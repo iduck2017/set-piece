@@ -1,86 +1,70 @@
 import type { App } from "../app";
 import type { Model } from "../models/base";
-import { BaseRecord, VoidRecord } from "./base";
-import { 
-    IDOF, 
-    RuleOF,
-    StateOF, 
-    InfoOF,
-    ProvidersOF,
-    ReferOF,
-    ConsumersOF,
-    UnionOF
-} from "./reflex";
+import { BaseData } from "./base";
+import { BaseRefer } from "./common";
 
-type ModelEvents = {
-    checkBefore: Model[],
-    updateDone: Model[],
+type BaseModel = Model<
+    number,
+    BaseData,
+    BaseData,
+    BaseData,
+    BaseRefer,
+    BaseRefer,
+    BaseModel | App
+>;
+
+type ModelChunk<
+    M extends number,
+    R extends BaseData,
+    S extends BaseData,
+    E extends BaseRefer,
+    H extends BaseRefer,
+> = {
+    referId: string,
+    modelId: M,
+    rule: R,
+    state: S,
+    emitters: Record<keyof E, string[]>
+    handlers: Record<keyof H, string[]>
 }
 
-type ModelDefinition = {
-    id: number;  
-    rule: BaseRecord,
-    info: BaseRecord,
-    state: BaseRecord,
-    extra: BaseRecord,
-    parent: Model | App,
-    providers: Record<string, Model[]>,
-    consumers: Record<string, Model[]>,
+type ModelConfig<
+    M extends number,
+    R extends BaseData,
+    I extends BaseData,
+    S extends BaseData,
+    E extends BaseRefer,
+    H extends BaseRefer,
+> = {
+    app: App
+    referId?: string
+    modelId: M
+    rule: R
+    info: I
+    state: S
+    emitters: Record<keyof E, string[]>
+    handlers: Record<keyof H, string[]>
 }
 
-type ModelTemplate = {
-    id: never;  
-    rule: VoidRecord,
-    info: VoidRecord,
-    state: VoidRecord,
-    extra: VoidRecord,
-    parent: Model,
-    providers: VoidRecord,
-    consumers: VoidRecord,
-}
-
-type ModelChunk<T extends ModelDefinition> = {
-    key: string,
-    id: IDOF<T>,
-    rule: RuleOF<T>,
-    state: StateOF<T>,
-    providers: ReferOF<ProvidersOF<T>>,
-    consumers: ReferOF<ConsumersOF<T>>
-}
-
-type ModelConfig<T extends ModelDefinition> = {
-    app: App,
-    key?: string,
-    id: IDOF<T>,
-    rule: RuleOF<T>,
-    info: InfoOF<T>,
-    state: StateOF<T>,
-    providers: ReferOF<ProvidersOF<T>>,
-    consumers: ReferOF<ConsumersOF<T>>
-}
-
-type IModelDefinition<T extends Partial<ModelDefinition>> = 
-    UnionOF<T, ModelDefinition>
-
-type IModelTemplate<T extends Partial<ModelDefinition>> = 
-    UnionOF<T, ModelTemplate>
-
-type IModelConfig<T extends ModelDefinition> = {
+type IModelConfig<
+    R extends BaseData,
+    S extends BaseData,
+    E extends BaseRefer,
+    H extends BaseRefer,
+> = {
     app: App;
-    key?: string;
-    rule: RuleOF<T>;
-    state?: Partial<StateOF<T>>;
-    providers?: ReferOF<ProvidersOF<T>>,
-    consumers?: ReferOF<ConsumersOF<T>>
+    referId?: string;
+    rule: R;
+    state?: Partial<S>;
+    emitters?: Record<keyof E, string[]>
+    handlers?: Record<keyof H, string[]>
 }
 
 export {
+    BaseModel,
+    BaseRefer,
+    
     ModelChunk,
-    ModelEvents,
-    ModelTemplate,
-    ModelDefinition,
     ModelConfig,
-    IModelConfig,
-    IModelTemplate,
-    IModelDefinition
+    IModelConfig
 };

@@ -1,10 +1,10 @@
 import { META_PATH } from "../configs/base";
-import { META_DATA } from "../configs/meta";
+import { META_DATA } from "../configs/app";
 import { AppStatus } from "../types/status";
-import { MetaData } from "../types/app";
-import { appStatus } from "../utils/decors/status";
-import { singleton } from "../utils/decors/singleton";
+import { appStatus } from "../utils/status";
+import { singleton } from "../utils/decors";
 import { Service } from "./base";
+import { MetaData } from "../types/app";
 
 @singleton
 export class MetaService extends Service {
@@ -20,7 +20,7 @@ export class MetaService extends Service {
     public async save() {
         const save: MetaData = {
             version: this.app.version,
-            perference: this.app.services.perference.data,
+            perference: this.app.services.setting.data,
             slots: this.app.services.slots.data
         };
         await localStorage.setItem(META_PATH, JSON.stringify(save));

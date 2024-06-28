@@ -1,5 +1,5 @@
-enum ExceptionID {
+enum ExceptionId {
     BASE = 100000,
 }
 
-export { ExceptionID };
+export { ExceptionId };

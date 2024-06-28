@@ -1,29 +1,53 @@
 import type { App } from "../app";
-import { ModelID } from ".";
-import { DictChunk, IDictTemplate } from "./dict";
+import { DictModel } from "../models/dict";
+import { VoidData } from "./base";
+import { VoidRefer } from "./common";
+import { DictChunk, IDictConfig } from "./dict";
+import { ModelId } from "./registry";
 
-type RootTemplate = IDictTemplate<
-    {
-        id: ModelID.ROOT,
-        rule: {
-            name: string,
-            difficulty: number,
-        },
-        state: {
-            progress: number,
-        },
-        extra: {
-            time: number,
-        },
-        parent: App
-    }
->
+type RootState = {
+    progress: number
+}
 
-type RootChunk = DictChunk<RootTemplate> & {
+type RootRule = {
+    name: string,
+    difficulty: number,
+}
+ 
+type RootChunk = DictChunk<
+    ModelId.ROOT,
+    RootRule,
+    RootState,
+    VoidRefer,
+    VoidRefer,
+    VoidData
+> & {
     version: string;
 }
 
+type RootConfig = IDictConfig<
+    RootRule,
+    RootState,
+    VoidRefer,
+    VoidRefer,
+    VoidData
+>
+
+const IRootModel = class extends DictModel<
+    ModelId.ROOT,
+    RootRule,
+    VoidData,
+    RootState,
+    VoidRefer,
+    VoidRefer,
+    App,
+    VoidData
+> {};
+
 export {
-    RootTemplate,
-    RootChunk
+    RootRule,
+    RootState,
+    RootChunk,
+    RootConfig,
+    IRootModel
 };

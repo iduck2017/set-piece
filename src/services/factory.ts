@@ -4,10 +4,10 @@ import { DictModel } from "../models/dict";
 import { ListModel } from "../models/list";
 import { BaseConstructor } from "../types/base";
 import { AppStatus } from "../types/status";
-import { appStatus } from "../utils/decors/status";
-import { singleton } from "../utils/decors/singleton";
+import { appStatus } from "../utils/status";
+import { singleton } from "../utils/decors";
 import { Service } from "./base";
-import { Model } from "../models/base";
+import { BaseModel } from "../types/model";
 
 @singleton
 export class FactoryService extends Service {
@@ -19,8 +19,8 @@ export class FactoryService extends Service {
     }
 
     @appStatus(AppStatus.MOUNTING)
-    public create<T extends Model>(config: any): T {
-        const Constructor = FactoryService._products[config.productID];
+    public create<T extends BaseModel>(config: any): T {
+        const Constructor = FactoryService._products[config.modelId];
         config.app = this.app;
 
         if (Constructor.prototype instanceof ListModel) {

@@ -1,16 +1,25 @@
 import { ModelStatus } from "../types/status";
 import { Model } from "./base";
-import { modelStatus } from "../utils/decors/status";
-import { ChildrenOF, ElementOF } from "../types/reflex";
-import { ListChunk, ListConfig, ListDefinition } from "../types/list";
+import { modelStatus } from "../utils/status";
+import { BaseData } from "../types/base";
+import { BaseModel, BaseRefer } from "../types/model";
+import type { App } from "../app";
+import { ListChunk, ListConfig } from "../types/list";
 
 export abstract class ListModel<
-    T extends ListDefinition
-> extends Model<T> {
-    private _children: ChildrenOF<T> = [];
+    M extends number,
+    R extends BaseData,
+    I extends BaseData,
+    S extends BaseData,
+    E extends BaseRefer,
+    H extends BaseRefer,
+    P extends BaseModel | App,
+    C extends BaseModel
+> extends Model<M, R, I, S, E, H, P> {
+    private _children: C[] = [];
     public get children() { return [...this._children]; }
 
-    constructor(config: ListConfig<T>) {
+    constructor(config: ListConfig<M, R, I, S, E, H, C>) {
         super(config);
         for (const child of config.children) {
             this.add(child);
@@ -26,7 +35,7 @@ export abstract class ListModel<
         ModelStatus.MOUNTED,
         ModelStatus.INITED
     )
-    public add(child: ElementOF<ChildrenOF<T>>) {
+    public add(child: C) {
         this._children.push(child);
         child.mount(this);
     }
@@ -41,7 +50,7 @@ export abstract class ListModel<
         child.unmount();
     }
     
-    public serialize(): ListChunk<T> {
+    public serialize(): ListChunk<M, R, S, E, H, C> {
         const result = super.serialize();
         return {
             ...result,

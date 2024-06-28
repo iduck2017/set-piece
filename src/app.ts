@@ -1,10 +1,10 @@
-import { appStatus } from "./utils/decors/status";
-import { ReferenceService } from "./services/reference";
+import { appStatus } from "./utils/status";
+import { ReferService } from "./services/refer";
 import { MetaService } from "./services/meta";
-import { PerferenceService } from "./services/perference";
+import { SettingService } from "./services/setting";
 import { SlotsService } from "./services/slots";
 import { FactoryService } from "./services/factory";
-import { singleton } from "./utils/decors/singleton";
+import { singleton } from "./utils/decors";
 import { AppStatus } from "./types/status";
 import { APP_VERSION } from "./configs/base";
 import { RootModel } from "./models/root";
@@ -16,14 +16,14 @@ export class App {
 
     private _services: {
         meta: MetaService;
-        reference: ReferenceService;
-        perference: PerferenceService;
+        refer: ReferService;
         slots: SlotsService;
         factory: FactoryService;
+        setting: SettingService;
     };
     public get services() { return this._services; }
 
-    public get app() { return this; }
+    public readonly app = this;
 
     private _root?: RootModel;
     public get root() { return this._root; }
@@ -36,8 +36,8 @@ export class App {
         this._status = AppStatus.INITED;
         this._services = {
             meta: new MetaService(this),
-            reference: new ReferenceService(this),
-            perference: new PerferenceService(this),
+            refer: new ReferService(this),
+            setting: new SettingService(this),
             slots: new SlotsService(this),
             factory: new FactoryService(this)
         };
@@ -46,7 +46,7 @@ export class App {
     @appStatus(AppStatus.INITED)
     public async init() {
         const meta = await this._services.meta.head();
-        this._services.perference.init(meta.perference);
+        this._services.setting.init(meta.perference);
         this._services.slots.init(meta.slots);
         this._status = AppStatus.UNMOUNTED;
     }
@@ -54,7 +54,7 @@ export class App {
     @appStatus(AppStatus.UNMOUNTED)
     public async mount(index: number) {
         this._status = AppStatus.MOUNTING;
-        this._services.reference.init();
+        this._services.refer.init();
         const record = await this._services.slots.load(index);
         this._root = this._services.factory.create(record);
         this._root.mount(this);

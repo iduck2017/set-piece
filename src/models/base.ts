@@ -1,146 +1,145 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 
-import { BaseRecord } from "../types/base";
+import { BaseData, BaseRecord, VoidData } from "../types/base";
 import { ModelStatus } from "../types/status";
-import { modelStatus } from "../utils/decors/status";
+import { modelStatus } from "../utils/status";
 import { 
+    BaseModel,
     ModelChunk, 
-    ModelConfig, 
-    ModelDefinition 
+    ModelConfig 
 } from "../types/model";
 import type { App } from "../app";
-import { 
-    CacheOF,
-    ConsumersOF,
-    DataOF,
-    IDOF, 
-    InfoOF, 
-    ParentOF,
-    ProvidersOF,
-    ReferOF,
-    RuleOF,
-    StateOF
-} from "../types/reflex";
-import { ReferenceService } from "../services/reference";
+import { ReferService } from "../services/refer";
 import { Exception } from "../utils/exceptions";
+import { BaseRefer } from "../types/common";
 
 export abstract class Model<
-    T extends ModelDefinition = ModelDefinition
+    M extends number,
+    R extends BaseData,
+    I extends BaseData,
+    S extends BaseData,
+    E extends BaseRefer,
+    H extends BaseRefer,
+    P extends BaseModel | App
 > {
     public readonly app: App;
-    public readonly reference: ReferenceService;
+    public readonly refer: ReferService;
 
-    public readonly key: string;
-    public readonly id: IDOF<T>;
+    public readonly referId: string;
+    public readonly modelId: M;
 
     private _status: ModelStatus;
     public get status() { return this._status; }
 
-    private readonly _rule: RuleOF<T>;
-    private readonly _info: InfoOF<T>;
-    private readonly _state: StateOF<T>;
+    private readonly _rule: R;
+    private readonly _info: I;
+    private readonly _state: S;
 
-    private readonly _data: CacheOF<T>;
-    public readonly data: DataOF<T>;
+    private readonly _data: R & I & S;
+    public get data() { return this._data; }
 
-    private _parent?: ParentOF<T>;
+    private _parent?: P;
     public get parent() { return this._parent; }
-    public get children(): Model[] { return []; }
+    public get children(): BaseModel[] { return []; }
 
-    private readonly _providers: ReferOF<ProvidersOF<T>>;
-    private readonly _consumers: ReferOF<ConsumersOF<T>>;
+    private readonly _emitters: Record<keyof E, string[]>;
+    private readonly _handlers: Record<keyof H, string[]>;
 
-    public providers: ProvidersOF<T>;
-    public consumers: ProvidersOF<T>;
+    public readonly emitters: E;
+    public readonly handlers: H;
 
-    public constructor(config: ModelConfig<T>) {
-        const that = this;
-        function wrapData(raw: BaseRecord) {
+    public constructor(config: ModelConfig<M, R, I, S, E, H>) {
+        const wrapData = (raw: BaseRecord) => {
             return new Proxy(raw, {
-                set: function (target, key: string, value) {
+                set: (target, key: string, value) => {
                     target[key] = value;
-                    that.update(key);
+                    this.update(key);
                     return true;
                 }
             });
-        }
+        };
 
-        function wrapRefer(raw: Record<string, string[]>) {
-            return new Proxy(raw, {
-                get: (target, key: string) => {
+        const wrapEvents = (raw: Record<string, string[]>) => {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            return new Proxy<any>(raw, {
+                get: (target, key: string): BaseModel[] => {
                     const value = target[key];
-                    if (!value) return [];
-                    return that.reference.list(value);
+                    return this.refer.list(value);
                 },
                 set: () => false
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            }) as any;
-        }
+            });
+        };
 
         this._status = ModelStatus.INITED;
 
         this.app = config.app;
-        this.reference = config.app.services.reference;
+        this.refer = config.app.services.refer;
 
-        this.id = config.id;
-        this.key = config.key || '';
+        this.modelId = config.modelId;
+        this.referId = config.referId || this.refer.register();
         
         this._rule = wrapData(config.rule);
         this._info = wrapData(config.info);
         this._state = wrapData(config.state);
-
         this._data = {
             ...config.rule,
             ...config.info,
             ...config.state
         };
-        this.data = new Proxy(this._data, {
-            get: this._compute.bind(this),
-            set: () => false
-        });
 
-        this._providers = config.providers;
-        this._consumers = config.consumers;
+        this._emitters = config.emitters;
+        this._handlers = config.handlers;
         
-        this.providers = wrapRefer(config.providers);
-        this.consumers = wrapRefer(config.consumers); 
+        this.emitters = wrapEvents(config.emitters);
+        this.handlers = wrapEvents(config.handlers); 
     }
 
     protected _onUpdateDone<
-        T extends ModelDefinition,
-        K extends keyof CacheOF<T>
+        R extends BaseData,
+        I extends BaseData,
+        S extends BaseData,
+        K extends keyof (R & I & S)
     >(
-        target: Model<T>,
+        target: Model<
+            number,
+            R,
+            I,
+            S,
+            BaseRefer,
+            BaseRefer,
+            BaseModel | App
+        >,
         key: K,
-        prev: CacheOF<T>[K],
-        next: CacheOF<T>[K]
-    ) { 
-    }
+        prev: (R & I & S)[K],
+        next: (R & I & S)[K]
+    ) {}
 
     protected _onCheckBefore<
-        T extends ModelDefinition,
-        K extends keyof CacheOF<T>
+        R extends BaseData,
+        I extends BaseData,
+        S extends BaseData,
+        K extends keyof (R & I & S)
     >(
-        target: Model<T>,
+        target: Model<
+            number,
+            R,
+            I,
+            S,
+            BaseRefer,
+            BaseRefer,
+            BaseModel | App
+        >,
         key: K,
-        prev: CacheOF<T>[K]
-    ): CacheOF<T>[K] { 
+        prev: (R & I & S)[K]
+    ): (R & I & S)[K] { 
         return prev; 
     }
-    
-    protected abstract _compute<
-        K extends keyof DataOF<T>
-    >(
-        target: BaseRecord,
-        key: K
-    ): BaseRecord[K]
-
     
     @modelStatus(
         ModelStatus.MOUNTING,
         ModelStatus.MOUNTED
     )
-    public update(key: keyof CacheOF<T>) {
+    public update(key: keyof (R & I & S)) {
         const prev = this._data[key];
         let result = {
             ...this._rule,
@@ -148,14 +147,14 @@ export abstract class Model<
             ...this._state
         }[key];
 
-        const modifiers = this.consumers.checkBefore;
+        const modifiers = this.handlers.checkBefore;
         for (const modifier of modifiers) {
             result = modifier._onCheckBefore(this, key, result);
         }
         
         this._data[key] = result;
         if (prev !== result) {
-            const listeners = this.consumers.updateDone;
+            const listeners = this.handlers.updateDone;
             for (const listener of listeners) {
                 listener._onUpdateDone(this, key, prev, result);
             }
@@ -163,9 +162,9 @@ export abstract class Model<
     }
 
     @modelStatus(ModelStatus.INITED)
-    public mount(parent: ParentOF<T>) {
+    public mount(parent: P) {
         this._status = ModelStatus.MOUNTING;
-        this.reference.add(this);
+        this.refer.add(this);
         for (const child of this.children) child.mount(this);
         for (const key in this._rule) this.update(key); 
         for (const key in this._info) this.update(key); 
@@ -178,57 +177,86 @@ export abstract class Model<
     public unmount() {
         this._status = ModelStatus.UNMOUNTING;
         for (const child of this.children) child.unmount();
-        this.reference.remove(this);
+        this.refer.remove(this);
         this._parent = undefined; 
         this._status = ModelStatus.UNMOUNTED; 
     }
 
     @modelStatus(ModelStatus.MOUNTED)
-    protected _sub<M extends ModelDefinition>(
-        target: Model<M>,
-        key: keyof ProvidersOF<T> & keyof ConsumersOF<M>
+    protected _bind<
+        H extends BaseRefer
+    >(
+        that: Model<
+            number,
+            BaseData,
+            BaseData,
+            BaseData,
+            BaseRefer,
+            H,
+            BaseModel | App
+        >,
+        key: keyof E & keyof H
     ) {
-        const providers = this._providers[key];
-        const consumers = target._consumers[key];
+        const emitters = this._emitters[key];
+        const handlers = that._handlers[key];
 
-        if (providers) providers.push(target.key);
-        else this._providers[key] = [target.key];
+        if (!emitters) this._emitters[key] = [];
+        if (!handlers) that._handlers[key] = [];
 
-        if (consumers) consumers.push(this.key);
-        else this._consumers[key] = [this.key];
+        this._emitters[key].push(that.referId);
+        that._handlers[key].push(this.referId);
     }
 
     @modelStatus(ModelStatus.UNMOUNTED)
-    protected _unpub<M extends ModelDefinition>(
-        target: Model<M>,
-        key: keyof ProvidersOF<M> & keyof ConsumersOF<T>
-    ) {
-        target._unsub(this, key);
+    public _unplug<
+        E extends BaseRefer
+    >(
+        that: Model<
+            number,
+            BaseData,
+            BaseData,
+            BaseData,
+            E,
+            BaseRefer,
+            BaseModel | App
+        >,
+        key: keyof E & keyof H
+    ) { 
+        that._unbind(this, key);
     }
 
-
     @modelStatus(ModelStatus.UNMOUNTED)
-    protected _unsub<M extends ModelDefinition>(
-        target: Model<M>,
-        key: keyof ProvidersOF<T> & keyof ConsumersOF<M>
+    public _unbind<
+        H extends BaseRefer
+    >(
+        that: Model<
+            number,
+            BaseData,
+            BaseData,
+            BaseData,
+            BaseRefer,
+            H,
+            BaseModel | App
+        >,
+        key: keyof E & keyof H
     ) {
-        const providers = this._providers[key];
-        const consumers = target._consumers[key];
+        const emitters = this._emitters[key];
+        const handlers = that._handlers[key];
         
-        if (!providers || !consumers) throw new Exception();
+        if (!emitters || !handlers) throw new Exception();
 
-        providers.splice(providers.indexOf(target.key), 1);
-        consumers.splice(consumers.indexOf(this.key), 1);
+        emitters.splice(emitters.indexOf(that.referId), 1);
+        handlers.splice(handlers.indexOf(this.referId), 1);
     }
 
-    public serialize(): ModelChunk<T> {
+    public serialize(): ModelChunk<M, R, S, E, H> {
         return {
-            id: this.id,
-            key: this.key,
+            modelId: this.modelId,
+            referId: this.referId,
             rule: this._rule,
             state: this._state,
-            providers: this._providers,
-            consumers: this._consumers
+            emitters: this._emitters,
+            handlers: this._handlers
         };
     }
 }

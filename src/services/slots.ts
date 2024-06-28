@@ -1,13 +1,13 @@
 import { SLOT_PATH } from "../configs/base";
 import { AppStatus } from "../types/status";
 import { SlotData } from "../types/app";
-import { appStatus } from "../utils/decors/status";
-import { singleton } from "../utils/decors/singleton";
+import { appStatus } from "../utils/status";
+import { singleton } from "../utils/decors";
 import { Service } from "./base";
 import { CreateSlotForm } from "../types/forms";
 import { Exception } from "../utils/exceptions";
-import { RootModel } from "../models/root";
 import { RootChunk } from "../types/root";
+import { RootModel } from "../models/root";
 
 @singleton
 export class SlotsService extends Service {
@@ -23,19 +23,19 @@ export class SlotsService extends Service {
 
     private _register(): number {
         let ticket = 1;
-        while (this._data.find(item => item.slotID === ticket)) {
+        while (this._data.find(item => item.slotId === ticket)) {
             ticket += 1;
         }
         return ticket;
     }
     
     @appStatus(AppStatus.UNMOUNTED)
-    public async new(options: CreateSlotForm) {
-        const slotID = this._register();
-        const path = `${SLOT_PATH}-${slotID}`;
+    public async new(options: CreateSlotForm): Promise<RootChunk> {
+        const slotId = this._register();
+        const path = `${SLOT_PATH}-${slotId}`;
         this._data.push({
             name: options.name,
-            slotID,
+            slotId: slotId,
             progress: 0
         });
         const record = new RootModel({
@@ -51,7 +51,7 @@ export class SlotsService extends Service {
     public async load(index: number): Promise<RootChunk> {
         this._index = index;
         const slot = this._data[index];
-        const path = `${SLOT_PATH}-${slot.slotID}`;
+        const path = `${SLOT_PATH}-${slot.slotId}`;
         const raw = await localStorage.getItem(path);
         if (!raw) throw new Exception();
         return JSON.parse(raw) as RootChunk;
@@ -60,7 +60,7 @@ export class SlotsService extends Service {
     @appStatus(AppStatus.UNMOUNTED)
     public async delete(index: number) {
         const slot = this._data[index];
-        const path = `${SLOT_PATH}-${slot.slotID}`;
+        const path = `${SLOT_PATH}-${slot.slotId}`;
         this._data.splice(index, 1);
         await this.app.services.meta.save();
         await localStorage.removeItem(path);
@@ -79,7 +79,7 @@ export class SlotsService extends Service {
             throw new Exception();
         }
         const slot = this._data[index];
-        const path = `${SLOT_PATH}-${slot.slotID}`;
+        const path = `${SLOT_PATH}-${slot.slotId}`;
         const record = root.serialize();
         this._data[index] = {
             ...slot,

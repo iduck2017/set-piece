@@ -1,22 +1,22 @@
-type PerferenceData = {
-    fullscreen: boolean;
-    mute: boolean;
-}
-
 type SlotData = {
-    slotID: number;
+    slotId: number;
     name: string;
     progress: number;
+}
+
+type SettingData = {
+    fullscreen: boolean;
+    mute: boolean;
 }
 
 type MetaData = {
     version: string;
     slots: SlotData[];
-    perference: PerferenceData;
+    perference: SettingData;
 }
 
 export { 
     MetaData,
-    PerferenceData,
-    SlotData
+    SlotData,
+    SettingData
 };

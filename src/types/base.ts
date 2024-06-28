@@ -2,16 +2,18 @@
 
 type BaseKey = string | number | symbol
 type BaseType = string | number | boolean | undefined
+type BaseData = Record<string, BaseType>
+type VoidData = Record<never, never>
+type BaseRecord = Record<any, any>
 type BaseFunction = (...args: any[]) => any
 type BaseConstructor = new (...args: any[]) => any & BaseRecord
-type BaseRecord = Record<any, any>
-type VoidRecord = Record<never, never>;
 
 export {
     BaseKey,
     BaseType,
-    BaseFunction,
-    BaseConstructor,
+    BaseData,
+    VoidData,
     BaseRecord,
-    VoidRecord
+    BaseFunction,
+    BaseConstructor
 };

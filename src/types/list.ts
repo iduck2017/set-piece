@@ -1,49 +1,42 @@
-import { Model } from "../models/base";
-import { ChildrenOF, UnionOF } from "./reflex";
-import { 
-    IModelConfig, 
-    ModelConfig, 
-    ModelDefinition, 
-    ModelChunk, 
-    ModelTemplate
-} from "./model";
+import { BaseData } from "./base";
+import { BaseRefer } from "./common";
+import { BaseModel, IModelConfig, ModelChunk, ModelConfig } from "./model";
 
-type ListDefinition = ModelDefinition & {
-    children: Model[]
+type ListChunk<
+    M extends number,
+    R extends BaseData,
+    S extends BaseData,
+    E extends BaseRefer,
+    H extends BaseRefer,
+    C extends BaseModel
+> = ModelChunk<M, R, S, E, H> & {
+    children: C[]
 }
 
-type ListTemplate = ModelTemplate & {
-    children: never[]
+type ListConfig<
+    M extends number,
+    R extends BaseData,
+    I extends BaseData,
+    S extends BaseData,
+    E extends BaseRefer,
+    H extends BaseRefer,
+    C extends BaseModel
+> = ModelConfig<M, R, I, S, E, H> & {
+    children: C[]
 }
 
-type ListConfig<T extends ListDefinition> = 
-    ModelConfig<T> & {
-        children: ChildrenOF<T>,
-    }
-
-type IListConfig<T extends ListDefinition> = 
-    IModelConfig<T> & {
-        children?: Partial<ChildrenOF<T>> 
-    }
-
-type ListChunk<T extends ListDefinition> = 
-    ModelChunk<T> & {
-        children: ChildrenOF<T>
-    }
-
-type IListDefinition<T extends Partial<ListDefinition>> = 
-    UnionOF<T, ListDefinition>
-
-type IListTemplate<T extends Partial<ListDefinition>> = 
-    UnionOF<T, ListTemplate>
-
+type IListConfig<
+    R extends BaseData,
+    S extends BaseData,
+    E extends BaseRefer,
+    H extends BaseRefer,
+    C extends BaseModel
+> = IModelConfig<R, S, E, H> & {
+    children?: C[]
+}
 
 export {
     ListChunk,
-    ListTemplate,
-    ListDefinition,
     ListConfig,
-    IListConfig,
-    IListTemplate,
-    IListDefinition
+    IListConfig
 };

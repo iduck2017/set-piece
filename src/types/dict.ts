@@ -1,49 +1,43 @@
-import type { Model } from "../models/base";
-import { VoidRecord } from "./base";
-import { ChildrenOF, UnionOF } from "./reflex";
-import { 
-    IModelConfig, 
-    ModelConfig, 
-    ModelDefinition, 
-    ModelChunk, 
-    ModelTemplate 
-} from "./model";
+import { BaseData } from "./base";
+import { BaseRefer } from "./common";
+import { BaseModel, IModelConfig, ModelChunk, ModelConfig } from "./model";
 
-type DictDefinition = ModelDefinition & {
-    children: Record<string, Model>
+type DictChunk<
+    M extends number,
+    R extends BaseData,
+    S extends BaseData,
+    E extends BaseRefer,
+    H extends BaseRefer,
+    C extends Record<string, BaseModel>
+> = ModelChunk<M, R, S, E, H> & {
+    children: C
 }
 
-type DictTemplate = ModelTemplate & {
-    children: VoidRecord
+type DictConfig<
+    M extends number,
+    R extends BaseData,
+    I extends BaseData,
+    S extends BaseData,
+    E extends BaseRefer,
+    H extends BaseRefer,
+    C extends Record<string, BaseModel>
+> = ModelConfig<M, R, I, S, E, H> & {
+    children: C
 }
 
-type DictChunk<T extends DictDefinition> = 
-    ModelChunk<T> & {
-        children: ChildrenOF<T>
-    }
+type IDictConfig<
+    R extends BaseData,
+    S extends BaseData,
+    E extends BaseRefer,
+    H extends BaseRefer,
+    C extends Record<string, BaseModel>
+> = IModelConfig<R, S, E, H> & {
+    children?: Partial<C>
+}
 
-type DictConfig<T extends DictDefinition> = 
-    ModelConfig<T> & {
-        children: ChildrenOF<T>,
-    }
-
-type IDictConfig<T extends DictDefinition> =
-    IModelConfig<T> & {
-        children?: Partial<ChildrenOF<T>> 
-    }
-
-type IDictDefinition<T extends Partial<DictDefinition>> = 
-    UnionOF<T, DictDefinition>
-
-type IDictTemplate<T extends Partial<DictDefinition>> = 
-    UnionOF<T, DictTemplate>
 
 export {
     DictChunk,
-    DictTemplate,
-    DictDefinition,
     DictConfig,
-    IDictConfig,
-    IDictTemplate,
-    IDictDefinition
+    IDictConfig
 };
