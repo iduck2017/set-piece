@@ -1,8 +1,8 @@
 import { ModelStatus } from "../types/status";
 import { Model } from "./base";
 import { modelStatus } from "../utils/status";
-import { BaseData } from "../types/base";
-import { BaseModel, BaseRefer } from "../types/model";
+import { BaseData, VoidData } from "../types/base";
+import { BaseModel } from "../types/model";
 import type { App } from "../app";
 import { ListChunk, ListConfig } from "../types/list";
 
@@ -11,8 +11,8 @@ export abstract class ListModel<
     R extends BaseData,
     I extends BaseData,
     S extends BaseData,
-    E extends BaseRefer,
-    H extends BaseRefer,
+    E extends Record<string, BaseModel[]>,
+    H extends Record<string, BaseModel[]>,
     P extends BaseModel | App,
     C extends BaseModel
 > extends Model<M, R, I, S, E, H, P> {

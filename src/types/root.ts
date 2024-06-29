@@ -1,7 +1,5 @@
-import type { App } from "../app";
-import { DictModel } from "../models/dict";
 import { VoidData } from "./base";
-import { VoidRefer } from "./common";
+import { ModelRefer } from "./common";
 import { DictChunk, IDictConfig } from "./dict";
 import { ModelId } from "./registry";
 
@@ -18,36 +16,22 @@ type RootChunk = DictChunk<
     ModelId.ROOT,
     RootRule,
     RootState,
-    VoidRefer,
-    VoidRefer,
+    ModelRefer,
+    ModelRefer,
     VoidData
-> & {
-    version: string;
-}
+> & { version: string; }
 
 type RootConfig = IDictConfig<
     RootRule,
     RootState,
-    VoidRefer,
-    VoidRefer,
+    ModelRefer,
+    ModelRefer,
     VoidData
 >
-
-const IRootModel = class extends DictModel<
-    ModelId.ROOT,
-    RootRule,
-    VoidData,
-    RootState,
-    VoidRefer,
-    VoidRefer,
-    App,
-    VoidData
-> {};
 
 export {
     RootRule,
     RootState,
     RootChunk,
-    RootConfig,
-    IRootModel
+    RootConfig
 };

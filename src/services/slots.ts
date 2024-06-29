@@ -14,7 +14,7 @@ export class SlotsService extends Service {
     private _index?: number;
 
     private _data: SlotData[] = [];
-    public get data() { return [...this._data]; } 
+    public get data() { return this._data; } 
 
     @appStatus(AppStatus.INITED)
     public init(config: SlotData[]) {
@@ -38,12 +38,13 @@ export class SlotsService extends Service {
             slotId: slotId,
             progress: 0
         });
-        const record = new RootModel({
-            rule: options,
-            app: this.app
-        }).serialize();
+        const root = this.app.factory.create(
+            RootModel, 
+            { rule: options }   
+        );
+        const record = root.serialize();
         await localStorage.setItem(path, JSON.stringify(record));
-        await this.app.services.meta.save();
+        await this.app.meta.save();
         return record;
     }
 
@@ -62,7 +63,7 @@ export class SlotsService extends Service {
         const slot = this._data[index];
         const path = `${SLOT_PATH}-${slot.slotId}`;
         this._data.splice(index, 1);
-        await this.app.services.meta.save();
+        await this.app.meta.save();
         await localStorage.removeItem(path);
     }
 
@@ -86,6 +87,6 @@ export class SlotsService extends Service {
             progress: root.data.progress
         };
         await localStorage.setItem(path, JSON.stringify(record));
-        await this.app.services.meta.save();
+        await this.app.meta.save();
     }
 }

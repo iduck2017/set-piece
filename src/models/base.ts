@@ -9,21 +9,19 @@ import {
     ModelConfig 
 } from "../types/model";
 import type { App } from "../app";
-import { ReferService } from "../services/refer";
 import { Exception } from "../utils/exceptions";
-import { BaseRefer } from "../types/common";
+import { ModelRefer } from "../types/common";
 
 export abstract class Model<
     M extends number,
     R extends BaseData,
     I extends BaseData,
     S extends BaseData,
-    E extends BaseRefer,
-    H extends BaseRefer,
+    E extends Record<string, BaseModel[]>,
+    H extends Record<string, BaseModel[]>,
     P extends BaseModel | App
 > {
     public readonly app: App;
-    public readonly refer: ReferService;
 
     public readonly referId: string;
     public readonly modelId: M;
@@ -45,8 +43,8 @@ export abstract class Model<
     private readonly _emitters: Record<keyof E, string[]>;
     private readonly _handlers: Record<keyof H, string[]>;
 
-    public readonly emitters: E;
-    public readonly handlers: H;
+    public readonly emitters: E & ModelRefer;
+    public readonly handlers: H & ModelRefer;
 
     public constructor(config: ModelConfig<M, R, I, S, E, H>) {
         const wrapData = (raw: BaseRecord) => {
@@ -64,7 +62,7 @@ export abstract class Model<
             return new Proxy<any>(raw, {
                 get: (target, key: string): BaseModel[] => {
                     const value = target[key];
-                    return this.refer.list(value);
+                    return this.app.refer.list(value);
                 },
                 set: () => false
             });
@@ -73,10 +71,8 @@ export abstract class Model<
         this._status = ModelStatus.INITED;
 
         this.app = config.app;
-        this.refer = config.app.services.refer;
-
         this.modelId = config.modelId;
-        this.referId = config.referId || this.refer.register();
+        this.referId = config.referId || this.app.refer.register();
         
         this._rule = wrapData(config.rule);
         this._info = wrapData(config.info);
@@ -105,8 +101,8 @@ export abstract class Model<
             R,
             I,
             S,
-            BaseRefer,
-            BaseRefer,
+            Record<string, BaseModel[]>,
+            Record<string, BaseModel[]>,
             BaseModel | App
         >,
         key: K,
@@ -125,8 +121,8 @@ export abstract class Model<
             R,
             I,
             S,
-            BaseRefer,
-            BaseRefer,
+            Record<string, BaseModel[]>,
+            Record<string, BaseModel[]>,
             BaseModel | App
         >,
         key: K,
@@ -147,14 +143,14 @@ export abstract class Model<
             ...this._state
         }[key];
 
-        const modifiers = this.handlers.checkBefore;
+        const modifiers = this.handlers.checkBefore || [];
         for (const modifier of modifiers) {
             result = modifier._onCheckBefore(this, key, result);
         }
         
         this._data[key] = result;
         if (prev !== result) {
-            const listeners = this.handlers.updateDone;
+            const listeners = this.handlers.updateDone || [];
             for (const listener of listeners) {
                 listener._onUpdateDone(this, key, prev, result);
             }
@@ -164,7 +160,7 @@ export abstract class Model<
     @modelStatus(ModelStatus.INITED)
     public mount(parent: P) {
         this._status = ModelStatus.MOUNTING;
-        this.refer.add(this);
+        this.app.refer.add(this);
         for (const child of this.children) child.mount(this);
         for (const key in this._rule) this.update(key); 
         for (const key in this._info) this.update(key); 
@@ -177,21 +173,21 @@ export abstract class Model<
     public unmount() {
         this._status = ModelStatus.UNMOUNTING;
         for (const child of this.children) child.unmount();
-        this.refer.remove(this);
+        this.app.refer.remove(this);
         this._parent = undefined; 
         this._status = ModelStatus.UNMOUNTED; 
     }
 
     @modelStatus(ModelStatus.MOUNTED)
     protected _bind<
-        H extends BaseRefer
+        H extends Record<string, BaseModel[]>
     >(
         that: Model<
             number,
             BaseData,
             BaseData,
             BaseData,
-            BaseRefer,
+            Record<string, BaseModel[]>,
             H,
             BaseModel | App
         >,
@@ -208,8 +204,8 @@ export abstract class Model<
     }
 
     @modelStatus(ModelStatus.UNMOUNTED)
-    public _unplug<
-        E extends BaseRefer
+    public _unconn<
+        E extends Record<string, BaseModel[]>
     >(
         that: Model<
             number,
@@ -217,7 +213,7 @@ export abstract class Model<
             BaseData,
             BaseData,
             E,
-            BaseRefer,
+            Record<string, BaseModel[]>,
             BaseModel | App
         >,
         key: keyof E & keyof H
@@ -227,14 +223,14 @@ export abstract class Model<
 
     @modelStatus(ModelStatus.UNMOUNTED)
     public _unbind<
-        H extends BaseRefer
+        H extends Record<string, BaseModel[]>
     >(
         that: Model<
             number,
             BaseData,
             BaseData,
             BaseData,
-            BaseRefer,
+            Record<string, BaseModel[]>,
             H,
             BaseModel | App
         >,

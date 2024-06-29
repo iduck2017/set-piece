@@ -1,10 +1,24 @@
 import { APP_VERSION } from "../configs/base";
 import { ModelId } from "../types/registry";
 import { product } from "../utils/product";
-import { IRootModel, RootChunk, RootConfig } from "../types/root";
+import { RootChunk, RootConfig, RootRule, RootState } from "../types/root";
+import { VoidData } from "../types/base";
+import { ModelRefer } from "../types/common";
+import type { App } from "../app";
+import { DictModel } from "./dict";
+import { modelRefer } from "../configs/refer";
 
 @product(ModelId.ROOT)
-export class RootModel extends IRootModel {
+export class RootModel extends DictModel<
+    ModelId.ROOT,
+    RootRule,
+    VoidData,
+    RootState,
+    ModelRefer,
+    ModelRefer,
+    App,
+    VoidData
+> {
     private _version: string;
 
     constructor(config: RootConfig) {
@@ -17,14 +31,8 @@ export class RootModel extends IRootModel {
                 ...config.state
             },
             children: {},
-            emitters: {
-                checkBefore: [],
-                updateDone: []
-            },
-            handlers: {
-                checkBefore: [],
-                updateDone: []
-            }
+            emitters: modelRefer(),
+            handlers: modelRefer()
         });
         this._version = APP_VERSION;
     }

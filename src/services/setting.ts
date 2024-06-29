@@ -7,7 +7,7 @@ import { Service } from "./base";
 @singleton
 export class SettingService extends Service {
     private _data!: SettingData;
-    public get data() { return { ...this._data }; } 
+    public get data() { return this._data; } 
 
     @appStatus(AppStatus.INITED)
     public init(config: SettingData) {
@@ -17,7 +17,7 @@ export class SettingService extends Service {
     @appStatus(AppStatus.UNMOUNTED)
     public async update(data: SettingData) {
         this._data = data;
-        await this.app.services.meta.save();
+        await this.app.meta.save();
         return;
     }
 }
