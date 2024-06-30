@@ -1,20 +1,22 @@
-import { VoidData } from "../types/base";
+import { modelEmitters, modelHandlers } from "../configs/refer";
+import { PartialOf, VoidData } from "../types/base";
 import { BunnyChildren, BunnyConfig, BunnyState } from "../types/bunny";
-import { ModelRefer } from "../types/common";
 import { GenderType } from "../types/enums";
-import { IListConfig } from "../types/list";
-import { BaseModel } from "../types/model";
+import { EventId, EventRegistry } from "../types/events";
+import { BaseModel, ModelEvent } from "../types/model";
 import { ModelId } from "../types/registry";
+import { product } from "../utils/product";
 import { randomEnum, randomNumber } from "../utils/random";
 import { ListModel } from "./list";
 
+@product(ModelId.BUNNY)
 export class BunnyModel extends ListModel<
     ModelId.BUNNY,
+    never,
+    never,
     VoidData,
     VoidData,
     BunnyState,
-    ModelRefer,
-    ModelRefer,
     BaseModel,
     BunnyChildren
 > {
@@ -30,9 +32,14 @@ export class BunnyModel extends ListModel<
                 weight: randomNumber(50, 100),
                 gender: randomEnum(GenderType.FEMALE, GenderType.MALE)
             },
-            emitters: {
-                update
-            }
+            emitters: modelEmitters(),
+            handlers: modelHandlers(),
+            children: config.children || []
         });
+    }
+
+    protected handle: PartialOf<EventRegistry, ModelEvent> = {
+        [EventId.CHECK_BEFORE]: this._handleCheckBefore,
+        [EventId.UPDATE_DONE]: this._handleUpdateDone
     }
 }

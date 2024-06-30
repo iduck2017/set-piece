@@ -1,40 +1,41 @@
 import type { App } from "../app";
 import { BaseData } from "./base";
-import { ChunkOf } from "./common";
-import { BaseModel, IModelConfig, ModelChunk, ModelConfig } from "./model";
+import { EventId } from "./events";
+import { BaseModel, ChunkOf, IModelConfig, ModelChunk, ModelConfig } from "./model";
+import { ModelId } from "./registry";
 
 type DictChunk<
-    M extends number,
+    M extends ModelId,
+    E extends EventId,
+    H extends EventId,
     R extends BaseData,
     S extends BaseData,
-    E extends Record<string, BaseModel[]>,
-    H extends Record<string, BaseModel[]>,
     C extends Record<string, BaseModel>
-> = ModelChunk<M, R, S, E, H> & {
+> = ModelChunk<M, E, H, R, S> & {
     children: {
         [K in keyof C]: ChunkOf<C[K]>
     }
 }
 
 type DictConfig<
-    M extends number,
+    M extends ModelId,
+    E extends EventId,
+    H extends EventId,
     R extends BaseData,
     I extends BaseData,
     S extends BaseData,
-    E extends Record<string, BaseModel[]>,
-    H extends Record<string, BaseModel[]>,
     C extends Record<string, BaseModel>
-> = ModelConfig<M, R, I, S, E, H> & {
+> = ModelConfig<M, E, H, R, I, S> & {
     children: C
 }
 
 type IDictConfig<
+    E extends EventId,
+    H extends EventId,
     R extends BaseData,
     S extends BaseData,
-    E extends Record<string, BaseModel[]>,
-    H extends Record<string, BaseModel[]>,
     C extends Record<string, BaseModel>
-> = IModelConfig<R, S, E, H> & {
+> = IModelConfig<E, H, R, S> & {
     children?: Partial<C>
 }
 

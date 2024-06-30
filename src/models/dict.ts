@@ -3,21 +3,22 @@ import { Model } from "./base";
 import { modelStatus } from "../utils/status";
 import { Exception } from "../utils/exceptions";
 import { BaseData } from "../types/base";
-import { BaseRefer } from "../types/common";
 import { BaseModel } from "../types/model";
 import type { App } from "../app";
 import { DictChunk, DictConfig } from "../types/dict";
+import { ModelId } from "../types/registry";
+import { EventId } from "../types/events";
 
 export abstract class DictModel<
-    M extends number,
+    M extends ModelId,
+    E extends EventId,
+    H extends EventId,
     R extends BaseData,
     I extends BaseData,
     S extends BaseData,
-    E extends BaseRefer,
-    H extends BaseRefer,
     P extends BaseModel | App,
     C extends Record<string, BaseModel>
-> extends Model<M, R, I, S, E, H, P> {
+> extends Model<M, E, H, R, I, S, P> {
     protected _children!: C;
     public get children() { 
         const result: BaseModel[] = [];
@@ -28,7 +29,7 @@ export abstract class DictModel<
         return result;
     }
 
-    constructor(config: DictConfig<M, R, I, S, E, H, C>) {
+    constructor(config: DictConfig<M, E, H, R, I, S, C>) {
         super(config);
         this._children = {} as C;
         for (const key in config.children) {
@@ -67,7 +68,7 @@ export abstract class DictModel<
         child.unmount();
     }
 
-    public serialize(): DictChunk<M, R, S, E, H, C> {
+    public serialize(): DictChunk<M, E, H, R, S, C> {
         const result = super.serialize();
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const children = {} as any;

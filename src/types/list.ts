@@ -1,38 +1,39 @@
 import type { App } from "../app";
-import { BaseData, VoidData } from "./base";
-import { ChunkOf, ModelRefer } from "./common";
-import { BaseModel, IModelConfig, ModelChunk, ModelConfig } from "./model";
+import { BaseData } from "./base";
+import { EventId } from "./events";
+import { BaseModel, ChunkOf, IModelConfig, ModelChunk, ModelConfig } from "./model";
+import { ModelId } from "./registry";
 
 type ListChunk<
-    M extends number,
+    M extends ModelId,
+    E extends EventId,
+    H extends EventId,
     R extends BaseData,
     S extends BaseData,
-    E extends Record<string, BaseModel[]>,
-    H extends Record<string, BaseModel[]>,
     C extends BaseModel
-> = ModelChunk<M, R, S, E, H> & {
+> = ModelChunk<M, E, H, R, S> & {
     children: ChunkOf<C>[]
 }
 
 type ListConfig<
-    M extends number,
+    M extends ModelId,
+    E extends EventId,
+    H extends EventId,
     R extends BaseData,
     I extends BaseData,
     S extends BaseData,
-    E extends Record<string, BaseModel[]>,
-    H extends Record<string, BaseModel[]>,
     C extends BaseModel
-> = ModelConfig<M, R, I, S, E, H> & {
+> = ModelConfig<M, E, H, R, I, S> & {
     children: C[]
 }
 
 type IListConfig<
+    E extends EventId,
+    H extends EventId,
     R extends BaseData,
     S extends BaseData,
-    E extends Record<string, BaseModel[]>,
-    H extends Record<string, BaseModel[]>,
     C extends BaseModel
-> = IModelConfig<R, S, E, H> & {
+> = IModelConfig<E, H, R, S> & {
     children?: C[]
 }
 

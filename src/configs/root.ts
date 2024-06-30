@@ -1,6 +1,6 @@
 import { ModelId } from "../types/registry";
 import { RootChunk } from "../types/root";
-import { modelRefer } from "./refer";
+import { modelEmitters } from "./refer";
 
 export const rootChunk: RootChunk = {
     modelId: ModelId.ROOT,
@@ -12,8 +12,8 @@ export const rootChunk: RootChunk = {
     state: {
         progress: 0
     },
-    emitters: modelRefer(),
-    handlers: modelRefer(),
+    emitters: modelEmitters(),
+    handlers: modelEmitters(),
     children: {},
     version: ''
 };

@@ -1,5 +1,4 @@
 import { VoidData } from "./base";
-import { ModelRefer } from "./common";
 import { DictChunk, IDictConfig } from "./dict";
 import { ModelId } from "./registry";
 
@@ -14,18 +13,18 @@ type RootRule = {
  
 type RootChunk = DictChunk<
     ModelId.ROOT,
+    never,
+    never,
     RootRule,
     RootState,
-    ModelRefer,
-    ModelRefer,
     VoidData
 > & { version: string; }
 
 type RootConfig = IDictConfig<
+    never,
+    never,
     RootRule,
     RootState,
-    ModelRefer,
-    ModelRefer,
     VoidData
 >
 

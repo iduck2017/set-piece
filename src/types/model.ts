@@ -1,44 +1,45 @@
 import type { App } from "../app";
 import type { Model } from "../models/base";
-import { BaseData, VoidData } from "./base";
+import { BaseData } from "./base";
+import { EventId } from "./events";
+import { ModelId } from "./registry";
 
 type BaseModel = Model<
-    number,
+    ModelId,
+    never,
+    never,
     BaseData,
     BaseData,
     BaseData,
-    VoidData,
-    VoidData,
     BaseModel | App
 >;
 
-type ModelRefer = {
-    updateDone?: BaseModel[];
-    checkBefore?: BaseModel[];
-}
+type ModelEvent = 
+    EventId.CHECK_BEFORE | 
+    EventId.UPDATE_DONE
 
 type ModelChunk<
-    M extends number,
+    M extends ModelId,
+    E extends EventId,
+    H extends EventId,
     R extends BaseData,
     S extends BaseData,
-    E extends Record<string, BaseModel[]>,
-    H extends Record<string, BaseModel[]>,
 > = {
     referId: string,
     modelId: M,
     rule: R,
     state: S,
-    emitters: Record<keyof (E & ModelRefer), string[]>
-    handlers: Record<keyof (H & ModelRefer), string[]>
+    emitters: Record<E | ModelEvent, string[]>
+    handlers: Record<H | ModelEvent, string[]>
 }
 
 type ModelConfig<
-    M extends number,
+    M extends ModelId,
+    E extends EventId,
+    H extends EventId,
     R extends BaseData,
     I extends BaseData,
     S extends BaseData,
-    E extends Record<string, BaseModel[]>,
-    H extends Record<string, BaseModel[]>,
 > = {
     app: App
     referId?: string
@@ -46,34 +47,36 @@ type ModelConfig<
     rule: R
     info: I
     state: S
-    emitters: Record<keyof (E & ModelRefer), string[]>
-    handlers: Record<keyof (H & ModelRefer), string[]>
+    emitters: Record<E | ModelEvent, string[]>
+    handlers: Record<H | ModelEvent, string[]>
 }
 
 type IModelConfig<
+    E extends EventId,
+    H extends EventId,
     R extends BaseData,
     S extends BaseData,
-    E extends Record<string, BaseModel[]>,
-    H extends Record<string, BaseModel[]>,
-> = R extends VoidData ? {
-    app: App;
-    referId?: string;
-    state?: Partial<S>;
-    emitters?: Record<keyof (E & ModelRefer), string[]>
-    handlers?: Record<keyof (H & ModelRefer), string[]>
-} : {
+> = {
     app: App;
     referId?: string;
     rule: R;
-    state?: Partial<S>;
-    emitters: Record<keyof (E & ModelRefer), string[]>
-    handlers: Record<keyof (H & ModelRefer), string[]>
+    state?: Partial<S>
+    emitters?: Record<E | ModelEvent, string[]>
+    handlers?: Record<H | ModelEvent, string[]>
 }
+
+type ChunkOf<T extends BaseModel | undefined> = 
+    T extends BaseModel ? 
+    ReturnType<T['serialize']> : 
+    undefined;
 
 export {
     BaseModel,
-    ModelRefer,
+
+    ModelEvent,
     ModelChunk,
     ModelConfig,
-    IModelConfig
+    IModelConfig,
+
+    ChunkOf
 };

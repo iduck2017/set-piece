@@ -1,24 +1,27 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-unused-vars */
 
-import { BaseData, BaseRecord, VoidData } from "../types/base";
+import { BaseData, BaseRecord, PartialOf, VoidData } from "../types/base";
 import { ModelStatus } from "../types/status";
 import { modelStatus } from "../utils/status";
 import { 
     BaseModel,
     ModelChunk, 
-    ModelConfig 
+    ModelConfig, 
+    ModelEvent
 } from "../types/model";
 import type { App } from "../app";
 import { Exception } from "../utils/exceptions";
-import { ModelRefer } from "../types/common";
+import { EventId, EventRegistry } from "../types/events";
+import { ModelId } from "../types/registry";
 
 export abstract class Model<
-    M extends number,
+    M extends ModelId,
+    E extends EventId,
+    H extends EventId,
     R extends BaseData,
     I extends BaseData,
     S extends BaseData,
-    E extends Record<string, BaseModel[]>,
-    H extends Record<string, BaseModel[]>,
     P extends BaseModel | App
 > {
     public readonly app: App;
@@ -40,13 +43,13 @@ export abstract class Model<
     public get parent() { return this._parent; }
     public get children(): BaseModel[] { return []; }
 
-    private readonly _emitters: Record<keyof E, string[]>;
-    private readonly _handlers: Record<keyof H, string[]>;
+    private readonly _emitters: Record<E | ModelEvent, string[]>;
+    private readonly _handlers: Record<H | ModelEvent, string[]>;
 
-    public readonly emitters: E & ModelRefer;
-    public readonly handlers: H & ModelRefer;
+    protected abstract handle: PartialOf<EventRegistry, H | ModelEvent>
+    protected emit: PartialOf<EventRegistry, H | ModelEvent>; 
 
-    public constructor(config: ModelConfig<M, R, I, S, E, H>) {
+    public constructor(config: ModelConfig<M, E, H, R, I, S>) {
         const wrapData = (raw: BaseRecord) => {
             return new Proxy(raw, {
                 set: (target, key: string, value) => {
@@ -54,17 +57,6 @@ export abstract class Model<
                     this.update(key);
                     return true;
                 }
-            });
-        };
-
-        const wrapEvents = (raw: Record<string, string[]>) => {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            return new Proxy<any>(raw, {
-                get: (target, key: string): BaseModel[] => {
-                    const value = target[key];
-                    return this.app.refer.list(value);
-                },
-                set: () => false
             });
         };
 
@@ -85,51 +77,63 @@ export abstract class Model<
 
         this._emitters = config.emitters;
         this._handlers = config.handlers;
-        
-        this.emitters = wrapEvents(config.emitters);
-        this.handlers = wrapEvents(config.handlers); 
+
+        this.emit = new Proxy({}, {
+            get: (target, key: any) => {
+                return (data: any) => {
+                    const event = key as H | ModelEvent;
+                    const refers = this._handlers[event];
+                    const handlers = this.app.refer.list(refers);
+                    for (const handler of handlers) {
+                        handler.handle[event](data);
+                    }
+                };
+            }
+        }) as any;
     }
 
-    protected _onUpdateDone<
+    protected _handleUpdateDone<
         R extends BaseData,
         I extends BaseData,
         S extends BaseData,
         K extends keyof (R & I & S)
-    >(
+    >(data: {
         target: Model<
-            number,
+            ModelId,
+            never,
+            never,
             R,
             I,
             S,
-            Record<string, BaseModel[]>,
-            Record<string, BaseModel[]>,
             BaseModel | App
         >,
         key: K,
         prev: (R & I & S)[K],
         next: (R & I & S)[K]
-    ) {}
+    }) {}
 
-    protected _onCheckBefore<
+    protected _handleCheckBefore<
         R extends BaseData,
         I extends BaseData,
         S extends BaseData,
         K extends keyof (R & I & S)
-    >(
+    >(data: {
         target: Model<
-            number,
+            ModelId,
+            never,
+            never,
             R,
             I,
             S,
-            Record<string, BaseModel[]>,
-            Record<string, BaseModel[]>,
             BaseModel | App
         >,
         key: K,
-        prev: (R & I & S)[K]
-    ): (R & I & S)[K] { 
-        return prev; 
+        prev: (R & I & S)[K],
+        next: (R & I & S)[K],
+    }): (R & I & S)[K] { 
+        return data.prev; 
     }
+
     
     @modelStatus(
         ModelStatus.MOUNTING,
@@ -137,23 +141,27 @@ export abstract class Model<
     )
     public update(key: keyof (R & I & S)) {
         const prev = this._data[key];
-        let result = {
+        const result = {
             ...this._rule,
             ...this._info,
             ...this._state
         }[key];
-
-        const modifiers = this.handlers.checkBefore || [];
-        for (const modifier of modifiers) {
-            result = modifier._onCheckBefore(this, key, result);
-        }
+        const data = {
+            target: this,
+            key,
+            prev: result,
+            next: result
+        };
         
-        this._data[key] = result;
-        if (prev !== result) {
-            const listeners = this.handlers.updateDone || [];
-            for (const listener of listeners) {
-                listener._onUpdateDone(this, key, prev, result);
-            }
+        this.emit[EventId.CHECK_BEFORE](data);
+        this._data[key] = data.next;
+        if (prev !== data.next) {
+            this.emit[EventId.UPDATE_DONE]({
+                target: this,
+                key,
+                prev,
+                next: data.next
+            });
         }
     }
 
@@ -180,18 +188,18 @@ export abstract class Model<
 
     @modelStatus(ModelStatus.MOUNTED)
     protected _bind<
-        H extends Record<string, BaseModel[]>
+        H extends EventId
     >(
         that: Model<
             number,
-            BaseData,
-            BaseData,
-            BaseData,
-            Record<string, BaseModel[]>,
+            EventId,
             H,
+            BaseData,
+            BaseData,
+            BaseData,
             BaseModel | App
         >,
-        key: keyof E & keyof H
+        key: E & H
     ) {
         const emitters = this._emitters[key];
         const handlers = that._handlers[key];
@@ -204,37 +212,37 @@ export abstract class Model<
     }
 
     @modelStatus(ModelStatus.UNMOUNTED)
-    public _unconn<
-        E extends Record<string, BaseModel[]>
+    public _unemit<
+        E extends EventId
     >(
         that: Model<
             number,
-            BaseData,
-            BaseData,
-            BaseData,
             E,
-            Record<string, BaseModel[]>,
+            never,
+            BaseData,
+            BaseData,
+            BaseData,
             BaseModel | App
         >,
-        key: keyof E & keyof H
+        key: E & H
     ) { 
         that._unbind(this, key);
     }
 
     @modelStatus(ModelStatus.UNMOUNTED)
     public _unbind<
-        H extends Record<string, BaseModel[]>
+        H extends EventId
     >(
         that: Model<
             number,
-            BaseData,
-            BaseData,
-            BaseData,
-            Record<string, BaseModel[]>,
+            never,
             H,
+            BaseData,
+            BaseData,
+            BaseData,
             BaseModel | App
         >,
-        key: keyof E & keyof H
+        key: E & H
     ) {
         const emitters = this._emitters[key];
         const handlers = that._handlers[key];
@@ -245,7 +253,7 @@ export abstract class Model<
         handlers.splice(handlers.indexOf(this.referId), 1);
     }
 
-    public serialize(): ModelChunk<M, R, S, E, H> {
+    public serialize(): ModelChunk<M, E, H, R, S> {
         return {
             modelId: this.modelId,
             referId: this.referId,

@@ -1,12 +1,15 @@
-import { ModelRefer } from "../types/common";
+import { EventId } from "../types/events";
+import { ModelEvent } from "../types/model";
 
-function modelRefer(): Record<keyof ModelRefer, string[]> {
+function modelHandlers(): Record<ModelEvent, string[]> {
     return {
-        updateDone: [],
-        checkBefore: []
+        [EventId.CHECK_BEFORE]: [],
+        [EventId.UPDATE_DONE]: []
     };
 }
 
+
 export {
-    modelRefer
+    modelHandlers as modelEmitters,
+    modelHandlers
 };

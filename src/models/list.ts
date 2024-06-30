@@ -1,25 +1,27 @@
 import { ModelStatus } from "../types/status";
 import { Model } from "./base";
 import { modelStatus } from "../utils/status";
-import { BaseData, VoidData } from "../types/base";
+import { BaseData } from "../types/base";
 import { BaseModel } from "../types/model";
 import type { App } from "../app";
 import { ListChunk, ListConfig } from "../types/list";
+import { ModelId } from "../types/registry";
+import { EventId } from "../types/events";
 
 export abstract class ListModel<
-    M extends number,
+    M extends ModelId,
+    E extends EventId,
+    H extends EventId,
     R extends BaseData,
     I extends BaseData,
     S extends BaseData,
-    E extends Record<string, BaseModel[]>,
-    H extends Record<string, BaseModel[]>,
     P extends BaseModel | App,
     C extends BaseModel
-> extends Model<M, R, I, S, E, H, P> {
+> extends Model<M, E, H, R, I, S, P> {
     private _children: C[] = [];
     public get children() { return [...this._children]; }
 
-    constructor(config: ListConfig<M, R, I, S, E, H, C>) {
+    constructor(config: ListConfig<M, E, H, R, I, S, C>) {
         super(config);
         for (const child of config.children) {
             this.add(child);
@@ -50,13 +52,12 @@ export abstract class ListModel<
         child.unmount();
     }
     
-    public serialize(): ListChunk<M, R, S, E, H, C> {
+    public serialize(): ListChunk<M, E, H, R, S, C> {
         const result = super.serialize();
         return {
             ...result,
             children: this._children.map(item => {
                 return item.serialize();
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             }) as any
         };
     }
