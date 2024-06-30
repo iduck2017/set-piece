@@ -1,6 +1,6 @@
 import { SLOT_PATH } from "../configs/base";
 import { AppStatus } from "../types/status";
-import { SlotData } from "../types/app";
+import { MetaData, SlotData } from "../types/app";
 import { appStatus } from "../utils/status";
 import { singleton } from "../utils/decors";
 import { Service } from "./base";
@@ -8,6 +8,7 @@ import { CreateSlotForm } from "../types/forms";
 import { Exception } from "../utils/exceptions";
 import { RootChunk } from "../types/root";
 import { RootModel } from "../models/root";
+import { BaseFunction } from "../types/base";
 
 @singleton
 export class SlotsService extends Service {
@@ -15,6 +16,22 @@ export class SlotsService extends Service {
 
     private _data: SlotData[] = [];
     public get data() { return this._data; } 
+
+    private _viewers: Array<BaseFunction> = []; 
+    public view(setter: BaseFunction) {
+        this._viewers.push(setter);
+    }
+    public unview(setter: BaseFunction) {
+        this._viewers.splice(
+            this._viewers.indexOf(setter),
+            1
+        )
+    }
+    public render() {
+        for (const view of this._viewers) {
+            view([...this._data]);
+        }
+    }
 
     @appStatus(AppStatus.INITED)
     public init(config: SlotData[]) {
@@ -44,7 +61,8 @@ export class SlotsService extends Service {
         const record = root.serialize();
         await localStorage.setItem(path, JSON.stringify(record));
         await this.app.meta.save();
-        await this.app.mount(length);
+        // await this.app.mount(length);
+        this.render();
         return record;
     }
 
