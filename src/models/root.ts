@@ -1,12 +1,17 @@
 import { APP_VERSION } from "../configs/base";
 import { ModelId } from "../types/registry";
 import { product } from "../utils/product";
-import { RootChildren, RootChunk, RootConfig, RootRule, RootState } from "../types/root";
+import { 
+    RootChildren, 
+    RootChunk, 
+    RootConfig, 
+    RootRule, 
+    RootState 
+} from "../types/root";
 import { VoidData } from "../types/base";
 import type { App } from "../app";
 import { DictModel } from "./dict";
-import { EventId, EventRegistry } from "../types/events";
-import { ModelEvent } from "../types/model";
+import { EventId } from "../types/events";
 import { BunnyModel } from "./bunny";
 
 @product(ModelId.ROOT)
@@ -37,7 +42,7 @@ export class RootModel extends DictModel<
                 bunny: 
                     config.children?.bunny || 
                     new BunnyModel({ rule: {} }, app)
-            },
+            }
         }, app);
         this._version = APP_VERSION;
     }
@@ -51,6 +56,6 @@ export class RootModel extends DictModel<
 
     protected _hooks = {
         [EventId.CHECK_BEFORE]: this._handleCheckBefore,
-        [EventId.UPDATE_DONE]: this._handleUpdateDone,    
-    }
+        [EventId.UPDATE_DONE]: this._handleUpdateDone    
+    };
 }

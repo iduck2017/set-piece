@@ -1,5 +1,5 @@
 import { ModelStatus } from "../types/status";
-import { Model } from "./base";
+import { Model } from "./model";
 import { modelStatus } from "../utils/status";
 import { BaseData } from "../types/base";
 import { BaseModel } from "../types/model";

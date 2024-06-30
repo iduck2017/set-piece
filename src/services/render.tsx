@@ -1,17 +1,37 @@
-import { createRoot } from 'react-dom/client';
-import type { RootModel } from "../models/root";
+import { Root, createRoot } from 'react-dom/client';
 import { Service } from "./base";
-import { AppRender } from '../views/app';
+import { AppDebugger } from '../utils/app';
 import React from 'react';
+import { appStatus } from '../utils/status';
+import { AppStatus } from '../types/status';
+import { ModelDebugger } from '../utils/model';
+import { Exception } from '../utils/exceptions';
 
 export class RenderService extends Service {
+    private _root?: Root;
+
+    @appStatus(AppStatus.INITED)
     public init() {
-        const container = document.getElementById('root');
-        const root = createRoot(container!);
-        root.render(<AppRender app={this.app} />);
+        this._root = createRoot(
+            document.getElementById('root')!
+        );
+        this._root.render(<AppDebugger app={this.app} />);
     }
 
-    public mount(root: RootModel) {
+    @appStatus(AppStatus.MOUNTING)
+    public mount() {
+        if (!this.app.root) throw new Exception();
 
+        this._root?.unmount();
+        
+        this._root = createRoot(
+            document.getElementById('root')!
+        );
+        this._root?.render(
+            <ModelDebugger 
+                target={this.app.root} 
+                app={this.app}
+            />
+        );
     }
 }

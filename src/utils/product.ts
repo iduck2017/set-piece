@@ -1,6 +1,6 @@
 import { FactoryService } from "../services/factory";
 import type { App } from "../app";
-import type { Model } from "../models/base";
+import type { Model } from "../models/model";
 import { BaseData } from "../types/base";
 import { BaseModel } from "../types/model";
 

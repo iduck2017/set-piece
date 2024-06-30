@@ -22,8 +22,8 @@ export class PureListModel<
 > {
     protected _hooks = {
         [EventId.CHECK_BEFORE]: this._handleCheckBefore,
-        [EventId.UPDATE_DONE]: this._handleUpdateDone,
-    }
+        [EventId.UPDATE_DONE]: this._handleUpdateDone
+    };
 
     constructor(config: PureListConfig<C>, app: App) {
         super({
@@ -55,8 +55,8 @@ export class PureDictModel<
     
     protected _hooks = {
         [EventId.CHECK_BEFORE]: this._handleCheckBefore,
-        [EventId.UPDATE_DONE]: this._handleUpdateDone,
-    }
+        [EventId.UPDATE_DONE]: this._handleUpdateDone
+    };
 
     constructor(config: PureDictConfig<C>, app: App) {
         super({

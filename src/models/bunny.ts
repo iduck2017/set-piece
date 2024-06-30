@@ -2,7 +2,7 @@ import type { App } from "../app";
 import { VoidData } from "../types/base";
 import { BunnyChildren, BunnyConfig, BunnyState } from "../types/bunny";
 import { GenderType } from "../types/enums";
-import { EventId, EventRegistry } from "../types/events";
+import { EventId, EventMethods } from "../types/events";
 import { BaseModel, ModelEvent } from "../types/model";
 import { ModelId } from "../types/registry";
 import { product } from "../utils/product";

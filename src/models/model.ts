@@ -11,8 +11,9 @@ import {
 } from "../types/model";
 import type { App } from "../app";
 import { Exception } from "../utils/exceptions";
-import { EventId, EventRegistry } from "../types/events";
+import { EventId, EventMethods } from "../types/events";
 import { ModelId } from "../types/registry";
+import { Renderer } from "../renders/base";
 
 export abstract class Model<
     M extends ModelId,
@@ -42,17 +43,18 @@ export abstract class Model<
     public get parent() { return this._parent; }
     public get children(): BaseModel[] { return []; }
 
-    private readonly _emitters: Partial<Record<E | ModelEvent, string[]>>;
-    private readonly _handlers: Partial<Record<H | ModelEvent, string[]>>;
+    private readonly _emitters: { [K in E | ModelEvent]?: string[] };
+    private readonly _handlers: { [K in H | ModelEvent]?: string[] };
+    private readonly _renderers: { [K in H | ModelEvent]?: Renderer<K>[] };
 
-    protected _events: { [K in E | ModelEvent]: EventRegistry[K] }; 
-    protected abstract _hooks: { [K in H | ModelEvent]: EventRegistry[K] }; 
+    protected _events: { [K in H | ModelEvent]: EventMethods[K] }; 
+    protected abstract _hooks: { [K in E | ModelEvent]: EventMethods[K] }; 
 
     public constructor(
         config: ModelConfig<M, E, H, R, I, S>, 
         app: App
     ) {
-        const wrapData = (raw: BaseRecord) => {
+        const proxy = (raw: BaseRecord) => {
             return new Proxy(raw, {
                 set: (target, key: string, value) => {
                     target[key] = value;
@@ -68,33 +70,36 @@ export abstract class Model<
         this.modelId = config.modelId;
         this.referId = config.referId || this.app.refer.register();
         
-        this._rule = wrapData(config.rule);
-        this._info = wrapData(config.info);
-        this._state = wrapData(config.state);
+        this._rule = proxy(config.rule);
+        this._info = proxy(config.info);
+        this._state = proxy(config.state);
         this._data = {
             ...config.rule,
             ...config.info,
             ...config.state
         };
 
-        this._emitters = {
-            ...config.emitters,
-            [EventId.CHECK_BEFORE]: config.emitters[EventId.CHECK_BEFORE] || [],
-            [EventId.UPDATE_DONE]: config.emitters[EventId.UPDATE_DONE] || []
-        };
+        this._emitters = config.emitters;
         this._handlers = config.handlers;
+        this._renderers = {};
 
         this._events = new Proxy({}, {
-            get: (target, key: any) => {
-                return (data: any) => {
-                    const event = key as H | ModelEvent;
-                    const refers = this._handlers[event];
+            get: (<K extends H | ModelEvent>(
+                target: unknown, 
+                key: K
+            ) => {
+                return (data: unknown) => {
+                    const refers = this._handlers[key];
                     const handlers = this.app.refer.list(refers);
+                    const renderers = this._renderers[key] || [];
                     for (const handler of handlers) {
-                        handler._hooks[event](data);
+                        handler._hooks[key](data);
+                    }
+                    for (const renderer of renderers) {
+                        renderer.hooks[key](data);
                     }
                 };
-            }
+            }) as any
         }) as any;
     }
 
@@ -193,9 +198,27 @@ export abstract class Model<
     }
 
     @modelStatus(ModelStatus.MOUNTED)
-    public hook<
-        K extends H,
-    >(
+    public bind<K extends H | ModelEvent>(
+        key: K,
+        that: Renderer<K>
+    ) {
+        let renderers = this._renderers[key];
+        if (!renderers) renderers = this._renderers[key] = [];
+        renderers.push(that);
+    }
+
+    @modelStatus(ModelStatus.MOUNTED)
+    public unbind<K extends H | ModelEvent>(
+        key: K,
+        that: Renderer<K>
+    ) {
+        const renderers = this._renderers[key];
+        if (!renderers) throw new Exception();
+        renderers.splice(renderers.indexOf(that), 1);
+    }
+
+    @modelStatus(ModelStatus.MOUNTED)
+    public hook<K extends H | ModelEvent>(
         key: K,
         that: Model<
             number,
@@ -213,14 +236,12 @@ export abstract class Model<
         if (!emitters) emitters = that._emitters[key] = [];
         if (!handlers) handlers = this._handlers[key] = [];
 
-        emitters.push(that.referId);
-        handlers.push(this.referId);
+        emitters.push(this.referId);
+        handlers.push(that.referId);
     }
 
     @modelStatus(ModelStatus.MOUNTED)
-    public unhook<
-        K extends H
-    >(
+    public unhook<K extends H | ModelEvent>(
         key: K,
         that: Model<
             number,
@@ -237,8 +258,8 @@ export abstract class Model<
         
         if (!emitters || !handlers) throw new Exception();
 
-        emitters.splice(emitters.indexOf(that.referId), 1);
-        handlers.splice(handlers.indexOf(this.referId), 1);
+        emitters.splice(emitters.indexOf(this.referId), 1);
+        handlers.splice(handlers.indexOf(that.referId), 1);
     }
 
     @modelStatus(

@@ -1,5 +1,5 @@
 import type { App } from "../app";
-import type { Model } from "../models/base";
+import type { Model } from "../models/model";
 import { BaseData } from "./base";
 import { EventId } from "./events";
 import { ModelId } from "./registry";

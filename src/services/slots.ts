@@ -17,22 +17,6 @@ export class SlotsService extends Service {
     private _data: SlotData[] = [];
     public get data() { return this._data; } 
 
-    private _viewers: Array<BaseFunction> = []; 
-    public view(setter: BaseFunction) {
-        this._viewers.push(setter);
-    }
-    public unview(setter: BaseFunction) {
-        this._viewers.splice(
-            this._viewers.indexOf(setter),
-            1
-        )
-    }
-    public render() {
-        for (const view of this._viewers) {
-            view([...this._data]);
-        }
-    }
-
     @appStatus(AppStatus.INITED)
     public init(config: SlotData[]) {
         this._data = config;
@@ -57,12 +41,11 @@ export class SlotsService extends Service {
             progress: 0
         });
         this.app.refer.reset();
-        const root = new RootModel({ rule: options }, this.app)
+        const root = new RootModel({ rule: options }, this.app);
         const record = root.serialize();
         await localStorage.setItem(path, JSON.stringify(record));
         await this.app.meta.save();
         // await this.app.mount(length);
-        this.render();
         return record;
     }
 
