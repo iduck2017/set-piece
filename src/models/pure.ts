@@ -1,3 +1,4 @@
+import { App } from "../app";
 import { modelEmitters, modelHandlers } from "../configs/refer";
 import { PartialOf, VoidData } from "../types/base";
 import { PureDictConfig } from "../types/dict";
@@ -25,7 +26,7 @@ export class PureListModel<
         [EventId.UPDATE_DONE]: this._handleUpdateDone,    
     }
 
-    constructor(config: PureListConfig<C>) {
+    constructor(config: PureListConfig<C>, app: App) {
         super({
             ...config,
             modelId: ModelId.LIST,
@@ -35,7 +36,7 @@ export class PureListModel<
             emitters: modelEmitters(),
             handlers: modelHandlers(),
             children: config.children
-        });
+        }, app);
     }
 
 }
@@ -57,7 +58,7 @@ export class PureDictModel<
         [EventId.UPDATE_DONE]: this._handleUpdateDone,    
     }
 
-    constructor(config: PureDictConfig<C>) {
+    constructor(config: PureDictConfig<C>, app: App) {
         super({
             ...config,
             modelId: ModelId.DICT,
@@ -67,6 +68,6 @@ export class PureDictModel<
             emitters: modelEmitters(),
             handlers: modelHandlers(),
             children: config.children
-        });
+        }, app);
     }
 }

@@ -8,7 +8,6 @@ import { appStatus } from "../utils/status";
 import { singleton } from "../utils/decors";
 import { Service } from "./base";
 import { BaseModel } from "../types/model";
-import { RootModel } from "../models/root";
 
 @singleton
 export class FactoryService extends Service {
@@ -35,12 +34,9 @@ export class FactoryService extends Service {
 
     public create<T extends BaseConstructor>(
         Constructor: T, 
-        params: Omit<ConstructorParameters<T>[0], 'app'>
+        param: ConstructorParameters<T>[0]
     ): InstanceType<T> {
-        return new Constructor({
-            ...params,
-            app: this.app
-        });
+        return new Constructor(param, this.app);
     }
 
     private _createListModel(

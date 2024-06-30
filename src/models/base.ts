@@ -49,7 +49,10 @@ export abstract class Model<
     protected abstract handle: PartialOf<EventRegistry, H | ModelEvent>
     protected emit: PartialOf<EventRegistry, H | ModelEvent>; 
 
-    public constructor(config: ModelConfig<M, E, H, R, I, S>) {
+    public constructor(
+        config: ModelConfig<M, E, H, R, I, S>, 
+        app: App
+    ) {
         const wrapData = (raw: BaseRecord) => {
             return new Proxy(raw, {
                 set: (target, key: string, value) => {
@@ -62,7 +65,7 @@ export abstract class Model<
 
         this._status = ModelStatus.INITED;
 
-        this.app = config.app;
+        this.app = app;
         this.modelId = config.modelId;
         this.referId = config.referId || this.app.refer.register();
         

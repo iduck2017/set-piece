@@ -41,7 +41,6 @@ type ModelConfig<
     I extends BaseData,
     S extends BaseData,
 > = {
-    app: App
     referId?: string
     modelId: M
     rule: R
@@ -57,7 +56,6 @@ type IModelConfig<
     R extends BaseData,
     S extends BaseData,
 > = {
-    app: App;
     referId?: string;
     rule: R;
     state?: Partial<S>

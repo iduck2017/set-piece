@@ -29,8 +29,11 @@ export abstract class DictModel<
         return result;
     }
 
-    constructor(config: DictConfig<M, E, H, R, I, S, C>) {
-        super(config);
+    constructor(
+        config: DictConfig<M, E, H, R, I, S, C>,
+        app: App
+    ) {
+        super(config, app);
         this._children = {} as C;
         for (const key in config.children) {
             this.set(key, config.children[key]);

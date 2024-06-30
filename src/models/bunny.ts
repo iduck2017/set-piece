@@ -1,3 +1,4 @@
+import type { App } from "../app";
 import { modelEmitters, modelHandlers } from "../configs/refer";
 import { PartialOf, VoidData } from "../types/base";
 import { BunnyChildren, BunnyConfig, BunnyState } from "../types/bunny";
@@ -20,7 +21,10 @@ export class BunnyModel extends ListModel<
     BaseModel,
     BunnyChildren
 > {
-    constructor(config: BunnyConfig) {
+    constructor(
+        config: BunnyConfig,
+        app: App,
+    ) {
         super({
             ...config,
             modelId: ModelId.BUNNY,
@@ -35,7 +39,7 @@ export class BunnyModel extends ListModel<
             emitters: modelEmitters(),
             handlers: modelHandlers(),
             children: config.children || []
-        });
+        }, app);
     }
 
     protected handle: PartialOf<EventRegistry, ModelEvent> = {

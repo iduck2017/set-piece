@@ -21,8 +21,11 @@ export abstract class ListModel<
     private _children: C[] = [];
     public get children() { return [...this._children]; }
 
-    constructor(config: ListConfig<M, E, H, R, I, S, C>) {
-        super(config);
+    constructor(
+        config: ListConfig<M, E, H, R, I, S, C>,
+        app: App,
+    ) {
+        super(config, app);
         for (const child of config.children) {
             this.add(child);
         }

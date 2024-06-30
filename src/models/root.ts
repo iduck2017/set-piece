@@ -22,7 +22,7 @@ export class RootModel extends DictModel<
 > {
     private _version: string;
 
-    constructor(config: RootConfig) {
+    constructor(config: RootConfig, app: App) {
         super({
             ...config,
             modelId: ModelId.ROOT,
@@ -34,7 +34,7 @@ export class RootModel extends DictModel<
             handlers: modelHandlers(),
             emitters: modelEmitters(),
             children: {},
-        });
+        }, app);
         this._version = APP_VERSION;
     }
 
