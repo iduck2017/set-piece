@@ -1,5 +1,5 @@
 import type { App } from "../app";
-import { PartialOf, VoidData } from "../types/base";
+import { VoidData } from "../types/base";
 import { BunnyChildren, BunnyConfig, BunnyState } from "../types/bunny";
 import { GenderType } from "../types/enums";
 import { EventId, EventRegistry } from "../types/events";
@@ -20,6 +20,11 @@ export class BunnyModel extends ListModel<
     BaseModel,
     BunnyChildren
 > {
+    protected _hooks = {
+        [EventId.CHECK_BEFORE]: this._handleCheckBefore,
+        [EventId.UPDATE_DONE]: this._handleUpdateDone
+    }
+
     constructor(
         config: BunnyConfig,
         app: App,
@@ -39,10 +44,5 @@ export class BunnyModel extends ListModel<
             handlers: {},
             children: config.children || []
         }, app);
-    }
-
-    protected _handle: PartialOf<EventRegistry, ModelEvent> = {
-        [EventId.CHECK_BEFORE]: this._handleCheckBefore,
-        [EventId.UPDATE_DONE]: this._handleUpdateDone
     }
 }

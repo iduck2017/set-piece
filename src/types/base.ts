@@ -6,13 +6,6 @@ type BaseRecord = Record<any, any>
 type BaseFunction = (...args: any[]) => any
 type BaseConstructor = new (...args: any[]) => any & BaseRecord
 
-type PartialOf<
-    T extends BaseRecord, 
-    P extends keyof T
-> = {
-    [K in P]: T[K] 
-}
-
 export {
     BaseKey,
     BaseType,
@@ -20,7 +13,5 @@ export {
     VoidData,
     BaseRecord,
     BaseFunction,
-    BaseConstructor,
-
-    PartialOf
+    BaseConstructor
 };

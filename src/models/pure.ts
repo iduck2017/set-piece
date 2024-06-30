@@ -1,9 +1,9 @@
 import { App } from "../app";
-import { PartialOf, VoidData } from "../types/base";
+import { VoidData } from "../types/base";
 import { PureDictConfig } from "../types/dict";
-import { EventId, EventRegistry } from "../types/events";
+import { EventId } from "../types/events";
 import { PureListConfig } from "../types/list";
-import { BaseModel, ModelEvent } from "../types/model";
+import { BaseModel } from "../types/model";
 import { ModelId } from "../types/registry";
 import { DictModel } from "./dict";
 import { ListModel } from "./list";
@@ -20,9 +20,9 @@ export class PureListModel<
     BaseModel,
     C
 > {
-    protected _handle: PartialOf<EventRegistry, ModelEvent> = {
+    protected _hooks = {
         [EventId.CHECK_BEFORE]: this._handleCheckBefore,
-        [EventId.UPDATE_DONE]: this._handleUpdateDone,    
+        [EventId.UPDATE_DONE]: this._handleUpdateDone,
     }
 
     constructor(config: PureListConfig<C>, app: App) {
@@ -52,9 +52,10 @@ export class PureDictModel<
     BaseModel,
     C
 > {
-    protected _handle: PartialOf<EventRegistry, ModelEvent> = {
+    
+    protected _hooks = {
         [EventId.CHECK_BEFORE]: this._handleCheckBefore,
-        [EventId.UPDATE_DONE]: this._handleUpdateDone,    
+        [EventId.UPDATE_DONE]: this._handleUpdateDone,
     }
 
     constructor(config: PureDictConfig<C>, app: App) {

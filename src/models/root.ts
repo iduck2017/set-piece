@@ -2,7 +2,7 @@ import { APP_VERSION } from "../configs/base";
 import { ModelId } from "../types/registry";
 import { product } from "../utils/product";
 import { RootChildren, RootChunk, RootConfig, RootRule, RootState } from "../types/root";
-import { PartialOf, VoidData } from "../types/base";
+import { VoidData } from "../types/base";
 import type { App } from "../app";
 import { DictModel } from "./dict";
 import { EventId, EventRegistry } from "../types/events";
@@ -49,7 +49,7 @@ export class RootModel extends DictModel<
         };
     }
 
-    protected _handle: PartialOf<EventRegistry, ModelEvent> = {
+    protected _hooks = {
         [EventId.CHECK_BEFORE]: this._handleCheckBefore,
         [EventId.UPDATE_DONE]: this._handleUpdateDone,    
     }

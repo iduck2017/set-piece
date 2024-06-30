@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 
-import { BaseData, BaseRecord, PartialOf, VoidData } from "../types/base";
+import { BaseData, BaseRecord } from "../types/base";
 import { ModelStatus } from "../types/status";
 import { modelStatus } from "../utils/status";
 import { 
@@ -45,8 +45,8 @@ export abstract class Model<
     private readonly _emitters: Partial<Record<E | ModelEvent, string[]>>;
     private readonly _handlers: Partial<Record<H | ModelEvent, string[]>>;
 
-    protected _emit: PartialOf<EventRegistry, E | ModelEvent>; 
-    protected abstract _handle: PartialOf<EventRegistry, H | ModelEvent>
+    protected _events: { [K in E | ModelEvent]: EventRegistry[K] }; 
+    protected abstract _hooks: { [K in H | ModelEvent]: EventRegistry[K] }; 
 
     public constructor(
         config: ModelConfig<M, E, H, R, I, S>, 
@@ -84,14 +84,14 @@ export abstract class Model<
         };
         this._handlers = config.handlers;
 
-        this._emit = new Proxy({}, {
+        this._events = new Proxy({}, {
             get: (target, key: any) => {
                 return (data: any) => {
                     const event = key as H | ModelEvent;
                     const refers = this._handlers[event];
                     const handlers = this.app.refer.list(refers);
                     for (const handler of handlers) {
-                        handler._handle[event](data);
+                        handler._hooks[event](data);
                     }
                 };
             }
@@ -159,10 +159,10 @@ export abstract class Model<
             next: result
         };
         
-        this._emit[EventId.CHECK_BEFORE](data);
+        this._events[EventId.CHECK_BEFORE](data);
         this._data[key] = data.next;
         if (prev !== data.next) {
-            this._emit[EventId.UPDATE_DONE]({
+            this._events[EventId.UPDATE_DONE]({
                 target: this,
                 key,
                 prev,
