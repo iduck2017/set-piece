@@ -1,5 +1,4 @@
 import { App } from "../app";
-import { modelEmitters, modelHandlers } from "../configs/refer";
 import { PartialOf, VoidData } from "../types/base";
 import { PureDictConfig } from "../types/dict";
 import { EventId, EventRegistry } from "../types/events";
@@ -21,7 +20,7 @@ export class PureListModel<
     BaseModel,
     C
 > {
-    protected handle: PartialOf<EventRegistry, ModelEvent> = {
+    protected _handle: PartialOf<EventRegistry, ModelEvent> = {
         [EventId.CHECK_BEFORE]: this._handleCheckBefore,
         [EventId.UPDATE_DONE]: this._handleUpdateDone,    
     }
@@ -33,8 +32,8 @@ export class PureListModel<
             rule: {},
             info: {},
             state: {},
-            emitters: modelEmitters(),
-            handlers: modelHandlers(),
+            emitters: {},
+            handlers: {},
             children: config.children
         }, app);
     }
@@ -53,7 +52,7 @@ export class PureDictModel<
     BaseModel,
     C
 > {
-    protected handle: PartialOf<EventRegistry, ModelEvent> = {
+    protected _handle: PartialOf<EventRegistry, ModelEvent> = {
         [EventId.CHECK_BEFORE]: this._handleCheckBefore,
         [EventId.UPDATE_DONE]: this._handleUpdateDone,    
     }
@@ -65,8 +64,8 @@ export class PureDictModel<
             rule: {},
             info: {},
             state: {},
-            emitters: modelEmitters(),
-            handlers: modelHandlers(),
+            emitters: {},
+            handlers: {},
             children: config.children
         }, app);
     }

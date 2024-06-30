@@ -1,4 +1,4 @@
-import { VoidData } from "./base";
+import type { BunnyModel } from "../models/bunny";
 import { DictChunk, IDictConfig } from "./dict";
 import { ModelId } from "./registry";
 
@@ -10,6 +10,10 @@ type RootRule = {
     name: string,
     difficulty: number,
 }
+
+type RootChildren = {
+    bunny: BunnyModel
+}
  
 type RootChunk = DictChunk<
     ModelId.ROOT,
@@ -17,7 +21,7 @@ type RootChunk = DictChunk<
     never,
     RootRule,
     RootState,
-    VoidData
+    RootChildren
 > & { version: string; }
 
 type RootConfig = IDictConfig<
@@ -25,12 +29,13 @@ type RootConfig = IDictConfig<
     never,
     RootRule,
     RootState,
-    VoidData
+    RootChildren
 >
 
 export {
     RootRule,
     RootState,
     RootChunk,
-    RootConfig
+    RootConfig,
+    RootChildren
 };

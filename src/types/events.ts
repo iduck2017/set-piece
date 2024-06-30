@@ -52,6 +52,7 @@ type HandleUpdateDone = <
     next: (R & I & S)[K]
 }) => void
 
+
 type EventRegistry = { 
     [EventId.CHECK_BEFORE]: HandleCheckBefore,
     [EventId.UPDATE_DONE]: HandleUpdateDone,

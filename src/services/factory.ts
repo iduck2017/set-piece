@@ -1,5 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-
 import { DictModel } from "../models/dict";
 import { ListModel } from "../models/list";
 import { BaseConstructor } from "../types/base";
@@ -30,13 +28,6 @@ export class FactoryService extends Service {
         }
 
         return new Constructor(config);
-    }
-
-    public create<T extends BaseConstructor>(
-        Constructor: T, 
-        param: ConstructorParameters<T>[0]
-    ): InstanceType<T> {
-        return new Constructor(param, this.app);
     }
 
     private _createListModel(

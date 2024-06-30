@@ -1,5 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-
 type BaseKey = string | number | symbol
 type BaseType = string | number | boolean | undefined
 type BaseData = Record<string, BaseType>

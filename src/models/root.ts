@@ -1,13 +1,13 @@
 import { APP_VERSION } from "../configs/base";
 import { ModelId } from "../types/registry";
 import { product } from "../utils/product";
-import { RootChunk, RootConfig, RootRule, RootState } from "../types/root";
+import { RootChildren, RootChunk, RootConfig, RootRule, RootState } from "../types/root";
 import { PartialOf, VoidData } from "../types/base";
 import type { App } from "../app";
 import { DictModel } from "./dict";
-import { modelEmitters, modelHandlers } from "../configs/refer";
 import { EventId, EventRegistry } from "../types/events";
 import { ModelEvent } from "../types/model";
+import { BunnyModel } from "./bunny";
 
 @product(ModelId.ROOT)
 export class RootModel extends DictModel<
@@ -18,7 +18,7 @@ export class RootModel extends DictModel<
     VoidData,
     RootState,
     App,
-    VoidData
+    RootChildren
 > {
     private _version: string;
 
@@ -31,9 +31,13 @@ export class RootModel extends DictModel<
                 progress: 0,
                 ...config.state
             },
-            handlers: modelHandlers(),
-            emitters: modelEmitters(),
-            children: {},
+            handlers: {},
+            emitters: {},
+            children: {
+                bunny: 
+                    config.children?.bunny || 
+                    new BunnyModel({ rule: {} }, app)
+            },
         }, app);
         this._version = APP_VERSION;
     }
@@ -45,7 +49,7 @@ export class RootModel extends DictModel<
         };
     }
 
-    protected handle: PartialOf<EventRegistry, ModelEvent> = {
+    protected _handle: PartialOf<EventRegistry, ModelEvent> = {
         [EventId.CHECK_BEFORE]: this._handleCheckBefore,
         [EventId.UPDATE_DONE]: this._handleUpdateDone,    
     }

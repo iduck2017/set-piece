@@ -38,10 +38,7 @@ export class SlotsService extends Service {
             slotId: slotId,
             progress: 0
         });
-        const root = this.app.factory.create(
-            RootModel, 
-            { rule: options }   
-        );
+        const root = new RootModel({ rule: options }, this.app)
         const record = root.serialize();
         await localStorage.setItem(path, JSON.stringify(record));
         await this.app.meta.save();

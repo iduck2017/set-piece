@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { BaseConstructor } from "../types/base";
 import { Exception } from "./exceptions";
 

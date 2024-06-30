@@ -18,7 +18,8 @@ export class ReferService extends Service {
     }
 
     @appStatus(AppStatus.MOUNTED)
-    public list(keys: string[]): BaseModel[] {
+    public list(keys?: string[]): BaseModel[] {
+        if (!keys) return [];
         const result: BaseModel[] = [];
         for (const key of keys) {
             if (this._refers[key]) {

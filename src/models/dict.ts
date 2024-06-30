@@ -73,7 +73,6 @@ export abstract class DictModel<
 
     public serialize(): DictChunk<M, E, H, R, S, C> {
         const result = super.serialize();
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const children = {} as any;
         for (const key in this._children) {
             children[key] = this._children[key].serialize();

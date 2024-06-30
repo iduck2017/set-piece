@@ -1,5 +1,4 @@
 import type { App } from "../app";
-import { modelEmitters, modelHandlers } from "../configs/refer";
 import { PartialOf, VoidData } from "../types/base";
 import { BunnyChildren, BunnyConfig, BunnyState } from "../types/bunny";
 import { GenderType } from "../types/enums";
@@ -36,13 +35,13 @@ export class BunnyModel extends ListModel<
                 weight: randomNumber(50, 100),
                 gender: randomEnum(GenderType.FEMALE, GenderType.MALE)
             },
-            emitters: modelEmitters(),
-            handlers: modelHandlers(),
+            emitters: {},
+            handlers: {},
             children: config.children || []
         }, app);
     }
 
-    protected handle: PartialOf<EventRegistry, ModelEvent> = {
+    protected _handle: PartialOf<EventRegistry, ModelEvent> = {
         [EventId.CHECK_BEFORE]: this._handleCheckBefore,
         [EventId.UPDATE_DONE]: this._handleUpdateDone
     }

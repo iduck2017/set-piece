@@ -29,8 +29,8 @@ type ModelChunk<
     modelId: M,
     rule: R,
     state: S,
-    emitters: Record<E | ModelEvent, string[]>
-    handlers: Record<H | ModelEvent, string[]>
+    emitters: Partial<Record<E | ModelEvent, string[]>>
+    handlers: Partial<Record<H | ModelEvent, string[]>>
 }
 
 type ModelConfig<
@@ -46,8 +46,8 @@ type ModelConfig<
     rule: R
     info: I
     state: S
-    emitters: Record<E | ModelEvent, string[]>
-    handlers: Record<H | ModelEvent, string[]>
+    emitters: Partial<Record<E | ModelEvent, string[]>>
+    handlers: Partial<Record<H | ModelEvent, string[]>>
 }
 
 type IModelConfig<
@@ -59,8 +59,8 @@ type IModelConfig<
     referId?: string;
     rule: R;
     state?: Partial<S>
-    emitters?: Record<E | ModelEvent, string[]>
-    handlers?: Record<H | ModelEvent, string[]>
+    emitters?: Partial<Record<E | ModelEvent, string[]>>
+    handlers?: Partial<Record<H | ModelEvent, string[]>>
 }
 
 type ChunkOf<T extends BaseModel | undefined> = 

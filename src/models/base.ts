@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-unused-vars */
 
 import { BaseData, BaseRecord, PartialOf, VoidData } from "../types/base";
@@ -43,11 +42,11 @@ export abstract class Model<
     public get parent() { return this._parent; }
     public get children(): BaseModel[] { return []; }
 
-    private readonly _emitters: Record<E | ModelEvent, string[]>;
-    private readonly _handlers: Record<H | ModelEvent, string[]>;
+    private readonly _emitters: Partial<Record<E | ModelEvent, string[]>>;
+    private readonly _handlers: Partial<Record<H | ModelEvent, string[]>>;
 
-    protected abstract handle: PartialOf<EventRegistry, H | ModelEvent>
-    protected emit: PartialOf<EventRegistry, H | ModelEvent>; 
+    protected _emit: PartialOf<EventRegistry, E | ModelEvent>; 
+    protected abstract _handle: PartialOf<EventRegistry, H | ModelEvent>
 
     public constructor(
         config: ModelConfig<M, E, H, R, I, S>, 
@@ -78,17 +77,21 @@ export abstract class Model<
             ...config.state
         };
 
-        this._emitters = config.emitters;
+        this._emitters = {
+            ...config.emitters,
+            [EventId.CHECK_BEFORE]: config.emitters[EventId.CHECK_BEFORE] || [],
+            [EventId.UPDATE_DONE]: config.emitters[EventId.UPDATE_DONE] || []
+        };
         this._handlers = config.handlers;
 
-        this.emit = new Proxy({}, {
+        this._emit = new Proxy({}, {
             get: (target, key: any) => {
                 return (data: any) => {
                     const event = key as H | ModelEvent;
                     const refers = this._handlers[event];
                     const handlers = this.app.refer.list(refers);
                     for (const handler of handlers) {
-                        handler.handle[event](data);
+                        handler._handle[event](data);
                     }
                 };
             }
@@ -156,10 +159,10 @@ export abstract class Model<
             next: result
         };
         
-        this.emit[EventId.CHECK_BEFORE](data);
+        this._emit[EventId.CHECK_BEFORE](data);
         this._data[key] = data.next;
         if (prev !== data.next) {
-            this.emit[EventId.UPDATE_DONE]({
+            this._emit[EventId.UPDATE_DONE]({
                 target: this,
                 key,
                 prev,
@@ -204,14 +207,14 @@ export abstract class Model<
         >,
         key: E & H
     ) {
-        const emitters = this._emitters[key];
-        const handlers = that._handlers[key];
+        let emitters = this._emitters[key];
+        let handlers = that._handlers[key];
 
-        if (!emitters) this._emitters[key] = [];
-        if (!handlers) that._handlers[key] = [];
+        if (!emitters) emitters = this._emitters[key] = [];
+        if (!handlers) handlers = that._handlers[key] = [];
 
-        this._emitters[key].push(that.referId);
-        that._handlers[key].push(this.referId);
+        emitters.push(that.referId);
+        handlers.push(this.referId);
     }
 
     @modelStatus(ModelStatus.UNMOUNTED)
