@@ -193,65 +193,47 @@ export abstract class Model<
     }
 
     @modelStatus(ModelStatus.MOUNTED)
-    protected _bind<
-        H extends EventId
+    public hook<
+        K extends H,
     >(
+        key: K,
         that: Model<
             number,
-            EventId,
-            H,
+            K,
+            never,
             BaseData,
             BaseData,
             BaseData,
             BaseModel | App
-        >,
-        key: E & H
+        >
     ) {
-        let emitters = this._emitters[key];
-        let handlers = that._handlers[key];
+        let emitters = that._emitters[key];
+        let handlers = this._handlers[key];
 
-        if (!emitters) emitters = this._emitters[key] = [];
-        if (!handlers) handlers = that._handlers[key] = [];
+        if (!emitters) emitters = that._emitters[key] = [];
+        if (!handlers) handlers = this._handlers[key] = [];
 
         emitters.push(that.referId);
         handlers.push(this.referId);
     }
 
-    @modelStatus(ModelStatus.UNMOUNTED)
-    public _unemit<
-        E extends EventId
+    @modelStatus(ModelStatus.MOUNTED)
+    public unhook<
+        K extends H
     >(
+        key: K,
         that: Model<
             number,
-            E,
+            K,
             never,
             BaseData,
             BaseData,
             BaseData,
             BaseModel | App
-        >,
-        key: E & H
-    ) { 
-        that._unbind(this, key);
-    }
-
-    @modelStatus(ModelStatus.UNMOUNTED)
-    public _unbind<
-        H extends EventId
-    >(
-        that: Model<
-            number,
-            never,
-            H,
-            BaseData,
-            BaseData,
-            BaseData,
-            BaseModel | App
-        >,
-        key: E & H
+        >
     ) {
-        const emitters = this._emitters[key];
-        const handlers = that._handlers[key];
+        const emitters = that._emitters[key];
+        const handlers = this._handlers[key];
         
         if (!emitters || !handlers) throw new Exception();
 
