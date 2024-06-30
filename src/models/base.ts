@@ -259,6 +259,10 @@ export abstract class Model<
         handlers.splice(handlers.indexOf(this.referId), 1);
     }
 
+    @modelStatus(
+        ModelStatus.INITED,
+        ModelStatus.MOUNTED
+    )
     public serialize(): ModelChunk<M, E, H, R, S> {
         return {
             modelId: this.modelId,

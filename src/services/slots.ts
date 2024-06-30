@@ -32,16 +32,19 @@ export class SlotsService extends Service {
     @appStatus(AppStatus.UNMOUNTED)
     public async new(options: CreateSlotForm): Promise<RootChunk> {
         const slotId = this._register();
-        const path = `${SLOT_PATH}-${slotId}`;
+        const path = `${SLOT_PATH}_${slotId}`;
+        const length = this._data.length;
         this._data.push({
             name: options.name,
             slotId: slotId,
             progress: 0
         });
+        this.app.refer.reset();
         const root = new RootModel({ rule: options }, this.app)
         const record = root.serialize();
         await localStorage.setItem(path, JSON.stringify(record));
         await this.app.meta.save();
+        await this.app.mount(length);
         return record;
     }
 
@@ -49,7 +52,7 @@ export class SlotsService extends Service {
     public async load(index: number): Promise<RootChunk> {
         this._index = index;
         const slot = this._data[index];
-        const path = `${SLOT_PATH}-${slot.slotId}`;
+        const path = `${SLOT_PATH}_${slot.slotId}`;
         const raw = await localStorage.getItem(path);
         if (!raw) throw new Exception();
         return JSON.parse(raw) as RootChunk;
@@ -58,7 +61,7 @@ export class SlotsService extends Service {
     @appStatus(AppStatus.UNMOUNTED)
     public async delete(index: number) {
         const slot = this._data[index];
-        const path = `${SLOT_PATH}-${slot.slotId}`;
+        const path = `${SLOT_PATH}_${slot.slotId}`;
         this._data.splice(index, 1);
         await this.app.meta.save();
         await localStorage.removeItem(path);
@@ -77,7 +80,7 @@ export class SlotsService extends Service {
             throw new Exception();
         }
         const slot = this._data[index];
-        const path = `${SLOT_PATH}-${slot.slotId}`;
+        const path = `${SLOT_PATH}_${slot.slotId}`;
         const record = root.serialize();
         this._data[index] = {
             ...slot,

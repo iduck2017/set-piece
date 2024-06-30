@@ -8,6 +8,7 @@ import { singleton } from "./utils/decors";
 import { AppStatus } from "./types/status";
 import { APP_VERSION } from "./configs/base";
 import { RootModel } from "./models/root";
+import { RenderService } from "./services/render";
 
 @singleton
 export class App {
@@ -18,6 +19,7 @@ export class App {
     public readonly meta: MetaService;
     public readonly refer: ReferService;
     public readonly slots: SlotsService;
+    public readonly render: RenderService;
     public readonly factory: FactoryService;
     public readonly setting: SettingService;
 
@@ -32,6 +34,7 @@ export class App {
         this.meta = new MetaService(this);
         this.refer = new ReferService(this);
         this.slots = new SlotsService(this);
+        this.render = new RenderService(this);
         this.setting = new SettingService(this);
         this.factory = new FactoryService(this);
     }
@@ -41,17 +44,17 @@ export class App {
         const meta = await this.meta.head();
         this.setting.init(meta.perference);
         this.slots.init(meta.slots);
+        this.render.init();
         this._status = AppStatus.UNMOUNTED;
     }
 
     @appStatus(AppStatus.UNMOUNTED)
     public async mount(index: number) {
         this._status = AppStatus.MOUNTING;
-        this.refer.init();
+        this.refer.reset();
         const record = await this.slots.load(index);
         this._root = this.factory.unserialize(record);
         this._root.mount(this);
-        console.log(this._root);
         this._status = AppStatus.MOUNTED;
     }
     

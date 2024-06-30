@@ -8,6 +8,14 @@ import { MetaData } from "../types/app";
 
 @singleton
 export class MetaService extends Service {
+    private _observers: Array<(data: MetaData) => void> = []; 
+    public observe(setter: (data: MetaData) => void) {
+        
+    }
+    public ignore() {
+
+    }
+
     @appStatus(AppStatus.INITED)
     public async head(): Promise<MetaData> {
         const raw = await localStorage.getItem(META_PATH);
@@ -16,7 +24,10 @@ export class MetaService extends Service {
         return result;
     }
 
-    @appStatus(AppStatus.UNMOUNTED, AppStatus.MOUNTED)
+    @appStatus(
+        AppStatus.UNMOUNTED, 
+        AppStatus.MOUNTED
+    )
     public async save() {
         const save: MetaData = {
             version: this.app.version,

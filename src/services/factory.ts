@@ -18,7 +18,6 @@ export class FactoryService extends Service {
     @appStatus(AppStatus.MOUNTING)
     public unserialize<T extends BaseModel>(config: any): T {
         const Constructor = FactoryService._products[config.modelId];
-        config.app = this.app;
 
         if (Constructor.prototype instanceof ListModel) {
             return this._createListModel(Constructor, config);
@@ -27,7 +26,7 @@ export class FactoryService extends Service {
             return this._createDictModel(Constructor, config);
         }
 
-        return new Constructor(config);
+        return new Constructor(config, this.app);
     }
 
     private _createListModel(
@@ -40,7 +39,7 @@ export class FactoryService extends Service {
         }
 
         config.children = children;
-        return new Constructor(config); 
+        return new Constructor(config, this.app); 
     }
 
     private _createDictModel(Constructor: BaseConstructor, config: any) {
@@ -50,7 +49,7 @@ export class FactoryService extends Service {
         }
 
         config.children = children;
-        return new Constructor(config); 
+        return new Constructor(config, this.app); 
     }
 }
 

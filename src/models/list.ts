@@ -26,9 +26,7 @@ export abstract class ListModel<
         app: App,
     ) {
         super(config, app);
-        for (const child of config.children) {
-            this.add(child);
-        }
+        this._children = config.children;
     }
     
     @modelStatus(ModelStatus.MOUNTED)
@@ -36,19 +34,13 @@ export abstract class ListModel<
         return this._children[index];
     }
     
-    @modelStatus(
-        ModelStatus.MOUNTED,
-        ModelStatus.INITED
-    )
+    @modelStatus(ModelStatus.MOUNTED)
     public add(child: C) {
         this._children.push(child);
         child.mount(this);
     }
 
-    @modelStatus(
-        ModelStatus.MOUNTED,
-        ModelStatus.INITED
-    )
+    @modelStatus(ModelStatus.MOUNTED)
     public remove(index: number) {
         const child = this._children[index];
         this._children.splice(index, 1);

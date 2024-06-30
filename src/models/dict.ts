@@ -34,22 +34,17 @@ export abstract class DictModel<
         app: App
     ) {
         super(config, app);
-        this._children = {} as C;
-        for (const key in config.children) {
-            this.set(key, config.children[key]);
-        }
+        this._children = config.children;
     }
 
+    @modelStatus(ModelStatus.MOUNTED)
     public get<K extends keyof C>(
         key: K
     ): C[K] {
         return this._children[key];
     }
 
-    @modelStatus(
-        ModelStatus.MOUNTED,
-        ModelStatus.INITED
-    )
+    @modelStatus(ModelStatus.MOUNTED)
     public set<K extends keyof C>(
         key: K, 
         child: C[K]
@@ -61,10 +56,7 @@ export abstract class DictModel<
         child.mount(this);
     }
 
-    @modelStatus(
-        ModelStatus.MOUNTED,
-        ModelStatus.INITED
-    )
+    @modelStatus(ModelStatus.MOUNTED)
     public remove(key: keyof C) {
         const child = this._children[key];
         delete this._children[key];

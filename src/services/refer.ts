@@ -11,13 +11,20 @@ export class ReferService extends Service {
     private _timestamp: number = Date.now();
     private _ticket: number = MIN_TICKET;
 
-    @appStatus(AppStatus.MOUNTING)
-    public init() {
+    @appStatus(
+        AppStatus.MOUNTING,
+        AppStatus.UNMOUNTED
+    )
+    public reset() {
         this._timestamp = Date.now();
         this._ticket = MIN_TICKET;
     }
 
-    @appStatus(AppStatus.MOUNTED)
+    @appStatus(
+        AppStatus.MOUNTED,
+        AppStatus.MOUNTING,
+        AppStatus.UNMOUNTED
+    )
     public list(keys?: string[]): BaseModel[] {
         if (!keys) return [];
         const result: BaseModel[] = [];
@@ -29,7 +36,11 @@ export class ReferService extends Service {
         return result;
     }
 
-    @appStatus(AppStatus.MOUNTED)
+    @appStatus(
+        AppStatus.MOUNTED,
+        AppStatus.MOUNTING,
+        AppStatus.UNMOUNTED
+    )
     public get(key: string): BaseModel {
         return this._refers[key];
     }
@@ -52,7 +63,6 @@ export class ReferService extends Service {
         }
         return ticket.toString(16) + now.toString(16);
     }
-
 
     @appStatus(
         AppStatus.MOUNTING, 
