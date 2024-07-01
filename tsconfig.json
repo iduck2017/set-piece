@@ -13,7 +13,7 @@
       "experimentalDecorators": true,
     },
     "include": [
-      "src/**/*", 
-      "src/index.d.ts"
+      "client/**/*", 
+      "client/index.d.ts"
     ],
 }

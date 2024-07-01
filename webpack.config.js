@@ -4,7 +4,7 @@ let HtmlWebpackPlugin=require('html-webpack-plugin');
 const { CleanWebpackPlugin } = require('clean-webpack-plugin');
 
 module.exports = {
-    entry: './src/main.ts',
+    entry: './client/main.ts',
     mode: "development",
     output: {
         filename: 'bundle.[hash:4].js',
@@ -16,9 +16,6 @@ module.exports = {
         open: false,
     },
     resolve: {
-        alias: {
-            "@": path.resolve(__dirname, 'src')
-        },
         extensions: ['.js', '.json', '.ts', '.tsx'],
     },
     module: {
@@ -43,7 +40,7 @@ module.exports = {
     plugins: [
         new CleanWebpackPlugin(),
         new HtmlWebpackPlugin({
-            template: './src/index.html',
+            template: './client/index.html',
             hash: true,  
         }),
     ]
