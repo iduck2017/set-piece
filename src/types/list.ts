@@ -1,7 +1,13 @@
 import type { App } from "../app";
 import { BaseData } from "./base";
 import { EventId } from "./events";
-import { BaseModel, ChunkOf, IModelConfig, ModelChunk, ModelConfig } from "./model";
+import { 
+    BaseModel, 
+    ChunkOf, 
+    IModelConfig, 
+    ModelChunk, 
+    ModelConfig 
+} from "./model";
 import { ModelId } from "./registry";
 
 type ListChunk<

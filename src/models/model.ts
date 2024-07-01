@@ -11,7 +11,7 @@ import {
 } from "../types/model";
 import type { App } from "../app";
 import { Exception } from "../utils/exceptions";
-import { EventId, EventMethods } from "../types/events";
+import { EventId, EventMap } from "../types/events";
 import { ModelId } from "../types/registry";
 import { Renderer } from "../renders/base";
 
@@ -43,12 +43,12 @@ export abstract class Model<
     public get parent() { return this._parent; }
     public get children(): BaseModel[] { return []; }
 
-    private readonly _emitters: { [K in E | ModelEvent]?: string[] };
-    private readonly _handlers: { [K in H | ModelEvent]?: string[] };
-    private readonly _renderers: { [K in H | ModelEvent]?: Renderer<K>[] };
+    private readonly _emitters: { [K in ModelEvent<E>]?: string[] };
+    private readonly _handlers: { [K in ModelEvent<H>]?: string[] };
+    private readonly _renderers: { [K in ModelEvent<H>]?: Renderer<K>[] };
 
-    protected _events: { [K in H | ModelEvent]: EventMethods[K] }; 
-    protected abstract _hooks: { [K in E | ModelEvent]: EventMethods[K] }; 
+    protected _events: { [K in ModelEvent<H>]: EventMap[K] }; 
+    protected abstract _hooks: { [K in ModelEvent<E>]: EventMap[K] }; 
 
     public constructor(
         config: ModelConfig<M, E, H, R, I, S>, 
@@ -84,7 +84,7 @@ export abstract class Model<
         this._renderers = {};
 
         this._events = new Proxy({}, {
-            get: (<K extends H | ModelEvent>(
+            get: (<K extends ModelEvent<H>>(
                 target: unknown, 
                 key: K
             ) => {
@@ -198,7 +198,7 @@ export abstract class Model<
     }
 
     @modelStatus(ModelStatus.MOUNTED)
-    public bind<K extends H | ModelEvent>(
+    public bind<K extends ModelEvent<H>>(
         key: K,
         that: Renderer<K>
     ) {
@@ -208,7 +208,7 @@ export abstract class Model<
     }
 
     @modelStatus(ModelStatus.MOUNTED)
-    public unbind<K extends H | ModelEvent>(
+    public unbind<K extends ModelEvent<H>>(
         key: K,
         that: Renderer<K>
     ) {
@@ -218,7 +218,7 @@ export abstract class Model<
     }
 
     @modelStatus(ModelStatus.MOUNTED)
-    public hook<K extends H | ModelEvent>(
+    public hook<K extends ModelEvent<H>>(
         key: K,
         that: Model<
             number,
@@ -241,7 +241,7 @@ export abstract class Model<
     }
 
     @modelStatus(ModelStatus.MOUNTED)
-    public unhook<K extends H | ModelEvent>(
+    public unhook<K extends ModelEvent<H>>(
         key: K,
         that: Model<
             number,

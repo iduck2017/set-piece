@@ -1,9 +1,6 @@
 import type { App } from "../app";
-import { BaseRecord } from "../types/base";
 
-export abstract class Service<
-    D extends BaseRecord = BaseRecord
-> {
+export abstract class Service {
     public readonly app: App;
 
     constructor(app: App) {

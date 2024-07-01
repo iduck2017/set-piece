@@ -11,7 +11,7 @@ enum EventId {
     PONG_DONE,
 }
 
-type EventMethods = { 
+type EventMap = { 
     [EventId.CHECK_BEFORE]: 
         <
             R extends BaseData,
@@ -61,5 +61,5 @@ type EventMethods = {
 
 export {
     EventId,
-    EventMethods
+    EventMap
 };

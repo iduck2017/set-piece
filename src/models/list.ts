@@ -23,7 +23,7 @@ export abstract class ListModel<
 
     constructor(
         config: ListConfig<M, E, H, R, I, S, C>,
-        app: App,
+        app: App
     ) {
         super(config, app);
         this._children = config.children;

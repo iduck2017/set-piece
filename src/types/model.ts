@@ -14,7 +14,9 @@ type BaseModel = Model<
     BaseModel | App
 >;
 
-type ModelEvent = 
+type ModelEvent<
+    E extends EventId
+> = E |
     EventId.CHECK_BEFORE | 
     EventId.UPDATE_DONE
 
@@ -29,8 +31,8 @@ type ModelChunk<
     modelId: M,
     rule: R,
     state: S,
-    emitters: Partial<Record<E | ModelEvent, string[]>>
-    handlers: Partial<Record<H | ModelEvent, string[]>>
+    emitters: Partial<Record<ModelEvent<E>, string[]>>
+    handlers: Partial<Record<ModelEvent<H>, string[]>>
 }
 
 type ModelConfig<
@@ -46,8 +48,8 @@ type ModelConfig<
     rule: R
     info: I
     state: S
-    emitters: Partial<Record<E | ModelEvent, string[]>>
-    handlers: Partial<Record<H | ModelEvent, string[]>>
+    emitters: Partial<Record<ModelEvent<E>, string[]>>
+    handlers: Partial<Record<ModelEvent<H>, string[]>>
 }
 
 type IModelConfig<
@@ -59,8 +61,8 @@ type IModelConfig<
     referId?: string;
     rule: R;
     state?: Partial<S>
-    emitters?: Partial<Record<E | ModelEvent, string[]>>
-    handlers?: Partial<Record<H | ModelEvent, string[]>>
+    emitters?: Partial<Record<ModelEvent<E>, string[]>>
+    handlers?: Partial<Record<ModelEvent<H>, string[]>>
 }
 
 type ChunkOf<T extends BaseModel | undefined> = 

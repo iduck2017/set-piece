@@ -2,8 +2,8 @@ import type { App } from "../app";
 import { VoidData } from "../types/base";
 import { BunnyChildren, BunnyConfig, BunnyState } from "../types/bunny";
 import { GenderType } from "../types/enums";
-import { EventId, EventMethods } from "../types/events";
-import { BaseModel, ModelEvent } from "../types/model";
+import { EventId } from "../types/events";
+import { BaseModel } from "../types/model";
 import { ModelId } from "../types/registry";
 import { product } from "../utils/product";
 import { randomEnum, randomNumber } from "../utils/random";
@@ -23,11 +23,11 @@ export class BunnyModel extends ListModel<
     protected _hooks = {
         [EventId.CHECK_BEFORE]: this._handleCheckBefore,
         [EventId.UPDATE_DONE]: this._handleUpdateDone
-    }
+    };
 
     constructor(
         config: BunnyConfig,
-        app: App,
+        app: App
     ) {
         super({
             ...config,
