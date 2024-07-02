@@ -19,7 +19,7 @@ type EventMap<K extends EventId> = {
         K extends keyof (R & I & S)
     >(data: {
         target: Model<
-            ModelId,
+            number,
             never,
             never,
             R,
@@ -39,7 +39,7 @@ type EventMap<K extends EventId> = {
         K extends keyof (R & I & S)
     >(data: {
         target: Model<
-            ModelId,
+            number,
             never,
             never,
             R,

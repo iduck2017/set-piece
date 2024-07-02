@@ -8,10 +8,9 @@ import {
     ModelChunk, 
     ModelConfig 
 } from "./model";
-import { ModelId } from "./registry";
 
 type ListChunk<
-    M extends ModelId,
+    M extends number,
     E extends EventId,
     H extends EventId,
     R extends BaseData,
@@ -22,7 +21,7 @@ type ListChunk<
 }
 
 type ListConfig<
-    M extends ModelId,
+    M extends number,
     E extends EventId,
     H extends EventId,
     R extends BaseData,

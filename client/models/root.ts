@@ -27,6 +27,11 @@ export class RootModel extends DictModel<
 > {
     private _version: string;
 
+    protected _handle = {
+        [EventId.CHECK_BEFORE]: this._handleCheckBefore,
+        [EventId.UPDATE_DONE]: this._handleUpdateDone    
+    };
+
     constructor(config: RootConfig, app: App) {
         super({
             ...config,
@@ -54,8 +59,4 @@ export class RootModel extends DictModel<
         };
     }
 
-    protected _handle = {
-        [EventId.CHECK_BEFORE]: this._handleCheckBefore,
-        [EventId.UPDATE_DONE]: this._handleUpdateDone    
-    };
 }

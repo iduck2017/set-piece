@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 
-import { BaseData, BaseRecord } from "../types/base";
+import { BaseData, BaseFunction, BaseRecord } from "../types/base";
 import { ModelStatus } from "../types/status";
 import { modelStatus } from "../utils/status";
 import { 
@@ -16,9 +16,9 @@ import { ModelId } from "../types/registry";
 import { Renderer } from "../renders/base";
 
 export abstract class Model<
-    M extends ModelId,
-    E extends EventId,
-    H extends EventId,
+    M extends number,
+    E extends Record<string, BaseFunction>,
+    H extends Record<string, BaseFunction>,
     R extends BaseData,
     I extends BaseData,
     S extends BaseData,
@@ -43,13 +43,13 @@ export abstract class Model<
     public get parent() { return this._parent; }
     public get children(): BaseModel[] { return []; }
 
-    private readonly _emitters: { [K in ModelEvent<E>]?: string[] };
-    private readonly _handlers: { [K in ModelEvent<H>]?: string[] };
-    private readonly _renderers: { [K in ModelEvent<H>]?: Renderer<K>[] };
+    private readonly _emitters: { [K in keyof E]?: string[] };
+    private readonly _handlers: { [K in keyof H]?: string[] };
+    private readonly _renderers: { [K in keyof H]?: Renderer<Pick<H, K>>[] };
 
-    protected _emit: { [K in ModelEvent<H>]: EventMap<K> }; 
-    protected abstract _handle: { [K in ModelEvent<E>]: EventMap<K> }; 
-    public debug = {};
+    protected _emit: E; 
+    protected abstract _handle: H; 
+    public test: Record<string, BaseFunction> = {};
 
     public constructor(
         config: ModelConfig<M, E, H, R, I, S>, 
@@ -96,18 +96,18 @@ export abstract class Model<
         ModelStatus.MOUNTING,
         ModelStatus.MOUNTED
     )
-    private _boot<K extends ModelEvent<H>>(
+    private _boot<K extends keyof H>(
         key: K, 
-        ...data: Parameters<EventMap<K>>
+        ...data: Parameters<H[K]>
     ) {
         const refers = this._handlers[key];
         const handlers = this.app.refer.list(refers);
         const renderers = this._renderers[key] || [];
         for (const handler of handlers) {
-            handler._handle[key](data);
+            handler._handle[key].call(handler, ...data);
         }
         for (const renderer of renderers) {
-            renderer._handle[key](data);
+            renderer._handle[key].call(renderer, ...data);
         }
     }
 
@@ -118,7 +118,7 @@ export abstract class Model<
         K extends keyof (R & I & S)
     >(data: {
         target: Model<
-            ModelId,
+            number,
             never,
             never,
             R,
@@ -138,7 +138,7 @@ export abstract class Model<
         K extends keyof (R & I & S)
     >(data: {
         target: Model<
-            ModelId,
+            number,
             never,
             never,
             R,
@@ -211,8 +211,13 @@ export abstract class Model<
         that: Renderer<K>
     ) {
         let renderers = this._renderers[key];
+        let emitters = that._emitters[key];
+
         if (!renderers) renderers = this._renderers[key] = [];
+        if (!emitters) emitters = that._emitters[key] = [];
+
         renderers.push(that);
+        emitters.push(this);
     }
 
     @modelStatus(ModelStatus.MOUNTED)
@@ -220,8 +225,12 @@ export abstract class Model<
         key: K,
         that: Renderer<K>
     ) {
+        const emitters = that._emitters[key];
         const renderers = this._renderers[key];
-        if (!renderers) throw new Error();
+        
+        if (!emitters || !renderers) throw new Error();
+
+        emitters.splice(emitters.indexOf(this), 1);
         renderers.splice(renderers.indexOf(that), 1);
     }
 

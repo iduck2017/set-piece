@@ -1,11 +1,17 @@
 import type { App } from "../app";
 import { BaseData } from "./base";
 import { EventId } from "./events";
-import { BaseModel, ChunkOf, IModelConfig, ModelChunk, ModelConfig } from "./model";
+import { 
+    BaseModel, 
+    ChunkOf, 
+    IModelConfig, 
+    ModelChunk, 
+    ModelConfig 
+} from "./model";
 import { ModelId } from "./registry";
 
 type DictChunk<
-    M extends ModelId,
+    M extends number,
     E extends EventId,
     H extends EventId,
     R extends BaseData,
@@ -18,7 +24,7 @@ type DictChunk<
 }
 
 type DictConfig<
-    M extends ModelId,
+    M extends number,
     E extends EventId,
     H extends EventId,
     R extends BaseData,

@@ -24,8 +24,7 @@ export class BunnyModel extends ListModel<
         [EventId.CHECK_BEFORE]: this._handleCheckBefore,
         [EventId.UPDATE_DONE]: this._handleUpdateDone
     };
-
-    public debug = {
+    public test = {
         eat: () => this.eat()
     };
 
@@ -52,6 +51,7 @@ export class BunnyModel extends ListModel<
 
     
     public eat() {
-        // this._state.weight += randomNumber(1, 5);
+        console.log('eat');
+        this._state.weight += randomNumber(1, 5);
     }
 }

@@ -10,7 +10,7 @@ import { ModelId } from "../types/registry";
 import { EventId } from "../types/events";
 
 export abstract class DictModel<
-    M extends ModelId,
+    M extends number,
     E extends EventId,
     H extends EventId,
     R extends BaseData,

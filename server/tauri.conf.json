@@ -29,7 +29,7 @@
         "icons/icon.icns",
         "icons/icon.ico"
       ],
-      "identifier": "com.tauri.dev",
+      "identifier": "com.iduck.demo",
       "longDescription": "",
       "macOS": {
         "entitlements": null,
@@ -55,7 +55,7 @@
     },
     "windows": [
       {
-        "fullscreen": true,
+        "fullscreen": false,
         "height": 600,
         "resizable": true,
         "title": "ScenaryVase",

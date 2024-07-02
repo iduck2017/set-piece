@@ -1,4 +1,4 @@
-import { App } from "../app";
+import type { App } from "../app";
 import { Model } from "../models/base";
 import { BaseData, BaseFunction } from "../types/base";
 import { EventId } from "../types/events";
@@ -14,12 +14,14 @@ export class DebugRenderer extends Renderer<EventId.UPDATE_DONE> {
     }; 
 
     constructor(config: {
-        target: BaseModel,
         setData: BaseFunction
-    }) {
-        super();
-        config.target.bind(EventId.UPDATE_DONE, this);
+    }, app: App) {
+        super(app);
         this._setData = config.setData;
+    }
+
+    public active(target: BaseModel) {
+        target.bind(EventId.UPDATE_DONE, this);
     }
 
     protected _handleUpdateDone<
@@ -29,7 +31,7 @@ export class DebugRenderer extends Renderer<EventId.UPDATE_DONE> {
         K extends keyof (R & I & S)
     >(data: {
             target: Model<
-                ModelId,
+                number,
                 never,
                 never,
                 R,
@@ -47,6 +49,4 @@ export class DebugRenderer extends Renderer<EventId.UPDATE_DONE> {
             [data.key]: data.next 
         }));
     }
-
-    
 }

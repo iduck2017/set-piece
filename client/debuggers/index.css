@@ -11,23 +11,16 @@
     margin-bottom: 8px;
 }
 
-.attribute {
+.row {
     display: flex;
 }
 
-.key {
-    width: 100px;
-}
 
-.value {
-    width: 100px;
-}
-
-.attribute:nth-of-type(odd) {
+.row:nth-of-type(odd) {
     background: #f8f8f8;
 }
 
-.attribute:nth-of-type(even) {
+.row:nth-of-type(even) {
     background: #f0f0f0;
 }
 
@@ -38,4 +31,18 @@
 .children {
     display: flex;
     flex-direction: column;
+}
+
+.key {
+    width: 100px;
+}
+
+.value {
+    width: 100px;
+}
+
+.function {
+    text-decoration: underline;
+    cursor: pointer;
+    color: #4d6aff
 }

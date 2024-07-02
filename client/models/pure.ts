@@ -52,7 +52,6 @@ export class PureDictModel<
     BaseModel,
     C
 > {
-    
     protected _handle = {
         [EventId.CHECK_BEFORE]: this._handleCheckBefore,
         [EventId.UPDATE_DONE]: this._handleUpdateDone

@@ -3,8 +3,7 @@ import { Service } from "./base";
 import React from 'react';
 import { appStatus } from '../utils/status';
 import { AppStatus } from '../types/status';
-import { ModelDebugger, AppDebugger } from '../utils/debuggers';
-import { Exception } from '../utils/exceptions';
+import { AppDebugger } from '../debuggers';
 
 export class RenderService extends Service {
     private _root?: Root;
@@ -19,18 +18,6 @@ export class RenderService extends Service {
 
     @appStatus(AppStatus.MOUNTING)
     public mount() {
-        if (!this.app.root) throw new Error();
-
-        this._root?.unmount();
         
-        this._root = createRoot(
-            document.getElementById('root')!
-        );
-        this._root?.render(
-            <ModelDebugger 
-                target={this.app.root} 
-                app={this.app}
-            />
-        );
     }
 }

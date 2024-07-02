@@ -5,7 +5,7 @@ import { EventId } from "./events";
 import { ModelId } from "./registry";
 
 type BaseModel = Model<
-    ModelId,
+    number,
     never,
     never,
     BaseData,
@@ -21,7 +21,7 @@ type ModelEvent<
     EventId.UPDATE_DONE
 
 type ModelChunk<
-    M extends ModelId,
+    M extends number,
     E extends EventId,
     H extends EventId,
     R extends BaseData,
@@ -36,7 +36,7 @@ type ModelChunk<
 }
 
 type ModelConfig<
-    M extends ModelId,
+    M extends number,
     E extends EventId,
     H extends EventId,
     R extends BaseData,
