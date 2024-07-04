@@ -25,24 +25,8 @@ export class ReferService extends Service {
         AppStatus.MOUNTING,
         AppStatus.UNMOUNTED
     )
-    public list(keys?: string[]): BaseModel[] {
-        if (!keys) return [];
-        const result: BaseModel[] = [];
-        for (const key of keys) {
-            if (this._refers[key]) {
-                result.push(this._refers[key]);
-            }
-        }
-        return result;
-    }
-
-    @appStatus(
-        AppStatus.MOUNTED,
-        AppStatus.MOUNTING,
-        AppStatus.UNMOUNTED
-    )
-    public get(key: string): BaseModel {
-        return this._refers[key];
+    public get<T extends BaseModel>(key: string): T | undefined {
+        return this._refers[key] as T | undefined;
     }
 
     @appStatus(

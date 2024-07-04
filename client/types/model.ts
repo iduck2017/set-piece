@@ -1,13 +1,12 @@
 import type { App } from "../app";
 import type { Model } from "../models/base";
-import { BaseData } from "./base";
-import { EventId } from "./events";
-import { ModelId } from "./registry";
+import { BaseData, BaseEvent } from "./base";
+import { CheckBeforeEvent, EventId, UpdateDoneEvent } from "./events";
 
 type BaseModel = Model<
     number,
-    never,
-    never,
+    BaseEvent,
+    BaseEvent,
     BaseData,
     BaseData,
     BaseData,
@@ -15,15 +14,16 @@ type BaseModel = Model<
 >;
 
 type ModelEvent<
-    E extends EventId
-> = E |
-    EventId.CHECK_BEFORE | 
-    EventId.UPDATE_DONE
+    E extends BaseEvent
+> = E & {
+    [EventId.CHECK_BEFORE]: CheckBeforeEvent, 
+    [EventId.UPDATE_DONE]: UpdateDoneEvent,
+}
 
 type ModelChunk<
     M extends number,
-    E extends EventId,
-    H extends EventId,
+    E extends BaseEvent,
+    H extends BaseEvent,
     R extends BaseData,
     S extends BaseData,
 > = {
@@ -31,14 +31,14 @@ type ModelChunk<
     modelId: M,
     rule: R,
     state: S,
-    emitters: Partial<Record<ModelEvent<E>, string[]>>
-    handlers: Partial<Record<ModelEvent<H>, string[]>>
+    provider: { [K in keyof E]?: string[] }
+    consumer: { [K in keyof H]?: string[] }
 }
 
 type ModelConfig<
     M extends number,
-    E extends EventId,
-    H extends EventId,
+    E extends BaseEvent,
+    H extends BaseEvent,
     R extends BaseData,
     I extends BaseData,
     S extends BaseData,
@@ -48,21 +48,21 @@ type ModelConfig<
     rule: R
     info: I
     state: S
-    emitters: Partial<Record<ModelEvent<E>, string[]>>
-    handlers: Partial<Record<ModelEvent<H>, string[]>>
+    provider: { [K in keyof E]?: string[] }
+    consumer: { [K in keyof H]?: string[] }
 }
 
 type IModelConfig<
-    E extends EventId,
-    H extends EventId,
+    E extends BaseEvent,
+    H extends BaseEvent,
     R extends BaseData,
     S extends BaseData,
 > = {
     referId?: string;
     rule: R;
     state?: Partial<S>
-    emitters?: Partial<Record<ModelEvent<E>, string[]>>
-    handlers?: Partial<Record<ModelEvent<H>, string[]>>
+    provider?: { [K in keyof E]?: string[] }
+    consumer?: { [K in keyof H]?: string[] }
 }
 
 type ChunkOf<T extends BaseModel | undefined> = 

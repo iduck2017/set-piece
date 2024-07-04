@@ -86,12 +86,12 @@ function ModelDebugger(props: {
                         <div className="value">{target.data[key]}</div>
                     </div>
                 ))}
-                {Object.keys(target.test).map(key => (
+                {Object.keys(target.debuggers).map(key => (
                     <div className="row" key={key}>
                         <div className="key">{key}</div>
                         <div 
                             className="function"
-                            onClick={target.test[key]}
+                            onClick={target.debuggers[key]}
                         >
                             function
                         </div>

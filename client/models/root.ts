@@ -8,17 +8,17 @@ import {
     RootRule, 
     RootState 
 } from "../types/root";
-import { VoidData } from "../types/base";
 import type { App } from "../app";
+import { VoidData } from "../types/base";
 import { DictModel } from "./dict";
-import { EventId } from "../types/events";
 import { BunnyModel } from "./bunny";
+import { Consumer } from "./node";
 
 @product(ModelId.ROOT)
 export class RootModel extends DictModel<
     ModelId.ROOT,
-    never,
-    never,
+    VoidData,
+    VoidData,
     RootRule,
     VoidData,
     RootState,
@@ -26,11 +26,7 @@ export class RootModel extends DictModel<
     RootChildren
 > {
     private _version: string;
-
-    protected _handle = {
-        [EventId.CHECK_BEFORE]: this._handleCheckBefore,
-        [EventId.UPDATE_DONE]: this._handleUpdateDone    
-    };
+    public consumer = new Consumer({}, this);
 
     constructor(config: RootConfig, app: App) {
         super({
@@ -41,8 +37,8 @@ export class RootModel extends DictModel<
                 progress: 0,
                 ...config.state
             },
-            handlers: {},
-            emitters: {},
+            consumer: {},
+            provider: {},
             children: {
                 bunny: 
                     config.children?.bunny || 

@@ -1,6 +1,5 @@
 import type { App } from "../app";
-import { BaseData } from "./base";
-import { EventId } from "./events";
+import { BaseData, BaseEvent } from "./base";
 import { 
     BaseModel, 
     ChunkOf, 
@@ -11,8 +10,8 @@ import {
 
 type ListChunk<
     M extends number,
-    E extends EventId,
-    H extends EventId,
+    E extends BaseEvent,
+    H extends BaseEvent,
     R extends BaseData,
     S extends BaseData,
     C extends BaseModel
@@ -22,8 +21,8 @@ type ListChunk<
 
 type ListConfig<
     M extends number,
-    E extends EventId,
-    H extends EventId,
+    E extends BaseEvent,
+    H extends BaseEvent,
     R extends BaseData,
     I extends BaseData,
     S extends BaseData,
@@ -33,8 +32,8 @@ type ListConfig<
 }
 
 type IListConfig<
-    E extends EventId,
-    H extends EventId,
+    E extends BaseEvent,
+    H extends BaseEvent,
     R extends BaseData,
     S extends BaseData,
     C extends BaseModel

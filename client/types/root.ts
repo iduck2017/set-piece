@@ -1,4 +1,5 @@
 import type { BunnyModel } from "../models/bunny";
+import { BaseEvent } from "./base";
 import { DictChunk, IDictConfig } from "./dict";
 import { ModelId } from "./registry";
 
@@ -17,16 +18,16 @@ type RootChildren = {
  
 type RootChunk = DictChunk<
     ModelId.ROOT,
-    never,
-    never,
+    BaseEvent,
+    BaseEvent,
     RootRule,
     RootState,
     RootChildren
 > & { version: string; }
 
 type RootConfig = IDictConfig<
-    never,
-    never,
+    BaseEvent,
+    BaseEvent,
     RootRule,
     RootState,
     RootChildren

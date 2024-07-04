@@ -1,6 +1,4 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
-
-import { BaseData, BaseFunction, BaseRecord } from "../types/base";
+import { BaseData, BaseEvent } from "../types/base";
 import { ModelStatus } from "../types/status";
 import { modelStatus } from "../utils/status";
 import { 
@@ -10,15 +8,13 @@ import {
     ModelEvent
 } from "../types/model";
 import type { App } from "../app";
-import { Exception } from "../utils/exceptions";
-import { EventMap, EventId } from "../types/events";
-import { ModelId } from "../types/registry";
-import { Renderer } from "../renders/base";
+import { EventId } from "../types/events";
+import { Consumer, Provider } from "./node";
 
 export abstract class Model<
     M extends number,
-    E extends Record<string, BaseFunction>,
-    H extends Record<string, BaseFunction>,
+    E extends BaseEvent,
+    H extends BaseEvent,
     R extends BaseData,
     I extends BaseData,
     S extends BaseData,
@@ -43,13 +39,18 @@ export abstract class Model<
     public get parent() { return this._parent; }
     public get children(): BaseModel[] { return []; }
 
-    private readonly _emitters: { [K in keyof E]?: string[] };
-    private readonly _handlers: { [K in keyof H]?: string[] };
-    private readonly _renderers: { [K in keyof H]?: Renderer<Pick<H, K>>[] };
+    public readonly provider: Provider<ModelEvent<E>>;
+    public readonly abstract consumer: Consumer<H>;
 
-    protected _emit: E; 
-    protected abstract _handle: H; 
-    public test: Record<string, BaseFunction> = {};
+    // private readonly _providerIds: { [K in keyof E]?: string[] };
+    // private readonly _consumerIds: { [K in keyof H]?: string[] };
+    // private readonly _renderers: { 
+    //     [K in keyof H]?: Array<Event<Pick<H, K>, BaseEvent>> 
+    // };
+
+    // protected _emitters: H; 
+    // protected abstract _handlers: E 
+    public debuggers: BaseEvent = {};
 
     public constructor(
         config: ModelConfig<M, E, H, R, I, S>, 
@@ -60,6 +61,8 @@ export abstract class Model<
         this.app = app;
         this.modelId = config.modelId;
         this.referId = config.referId || this.app.refer.register();
+
+        this.provider = new Provider(this);
         
         this._rule = this._proxy(config.rule);
         this._info = this._proxy(config.info);
@@ -70,16 +73,59 @@ export abstract class Model<
             ...config.state
         };
 
-        this._emitters = config.emitters;
-        this._handlers = config.handlers;
-        this._renderers = {};
+        // this._providers = config.providers;
+        // this._consumers = config.consumers;
+        // this._renderers = {};
 
-        this._emit = new Proxy({}, {
-            get: (target: unknown, key: any) => {
-                return this._boot.bind(this, key);
-            }
-        }) as any;
+        // this._emitters = new Proxy({}, {
+        //     get: (target, key: any) => {
+        //         return this._emit.bind(this, key);
+        //     }
+        // }) as any;
     }
+
+    // @modelStatus(
+    //     ModelStatus.MOUNTING,
+    //     ModelStatus.MOUNTED
+    // )
+    // private _emit<K extends keyof H>(
+    //     key: K, 
+    //     ...data: Parameters<H[K]>
+    // ) {
+    //     const consumers = this._consumers[key];
+    //     const renderers = this._renderers[key];
+
+    //     const callbacks = [];
+    //     if (consumers) {
+    //         for (const handler of consumers) {
+    //             const model = this.app.refer.get<Model<
+    //                 number,
+    //                 H,
+    //                 ModelEvent,
+    //                 BaseData,
+    //                 BaseData,
+    //                 BaseData,
+    //                 BaseModel | App
+    //             >>(handler);
+    //             if (model) {
+    //                 callbacks.push(
+    //                     model._handlers[key].bind(model)
+    //                 );
+    //             }
+    //         }
+    //     }
+    //     if (renderers) {
+    //         for (const renderer of renderers) {
+    //             callbacks.push(
+    //                 renderer.handlers[key].bind(renderer)
+    //             );
+    //         }
+    //     }
+        
+    //     for (const callback of callbacks) {
+    //         callback(data);
+    //     }
+    // }
 
     @modelStatus(ModelStatus.INITED)
     private _proxy<T extends BaseData>(raw: T): T {
@@ -91,68 +137,6 @@ export abstract class Model<
             }
         });
     }
-
-    @modelStatus(
-        ModelStatus.MOUNTING,
-        ModelStatus.MOUNTED
-    )
-    private _boot<K extends keyof H>(
-        key: K, 
-        ...data: Parameters<H[K]>
-    ) {
-        const refers = this._handlers[key];
-        const handlers = this.app.refer.list(refers);
-        const renderers = this._renderers[key] || [];
-        for (const handler of handlers) {
-            handler._handle[key].call(handler, ...data);
-        }
-        for (const renderer of renderers) {
-            renderer._handle[key].call(renderer, ...data);
-        }
-    }
-
-    protected _handleUpdateDone<
-        R extends BaseData,
-        I extends BaseData,
-        S extends BaseData,
-        K extends keyof (R & I & S)
-    >(data: {
-        target: Model<
-            number,
-            never,
-            never,
-            R,
-            I,
-            S,
-            BaseModel | App
-        >,
-        key: K,
-        prev: (R & I & S)[K],
-        next: (R & I & S)[K]
-    }) {}
-
-    protected _handleCheckBefore<
-        R extends BaseData,
-        I extends BaseData,
-        S extends BaseData,
-        K extends keyof (R & I & S)
-    >(data: {
-        target: Model<
-            number,
-            never,
-            never,
-            R,
-            I,
-            S,
-            BaseModel | App
-        >,
-        key: K,
-        prev: (R & I & S)[K],
-        next: (R & I & S)[K],
-    }): (R & I & S)[K] { 
-        return data.prev; 
-    }
-
     
     @modelStatus(
         ModelStatus.MOUNTING,
@@ -172,10 +156,11 @@ export abstract class Model<
             next: result
         };
         
-        this._emit[EventId.CHECK_BEFORE](data);
+        this.provider.emit(EventId.CHECK_BEFORE)(data);
         this._data[key] = data.next;
         if (prev !== data.next) {
-            this._emit[EventId.UPDATE_DONE]({
+            const foo = this.provider.emit(EventId.UPDATE_DONE);
+            this.provider.emit(EventId.UPDATE_DONE)({
                 target: this,
                 key,
                 prev,
@@ -195,7 +180,7 @@ export abstract class Model<
         this._parent = parent;
         this._status = ModelStatus.MOUNTED;
     }
-
+    
     @modelStatus(ModelStatus.MOUNTED)
     public unmount() {
         this._status = ModelStatus.UNMOUNTING;
@@ -205,92 +190,156 @@ export abstract class Model<
         this._status = ModelStatus.UNMOUNTED; 
     }
 
-    @modelStatus(ModelStatus.MOUNTED)
-    public bind<K extends ModelEvent<H>>(
-        key: K,
-        that: Renderer<K>
-    ) {
-        let renderers = this._renderers[key];
-        let emitters = that._emitters[key];
+    // @modelStatus(ModelStatus.MOUNTED)
+    // public bind<K extends keyof H>(
+    //     key: K,
+    //     that: Renderer<Pick<H, K>>
+    // ) {
+    //     let renderers = this._renderers[key];
+    //     let providers = that.providers[key];
 
-        if (!renderers) renderers = this._renderers[key] = [];
-        if (!emitters) emitters = that._emitters[key] = [];
+    //     if (!renderers) renderers = this._renderers[key] = [];
+    //     if (!providers) providers = that.providers[key] = [];
 
-        renderers.push(that);
-        emitters.push(this);
-    }
+    //     renderers.push(that);
+    //     providers.push(this);
+    // }
 
-    @modelStatus(ModelStatus.MOUNTED)
-    public unbind<K extends ModelEvent<H>>(
-        key: K,
-        that: Renderer<K>
-    ) {
-        const emitters = that._emitters[key];
-        const renderers = this._renderers[key];
+    // @modelStatus(ModelStatus.MOUNTED)
+    // public unbind<K extends keyof H>(
+    //     key: K,
+    //     that: Renderer<Pick<H, K>>
+    // ) {
+    //     const providers = that.providers[key];
+    //     const renderers = this._renderers[key];
+
+    //     if (!providers || !renderers) throw new Error();
+
+    //     providers.splice(providers.indexOf(this), 1);
+    //     renderers.splice(renderers.indexOf(that), 1);
+    // }
+
+    // @modelStatus(ModelStatus.MOUNTED)
+    // public hook<K extends keyof H>(
+    //     key: K,
+    //     that: Model<
+    //         number,
+    //         Pick<H, K>,
+    //         ModelEvent,
+    //         BaseData,
+    //         BaseData,
+    //         BaseData,
+    //         BaseModel | App
+    //     >
+    // ) {
+    //     let providers = that._providers[key];
+    //     let consumers = this._consumers[key];
+
+    //     if (!providers) providers = that._providers[key] = [];
+    //     if (!consumers) consumers = this._consumers[key] = [];
+
+    //     providers.push(this.referId);
+    //     consumers.push(that.referId);
+    // }
+
+    // @modelStatus(ModelStatus.MOUNTED)
+    // public unhook<K extends keyof H>(
+    //     key: K,
+    //     that: Model<
+    //         number,
+    //         Pick<H, K>,
+    //         ModelEvent,
+    //         BaseData,
+    //         BaseData,
+    //         BaseData,
+    //         BaseModel | App
+    //     >
+    // ) {
+    //     const providers = that._providers[key];
+    //     const consumers = this._consumers[key];
         
-        if (!emitters || !renderers) throw new Error();
+    //     if (!providers || !consumers) throw new Error();
 
-        emitters.splice(emitters.indexOf(this), 1);
-        renderers.splice(renderers.indexOf(that), 1);
-    }
+    //     providers.splice(providers.indexOf(this.referId), 1);
+    //     consumers.splice(consumers.indexOf(that.referId), 1);
+    // }
 
-    @modelStatus(ModelStatus.MOUNTED)
-    public hook<K extends ModelEvent<H>>(
-        key: K,
-        that: Model<
-            number,
-            K,
-            never,
-            BaseData,
-            BaseData,
-            BaseData,
-            BaseModel | App
-        >
-    ) {
-        let emitters = that._emitters[key];
-        let handlers = this._handlers[key];
-
-        if (!emitters) emitters = that._emitters[key] = [];
-        if (!handlers) handlers = this._handlers[key] = [];
-
-        emitters.push(this.referId);
-        handlers.push(that.referId);
-    }
-
-    @modelStatus(ModelStatus.MOUNTED)
-    public unhook<K extends ModelEvent<H>>(
-        key: K,
-        that: Model<
-            number,
-            K,
-            never,
-            BaseData,
-            BaseData,
-            BaseData,
-            BaseModel | App
-        >
-    ) {
-        const emitters = that._emitters[key];
-        const handlers = this._handlers[key];
-        
-        if (!emitters || !handlers) throw new Error();
-
-        emitters.splice(emitters.indexOf(this.referId), 1);
-        handlers.splice(handlers.indexOf(that.referId), 1);
-    }
+    // public deactive<K extends keyof E>(key: K) {
+    //     const providers = this._providers[key];
+    //     if (providers) {
+    //         for (const provider of providers) {
+    //             const model = this.app.refer.get<
+    //                     Model<
+    //                         number,
+    //                         BaseEvent,
+    //                         Pick<E, K>,    
+    //                         BaseData,
+    //                         BaseData,
+    //                         BaseData,
+    //                         BaseModel | App
+    //                     >
+    //                 >(provider);
+    //             if (model) {
+    //                 model.unhook(key, this as any as Model<
+    //                         number,
+    //                         Pick<ModelEvent<E>, K>,
+    //                         BaseEvent,
+    //                         BaseData,
+    //                         BaseData,
+    //                         BaseData,
+    //                         BaseModel | App
+    //                     >);
+    //             }
+    //         }
+    //     }
+    // }
+    
 
     @modelStatus(
         ModelStatus.INITED,
         ModelStatus.MOUNTED
     )
     public serialize(): ModelChunk<M, E, H, R, S> {
+        const provider: { [K in keyof ModelEvent<E>]?: string[] } = {};
+        const consumer: { [K in keyof H]?: string[] } = {};
+
+        for (const index in this.provider.consumers) {
+            const key: keyof ModelEvent<E> = index;
+
+            provider[key] = [];
+            const targets = this.provider.consumers[key];
+            if (targets) {
+                for (const target of targets) {
+                    const container = target.container;
+                    if (container instanceof Model) {
+                        provider[key]!.push(container.referId);
+                    }
+                }
+            }
+        }
+
+        for (const index in this.consumer.providers) {
+            const key: keyof H = index;
+
+            consumer[key] = [];
+            const targets = this.consumer.providers[key];
+            if (targets) {
+                for (const target of targets) {
+                    const container = target.container;
+                    if (container instanceof Model) {
+                        consumer[key]!.push(container.referId);
+                    }
+                }
+            }
+        }
+
         return {
             modelId: this.modelId,
             referId: this.referId,
             rule: this._rule,
             state: this._state,
-            emitters: this._emitters,
-            handlers: this._handlers
+            provider,
+            consumer
         };
     }
 

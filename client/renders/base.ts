@@ -1,25 +1,15 @@
 import type { App } from "../app";
-import { BaseFunction } from "../types/base";
-import { BaseModel } from "../types/model";
+import { Consumer } from "../models/node";
+import { BaseEvent } from "../types/base";
 
 export abstract class Renderer<
-    E extends Record<number, BaseFunction>
+    H extends BaseEvent
 > {
-    private _app: App;
+    public readonly app: App;
 
-    public readonly _emitters: { [K in keyof E]?: BaseModel[] } = {};
-    public abstract readonly _handle: E
+    public readonly abstract consumer: Consumer<H>;
 
     constructor(app: App) {
-        this._app = app;
-    }
-
-    public deactive() {
-        for (const key in this._emitters) {
-            const emitters = this._emitters[key];
-            for (const emitter of emitters || []) {
-                emitter.unbind(key, this);
-            }
-        }
+        this.app = app;
     }
 }

@@ -2,30 +2,27 @@ import type { App } from "../app";
 import { VoidData } from "../types/base";
 import { BunnyChildren, BunnyConfig, BunnyState } from "../types/bunny";
 import { GenderType } from "../types/enums";
-import { EventId } from "../types/events";
 import { BaseModel } from "../types/model";
 import { ModelId } from "../types/registry";
 import { product } from "../utils/product";
 import { randomEnum, randomNumber } from "../utils/random";
 import { ListModel } from "./list";
+import { Consumer } from "./node";
 
 @product(ModelId.BUNNY)
 export class BunnyModel extends ListModel<
     ModelId.BUNNY,
-    never,
-    never,
+    VoidData,
+    VoidData,
     VoidData,
     VoidData,
     BunnyState,
     BaseModel,
     BunnyChildren
 > {
-    protected _handle = {
-        [EventId.CHECK_BEFORE]: this._handleCheckBefore,
-        [EventId.UPDATE_DONE]: this._handleUpdateDone
-    };
-    public test = {
-        eat: () => this.eat()
+    public consumer = new Consumer({}, this); 
+    public debuggers = {
+        eat: this.eat.bind(this)
     };
 
     constructor(
@@ -43,8 +40,8 @@ export class BunnyModel extends ListModel<
                 gender: randomEnum(GenderType.FEMALE, GenderType.MALE),
                 ...config.state
             },
-            emitters: {},
-            handlers: {},
+            provider: {},
+            consumer: {},
             children: config.children || []
         }, app);
     }

@@ -1,17 +1,19 @@
 import type { App } from "../app";
 import { Model } from "../models/base";
+import { Consumer } from "../models/node";
 import { BaseData, BaseFunction } from "../types/base";
-import { EventId } from "../types/events";
+import { EventId, UpdateDoneEvent } from "../types/events";
 import { BaseModel } from "../types/model";
-import { ModelId } from "../types/registry";
 import { Renderer } from "./base";
 
-export class DebugRenderer extends Renderer<EventId.UPDATE_DONE> {
+export class DebugRenderer extends Renderer<{
+    [EventId.UPDATE_DONE]: UpdateDoneEvent
+}> {
     private _setData: React.Dispatch<React.SetStateAction<any>>;
 
-    public _handle = {
-        [EventId.UPDATE_DONE]: this._handleUpdateDone
-    }; 
+    public consumer = new Consumer({
+        [EventId.UPDATE_DONE]: this._handleUpdateDone.bind(this)
+    }, this); 
 
     constructor(config: {
         setData: BaseFunction
@@ -21,7 +23,11 @@ export class DebugRenderer extends Renderer<EventId.UPDATE_DONE> {
     }
 
     public active(target: BaseModel) {
-        target.bind(EventId.UPDATE_DONE, this);
+        target.provider.bind(EventId.UPDATE_DONE, this.consumer);
+    }
+
+    public deactive() {
+        this.consumer.dispose();
     }
 
     protected _handleUpdateDone<

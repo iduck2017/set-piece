@@ -1,17 +1,15 @@
 import { ModelStatus } from "../types/status";
 import { Model } from "./base";
 import { modelStatus } from "../utils/status";
-import { BaseData } from "../types/base";
-import { BaseModel, ChunkOf } from "../types/model";
+import { BaseData, BaseEvent } from "../types/base";
+import { BaseModel } from "../types/model";
 import type { App } from "../app";
 import { ListChunk, ListConfig } from "../types/list";
-import { ModelId } from "../types/registry";
-import { EventId } from "../types/events";
 
 export abstract class ListModel<
     M extends number,
-    E extends EventId,
-    H extends EventId,
+    E extends BaseEvent,
+    H extends BaseEvent,
     R extends BaseData,
     I extends BaseData,
     S extends BaseData,

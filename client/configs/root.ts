@@ -1,5 +1,4 @@
 import { GenderType } from "../types/enums";
-import { EventId } from "../types/events";
 import { ModelId } from "../types/registry";
 import { RootChunk } from "../types/root";
 
@@ -13,8 +12,8 @@ export const rootChunk: RootChunk = {
     state: {
         progress: 0
     },
-    emitters: {},
-    handlers: {},
+    provider: {},
+    consumer: {},
     children: {
         bunny: {
             modelId: ModelId.BUNNY,
@@ -23,11 +22,11 @@ export const rootChunk: RootChunk = {
             state: {
                 age: 0,
                 weight: 0,
-                gender: GenderType.FEMALE,
+                gender: GenderType.FEMALE
             },
-            emitters: {},
-            handlers: {},
-            children: [],
+            provider: {},
+            consumer: {},
+            children: []
         }
     },
     version: ''

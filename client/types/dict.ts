@@ -1,5 +1,5 @@
 import type { App } from "../app";
-import { BaseData } from "./base";
+import { BaseData, BaseEvent } from "./base";
 import { EventId } from "./events";
 import { 
     BaseModel, 
@@ -8,12 +8,11 @@ import {
     ModelChunk, 
     ModelConfig 
 } from "./model";
-import { ModelId } from "./registry";
 
 type DictChunk<
     M extends number,
-    E extends EventId,
-    H extends EventId,
+    E extends BaseEvent,
+    H extends BaseEvent,
     R extends BaseData,
     S extends BaseData,
     C extends Record<string, BaseModel>
@@ -25,8 +24,8 @@ type DictChunk<
 
 type DictConfig<
     M extends number,
-    E extends EventId,
-    H extends EventId,
+    E extends BaseEvent,
+    H extends BaseEvent,
     R extends BaseData,
     I extends BaseData,
     S extends BaseData,
@@ -36,8 +35,8 @@ type DictConfig<
 }
 
 type IDictConfig<
-    E extends EventId,
-    H extends EventId,
+    E extends BaseEvent,
+    H extends BaseEvent,
     R extends BaseData,
     S extends BaseData,
     C extends Record<string, BaseModel>

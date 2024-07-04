@@ -1,18 +1,15 @@
 import { ModelStatus } from "../types/status";
 import { Model } from "./base";
 import { modelStatus } from "../utils/status";
-import { Exception } from "../utils/exceptions";
-import { BaseData } from "../types/base";
+import { BaseData, BaseEvent } from "../types/base";
 import { BaseModel } from "../types/model";
 import type { App } from "../app";
 import { DictChunk, DictConfig } from "../types/dict";
-import { ModelId } from "../types/registry";
-import { EventId } from "../types/events";
 
 export abstract class DictModel<
     M extends number,
-    E extends EventId,
-    H extends EventId,
+    E extends BaseEvent,
+    H extends BaseEvent,
     R extends BaseData,
     I extends BaseData,
     S extends BaseData,
