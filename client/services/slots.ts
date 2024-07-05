@@ -5,7 +5,6 @@ import { appStatus } from "../utils/status";
 import { singleton } from "../utils/decors";
 import { Service } from "./base";
 import { CreateSlotForm } from "../types/forms";
-import { Exception } from "../utils/exceptions";
 import { RootChunk } from "../types/root";
 import { RootModel } from "../models/root";
 
@@ -79,7 +78,7 @@ export class SlotsService extends Service {
         const record = root.serialize();
         this._data[index] = {
             ...slot,
-            progress: root.data.progress
+            progress: root.data.calc.progress
         };
         await localStorage.setItem(path, JSON.stringify(record));
         await this.app.meta.save();

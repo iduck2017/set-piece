@@ -28,7 +28,7 @@ function AppDebugger(props: {
     };
 
     useEffect(() => {
-        start(0);
+        // start(0);
     }, []);
 
     return <div>
@@ -63,7 +63,7 @@ function ModelDebugger(props: {
 }) {
     const { target, app } = props;
 
-    const [data, setData] = useState(target.data);
+    const [data, setData] = useState(target.data.calc);
     const render = useRef(new DebugRenderer({ 
         setData 
     }, app));
@@ -83,15 +83,15 @@ function ModelDebugger(props: {
                 {Object.keys(data).map(key => (
                     <div className="row" key={key}>
                         <div className="key">{key}</div>
-                        <div className="value">{target.data[key]}</div>
+                        <div className="value">{target.data.calc[key]}</div>
                     </div>
                 ))}
-                {Object.keys(target.debuggers).map(key => (
+                {Object.keys(target.debugger).map(key => (
                     <div className="row" key={key}>
                         <div className="key">{key}</div>
                         <div 
                             className="function"
-                            onClick={target.debuggers[key]}
+                            onClick={target.debugger[key]}
                         >
                             function
                         </div>

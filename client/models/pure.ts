@@ -20,7 +20,7 @@ export class PureListModel<
     BaseModel,
     C
 > {
-    public consumer = new Consumer({}, this);
+    public consumer = new Consumer({});
 
     constructor(config: PureListConfig<C>, app: App) {
         super({
@@ -28,7 +28,7 @@ export class PureListModel<
             modelId: ModelId.LIST,
             rule: {},
             info: {},
-            state: {},
+            stat: {},
             provider: {},
             consumer: {},
             children: config.children
@@ -49,7 +49,7 @@ export class PureDictModel<
     BaseModel,
     C
 > {
-    public consumer = new Consumer({}, this);
+    public consumer = new Consumer({});
 
     constructor(config: PureDictConfig<C>, app: App) {
         super({
@@ -57,7 +57,7 @@ export class PureDictModel<
             modelId: ModelId.DICT,
             rule: {},
             info: {},
-            state: {},
+            stat: {},
             provider: {},
             consumer: {},
             children: config.children

@@ -9,7 +9,7 @@ export const rootChunk: RootChunk = {
         name: '',
         difficulty: 0
     },
-    state: {
+    stat: {
         progress: 0
     },
     provider: {},
@@ -19,7 +19,7 @@ export const rootChunk: RootChunk = {
             modelId: ModelId.BUNNY,
             referId: '',
             rule: {},
-            state: {
+            stat: {
                 age: 0,
                 weight: 0,
                 gender: GenderType.FEMALE

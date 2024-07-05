@@ -30,7 +30,7 @@ type ModelChunk<
     referId: string,
     modelId: M,
     rule: R,
-    state: S,
+    stat: S,
     provider: { [K in keyof E]?: string[] }
     consumer: { [K in keyof H]?: string[] }
 }
@@ -47,7 +47,7 @@ type ModelConfig<
     modelId: M
     rule: R
     info: I
-    state: S
+    stat: S
     provider: { [K in keyof E]?: string[] }
     consumer: { [K in keyof H]?: string[] }
 }
@@ -60,7 +60,7 @@ type IModelConfig<
 > = {
     referId?: string;
     rule: R;
-    state?: Partial<S>
+    stat?: Partial<S>
     provider?: { [K in keyof E]?: string[] }
     consumer?: { [K in keyof H]?: string[] }
 }

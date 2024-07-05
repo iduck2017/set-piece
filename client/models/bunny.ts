@@ -20,10 +20,7 @@ export class BunnyModel extends ListModel<
     BaseModel,
     BunnyChildren
 > {
-    public consumer = new Consumer({}, this); 
-    public debuggers = {
-        eat: this.eat.bind(this)
-    };
+    public consumer = new Consumer({}); 
 
     constructor(
         config: BunnyConfig,
@@ -34,21 +31,25 @@ export class BunnyModel extends ListModel<
             modelId: ModelId.BUNNY,
             rule: {},
             info: {},
-            state: {
+            stat: {
                 age: 0,
                 weight: randomNumber(50, 100),
                 gender: randomEnum(GenderType.FEMALE, GenderType.MALE),
-                ...config.state
+                ...config.stat
             },
             provider: {},
             consumer: {},
             children: config.children || []
         }, app);
+
+        this.debugger = {
+            eat: this.eat.bind(this)
+        };
     }
 
     
     public eat() {
         console.log('eat');
-        this._state.weight += randomNumber(1, 5);
+        this.data._stat.weight += randomNumber(1, 5);
     }
 }

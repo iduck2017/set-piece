@@ -26,16 +26,16 @@ export class RootModel extends DictModel<
     RootChildren
 > {
     private _version: string;
-    public consumer = new Consumer({}, this);
+    public consumer = new Consumer({});
 
     constructor(config: RootConfig, app: App) {
         super({
             ...config,
             modelId: ModelId.ROOT,
             info: {},
-            state: {
+            stat: {
                 progress: 0,
-                ...config.state
+                ...config.stat
             },
             consumer: {},
             provider: {},

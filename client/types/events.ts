@@ -1,5 +1,6 @@
 import type { App } from "../app";
 import type { Model } from "../models/base";
+import { Data } from "../models/node";
 import { BaseData, BaseEvent } from "./base";
 import type { BaseModel } from "./model";
 
@@ -11,43 +12,25 @@ enum EventId {
 }
 
 type CheckBeforeEvent = <
-    R extends BaseData,
     I extends BaseData,
     S extends BaseData,
-    K extends keyof (R & I & S)
+    K extends keyof (I & S)
 >(data: {
-    target: Model<
-        number,
-        BaseEvent,
-        BaseEvent,
-        R,
-        I,
-        S,
-        BaseModel | App
-    >,
+    target: Data<BaseData, I, S>,
     key: K,
-    prev: (R & I & S)[K],
-    next: (R & I & S)[K],
+    prev: (I & S)[K],
+    next: (I & S)[K],
 }) => void
 
 type UpdateDoneEvent = <
-    R extends BaseData,
     I extends BaseData,
     S extends BaseData,
-    K extends keyof (R & I & S)
+    K extends keyof (I & S)
 >(data: {
-    target: Model<
-        number,
-        BaseEvent,
-        BaseEvent,
-        R,
-        I,
-        S,
-        BaseModel | App
-    >,
+    target: Data<BaseData, I, S>,
     key: K,
-    prev: (R & I & S)[K],
-    next: (R & I & S)[K]
+    prev: (I & S)[K],
+    next: (I & S)[K]
 }) => void
 
 export {

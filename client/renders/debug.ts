@@ -1,6 +1,5 @@
 import type { App } from "../app";
-import { Model } from "../models/base";
-import { Consumer } from "../models/node";
+import { Consumer, Data } from "../models/node";
 import { BaseData, BaseFunction } from "../types/base";
 import { EventId, UpdateDoneEvent } from "../types/events";
 import { BaseModel } from "../types/model";
@@ -13,7 +12,7 @@ export class DebugRenderer extends Renderer<{
 
     public consumer = new Consumer({
         [EventId.UPDATE_DONE]: this._handleUpdateDone.bind(this)
-    }, this); 
+    }); 
 
     constructor(config: {
         setData: BaseFunction
@@ -27,29 +26,21 @@ export class DebugRenderer extends Renderer<{
     }
 
     public deactive() {
-        this.consumer.dispose();
+        this.consumer._dispose();
     }
 
     protected _handleUpdateDone<
-        R extends BaseData,
         I extends BaseData,
         S extends BaseData,
-        K extends keyof (R & I & S)
+        K extends keyof (I & S)
     >(data: {
-            target: Model<
-                number,
-                never,
-                never,
-                R,
-                I,
-                S,
-                BaseModel | App
-            >,
+            target: Data<BaseData, I, S>,
             key: K,
-            prev: (R & I & S)[K],
-            next: (R & I & S)[K]
+            prev: (I & S)[K],
+            next: (I & S)[K]
         }
     ) {
+        console.log('update');
         this._setData((prev: any) => ({
             ...prev,
             [data.key]: data.next 
