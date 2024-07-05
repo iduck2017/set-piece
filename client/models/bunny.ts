@@ -22,10 +22,7 @@ export class BunnyModel extends ListModel<
 > {
     public consumer = new Consumer({}); 
 
-    constructor(
-        config: BunnyConfig,
-        app: App
-    ) {
+    constructor(config: BunnyConfig) {
         super({
             ...config,
             modelId: ModelId.BUNNY,
@@ -40,7 +37,7 @@ export class BunnyModel extends ListModel<
             provider: {},
             consumer: {},
             children: config.children || []
-        }, app);
+        });
 
         this.debugger = {
             eat: this.eat.bind(this)

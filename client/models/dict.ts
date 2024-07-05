@@ -27,10 +27,9 @@ export abstract class DictModel<
     }
 
     constructor(
-        config: DictConfig<M, E, H, R, I, S, C>,
-        app: App
+        config: DictConfig<M, E, H, R, I, S, C>
     ) {
-        super(config, app);
+        super(config);
         this._children = config.children;
     }
 
@@ -50,7 +49,7 @@ export abstract class DictModel<
             throw new Error();
         }
         this._children[key] = child;
-        child.mount(this);
+        child.mount(this._app, this);
     }
 
     @modelStatus(ModelStatus.MOUNTED)

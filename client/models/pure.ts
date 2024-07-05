@@ -22,7 +22,7 @@ export class PureListModel<
 > {
     public consumer = new Consumer({});
 
-    constructor(config: PureListConfig<C>, app: App) {
+    constructor(config: PureListConfig<C>) {
         super({
             ...config,
             modelId: ModelId.LIST,
@@ -32,7 +32,7 @@ export class PureListModel<
             provider: {},
             consumer: {},
             children: config.children
-        }, app);
+        });
     }
 
 }
@@ -51,7 +51,7 @@ export class PureDictModel<
 > {
     public consumer = new Consumer({});
 
-    constructor(config: PureDictConfig<C>, app: App) {
+    constructor(config: PureDictConfig<C>) {
         super({
             ...config,
             modelId: ModelId.DICT,
@@ -61,6 +61,6 @@ export class PureDictModel<
             provider: {},
             consumer: {},
             children: config.children
-        }, app);
+        });
     }
 }

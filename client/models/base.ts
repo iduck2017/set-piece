@@ -20,7 +20,8 @@ export abstract class Model<
     S extends BaseData,
     P extends BaseModel | App
 > {
-    public readonly app: App;
+    protected _app!: App;
+    public get app() { return this._app; }
 
     public readonly referId: string;
     public readonly modelId: M;
@@ -39,13 +40,9 @@ export abstract class Model<
 
     public debugger: BaseEvent;
 
-    public constructor(
-        config: ModelConfig<M, E, H, R, I, S>, 
-        app: App
-    ) {
+    public constructor(config: ModelConfig<M, E, H, R, I, S>) {
         this._status = ModelStatus.INITED;
 
-        this.app = app;
         this.modelId = config.modelId;
         this.referId = config.referId || this.app.refer.register();
 
@@ -96,12 +93,21 @@ export abstract class Model<
     }
 
     @modelStatus(ModelStatus.INITED)
-    public mount(parent: P) {
+    public mount(
+        app: App,    
+        parent: P
+    ) {
+        this._app = app;
         this._status = ModelStatus.MOUNTING;
         this.app.refer.add(this);
         this.provider._mount(this);
         this.consumer._mount(this);
-        for (const child of this.children) child.mount(this);
+        for (const child of this.children) {
+            child.mount(
+                app,
+                this
+            );
+        }
         this.data._mount(this);
         this._parent = parent;
         this._status = ModelStatus.MOUNTED;

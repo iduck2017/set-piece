@@ -30,7 +30,7 @@ export class SlotsService extends Service {
             progress: 0
         });
         this.app.refer.reset();
-        const root = new RootModel({ rule: options }, this.app);
+        const root = new RootModel({ rule: options });
         const record = root.serialize();
 
         await localStorage.setItem(path, JSON.stringify(record));

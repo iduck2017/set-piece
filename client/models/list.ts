@@ -19,11 +19,8 @@ export abstract class ListModel<
     private _children: C[] = [];
     public get children() { return [...this._children]; }
 
-    constructor(
-        config: ListConfig<M, E, H, R, I, S, C>,
-        app: App
-    ) {
-        super(config, app);
+    constructor(config: ListConfig<M, E, H, R, I, S, C>) {
+        super(config);
         this._children = config.children;
     }
     
@@ -35,7 +32,7 @@ export abstract class ListModel<
     @modelStatus(ModelStatus.MOUNTED)
     public add(child: C) {
         this._children.push(child);
-        child.mount(this);
+        child.mount(this._app, this);
     }
 
     @modelStatus(ModelStatus.MOUNTED)

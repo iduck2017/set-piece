@@ -28,7 +28,7 @@ export class RootModel extends DictModel<
     private _version: string;
     public consumer = new Consumer({});
 
-    constructor(config: RootConfig, app: App) {
+    constructor(config: RootConfig) {
         super({
             ...config,
             modelId: ModelId.ROOT,
@@ -42,9 +42,9 @@ export class RootModel extends DictModel<
             children: {
                 bunny: 
                     config.children?.bunny || 
-                    new BunnyModel({ rule: {} }, app)
+                    new BunnyModel({ rule: {} })
             }
-        }, app);
+        });
         this._version = APP_VERSION;
     }
 
