@@ -1,4 +1,4 @@
-import type { Data } from "../models/node";
+import { Data } from "../utils/data";
 import { BaseData } from "./base";
 
 enum EventId {

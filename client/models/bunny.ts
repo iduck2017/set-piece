@@ -1,13 +1,13 @@
-import type { App } from "../app";
 import { VoidData } from "../types/base";
 import { BunnyChildren, BunnyConfig, BunnyState } from "../types/bunny";
 import { GenderType } from "../types/enums";
 import { BaseModel } from "../types/model";
 import { ModelId } from "../types/registry";
+import { Consumer } from "../utils/consumer";
+import { ModelConsumer } from "../utils/model-consumer";
 import { product } from "../utils/product";
 import { randomEnum, randomNumber } from "../utils/random";
 import { ListModel } from "./list";
-import { Consumer } from "./node";
 
 @product(ModelId.BUNNY)
 export class BunnyModel extends ListModel<
@@ -20,7 +20,7 @@ export class BunnyModel extends ListModel<
     BaseModel,
     BunnyChildren
 > {
-    public consumer = new Consumer({}); 
+    public consumer = new ModelConsumer({}); 
 
     constructor(config: BunnyConfig) {
         super({
@@ -39,9 +39,7 @@ export class BunnyModel extends ListModel<
             children: config.children || []
         });
 
-        this.debugger = {
-            eat: this.eat.bind(this)
-        };
+        this.debugger.eat = this.eat.bind(this);
     }
 
     

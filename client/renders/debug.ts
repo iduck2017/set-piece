@@ -1,9 +1,10 @@
 import type { App } from "../app";
-import { Consumer, Data } from "../models/node";
+import { Consumer } from "../utils/consumer";
 import { BaseData, BaseFunction } from "../types/base";
 import { EventId, UpdateDoneEvent } from "../types/events";
 import { BaseModel } from "../types/model";
 import { Renderer } from "./base";
+import { Data } from "../utils/data";
 
 export class DebugRenderer extends Renderer<{
     [EventId.UPDATE_DONE]: UpdateDoneEvent
@@ -40,7 +41,6 @@ export class DebugRenderer extends Renderer<{
             next: (I & S)[K]
         }
     ) {
-        console.log('update');
         this._setData((prev: any) => ({
             ...prev,
             [data.key]: data.next 

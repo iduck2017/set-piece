@@ -12,7 +12,7 @@ import type { App } from "../app";
 import { VoidData } from "../types/base";
 import { DictModel } from "./dict";
 import { BunnyModel } from "./bunny";
-import { Consumer } from "./node";
+import { ModelConsumer } from "../utils/model-consumer";
 
 @product(ModelId.ROOT)
 export class RootModel extends DictModel<
@@ -26,7 +26,7 @@ export class RootModel extends DictModel<
     RootChildren
 > {
     private _version: string;
-    public consumer = new Consumer({});
+    public consumer = new ModelConsumer({});
 
     constructor(config: RootConfig) {
         super({

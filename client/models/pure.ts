@@ -1,12 +1,11 @@
-import { App } from "../app";
 import { VoidData } from "../types/base";
 import { PureDictConfig } from "../types/dict";
 import { PureListConfig } from "../types/list";
 import { BaseModel } from "../types/model";
 import { ModelId } from "../types/registry";
+import { ModelConsumer } from "../utils/model-consumer";
 import { DictModel } from "./dict";
 import { ListModel } from "./list";
-import { Consumer } from "./node";
 
 export class PureListModel<
     C extends BaseModel
@@ -20,7 +19,7 @@ export class PureListModel<
     BaseModel,
     C
 > {
-    public consumer = new Consumer({});
+    public consumer = new ModelConsumer({});
 
     constructor(config: PureListConfig<C>) {
         super({
@@ -49,7 +48,7 @@ export class PureDictModel<
     BaseModel,
     C
 > {
-    public consumer = new Consumer({});
+    public consumer = new ModelConsumer({});
 
     constructor(config: PureDictConfig<C>) {
         super({

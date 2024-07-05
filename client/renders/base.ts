@@ -1,5 +1,5 @@
 import type { App } from "../app";
-import { Consumer } from "../models/node";
+import { Consumer } from "../utils/consumer";
 import { BaseEvent } from "../types/base";
 
 export abstract class Renderer<

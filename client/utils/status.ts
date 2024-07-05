@@ -2,7 +2,6 @@ import type { App } from "../app";
 import { BaseFunction } from "../types/base";
 import { BaseModel } from "../types/model";
 import { AppStatus, ModelStatus } from "../types/status";
-import { Exception } from "./exceptions";
 
 function appStatus(...status: AppStatus[]) {
     return function (

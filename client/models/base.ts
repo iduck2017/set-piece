@@ -1,6 +1,5 @@
 import { BaseData, BaseEvent, VoidData } from "../types/base";
 import { ModelStatus } from "../types/status";
-import { modelStatus } from "../utils/status";
 import { 
     BaseModel,
     ModelChunk, 
@@ -9,7 +8,11 @@ import {
 } from "../types/model";
 import type { App } from "../app";
 import { EventId } from "../types/events";
-import { Consumer, Data, Node, Provider } from "./node";
+import { Node } from "../utils/node";
+import { ModelProvider } from "../utils/model-provider";
+import { ModelConsumer } from "../utils/model-consumer";
+import { Data } from "../utils/data";
+
 
 export abstract class Model<
     M extends number,
@@ -33,12 +36,15 @@ export abstract class Model<
     public get parent() { return this._parent; }
     public get children(): BaseModel[] { return []; }
 
-    public readonly provider: Provider<ModelEvent<E>, BaseModel>;
-    public readonly abstract consumer: Consumer<H, BaseModel>;
+    private _provider: { [K in keyof ModelEvent<E>]?: string[] };
+    private _consumer: { [K in keyof H]?: string[] };
+
+    public readonly provider: ModelProvider<ModelEvent<E>>;
+    public readonly abstract consumer: ModelConsumer<H>;
     public readonly data: Data<R, I, S, BaseModel>;
     public readonly node: Node<BaseModel, BaseModel, VoidData, BaseModel>;
 
-    public debugger: BaseEvent;
+    public readonly debugger: BaseEvent;
 
     public constructor(config: ModelConfig<M, E, H, R, I, S>) {
         this._status = ModelStatus.INITED;
@@ -46,7 +52,7 @@ export abstract class Model<
         this.modelId = config.modelId;
         this.referId = config.referId || this.app.refer.register();
 
-        this.provider = new Provider();
+        this.provider = new ModelProvider();
         this.data = new Data(
             {
                 rule: config.rule,
@@ -63,6 +69,8 @@ export abstract class Model<
             dict: {}
         });
 
+        this._provider = config.provider;
+        this._consumer = config.consumer;
         this.debugger = {};
     }
 
@@ -92,85 +100,44 @@ export abstract class Model<
         this.provider._emitters[EventId.UPDATE_DONE](data);
     }
 
-    @modelStatus(ModelStatus.INITED)
     public mount(
         app: App,    
         parent: P
     ) {
-        this._app = app;
         this._status = ModelStatus.MOUNTING;
+        this._app = app;
         this.app.refer.add(this);
+        
         this.provider._mount(this);
         this.consumer._mount(this);
-        for (const child of this.children) {
-            child.mount(
-                app,
-                this
-            );
-        }
+
         this.data._mount(this);
+        this.node._mount(this);
         this._parent = parent;
+        for (const child of this.children) {
+            child.mount(app, this);
+        }
         this._status = ModelStatus.MOUNTED;
     }
     
-    @modelStatus(ModelStatus.MOUNTED)
     public unmount() {
         this._status = ModelStatus.UNMOUNTING;
+
         for (const child of this.children) child.unmount();
         this.app.refer.remove(this);
         this._parent = undefined; 
+        
         this._status = ModelStatus.UNMOUNTED; 
     }
 
-    @modelStatus(
-        ModelStatus.INITED,
-        ModelStatus.MOUNTED
-    )
     public serialize(): ModelChunk<M, E, H, R, S> {
-        const provider: { [K in keyof ModelEvent<E>]?: string[] } = {};
-        const consumer: { [K in keyof H]?: string[] } = {};
-
-        for (const key in this.consumer._providers) {
-            if (!consumer[key]) {
-                consumer[key] = [];
-            }
-
-            const list = this.consumer._providers[key];
-            if (list) {
-                for (const item of list) {
-                    const container = item.container;
-                    if (container instanceof Model) {
-                        consumer[key]!.push(container.referId);
-                    }
-                }
-            }
-        }
-
-        for (const _key in this.provider._consumers) {
-            const key: keyof ModelEvent<E> = _key;
-            if (!provider[key]) {
-                provider[key] = [];
-            }
-
-            const list = this.provider._consumers[key];
-            if (list) {
-                for (const item of list) {
-                    const container = item.container;
-                    if (container instanceof Model) {
-                        provider[key]!.push(container.referId);
-                    }
-                }
-            }
-        }
-
         return {
             modelId: this.modelId,
             referId: this.referId,
             rule: this.data._rule,
             stat: this.data._stat,
-            provider,
-            consumer
+            provider: this.provider._serialize(),
+            consumer: this.consumer._serialize()
         };
     }
-
 }
