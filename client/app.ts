@@ -56,7 +56,7 @@ export class App {
         this._root = this.factory.unserialize(record);
         this._root.mount({
             app: this,
-            parent: this
+            parent: this._root
         });
         console.log(this._root);
         this.render.mount();

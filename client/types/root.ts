@@ -22,7 +22,7 @@ type RootChunk = ModelChunk<
     BaseEvent,
     RootRule,
     RootState,
-    BaseModel,
+    BaseModel[],
     RootDict
 >
 
@@ -31,7 +31,7 @@ type RootConfig = ModelTemplate<
     BaseEvent,
     RootRule,
     RootState,
-    BaseModel,
+    BaseModel[],
     RootDict
 >
 

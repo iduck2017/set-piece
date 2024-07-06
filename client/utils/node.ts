@@ -1,9 +1,10 @@
+import { BaseRecord } from "../types/base";
 import { Base } from "./base";
 
 export class Node<
     P extends T,
-    C extends T,
-    D extends Record<string, C>,
+    L extends T[],
+    D extends Record<string, T>,
     T = any,
 > extends Base<T> {
     private _parent?: P;
@@ -15,48 +16,57 @@ export class Node<
         return parent;
     }
 
-    private readonly _children: C[];
-    public get children(): C[] { return [...this._children]; }
+    private readonly _list: L;
+    public get list() { return [...this._list]; }
 
-    public readonly _dict: Record<keyof D, number>;
+    public readonly dict: D;
 
-    constructor(
-        config: {
-            children: C[],
-            dict: Record<keyof D, number>
+    public get children(): T[] { 
+        const children: T[] = [];
+        for (const item of this._list) {
+            children.push(item);
         }
-    ) {
+        for (const key in this.dict) {
+            children.push(this.dict[key]);
+        }
+        return children;
+    }
+
+    constructor(config: {
+        list: L,
+        dict: D
+    }) {
         super();
-        this._children = config.children;
-        this._dict = config.dict;
+        this._list = config.list;
+        this.dict = new Proxy(config.dict, {
+            set: (
+                target: BaseRecord, 
+                key: string, 
+                value
+            ) => {
+                this._set(key, value);
+                return true;
+            }
+        });
     }
 
-    public get<K extends keyof D>(key: K): D[K] {
-        const index = this._dict[key];
-        return this._children[index] as D[K];
-    }
-
-    public _set<K extends keyof D>(key: K, value: D[K]) {
-        const index = this._dict[key];
-        if (index === undefined) {
-            const length = this._children.length;
-            this._children.push(value);
-            this._dict[key] = length;
-        } else {
-            this._children[index] = value;
+    protected _set<K extends keyof D>(key: K, value: D[K]) {
+        if (this.dict[key]) {
+            throw new Error();
         }
+        this.dict[key] = value;
     }
 
-    public _add(value: C) {
-        this._children.push(value);
+    public _add(value: L[number]) {
+        this._list.push(value);
     }
 
-    public _del(value: C) {
-        const index = this._children.indexOf(value);
+    public _del(value: L[number]) {
+        const index = this._list.indexOf(value);
         if (index === -1) {
             throw new Error();
         }
-        this._children.splice(index, 1);
+        this._list.splice(index, 1);
     }
 
     public _mount(options: {

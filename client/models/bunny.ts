@@ -1,5 +1,5 @@
 import { VoidData } from "../types/base";
-import { BunnyChildren, BunnyConfig, BunnyState } from "../types/bunny";
+import { BunnyList, BunnyConfig, BunnyState } from "../types/bunny";
 import { GenderType } from "../types/enums";
 import { BaseModel } from "../types/model";
 import { ModelId } from "../types/registry";
@@ -17,7 +17,7 @@ export class BunnyModel extends Model<
     VoidData,
     BunnyState,
     BaseModel,
-    BunnyChildren,
+    BunnyList,
     VoidData
 > {
     public consumer;
@@ -36,7 +36,7 @@ export class BunnyModel extends Model<
             },
             provider: {},
             consumer: {},
-            children: config.children || [], 
+            list: config.list || [], 
             dict: {}
         });
 

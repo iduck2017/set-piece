@@ -6,7 +6,6 @@ import {
     RootRule, 
     RootState 
 } from "../types/root";
-import type { App } from "../app";
 import { VoidData } from "../types/base";
 import { BunnyModel } from "./bunny";
 import { ModelConsumer } from "../utils/model-consumer";
@@ -21,8 +20,8 @@ export class RootModel extends Model<
     RootRule,
     VoidData,
     RootState,
-    App,
-    BaseModel,
+    RootModel,
+    BaseModel[],
     RootDict
 > {
     public consumer;
@@ -38,13 +37,11 @@ export class RootModel extends Model<
             },
             consumer: {},
             provider: {},
-            children: [
-                new BunnyModel({
+            list: [],
+            dict: {
+                bunny: config.dict?.bunny || new BunnyModel({
                     rule: {}
                 })
-            ],
-            dict: {
-                bunny: 0
             }
         });
         this.consumer = new ModelConsumer({

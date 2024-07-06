@@ -3,11 +3,11 @@ import { BaseModel } from "../types/model";
 import { Node } from "./node";
 
 export class ModelNode<
-    P extends BaseModel | App,
-    C extends BaseModel,
-    D extends Record<string, C>,
-> extends Node<P, C, D, BaseModel | App> {
-    public _add(value: C): void {
+    P extends BaseModel,
+    L extends BaseModel[],
+    D extends Record<string, BaseModel>,
+> extends Node<P, L, D, BaseModel> {
+    public _add(value: L[number]): void {
         super._add(value);
         value.mount({
             app: this.container.app,
@@ -15,19 +15,19 @@ export class ModelNode<
         });    
     }
 
-    public _del(value: C): void {
+    public _del(value: L[number]): void {
         super._del(value);
         value.unmount();
     }
 
-    public _set<K extends keyof D>(
+    protected _set<K extends keyof D>(
         key: K, 
         value: D[K]
     ): void {
-        super._set(key, value);
+        super._set(key, value); 
         value.mount({
             app: this.container.app,
             parent: this.parent
-        });    
+        });
     }
 }

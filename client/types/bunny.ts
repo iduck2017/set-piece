@@ -9,19 +9,19 @@ type BunnyState = {
     gender: GenderType;
 }
 
-type BunnyChildren = BunnyModel
+type BunnyList = BunnyModel[]
 
 type BunnyConfig = ModelTemplate<
     VoidData,
     VoidData,
     VoidData,
     BunnyState,
-    BunnyChildren,
+    BunnyList,
     VoidData
 >
 
 export {
     BunnyState,
-    BunnyChildren,
+    BunnyList,
     BunnyConfig
 };

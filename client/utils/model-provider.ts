@@ -40,8 +40,8 @@ export class ModelProvider<
                             BaseData,
                             BaseData,
                             BaseData,
-                            BaseModel | App,
                             BaseModel,
+                            BaseModel[],
                             Record<string, BaseModel>
                         >
                     >(id);
