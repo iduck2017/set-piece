@@ -10,7 +10,9 @@ type BaseModel = Model<
     BaseData,
     BaseData,
     BaseData,
-    BaseModel | App
+    BaseModel | App,
+    BaseModel,
+    Record<string, BaseModel>
 >;
 
 type ModelEvent<
@@ -26,13 +28,17 @@ type ModelChunk<
     H extends BaseEvent,
     R extends BaseData,
     S extends BaseData,
+    C extends BaseModel,
+    D extends Record<string, C>
 > = {
     referId: string,
     modelId: M,
     rule: R,
     stat: S,
-    provider: { [K in keyof E]?: string[] }
-    consumer: { [K in keyof H]?: string[] }
+    provider: { [K in keyof ModelEvent<E>]?: string[] }
+    consumer: { [K in keyof H]?: string[] },
+    dict: { [K in keyof D ]: number }
+    children: ChunkOf<C>[],
 }
 
 type ModelConfig<
@@ -42,27 +48,35 @@ type ModelConfig<
     R extends BaseData,
     I extends BaseData,
     S extends BaseData,
+    C extends BaseModel,
+    D extends Record<string, C>
 > = {
     referId?: string
     modelId: M
     rule: R
     info: I
     stat: S
-    provider: { [K in keyof E]?: string[] }
     consumer: { [K in keyof H]?: string[] }
+    provider: { [K in keyof ModelEvent<E>]?: string[] }
+    children: C[],
+    dict: { [K in keyof D]: number }
 }
 
-type IModelConfig<
+type ModelTemplate<
     E extends BaseEvent,
     H extends BaseEvent,
     R extends BaseData,
     S extends BaseData,
+    C extends BaseModel,
+    D extends Record<string, C>
 > = {
     referId?: string;
     rule: R;
     stat?: Partial<S>
-    provider?: { [K in keyof E]?: string[] }
+    provider?: { [K in keyof ModelEvent<E>]?: string[] }
     consumer?: { [K in keyof H]?: string[] }
+    children?: C[],
+    dict?: { [K in keyof D]: number }
 }
 
 type ChunkOf<T extends BaseModel | undefined> = 
@@ -76,7 +90,7 @@ export {
     ModelEvent,
     ModelChunk,
     ModelConfig,
-    IModelConfig,
+    ModelTemplate,
 
     ChunkOf
 };

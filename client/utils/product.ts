@@ -12,7 +12,9 @@ export function product<N extends number>(key: N) {
         BaseData,
         BaseData,
         BaseData,
-        BaseModel | App
+        BaseModel | App,
+        BaseModel,
+        Record<string, BaseModel>
     >) {
         FactoryService.register(key, target);
     };

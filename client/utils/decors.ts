@@ -1,5 +1,4 @@
 import { BaseConstructor } from "../types/base";
-import { Exception } from "./exceptions";
 
 const _instances = new Set<BaseConstructor>();
 

@@ -1,21 +1,20 @@
-import { APP_VERSION } from "../configs/base";
 import { ModelId } from "../types/registry";
 import { product } from "../utils/product";
 import { 
-    RootChildren, 
-    RootChunk, 
+    RootDict, 
     RootConfig, 
     RootRule, 
     RootState 
 } from "../types/root";
 import type { App } from "../app";
 import { VoidData } from "../types/base";
-import { DictModel } from "./dict";
 import { BunnyModel } from "./bunny";
 import { ModelConsumer } from "../utils/model-consumer";
+import { Model } from "./base";
+import { BaseModel } from "../types/model";
 
 @product(ModelId.ROOT)
-export class RootModel extends DictModel<
+export class RootModel extends Model<
     ModelId.ROOT,
     VoidData,
     VoidData,
@@ -23,10 +22,10 @@ export class RootModel extends DictModel<
     VoidData,
     RootState,
     App,
-    RootChildren
+    BaseModel,
+    RootDict
 > {
-    private _version: string;
-    public consumer = new ModelConsumer({});
+    public consumer;
 
     constructor(config: RootConfig) {
         super({
@@ -39,20 +38,18 @@ export class RootModel extends DictModel<
             },
             consumer: {},
             provider: {},
-            children: {
-                bunny: 
-                    config.children?.bunny || 
-                    new BunnyModel({ rule: {} })
+            children: [
+                new BunnyModel({
+                    rule: {}
+                })
+            ],
+            dict: {
+                bunny: 0
             }
         });
-        this._version = APP_VERSION;
+        this.consumer = new ModelConsumer({
+            raw: config.consumer || {},
+            handlers: {}
+        });
     }
-
-    public serialize(): RootChunk {
-        return {
-            ...super.serialize(),
-            version: this._version
-        };
-    }
-
 }

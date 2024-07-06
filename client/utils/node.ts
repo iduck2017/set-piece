@@ -7,12 +7,18 @@ export class Node<
     T = any,
 > extends Base<T> {
     private _parent?: P;
-    public get parent() { return this._parent; }
+    public get parent(): P { 
+        const parent = this._parent; 
+        if (!parent) {
+            throw new Error();
+        }
+        return parent;
+    }
 
     private readonly _children: C[];
     public get children(): C[] { return [...this._children]; }
 
-    private readonly _dict: Record<keyof D, number>;
+    public readonly _dict: Record<keyof D, number>;
 
     constructor(
         config: {
@@ -53,11 +59,11 @@ export class Node<
         this._children.splice(index, 1);
     }
 
-    public _mount(
+    public _mount(options: {
         container: T,
-        parent?: P
-    ) {
-        super._mount(container);
-        this._parent = parent;
+        parent: P
+    }) {
+        super._mount(options);
+        this._parent = options.parent;
     } 
 }

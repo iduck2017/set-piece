@@ -14,8 +14,8 @@ export const rootChunk: RootChunk = {
     },
     provider: {},
     consumer: {},
-    children: {
-        bunny: {
+    children: [
+        {
             modelId: ModelId.BUNNY,
             referId: '',
             rule: {},
@@ -26,8 +26,11 @@ export const rootChunk: RootChunk = {
             },
             provider: {},
             consumer: {},
-            children: []
+            children: [],
+            dict: {}
         }
-    },
-    version: ''
+    ],
+    dict: {
+        bunny: 0
+    }
 };

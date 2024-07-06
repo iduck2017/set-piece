@@ -54,7 +54,10 @@ export class App {
         this.refer.reset();
         const record = await this.slots.load(index);
         this._root = this.factory.unserialize(record);
-        this._root.mount(this, this);
+        this._root.mount({
+            app: this,
+            parent: this
+        });
         console.log(this._root);
         this.render.mount();
         this._status = AppStatus.MOUNTED;

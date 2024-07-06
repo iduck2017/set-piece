@@ -3,8 +3,10 @@ export class Base<T = any> {
     public get container() { return this._container; }
 
     public _mount(
-        container: T
+        options: {
+            container: T
+        }
     ) {
-        this._container = container;
+        this._container = options.container;
     }
 }

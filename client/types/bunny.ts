@@ -1,7 +1,7 @@
 import type { BunnyModel } from "../models/bunny";
 import { VoidData } from "./base";
 import { GenderType } from "./enums";
-import { IListConfig } from "./list";
+import { ModelTemplate } from "./model";
 
 type BunnyState = {
     age: number;
@@ -11,12 +11,13 @@ type BunnyState = {
 
 type BunnyChildren = BunnyModel
 
-type BunnyConfig = IListConfig<
-    never,
-    never,
+type BunnyConfig = ModelTemplate<
     VoidData,
     VoidData,
-    BunnyChildren
+    VoidData,
+    BunnyState,
+    BunnyChildren,
+    VoidData
 >
 
 export {

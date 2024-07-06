@@ -1,5 +1,3 @@
-import { DictModel } from "../models/dict";
-import { ListModel } from "../models/list";
 import { BaseConstructor } from "../types/base";
 import { AppStatus } from "../types/status";
 import { appStatus } from "../utils/status";
@@ -18,38 +16,7 @@ export class FactoryService extends Service {
     @appStatus(AppStatus.MOUNTING)
     public unserialize<T extends BaseModel>(config: any): T {
         const Constructor = FactoryService._products[config.modelId];
-
-        if (Constructor.prototype instanceof ListModel) {
-            return this._createListModel(Constructor, config);
-        } 
-        if (Constructor.prototype instanceof DictModel) {
-            return this._createDictModel(Constructor, config);
-        }
-
         return new Constructor(config, this.app);
-    }
-
-    private _createListModel(
-        Constructor: BaseConstructor, 
-        config: any
-    ) {
-        const children: any[] = [];
-        for (const childConfig of config.children) {
-            children.push(this.unserialize(childConfig));
-        }
-
-        config.children = children;
-        return new Constructor(config, this.app); 
-    }
-
-    private _createDictModel(Constructor: BaseConstructor, config: any) {
-        const children = {} as any;
-        for (const key in config.children) {
-            children[key] = this.unserialize(config.children[key]);
-        }
-
-        config.children = children;
-        return new Constructor(config, this.app); 
     }
 }
 

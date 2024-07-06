@@ -1,6 +1,6 @@
 import type { BunnyModel } from "../models/bunny";
 import { BaseEvent } from "./base";
-import { DictChunk, IDictConfig } from "./dict";
+import { BaseModel, ModelChunk, ModelTemplate } from "./model";
 import { ModelId } from "./registry";
 
 type RootState = {
@@ -12,25 +12,27 @@ type RootRule = {
     difficulty: number,
 }
 
-type RootChildren = {
+type RootDict = {
     bunny: BunnyModel
 }
  
-type RootChunk = DictChunk<
+type RootChunk = ModelChunk<
     ModelId.ROOT,
     BaseEvent,
     BaseEvent,
     RootRule,
     RootState,
-    RootChildren
-> & { version: string; }
+    BaseModel,
+    RootDict
+>
 
-type RootConfig = IDictConfig<
+type RootConfig = ModelTemplate<
     BaseEvent,
     BaseEvent,
     RootRule,
     RootState,
-    RootChildren
+    BaseModel,
+    RootDict
 >
 
 export {
@@ -38,5 +40,5 @@ export {
     RootState,
     RootChunk,
     RootConfig,
-    RootChildren
+    RootDict
 };

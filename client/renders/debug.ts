@@ -12,7 +12,9 @@ export class DebugRenderer extends Renderer<{
     private _setData: React.Dispatch<React.SetStateAction<any>>;
 
     public consumer = new Consumer({
-        [EventId.UPDATE_DONE]: this._handleUpdateDone.bind(this)
+        handlers: {
+            [EventId.UPDATE_DONE]: this._handleUpdateDone.bind(this)
+        }
     }); 
 
     constructor(config: {

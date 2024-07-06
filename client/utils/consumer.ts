@@ -13,11 +13,13 @@ export class Consumer<
     public get handlers() { return { ...this._handlers }; }
 
     constructor(
-        handlers: H
+        config: {
+            handlers: H
+        }
     ) {
         super();
         this._providers = {};
-        this._handlers = handlers;
+        this._handlers = config.handlers;
     }
 
     public _add<K extends keyof H>(
@@ -57,12 +59,6 @@ export class Consumer<
                 }
             }
         }
-    }
-
-    public _save() {
-        return {
-            providers: this._providers
-        };
     }
 }
 

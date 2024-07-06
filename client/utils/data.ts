@@ -1,4 +1,4 @@
-import { BaseData } from "../types/base";
+import { BaseData, VoidData } from "../types/base";
 import { EventId } from "../types/events";
 import type { ModelEvent } from "../types/model";
 import { Base } from "./base";
@@ -16,19 +16,19 @@ export class Data<
     private readonly _calc: R & I & S;
     public get calc() { return { ...this._calc }; }
 
-    private readonly _handlers: ModelEvent<{}>;
+    private readonly _handlers: ModelEvent<VoidData>;
 
     constructor(
         config: {
             rule: R,
             info: I,
             stat: S,
-        }, 
-        handlers: ModelEvent<{}> 
+            handlers: ModelEvent<VoidData> 
+        } 
     ) {
         super();
-        this._handlers = handlers;
 
+        this._handlers = config.handlers;
         this._rule = config.rule;
         this._info = config.info;
 
@@ -39,7 +39,11 @@ export class Data<
             set: this._set.bind(this)
         });
 
-        this._calc = { ...config.rule } as R & I & S;
+        this._calc = { 
+            ...config.rule,
+            ...config.info,
+            ...config.stat  
+        }; 
     }
 
     private _set<K extends keyof S>(
@@ -79,8 +83,10 @@ export class Data<
         }
     }
 
-    public _mount(container: T) {
-        super._mount(container);
+    public _mount(options: {
+        container: T
+    }) {
+        super._mount(options);
         for (const key in this._info) {
             this.update(key);
         }
@@ -88,5 +94,4 @@ export class Data<
             this.update(key);
         }
     }
-
 }

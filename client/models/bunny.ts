@@ -3,14 +3,13 @@ import { BunnyChildren, BunnyConfig, BunnyState } from "../types/bunny";
 import { GenderType } from "../types/enums";
 import { BaseModel } from "../types/model";
 import { ModelId } from "../types/registry";
-import { Consumer } from "../utils/consumer";
 import { ModelConsumer } from "../utils/model-consumer";
 import { product } from "../utils/product";
 import { randomEnum, randomNumber } from "../utils/random";
-import { ListModel } from "./list";
+import { Model } from "./base";
 
 @product(ModelId.BUNNY)
-export class BunnyModel extends ListModel<
+export class BunnyModel extends Model<
     ModelId.BUNNY,
     VoidData,
     VoidData,
@@ -18,9 +17,10 @@ export class BunnyModel extends ListModel<
     VoidData,
     BunnyState,
     BaseModel,
-    BunnyChildren
+    BunnyChildren,
+    VoidData
 > {
-    public consumer = new ModelConsumer({}); 
+    public consumer;
 
     constructor(config: BunnyConfig) {
         super({
@@ -36,13 +36,17 @@ export class BunnyModel extends ListModel<
             },
             provider: {},
             consumer: {},
-            children: config.children || []
+            children: config.children || [], 
+            dict: {}
         });
 
+        this.consumer = new ModelConsumer({
+            raw: config.consumer || {},
+            handlers: {}
+        });
         this.debugger.eat = this.eat.bind(this);
     }
 
-    
     public eat() {
         console.log('eat');
         this.data._stat.weight += randomNumber(1, 5);

@@ -3,7 +3,7 @@ import { Service } from "./base";
 import React from 'react';
 import { appStatus } from '../utils/status';
 import { AppStatus } from '../types/status';
-import { AppDebugger } from '../debuggers';
+import { AppDebugger } from '../debuggers/app';
 
 export class RenderService extends Service {
     private _root?: Root;
