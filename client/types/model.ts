@@ -1,4 +1,3 @@
-import type { App } from "../app";
 import type { Model } from "../models/base";
 import { BaseData, BaseEvent } from "./base";
 import { CheckBeforeEvent, EventId, UpdateDoneEvent } from "./events";

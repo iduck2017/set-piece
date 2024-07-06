@@ -1,6 +1,5 @@
 /* eslint-disable import/no-cycle */
 
-import type { App } from "../app";
 import type { Model } from "../models/base";
 import { BaseData, BaseEvent } from "../types/base";
 import { BaseModel, ModelEvent } from "../types/model";

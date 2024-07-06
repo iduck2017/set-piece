@@ -1,4 +1,3 @@
-import type { App } from "../app";
 import { BaseModel } from "../types/model";
 import { Node } from "./node";
 
