@@ -1,10 +1,9 @@
 import { BaseRecord } from "../types/base";
 
 export class Node<
-    P extends T,
-    L extends T[],
-    D extends Record<string, T>,
-    T = any,
+    P,
+    L extends any[],
+    D extends BaseRecord,
 > {
     protected _parent?: P;
     public get parent(): P { 
@@ -20,8 +19,8 @@ export class Node<
 
     public readonly dict: D;
 
-    public get children(): T[] { 
-        const children: T[] = [];
+    public get children(): any[] { 
+        const children: any[] = [];
         for (const item of this._list) {
             children.push(item);
         }

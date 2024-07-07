@@ -1,29 +1,47 @@
 import type { Model } from "../models/base";
-import { BaseFunction, BaseRecord } from "./base";
+import { BaseData, BaseFunction, VoidData, VoidList } from "./base";
+import { CheckBeforeEvent, EventId, UpdateDoneEvent } from "./events";
 import type { 
-    ConsumerChunk,
     DictChunk, 
     ListChunk, 
-    ProviderChunk 
+    EventChunk
 } from "./common";
-import { CheckBeforeEvent, EventId, UpdateDoneEvent } from "./events";
 
-type BaseModel = Model<
-    number,
-    BaseRecord,
-    BaseRecord,
-    BaseRecord,
-    BaseEvent,
-    BaseEvent,
-    BaseModel,
-    BaseModelList,
-    BaseModelDict
->;
+type BaseTmpl = {
+    [0]: number,
+    [1]: BaseData,
+    [2]: BaseData,
+    [3]: BaseData,
+    [4]: BaseModel,
+    [5]: BaseList,
+    [6]: BaseDict,
+    [7]: BaseEvent,
+    [8]: BaseEvent,
+}
 
-type BaseModelList = Array<BaseModel>
-type BaseModelDict = Record<string, BaseModel>;
+type ModelTmpl<
+    M extends Partial<BaseTmpl>,
+> = M & Omit<BaseTmpl, keyof M>;
+
+type PureTmpl<
+    M extends Partial<BaseTmpl>
+> = M & Omit<{
+    [0]: number,
+    [1]: VoidData,
+    [2]: VoidData,
+    [3]: VoidData,
+    [4]: BaseModel,
+    [5]: VoidList,
+    [6]: VoidData,
+    [7]: VoidData,
+    [8]: VoidData,
+}, keyof M>
+
+
+type BaseList = Array<BaseModel>
+type BaseDict = Record<string, BaseModel>;
 type BaseEvent = Record<string, BaseFunction>
-
+type BaseModel = Model<BaseTmpl>;
 
 type ModelEvent<
     E extends BaseEvent
@@ -33,72 +51,58 @@ type ModelEvent<
 }
 
 type ModelChunk<
-    M extends number,
-    R extends BaseRecord,
-    S extends BaseRecord,
-    E extends BaseEvent,
-    H extends BaseEvent,
-    L extends BaseModelList,
-    D extends BaseModelDict,
+    M extends BaseTmpl = BaseTmpl
 > = {
     referId: string,
-    modelId: M,
-    rule: R,
-    stat: S,
-    list: ListChunk<L>,
-    dict: DictChunk<D>
-    provider: ProviderChunk<E>
-    consumer: ConsumerChunk<H>,
+    modelId: M[0],
+    rule: M[1],
+    stat: M[3],
+    list: ListChunk<M[5]>,
+    dict: DictChunk<M[6]>
+    provider: EventChunk<ModelEvent<M[7]>>
+    consumer: EventChunk<M[8]>,
 }
 
-type ModelStruct<
-    M extends number,
-    R extends BaseRecord,
-    I extends BaseRecord,
-    S extends BaseRecord,
-    E extends BaseEvent,
-    H extends BaseEvent,
-    L extends BaseModelList,
-    D extends BaseModelDict,
-> = {
-    modelId: M;
-    referId?: string;
-    rule: R;
-    stat: S;
-    info: I,
-    list: L,
-    dict: D
-    provider: ProviderChunk<E>
-    consumer: ConsumerChunk<H>,
-    handlers: H,
-}
-
-type ModelConfig<
-    R extends BaseRecord,
-    S extends BaseRecord,
-    E extends BaseEvent,
-    H extends BaseEvent,
-    L extends BaseModel[],
-    D extends Record<string, BaseModel>
+type BaseConf<
+    M extends BaseTmpl = BaseTmpl
 > = {
     referId?: string;
-    rule: R;
-    stat?: Partial<S>
-    dict?: Partial<D>
-    list?: L,
-    provider?: ProviderChunk<E>
-    consumer?: ConsumerChunk<H>,
+    modelId: M[0];
+    rule: M[1];
+    info: M[2],
+    stat: M[3];
+    list: M[5],
+    dict: M[6],
+    handlers: M[8],
+    provider: EventChunk<ModelEvent<M[7]>>
+    consumer: EventChunk<M[8]>,
 }
 
+type ModelConf<
+    M extends BaseTmpl = BaseTmpl
+> = {
+    referId?: string;
+    rule: M[1];
+    stat?: Partial<M[3]>
+    list?: M[5],
+    dict?: Partial<M[6]>
+    provider?: EventChunk<ModelEvent<M[7]>>
+    consumer?: EventChunk<M[8]>,
+}
 
 export {
     BaseModel,
     BaseEvent,
-    BaseModelDict,
-    BaseModelList,
+
+    BaseDict,
+    BaseList,
+    BaseConf,
+    BaseTmpl,
 
     ModelChunk,
     ModelEvent,
-    ModelStruct,
-    ModelConfig
+    ModelConf,
+    ModelTmpl,
+
+    PureTmpl
 };

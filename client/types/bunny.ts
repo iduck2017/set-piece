@@ -1,40 +1,24 @@
 import type { BunnyModel } from "../models/bunny";
-import { VoidData } from "./base";
 import { GenderType } from "./enums";
-import { BaseModel, BaseModelDict, ModelConfig } from "./model";
+import { ModelConf, PureTmpl } from "./model";
+import { ModelId } from "./registry";
 
-type BunnyRule = VoidData;
-type BunnyInfo = VoidData;
 type BunnyStat = {
     age: number;
     weight: number;
     gender: GenderType;
 }
 
-type BunnyParent = BaseModel;
-type BunnyList = BunnyModel[];
-type BunnyDict = VoidData;
+type BunnyTmpl = PureTmpl<{
+    [0]: ModelId.BUNNY,
+    [3]: BunnyStat,
+    [5]: BunnyModel[],
+}>
 
-type BunnyProvider = VoidData;
-type BunnyConsumer = VoidData;
-
-type BunnyConfig = ModelConfig<
-    BunnyRule,
-    BunnyStat,
-    BunnyProvider,
-    BunnyConsumer,
-    BunnyList,
-    BunnyDict
->
+type BunnyConf = ModelConf<BunnyTmpl>
 
 export {
-    BunnyRule,
-    BunnyInfo,
     BunnyStat,
-    BunnyParent,
-    BunnyDict,
-    BunnyList,
-    BunnyProvider,
-    BunnyConsumer,
-    BunnyConfig
+    BunnyTmpl,
+    BunnyConf
 };

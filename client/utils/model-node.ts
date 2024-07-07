@@ -1,11 +1,11 @@
 import { ChunkOf, DictChunk, ListChunk } from "../types/common";
-import { BaseModel, BaseModelDict, BaseModelList } from "../types/model";
+import { BaseModel, BaseDict, BaseList } from "../types/model";
 import { Node } from "./node";
 
 export class ModelNode<
     P extends BaseModel,
-    L extends BaseModelList,
-    D extends BaseModelDict,
+    L extends BaseList,
+    D extends BaseDict,
 > extends Node<P, L, D> {
     private _container?: BaseModel;
     public get container(): BaseModel {

@@ -1,13 +1,11 @@
 /* eslint-disable import/no-cycle */
 
 import type { Model } from "../models/base";
-import { BaseRecord } from "../types/base";
 import { 
-    BaseModelDict, 
     BaseEvent, 
-    BaseModelList, 
     BaseModel, 
-    ModelEvent 
+    ModelEvent, 
+    ModelTmpl
 } from "../types/model";
 import { ModelConsumer } from "./model-consumer";
 import { Provider } from "./provider";
@@ -44,17 +42,7 @@ export class ModelProvider<
             if (list) {
                 for (const id of list) {
                     const model = app.refer.get<
-                        Model<
-                            number,
-                            BaseRecord,
-                            BaseRecord,
-                            BaseRecord,
-                            BaseEvent,
-                            ModelEvent<E>,
-                            BaseModel,
-                            BaseModelList,
-                            BaseModelDict
-                        >
+                        Model<ModelTmpl<{ [8]: ModelEvent<E> }>>
                     >(id);
                     if (model) {
                         this.bind(key, model.consumer);

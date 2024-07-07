@@ -1,11 +1,8 @@
 /* eslint-disable import/no-cycle */
 
 import type { Model } from "../models/base";
-import { BaseRecord } from "../types/base";
 import { 
-    BaseModelDict, 
     BaseEvent, 
-    BaseModelList, 
     BaseModel 
 } from "../types/model";
 import { Consumer } from "./consumer";
@@ -44,17 +41,7 @@ export class ModelConsumer<
             if (list) {
                 for (const id of list) {
                     const model = app.refer.get<
-                        Model<
-                            number,
-                            BaseRecord,
-                            BaseRecord,
-                            BaseRecord,
-                            any,
-                            BaseEvent,
-                            BaseModel,
-                            BaseModelList,
-                            BaseModelDict
-                        >
+                        Model<any>
                     >(id);
                     if (model) {
                         model.provider.bind(key, this);

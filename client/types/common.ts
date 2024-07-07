@@ -1,29 +1,30 @@
 import { 
     BaseEvent, 
-    BaseModelDict, 
-    BaseModelList, 
-    ModelEvent,
-
-    BaseModel
+    BaseDict, 
+    BaseList, 
+    BaseModel,
+    BaseTmpl
 } from "./model";
 
-type ListChunk<L extends BaseModelList> = ChunkOf<L[number]>[];
-type DictChunk<D extends BaseModelDict> = { [K in keyof D]: ChunkOf<D[K]> }
-type ConsumerChunk<H extends BaseEvent> = { [K in keyof H]?: string[] }
-type ProviderChunk<E extends BaseEvent> = { 
-    [K in keyof ModelEvent<E>]?: string[] 
-}
+type ListChunk<L extends BaseList> = ChunkOf<L[number]>[];
+type DictChunk<D extends BaseDict> = { [K in keyof D]: ChunkOf<D[K]> }
+type EventChunk<H extends BaseEvent> = { [K in keyof H]?: string[] }
 
 type ChunkOf<T extends BaseModel | undefined> = 
     T extends BaseModel ? 
-    ReturnType<T['serialize']> : 
-    undefined;
+        ReturnType<T['serialize']> : 
+        undefined;
+
+type UnionOf<
+    A extends Partial<BaseTmpl>,
+    B extends BaseTmpl
+> = A & Omit<B, keyof A>;
 
 export {
+    ChunkOf,
+    UnionOf,
+
     ListChunk,
     DictChunk,
-    ConsumerChunk,
-    ProviderChunk,
-
-    ChunkOf
+    EventChunk
 };

@@ -7,12 +7,13 @@ import { appStatus } from "../utils/status";
 import { singleton } from "../utils/decors";
 import { Service } from "./base";
 import { 
-    BaseModelDict, 
+    BaseDict, 
     BaseEvent, 
-    BaseModelList, 
+    BaseList, 
     BaseModel, 
+    BaseTmpl, 
     ModelChunk, 
-    ModelConfig 
+    ModelConf 
 } from "../types/model";
 
 @singleton
@@ -24,15 +25,7 @@ export class FactoryService extends Service {
     }
 
     @appStatus(AppStatus.MOUNTING)
-    public unserialize<T extends BaseModel>(chunk: ModelChunk<
-        number,
-        BaseRecord,
-        BaseRecord,
-        BaseEvent,
-        BaseEvent,
-        BaseModel[],
-        Record<string, BaseModel>        
-    >): T {
+    public unserialize<T extends BaseModel>(chunk: ModelChunk): T {
         const Constructor = FactoryService._products[chunk.modelId];
         const list: BaseModel[] = [];
         const dict = {} as Record<string, BaseModel>;
@@ -44,14 +37,7 @@ export class FactoryService extends Service {
             dict[key] = this.unserialize(chunk.dict[key]);
         }
 
-        const config: Required<ModelConfig<
-            BaseEvent,
-            BaseEvent,
-            BaseRecord,
-            BaseRecord,
-            BaseModelList,
-            BaseModelDict
-        >>= {
+        const config: Required<ModelConf>= {
             referId: chunk.referId,
             rule: chunk.rule,
             stat: chunk.stat,

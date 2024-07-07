@@ -1,22 +1,27 @@
 type BaseKey = string | number | symbol
-type BaseData = Record<string, BaseType>
 type BaseType = string | number | boolean | undefined
 
+type VoidList = never[]
 type VoidData = Record<never, never>
 
-type BaseRecord = Record<any, any>
+type BaseData = Record<BaseKey, BaseType>
+type BaseRecord = Record<BaseKey, any>
 type BaseFunction = (...args: any[]) => any
 type BaseConstructor = new (...args: any[]) => any & BaseRecord
 
+type ValueOf<T extends BaseRecord> = T[keyof T];
 
 export {
     BaseKey,
     BaseType,
-    BaseData,
 
+    VoidList,
     VoidData,
     
+    BaseData,
     BaseRecord,
     BaseFunction,
-    BaseConstructor
+    BaseConstructor,
+
+    ValueOf
 };

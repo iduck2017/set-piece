@@ -1,30 +1,17 @@
-import { BaseRecord } from "../types/base";
 import { ModelStatus } from "../types/status";
 import { 
-    BaseModelDict,
     BaseEvent,
-    BaseModelList,
-    BaseModel,
     ModelChunk, 
-    ModelStruct
+    BaseTmpl, 
+    BaseConf
 } from "../types/model";
 import type { App } from "../app";
-import { ModelProvider } from "../utils/model-provider";
 import { ModelConsumer } from "../utils/model-consumer";
 import { ModelNode } from "../utils/model-node";
 import { ModelData } from "../utils/model-data";
+import { ModelProvider } from "../utils/model-provider";
 
-export abstract class Model<
-    M extends number,
-    R extends BaseRecord,
-    I extends BaseRecord,
-    S extends BaseRecord,
-    E extends BaseEvent,
-    H extends BaseEvent,
-    P extends BaseModel,
-    L extends BaseModelList,
-    D extends BaseModelDict,
-> {
+export abstract class Model<M extends BaseTmpl> {
     private _app?: App;
     public get app() { 
         const app = this._app;
@@ -43,20 +30,18 @@ export abstract class Model<
         return referId;
     }
 
-    public readonly modelId: M;
-
     private _status: ModelStatus;
     public get status() { return this._status; }
 
-    public readonly data: ModelData<R, I, S>;
-    public readonly node: ModelNode<P, L, D>;
-
-    public readonly provider: ModelProvider<E>;
-    public readonly consumer: ModelConsumer<H>;
+    public readonly modelId: M[0];
+    public readonly data: ModelData<M[1], M[2], M[3]>;
+    public readonly node: ModelNode<M[4], M[5], M[6]>;
+    public readonly provider: ModelProvider<M[7]>;
+    public readonly consumer: ModelConsumer<M[8]>;
 
     public readonly debugger: BaseEvent;
 
-    public constructor(config: ModelStruct<M, R, I, S, E, H, L, D>) {
+    public constructor(config: BaseConf<M>) {
         this._status = ModelStatus.INITED;
 
         this.modelId = config.modelId;
@@ -86,7 +71,7 @@ export abstract class Model<
 
     public mount(options: {
         app: App,    
-        parent: P
+        parent: M[4]
     }) {
         this._status = ModelStatus.MOUNTING;
         this._app = options.app;
@@ -123,7 +108,7 @@ export abstract class Model<
         this._status = ModelStatus.UNMOUNTED; 
     }
 
-    public serialize(): ModelChunk<M, R, S, E, H, L, D> {
+    public serialize(): ModelChunk<M> {
         return {
             modelId: this.modelId,
             referId: this.referId,

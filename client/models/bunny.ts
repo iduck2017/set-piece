@@ -1,25 +1,13 @@
-import { VoidData } from "../types/base";
-import { BunnyList, BunnyConfig, BunnyStat } from "../types/bunny";
+import { BunnyConf, BunnyTmpl } from "../types/bunny";
 import { GenderType } from "../types/enums";
-import { BaseModel } from "../types/model";
 import { ModelId } from "../types/registry";
 import { product } from "../utils/product";
 import { randomEnum, randomNumber } from "../utils/random";
 import { Model } from "./base";
 
 @product(ModelId.BUNNY)
-export class BunnyModel extends Model<
-    ModelId.BUNNY,
-    VoidData,
-    VoidData,
-    BunnyStat,
-    VoidData,
-    VoidData,
-    BaseModel,
-    BunnyList,
-    VoidData
-> {
-    constructor(config: BunnyConfig) {
+export class BunnyModel extends Model<BunnyTmpl> {
+    constructor(config: BunnyConf) {
         super({
             referId: config.referId,
             modelId: ModelId.BUNNY,

@@ -1,29 +1,12 @@
 import { ModelId } from "../types/registry";
 import { product } from "../utils/product";
-import { 
-    RootDict, 
-    RootConfig, 
-    RootRule, 
-    RootStat
-} from "../types/root";
-import { VoidData } from "../types/base";
 import { BunnyModel } from "./bunny";
 import { Model } from "./base";
-import { BaseModelList } from "../types/model";
+import { RootConf, RootTmpl } from "../types/root";
 
 @product(ModelId.ROOT)
-export class RootModel extends Model<
-    ModelId.ROOT,
-    RootRule,
-    VoidData,
-    RootStat,
-    VoidData,
-    VoidData,
-    RootModel,
-    BaseModelList,
-    RootDict
-> {
-    constructor(config: RootConfig) {
+export class RootModel extends Model<RootTmpl> {
+    constructor(config: RootConf) {
         super({
             referId: config.referId,
             modelId: ModelId.ROOT,

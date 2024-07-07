@@ -1,42 +1,33 @@
 import type { BunnyModel } from "../models/bunny";
-import { VoidData } from "./base";
-import { BaseModel, ModelConfig } from "./model";
+import { ModelConf, PureTmpl } from "./model";
+import { ModelId } from "./registry";
 
 type RootRule = {
     name: string;
     difficulty: number;
 };
-type RootInfo = VoidData;
 type RootStat = {
     progress: number
 }
 
-type RootParent = BaseModel;
-type RootList = never[];
 type RootDict = {
     bunny: BunnyModel
 }
 
-type RootProvider = VoidData;
-type RootConsumer = VoidData;
+type RootTmpl = PureTmpl<{
+    [0]: ModelId.ROOT,
+    [1]: RootRule,
+    [3]: RootStat,
+    [6]: RootDict
+}>
 
-type RootConfig = ModelConfig<
-    RootRule,
-    RootStat,
-    RootProvider,
-    RootConsumer,
-    RootList,
-    RootDict
->
+type RootConf = ModelConf<RootTmpl>
 
 export {
     RootRule,
-    RootInfo,
     RootStat,
-    RootParent,
     RootDict,
-    RootList,
-    RootProvider,
-    RootConsumer,
-    RootConfig
+
+    RootTmpl,
+    RootConf
 };
