@@ -4,23 +4,23 @@ import {
     RootDict, 
     RootConfig, 
     RootRule, 
-    RootState 
+    RootStat
 } from "../types/root";
 import { VoidData } from "../types/base";
 import { BunnyModel } from "./bunny";
 import { Model } from "./base";
-import { BaseList } from "../types/model";
+import { BaseModelList } from "../types/model";
 
 @product(ModelId.ROOT)
 export class RootModel extends Model<
     ModelId.ROOT,
     RootRule,
     VoidData,
-    RootState,
+    RootStat,
     VoidData,
     VoidData,
     RootModel,
-    BaseList,
+    BaseModelList,
     RootDict
 > {
     constructor(config: RootConfig) {

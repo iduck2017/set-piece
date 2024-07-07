@@ -1,8 +1,9 @@
+import { RootModel } from "../models/root";
+import { ChunkOf } from "../types/common";
 import { GenderType } from "../types/enums";
 import { ModelId } from "../types/registry";
-import { RootChunk } from "../types/root";
 
-export const rootChunk: RootChunk = {
+export const rootChunk: ChunkOf<RootModel> = {
     modelId: ModelId.ROOT,
     referId: '',
     rule: {

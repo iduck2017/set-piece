@@ -5,8 +5,8 @@ import { appStatus } from "../utils/status";
 import { singleton } from "../utils/decors";
 import { Service } from "./base";
 import { CreateSlotForm } from "../types/forms";
-import { RootChunk } from "../types/root";
 import { RootModel } from "../models/root";
+import { ChunkOf } from "../types/common";
 
 @singleton
 export class SlotsService extends Service {
@@ -21,7 +21,7 @@ export class SlotsService extends Service {
     }
 
     @appStatus(AppStatus.UNMOUNTED)
-    public async new(options: CreateSlotForm): Promise<RootChunk> {
+    public async new(options: CreateSlotForm) {
         const slotId = Date.now().toString(16);
         const path = `${SLOT_PATH}_${slotId}`;
         this._data.push({
@@ -44,7 +44,7 @@ export class SlotsService extends Service {
     }
 
     @appStatus(AppStatus.MOUNTING)
-    public async load(index: number): Promise<RootChunk> {
+    public async load(index: number) {
         this._index = index;
         const slot = this._data[index];
         const path = `${SLOT_PATH}_${slot.slotId}`;
@@ -52,7 +52,7 @@ export class SlotsService extends Service {
         const raw = await localStorage.getItem(path);
         
         if (!raw) throw new Error();
-        return JSON.parse(raw) as RootChunk;
+        return JSON.parse(raw) as ChunkOf<RootModel>;
     }
 
     @appStatus(AppStatus.UNMOUNTED)

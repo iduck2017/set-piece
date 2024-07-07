@@ -1,49 +1,42 @@
 import type { BunnyModel } from "../models/bunny";
-import { 
-    BaseEvent, 
-    BaseList, 
-    BaseModel, 
-    ModelChunk, 
-    ModelConfig
-} from "./model";
-import { ModelId } from "./registry";
+import { VoidData } from "./base";
+import { BaseModel, ModelConfig } from "./model";
 
-type RootState = {
+type RootRule = {
+    name: string;
+    difficulty: number;
+};
+type RootInfo = VoidData;
+type RootStat = {
     progress: number
 }
 
-type RootRule = {
-    name: string,
-    difficulty: number,
-}
-
+type RootParent = BaseModel;
+type RootList = never[];
 type RootDict = {
     bunny: BunnyModel
 }
- 
-type RootChunk = ModelChunk<
-    ModelId.ROOT,
-    RootRule,
-    RootState,
-    BaseEvent,
-    BaseEvent,
-    BaseList,
-    RootDict
->
+
+type RootProvider = VoidData;
+type RootConsumer = VoidData;
 
 type RootConfig = ModelConfig<
     RootRule,
-    RootState,
-    BaseEvent,
-    BaseEvent,
-    BaseList,
+    RootStat,
+    RootProvider,
+    RootConsumer,
+    RootList,
     RootDict
 >
 
 export {
     RootRule,
-    RootState,
-    RootChunk,
-    RootConfig,
-    RootDict
+    RootInfo,
+    RootStat,
+    RootParent,
+    RootDict,
+    RootList,
+    RootProvider,
+    RootConsumer,
+    RootConfig
 };

@@ -1,5 +1,11 @@
 import type { Model } from "../models/base";
-import { BaseFunction, BaseRecord, BaseType } from "./base";
+import { BaseFunction, BaseRecord } from "./base";
+import type { 
+    ConsumerChunk,
+    DictChunk, 
+    ListChunk, 
+    ProviderChunk 
+} from "./common";
 import { CheckBeforeEvent, EventId, UpdateDoneEvent } from "./events";
 
 type BaseModel = Model<
@@ -18,18 +24,12 @@ type BaseModelList = Array<BaseModel>
 type BaseModelDict = Record<string, BaseModel>;
 type BaseEvent = Record<string, BaseFunction>
 
+
 type ModelEvent<
     E extends BaseEvent
 > = E & {
     [EventId.CHECK_BEFORE]: CheckBeforeEvent, 
     [EventId.UPDATE_DONE]: UpdateDoneEvent,
-}
-
-type ListChunk<L extends BaseModelList> = ChunkOf<L[number]>[];
-type DictChunk<D extends BaseModelDict> = { [K in keyof D]: ChunkOf<D[K]> }
-type ConsumerChunk<H extends BaseEvent> = { [K in keyof H]?: string[] }
-type ProviderChunk<E extends BaseEvent> = { 
-    [K in keyof ModelEvent<E>]?: string[] 
 }
 
 type ModelChunk<
@@ -90,26 +90,15 @@ type ModelConfig<
     consumer?: ConsumerChunk<H>,
 }
 
-type ChunkOf<T extends BaseModel | undefined> = 
-    T extends BaseModel ? 
-    ReturnType<T['serialize']> : 
-    undefined;
 
 export {
     BaseModel,
     BaseEvent,
-    BaseModelDict as BaseDict,
-    BaseModelList as BaseList,
-
-    DictChunk,
-    ListChunk,
-    ProviderChunk,
-    ConsumerChunk,
+    BaseModelDict,
+    BaseModelList,
 
     ModelChunk,
     ModelEvent,
     ModelStruct,
-    ModelConfig,
-
-    ChunkOf
+    ModelConfig
 };

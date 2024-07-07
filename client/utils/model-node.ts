@@ -1,10 +1,11 @@
-import { BaseModel, ChunkOf } from "../types/model";
+import { ChunkOf, DictChunk, ListChunk } from "../types/common";
+import { BaseModel, BaseModelDict, BaseModelList } from "../types/model";
 import { Node } from "./node";
 
 export class ModelNode<
     P extends BaseModel,
-    L extends BaseModel[],
-    D extends Record<string, BaseModel>,
+    L extends BaseModelList,
+    D extends BaseModelDict,
 > extends Node<P, L, D> {
     private _container?: BaseModel;
     public get container(): BaseModel {
@@ -48,11 +49,11 @@ export class ModelNode<
     }
 
     public _serialize() {
-        const list: ChunkOf<L[number]>[] = [];
+        const list: ListChunk<L> = [];
         for (const child of this.list) {
             list.push(child.serialize() as ChunkOf<L[number]>);
         }
-        const dict = {} as { [K in keyof D]: ChunkOf<D[K]> };
+        const dict = {} as DictChunk<D>;
         for (const key in this.dict) {
             dict[key] = this.dict[key].serialize() as ChunkOf<D[keyof D]>;
         }

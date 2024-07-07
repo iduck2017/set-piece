@@ -1,9 +1,9 @@
 import { BaseRecord } from "../types/base";
 import { ModelStatus } from "../types/status";
 import { 
-    BaseDict,
+    BaseModelDict,
     BaseEvent,
-    BaseList,
+    BaseModelList,
     BaseModel,
     ModelChunk, 
     ModelStruct
@@ -22,8 +22,8 @@ export abstract class Model<
     E extends BaseEvent,
     H extends BaseEvent,
     P extends BaseModel,
-    L extends BaseList,
-    D extends BaseDict,
+    L extends BaseModelList,
+    D extends BaseModelDict,
 > {
     private _app?: App;
     public get app() { 

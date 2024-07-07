@@ -3,9 +3,9 @@
 import type { Model } from "../models/base";
 import { BaseRecord } from "../types/base";
 import { 
-    BaseDict, 
+    BaseModelDict, 
     BaseEvent, 
-    BaseList, 
+    BaseModelList, 
     BaseModel 
 } from "../types/model";
 import { Consumer } from "./consumer";
@@ -52,8 +52,8 @@ export class ModelConsumer<
                             any,
                             BaseEvent,
                             BaseModel,
-                            BaseList,
-                            BaseDict
+                            BaseModelList,
+                            BaseModelDict
                         >
                     >(id);
                     if (model) {

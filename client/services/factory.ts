@@ -7,9 +7,9 @@ import { appStatus } from "../utils/status";
 import { singleton } from "../utils/decors";
 import { Service } from "./base";
 import { 
-    BaseDict, 
+    BaseModelDict, 
     BaseEvent, 
-    BaseList, 
+    BaseModelList, 
     BaseModel, 
     ModelChunk, 
     ModelConfig 
@@ -49,8 +49,8 @@ export class FactoryService extends Service {
             BaseEvent,
             BaseRecord,
             BaseRecord,
-            BaseList,
-            BaseDict
+            BaseModelList,
+            BaseModelDict
         >>= {
             referId: chunk.referId,
             rule: chunk.rule,

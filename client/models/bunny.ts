@@ -1,5 +1,5 @@
 import { VoidData } from "../types/base";
-import { BunnyList, BunnyConfig, BunnyState } from "../types/bunny";
+import { BunnyList, BunnyConfig, BunnyStat } from "../types/bunny";
 import { GenderType } from "../types/enums";
 import { BaseModel } from "../types/model";
 import { ModelId } from "../types/registry";
@@ -12,7 +12,7 @@ export class BunnyModel extends Model<
     ModelId.BUNNY,
     VoidData,
     VoidData,
-    BunnyState,
+    BunnyStat,
     VoidData,
     VoidData,
     BaseModel,

@@ -3,9 +3,9 @@
 import type { Model } from "../models/base";
 import { BaseRecord } from "../types/base";
 import { 
-    BaseDict, 
+    BaseModelDict, 
     BaseEvent, 
-    BaseList, 
+    BaseModelList, 
     BaseModel, 
     ModelEvent 
 } from "../types/model";
@@ -52,8 +52,8 @@ export class ModelProvider<
                             BaseEvent,
                             ModelEvent<E>,
                             BaseModel,
-                            BaseList,
-                            BaseDict
+                            BaseModelList,
+                            BaseModelDict
                         >
                     >(id);
                     if (model) {

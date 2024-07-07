@@ -1,27 +1,40 @@
 import type { BunnyModel } from "../models/bunny";
 import { VoidData } from "./base";
 import { GenderType } from "./enums";
-import { ModelConfig } from "./model";
+import { BaseModel, BaseModelDict, ModelConfig } from "./model";
 
-type BunnyState = {
+type BunnyRule = VoidData;
+type BunnyInfo = VoidData;
+type BunnyStat = {
     age: number;
     weight: number;
     gender: GenderType;
 }
 
-type BunnyList = BunnyModel[]
+type BunnyParent = BaseModel;
+type BunnyList = BunnyModel[];
+type BunnyDict = VoidData;
+
+type BunnyProvider = VoidData;
+type BunnyConsumer = VoidData;
 
 type BunnyConfig = ModelConfig<
-    VoidData,
-    BunnyState,
-    VoidData,
-    VoidData,
+    BunnyRule,
+    BunnyStat,
+    BunnyProvider,
+    BunnyConsumer,
     BunnyList,
-    VoidData
+    BunnyDict
 >
 
 export {
-    BunnyState,
+    BunnyRule,
+    BunnyInfo,
+    BunnyStat,
+    BunnyParent,
+    BunnyDict,
     BunnyList,
+    BunnyProvider,
+    BunnyConsumer,
     BunnyConfig
 };
