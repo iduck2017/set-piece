@@ -1,6 +1,11 @@
 import type { BunnyModel } from "../models/bunny";
-import { BaseEvent } from "./base";
-import { BaseModel, ModelChunk, ModelTemplate } from "./model";
+import { 
+    BaseEvent, 
+    BaseList, 
+    BaseModel, 
+    ModelChunk, 
+    ModelConfig
+} from "./model";
 import { ModelId } from "./registry";
 
 type RootState = {
@@ -18,20 +23,20 @@ type RootDict = {
  
 type RootChunk = ModelChunk<
     ModelId.ROOT,
-    BaseEvent,
-    BaseEvent,
     RootRule,
     RootState,
-    BaseModel[],
+    BaseEvent,
+    BaseEvent,
+    BaseList,
     RootDict
 >
 
-type RootConfig = ModelTemplate<
-    BaseEvent,
-    BaseEvent,
+type RootConfig = ModelConfig<
     RootRule,
     RootState,
-    BaseModel[],
+    BaseEvent,
+    BaseEvent,
+    BaseList,
     RootDict
 >
 

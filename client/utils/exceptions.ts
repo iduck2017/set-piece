@@ -1,8 +1,8 @@
-import { BaseData } from "../types/base";
+import { BaseRecord } from "../types/base";
 
 class Exception<
     I extends number,
-    D extends BaseData,
+    D extends BaseRecord,
 > extends Error {
     public exceptionId: I;
     public data: D;

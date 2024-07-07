@@ -1,10 +1,9 @@
-import { BaseEvent } from "../types/base";
-import { Base } from "./base";
+import { BaseEvent } from "../types/model";
 import type { Consumer } from "./consumer";
 
 export class Provider<
-    E extends BaseEvent, T = any
-> extends Base<T> {
+    E extends BaseEvent
+> {
     public readonly _consumers: { 
         [K in keyof E]?: Consumer<Pick<E, K>>[] 
     };
@@ -12,7 +11,6 @@ export class Provider<
     public _emitters: E;
     
     constructor() {
-        super();
         this._consumers = {};
         this._emitters = new Proxy({} as E, {
             get: (target, key) => {

@@ -1,5 +1,5 @@
 // import type { App } from "../app";
-// import { BaseData, BaseEvent } from "./base";
+// import { BaseRecord, BaseEvent } from "./base";
 // import { EventId } from "./events";
 // import { 
 //     BaseModel, 
@@ -13,8 +13,8 @@
 //     M extends number,
 //     E extends BaseEvent,
 //     H extends BaseEvent,
-//     R extends BaseData,
-//     S extends BaseData,
+//     R extends BaseRecord,
+//     S extends BaseRecord,
 //     C extends Record<string, BaseModel>
 // > = ModelChunk<M, E, H, R, S> & {
 //     children: {
@@ -26,9 +26,9 @@
 //     M extends number,
 //     E extends BaseEvent,
 //     H extends BaseEvent,
-//     R extends BaseData,
-//     I extends BaseData,
-//     S extends BaseData,
+//     R extends BaseRecord,
+//     I extends BaseRecord,
+//     S extends BaseRecord,
 //     C extends Record<string, BaseModel>
 // > = ModelConfig<M, E, H, R, I, S> & {
 //     children: C
@@ -37,8 +37,8 @@
 // type IDictConfig<
 //     E extends BaseEvent,
 //     H extends BaseEvent,
-//     R extends BaseData,
-//     S extends BaseData,
+//     R extends BaseRecord,
+//     S extends BaseRecord,
 //     C extends Record<string, BaseModel>
 // > = IModelConfig<E, H, R, S> & {
 //     children?: Partial<C>

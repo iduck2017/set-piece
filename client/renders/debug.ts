@@ -1,10 +1,10 @@
 import type { App } from "../app";
 import { Consumer } from "../utils/consumer";
-import { BaseData, BaseFunction } from "../types/base";
+import { BaseRecord, BaseFunction } from "../types/base";
 import { EventId, UpdateDoneEvent } from "../types/events";
 import { BaseModel } from "../types/model";
 import { Renderer } from "./base";
-import { Data } from "../utils/data";
+import { ModelData } from "../utils/model-data";
 
 export class DebugRenderer extends Renderer<{
     [EventId.UPDATE_DONE]: UpdateDoneEvent
@@ -33,11 +33,11 @@ export class DebugRenderer extends Renderer<{
     }
 
     protected _handleUpdateDone<
-        I extends BaseData,
-        S extends BaseData,
+        I extends BaseRecord,
+        S extends BaseRecord,
         K extends keyof (I & S)
     >(data: {
-            target: Data<BaseData, I, S>,
+            target: ModelData<BaseRecord, I, S>,
             key: K,
             prev: (I & S)[K],
             next: (I & S)[K]

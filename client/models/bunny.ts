@@ -3,7 +3,6 @@ import { BunnyList, BunnyConfig, BunnyState } from "../types/bunny";
 import { GenderType } from "../types/enums";
 import { BaseModel } from "../types/model";
 import { ModelId } from "../types/registry";
-import { ModelConsumer } from "../utils/model-consumer";
 import { product } from "../utils/product";
 import { randomEnum, randomNumber } from "../utils/random";
 import { Model } from "./base";
@@ -13,19 +12,19 @@ export class BunnyModel extends Model<
     ModelId.BUNNY,
     VoidData,
     VoidData,
-    VoidData,
-    VoidData,
     BunnyState,
+    VoidData,
+    VoidData,
     BaseModel,
     BunnyList,
     VoidData
 > {
-    public consumer;
-
     constructor(config: BunnyConfig) {
         super({
-            ...config,
+            referId: config.referId,
             modelId: ModelId.BUNNY,
+            list: config.list || [],
+            dict: {},
             rule: {},
             info: {},
             stat: {
@@ -34,14 +33,8 @@ export class BunnyModel extends Model<
                 gender: randomEnum(GenderType.FEMALE, GenderType.MALE),
                 ...config.stat
             },
-            provider: {},
-            consumer: {},
-            list: config.list || [], 
-            dict: {}
-        });
-
-        this.consumer = new ModelConsumer({
-            raw: config.consumer || {},
+            provider: config.provider || {},
+            consumer: config.consumer || {},
             handlers: {}
         });
         this.debugger.eat = this.eat.bind(this);

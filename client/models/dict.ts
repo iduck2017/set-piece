@@ -1,7 +1,7 @@
 // import { ModelStatus } from "../types/status";
 // import { Model } from "./base";
 // import { modelStatus } from "../utils/status";
-// import { BaseData, BaseEvent } from "../types/base";
+// import { BaseRecord, BaseEvent } from "../types/base";
 // import { BaseModel } from "../types/model";
 // import type { App } from "../app";
 // import { DictChunk, DictConfig } from "../types/dict";
@@ -10,9 +10,9 @@
 //     M extends number,
 //     E extends BaseEvent,
 //     H extends BaseEvent,
-//     R extends BaseData,
-//     I extends BaseData,
-//     S extends BaseData,
+//     R extends BaseRecord,
+//     I extends BaseRecord,
+//     S extends BaseRecord,
 //     P extends BaseModel | App,
 //     C extends Record<string, BaseModel>
 // > extends Model<M, E, H, R, I, S, P> {

@@ -1,13 +1,12 @@
 import { BaseRecord } from "../types/base";
-import { Base } from "./base";
 
 export class Node<
     P extends T,
     L extends T[],
     D extends Record<string, T>,
     T = any,
-> extends Base<T> {
-    private _parent?: P;
+> {
+    protected _parent?: P;
     public get parent(): P { 
         const parent = this._parent; 
         if (!parent) {
@@ -36,7 +35,6 @@ export class Node<
         list: L,
         dict: D
     }) {
-        super();
         this._list = config.list;
         this.dict = new Proxy(config.dict, {
             set: (
@@ -68,12 +66,4 @@ export class Node<
         }
         this._list.splice(index, 1);
     }
-
-    public _mount(options: {
-        container: T,
-        parent: P
-    }) {
-        super._mount(options);
-        this._parent = options.parent;
-    } 
 }

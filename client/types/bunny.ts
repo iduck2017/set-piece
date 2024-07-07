@@ -1,7 +1,7 @@
 import type { BunnyModel } from "../models/bunny";
 import { VoidData } from "./base";
 import { GenderType } from "./enums";
-import { ModelTemplate } from "./model";
+import { ModelConfig } from "./model";
 
 type BunnyState = {
     age: number;
@@ -11,11 +11,11 @@ type BunnyState = {
 
 type BunnyList = BunnyModel[]
 
-type BunnyConfig = ModelTemplate<
-    VoidData,
-    VoidData,
+type BunnyConfig = ModelConfig<
     VoidData,
     BunnyState,
+    VoidData,
+    VoidData,
     BunnyList,
     VoidData
 >

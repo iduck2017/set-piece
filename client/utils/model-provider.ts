@@ -1,17 +1,29 @@
 /* eslint-disable import/no-cycle */
 
 import type { Model } from "../models/base";
-import { BaseData, BaseEvent } from "../types/base";
-import { BaseModel, ModelEvent } from "../types/model";
+import { BaseRecord } from "../types/base";
+import { 
+    BaseDict, 
+    BaseEvent, 
+    BaseList, 
+    BaseModel, 
+    ModelEvent 
+} from "../types/model";
 import { ModelConsumer } from "./model-consumer";
 import { Provider } from "./provider";
 
 export class ModelProvider<
     E extends BaseEvent
-> extends Provider<
-    ModelEvent<E>, 
-    BaseModel
-> {
+> extends Provider<ModelEvent<E>> {
+    private _container?: BaseModel;
+    public get container(): BaseModel {
+        const result = this._container;
+        if (!result) {
+            throw new Error();
+        }
+        return result;
+    }
+
     private _raw: { [K in keyof ModelEvent<E>]?: string[] };
 
     constructor(config: {
@@ -24,8 +36,8 @@ export class ModelProvider<
     public _mount(options: {
         container: BaseModel
     }) {
-        super._mount(options);
-        
+        this._container = options.container;
+
         const app = options.container.app;
         for (const key in this._raw) {
             const list = this._raw[key];
@@ -34,14 +46,14 @@ export class ModelProvider<
                     const model = app.refer.get<
                         Model<
                             number,
+                            BaseRecord,
+                            BaseRecord,
+                            BaseRecord,
                             BaseEvent,
                             ModelEvent<E>,
-                            BaseData,
-                            BaseData,
-                            BaseData,
                             BaseModel,
-                            BaseModel[],
-                            Record<string, BaseModel>
+                            BaseList,
+                            BaseDict
                         >
                     >(id);
                     if (model) {
@@ -70,6 +82,6 @@ export class ModelProvider<
             }
         }
 
-        return provider;
+        return { provider };
     }
 }

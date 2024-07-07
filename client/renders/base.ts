@@ -1,6 +1,6 @@
 import type { App } from "../app";
+import { BaseEvent } from "../types/model";
 import { Consumer } from "../utils/consumer";
-import { BaseEvent } from "../types/base";
 
 export abstract class Renderer<
     H extends BaseEvent

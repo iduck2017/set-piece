@@ -1,5 +1,5 @@
-import type { Data } from "../utils/data";
-import { BaseData } from "./base";
+import { ModelData } from "../utils/model-data";
+import { BaseRecord } from "./base";
 
 enum EventId {
     CHECK_BEFORE,
@@ -9,22 +9,22 @@ enum EventId {
 }
 
 type CheckBeforeEvent = <
-    I extends BaseData,
-    S extends BaseData,
+    I extends BaseRecord,
+    S extends BaseRecord,
     K extends keyof (I & S)
 >(data: {
-    target: Data<BaseData, I, S>,
+    target: ModelData<BaseRecord, I, S>,
     key: K,
     prev: (I & S)[K],
     next: (I & S)[K],
 }) => void
 
 type UpdateDoneEvent = <
-    I extends BaseData,
-    S extends BaseData,
+    I extends BaseRecord,
+    S extends BaseRecord,
     K extends keyof (I & S)
 >(data: {
-    target: Data<BaseData, I, S>,
+    target: ModelData<BaseRecord, I, S>,
     key: K,
     prev: (I & S)[K],
     next: (I & S)[K]

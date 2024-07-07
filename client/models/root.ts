@@ -8,44 +8,37 @@ import {
 } from "../types/root";
 import { VoidData } from "../types/base";
 import { BunnyModel } from "./bunny";
-import { ModelConsumer } from "../utils/model-consumer";
 import { Model } from "./base";
-import { BaseModel } from "../types/model";
+import { BaseList } from "../types/model";
 
 @product(ModelId.ROOT)
 export class RootModel extends Model<
     ModelId.ROOT,
-    VoidData,
-    VoidData,
     RootRule,
     VoidData,
     RootState,
+    VoidData,
+    VoidData,
     RootModel,
-    BaseModel[],
+    BaseList,
     RootDict
 > {
-    public consumer;
-
     constructor(config: RootConfig) {
         super({
-            ...config,
+            referId: config.referId,
             modelId: ModelId.ROOT,
+            rule: config.rule,
             info: {},
             stat: {
                 progress: 0,
                 ...config.stat
             },
-            consumer: {},
-            provider: {},
+            provider: config.provider || {},
+            consumer: config.consumer || {},
             list: [],
             dict: {
-                bunny: config.dict?.bunny || new BunnyModel({
-                    rule: {}
-                })
-            }
-        });
-        this.consumer = new ModelConsumer({
-            raw: config.consumer || {},
+                bunny: config.dict?.bunny || new BunnyModel({ rule: {} })
+            },
             handlers: {}
         });
     }

@@ -1,5 +1,5 @@
 // import type { App } from "../app";
-// import { BaseData, BaseEvent } from "./base";
+// import { BaseRecord, BaseEvent } from "./base";
 // import { 
 //     BaseModel, 
 //     ChunkOf, 
@@ -12,8 +12,8 @@
 //     M extends number,
 //     E extends BaseEvent,
 //     H extends BaseEvent,
-//     R extends BaseData,
-//     S extends BaseData,
+//     R extends BaseRecord,
+//     S extends BaseRecord,
 //     C extends BaseModel
 // > = ModelChunk<M, E, H, R, S> & {
 //     children: ChunkOf<C>[]
@@ -23,9 +23,9 @@
 //     M extends number,
 //     E extends BaseEvent,
 //     H extends BaseEvent,
-//     R extends BaseData,
-//     I extends BaseData,
-//     S extends BaseData,
+//     R extends BaseRecord,
+//     I extends BaseRecord,
+//     S extends BaseRecord,
 //     C extends BaseModel
 // > = ModelConfig<M, E, H, R, I, S> & {
 //     children: C[]
@@ -34,8 +34,8 @@
 // type IListConfig<
 //     E extends BaseEvent,
 //     H extends BaseEvent,
-//     R extends BaseData,
-//     S extends BaseData,
+//     R extends BaseRecord,
+//     S extends BaseRecord,
 //     C extends BaseModel
 // > = IModelConfig<E, H, R, S> & {
 //     children?: C[]

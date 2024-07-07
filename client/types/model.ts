@@ -1,19 +1,22 @@
 import type { Model } from "../models/base";
-import { BaseData, BaseEvent } from "./base";
+import { BaseFunction, BaseRecord, BaseType } from "./base";
 import { CheckBeforeEvent, EventId, UpdateDoneEvent } from "./events";
 
 type BaseModel = Model<
     number,
+    BaseRecord,
+    BaseRecord,
+    BaseRecord,
     BaseEvent,
     BaseEvent,
-    BaseData,
-    BaseData,
-    BaseData,
     BaseModel,
-    BaseModel[],
-    Record<string, BaseModel>
+    BaseModelList,
+    BaseModelDict
 >;
 
+type BaseModelList = Array<BaseModel>
+type BaseModelDict = Record<string, BaseModel>;
+type BaseEvent = Record<string, BaseFunction>
 
 type ModelEvent<
     E extends BaseEvent
@@ -22,61 +25,69 @@ type ModelEvent<
     [EventId.UPDATE_DONE]: UpdateDoneEvent,
 }
 
+type ListChunk<L extends BaseModelList> = ChunkOf<L[number]>[];
+type DictChunk<D extends BaseModelDict> = { [K in keyof D]: ChunkOf<D[K]> }
+type ConsumerChunk<H extends BaseEvent> = { [K in keyof H]?: string[] }
+type ProviderChunk<E extends BaseEvent> = { 
+    [K in keyof ModelEvent<E>]?: string[] 
+}
+
 type ModelChunk<
     M extends number,
+    R extends BaseRecord,
+    S extends BaseRecord,
     E extends BaseEvent,
     H extends BaseEvent,
-    R extends BaseData,
-    S extends BaseData,
-    L extends BaseModel[],
-    D extends Record<string, BaseModel>
+    L extends BaseModelList,
+    D extends BaseModelDict,
 > = {
     referId: string,
     modelId: M,
     rule: R,
     stat: S,
-    list: ChunkOf<L[number]>[],
-    dict: { [K in keyof D]: ChunkOf<D[K]> }
-    provider: { [K in keyof ModelEvent<E>]?: string[] }
-    consumer: { [K in keyof H]?: string[] },
+    list: ListChunk<L>,
+    dict: DictChunk<D>
+    provider: ProviderChunk<E>
+    consumer: ConsumerChunk<H>,
+}
+
+type ModelStruct<
+    M extends number,
+    R extends BaseRecord,
+    I extends BaseRecord,
+    S extends BaseRecord,
+    E extends BaseEvent,
+    H extends BaseEvent,
+    L extends BaseModelList,
+    D extends BaseModelDict,
+> = {
+    modelId: M;
+    referId?: string;
+    rule: R;
+    stat: S;
+    info: I,
+    list: L,
+    dict: D
+    provider: ProviderChunk<E>
+    consumer: ConsumerChunk<H>,
+    handlers: H,
 }
 
 type ModelConfig<
-    M extends number,
+    R extends BaseRecord,
+    S extends BaseRecord,
     E extends BaseEvent,
     H extends BaseEvent,
-    R extends BaseData,
-    I extends BaseData,
-    S extends BaseData,
-    L extends BaseModel[],
-    D extends Record<string, BaseModel>
-> = {
-    referId?: string
-    modelId: M
-    rule: R
-    info: I
-    stat: S
-    dict: D
-    list: L,
-    consumer: { [K in keyof H]?: string[] }
-    provider: { [K in keyof ModelEvent<E>]?: string[] }
-}
-
-type ModelTemplate<
-    E extends BaseEvent,
-    H extends BaseEvent,
-    R extends BaseData,
-    S extends BaseData,
     L extends BaseModel[],
     D extends Record<string, BaseModel>
 > = {
     referId?: string;
     rule: R;
     stat?: Partial<S>
-    list?: L,
     dict?: Partial<D>
-    provider?: { [K in keyof ModelEvent<E>]?: string[] }
-    consumer?: { [K in keyof H]?: string[] }
+    list?: L,
+    provider?: ProviderChunk<E>
+    consumer?: ConsumerChunk<H>,
 }
 
 type ChunkOf<T extends BaseModel | undefined> = 
@@ -86,11 +97,19 @@ type ChunkOf<T extends BaseModel | undefined> =
 
 export {
     BaseModel,
+    BaseEvent,
+    BaseModelDict as BaseDict,
+    BaseModelList as BaseList,
 
-    ModelEvent,
+    DictChunk,
+    ListChunk,
+    ProviderChunk,
+    ConsumerChunk,
+
     ModelChunk,
+    ModelEvent,
+    ModelStruct,
     ModelConfig,
-    ModelTemplate,
 
     ChunkOf
 };

@@ -1,9 +1,19 @@
-import { BaseConstructor } from "../types/base";
+import { 
+    BaseConstructor, 
+    BaseRecord 
+} from "../types/base";
 import { AppStatus } from "../types/status";
 import { appStatus } from "../utils/status";
 import { singleton } from "../utils/decors";
 import { Service } from "./base";
-import { BaseModel } from "../types/model";
+import { 
+    BaseDict, 
+    BaseEvent, 
+    BaseList, 
+    BaseModel, 
+    ModelChunk, 
+    ModelConfig 
+} from "../types/model";
 
 @singleton
 export class FactoryService extends Service {
@@ -14,9 +24,44 @@ export class FactoryService extends Service {
     }
 
     @appStatus(AppStatus.MOUNTING)
-    public unserialize<T extends BaseModel>(config: any): T {
-        const Constructor = FactoryService._products[config.modelId];
-        return new Constructor(config, this.app);
+    public unserialize<T extends BaseModel>(chunk: ModelChunk<
+        number,
+        BaseRecord,
+        BaseRecord,
+        BaseEvent,
+        BaseEvent,
+        BaseModel[],
+        Record<string, BaseModel>        
+    >): T {
+        const Constructor = FactoryService._products[chunk.modelId];
+        const list: BaseModel[] = [];
+        const dict = {} as Record<string, BaseModel>;
+
+        for (const item of chunk.list) {
+            list.push(this.unserialize(item));
+        }
+        for (const key in chunk.dict) {
+            dict[key] = this.unserialize(chunk.dict[key]);
+        }
+
+        const config: Required<ModelConfig<
+            BaseEvent,
+            BaseEvent,
+            BaseRecord,
+            BaseRecord,
+            BaseList,
+            BaseDict
+        >>= {
+            referId: chunk.referId,
+            rule: chunk.rule,
+            stat: chunk.stat,
+            provider: chunk.provider,
+            consumer: chunk.consumer,
+            list,
+            dict
+        };
+
+        return new Constructor(config);
     }
 }
 

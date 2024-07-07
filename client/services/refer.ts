@@ -3,11 +3,11 @@ import { appStatus } from "../utils/status";
 import { singleton } from "../utils/decors";
 import { Service } from "./base";
 import { MAX_TICKET, MIN_TICKET } from "../configs/base";
-import { BaseModel } from "../types/model";
+import { BaseDict, BaseModel } from "../types/model";
 
 @singleton
 export class ReferService extends Service {
-    private readonly _refers: Record<string, BaseModel> = {};
+    private readonly _refers: BaseDict = {};
     private _timestamp: number = Date.now();
     private _ticket: number = MIN_TICKET;
 

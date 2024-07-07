@@ -1,10 +1,9 @@
-import { BaseEvent } from "../types/base";
-import { Base } from "./base";
+import { BaseEvent } from "../types/model";
 import { Provider } from "./provider";
 
 export class Consumer<
-    H extends BaseEvent, T = any
-> extends Base<T> {
+    H extends BaseEvent
+> {
     public readonly _providers: { 
         [K in keyof H]?: Provider<Pick<H, K>>[] 
     };
@@ -17,7 +16,6 @@ export class Consumer<
             handlers: H
         }
     ) {
-        super();
         this._providers = {};
         this._handlers = config.handlers;
     }
