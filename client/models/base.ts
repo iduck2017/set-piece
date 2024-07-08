@@ -1,17 +1,18 @@
 import { ModelStatus } from "../types/status";
 import { 
     BaseIntf,
-    ModelChunk, 
-    BaseTmpl, 
-    BaseConf,
-    ModelIntf
+    ModelIntf,
+    BaseRefer
 } from "../types/model";
+import { TmplId, BaseTmpl } from "../types/tmpl";
 import type { App } from "../app";
 import { ModelNode } from "../utils/model-node";
-import { Data } from "../utils/model-data";
-import { ModelRefer } from "../types/common";
+import { Data } from "../utils/data";
 import { Emitter } from "../utils/emitter";
 import { Handler } from "../utils/handler";
+
+import { BaseConf } from "../types/conf";
+import { BaseChunk } from "../types/chunk";
 
 export abstract class Model<M extends BaseTmpl> {
     private _app?: App;
@@ -35,13 +36,22 @@ export abstract class Model<M extends BaseTmpl> {
     private _status: ModelStatus;
     public get status() { return this._status; }
 
-    private _config;
-    private readonly _handler: Handler<M[8]>;
-    private readonly _emitter: Emitter<ModelIntf<M[7]>>;
+    private _refer;
 
-    public readonly modelId: M[0];
-    public readonly data: Data<M[1], M[2], M[3]>;
-    public readonly node: ModelNode<M[4], M[5], M[6]>;
+    private readonly _recver: Handler<M[TmplId.RECVER]>;
+    private readonly _sender: Emitter<ModelIntf<M[TmplId.SENDER]>>;
+
+    public readonly modelId: M[TmplId.ID];
+    public readonly data: Data<
+        M[TmplId.RULE], 
+        M[TmplId.INFO], 
+        M[TmplId.STAT]
+    >;
+    public readonly node: ModelNode<
+        M[TmplId.LIST], 
+        M[TmplId.DICT], 
+        M[TmplId.PARENT]
+    >;
 
     public readonly debugger: BaseIntf;
 
@@ -65,52 +75,52 @@ export abstract class Model<M extends BaseTmpl> {
             stat: config.stat
         });
 
-        this._emitter = new Emitter({
+        this._sender = new Emitter({
             target: {}
         });
-        this._handler = new Handler({
+        this._recver = new Handler({
             map: {},
             intf: config.intf
         });
 
-        this._config = {
-            emitter: config.emitter,
-            handler: config.handler
+        this._refer = {
+            sender: config.sender,
+            recver: config.recver
         };
         this.debugger = {};
 
         /** intf */
-        this.bind = this._emitter.bind.bind(this._emitter);
-        this.emit = this._emitter._intf;
+        this.bind = this._sender.bind.bind(this._sender);
+        this.emit = this._sender._intf;
     }
 
     public mount(options: {
         app: App,    
-        parent: M[4]
+        parent: M[TmplId.PARENT]
     }) {
         this._status = ModelStatus.MOUNTING;
         this._app = options.app;
 
         /** provider */
-        for (const key in this._config.emitter) {
-            const list = this._config.emitter[key];
+        for (const key in this._refer.sender) {
+            const list = this._refer.sender[key];
             if (list) {
                 for (const id of list) {
                     const model = this.app.refer.get<Model<any>>(id);
                     if (model) {
-                        this._emitter.bind(key, model._handler);
+                        this._sender.bind(key, model._recver);
                     }
                 }
             }
         }
         /** consumer */
-        for (const key in this._config.handler) {
-            const list = this._config.handler[key];
+        for (const key in this._refer.recver) {
+            const list = this._refer.recver[key];
             if (list) {
                 for (const id of list) {
                     const model = this.app.refer.get<Model<any>>(id);
                     if (model) {
-                        model._emitter.bind(key, this._handler);
+                        model._sender.bind(key, this._recver);
                     }
                 }
             }
@@ -146,14 +156,14 @@ export abstract class Model<M extends BaseTmpl> {
         this._status = ModelStatus.UNMOUNTED; 
     }
 
-    public serialize(): ModelChunk<M> {
+    public serialize(): BaseChunk<M> {
         /** provider */
-        const emitter: ModelRefer<ModelIntf<M[7]>> = {};
-        for (const key in this._emitter._map) {
+        const emitter: BaseRefer<ModelIntf<M[7]>> = {};
+        for (const key in this._sender._map) {
             if (!emitter[key]) {
                 emitter[key as keyof M[7]] = [];
             }
-            const list = this._emitter._map[key];
+            const list = this._sender._map[key];
             if (list) {
                 for (const item of list) {
                     if (item instanceof Handler) {
@@ -164,12 +174,12 @@ export abstract class Model<M extends BaseTmpl> {
             }
         }
         /** consumer */
-        const handler: ModelRefer<M[8]> = {};
-        for (const key in this._handler._map) {
+        const handler: BaseRefer<M[8]> = {};
+        for (const key in this._recver._map) {
             if (!handler[key]) {
                 handler[key] = [];
             }
-            const list = this._handler._map[key];
+            const list = this._recver._map[key];
             if (list) {
                 for (const item of list) {
                     if (item instanceof Emitter) {
@@ -185,8 +195,8 @@ export abstract class Model<M extends BaseTmpl> {
             referId: this.referId,
             ...this.node._serialize(),
             ...this.data._serialize(),
-            emitter,
-            handler
+            sender: emitter,
+            recver: handler
         };
     }
 }

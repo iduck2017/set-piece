@@ -1,6 +1,8 @@
 import type { BunnyModel } from "../models/bunny";
-import { ModelConf, PureTmpl } from "./model";
+import { UnionOf } from "./base";
+import { ComnConf } from "./conf";
 import { ModelId } from "./registry";
+import { PureTmpl, TmplId } from "./tmpl";
 
 type RootRule = {
     name: string;
@@ -14,14 +16,17 @@ type RootDict = {
     bunny: BunnyModel
 }
 
-type RootTmpl = PureTmpl<{
-    [0]: ModelId.ROOT,
-    [1]: RootRule,
-    [3]: RootStat,
-    [6]: RootDict
-}>
+type RootTmpl = UnionOf<
+    {
+        [TmplId.ID]: ModelId.ROOT,
+        [TmplId.RULE]: RootRule,
+        [TmplId.STAT]: RootStat,
+        [TmplId.DICT]: RootDict
+    },
+    PureTmpl
+>
 
-type RootConf = ModelConf<RootTmpl>
+type RootConf = ComnConf<RootTmpl>
 
 export {
     RootRule,

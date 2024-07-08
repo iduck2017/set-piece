@@ -6,7 +6,7 @@ import { singleton } from "../utils/decors";
 import { Service } from "./base";
 import { CreateSlotForm } from "../types/forms";
 import { RootModel } from "../models/root";
-import { ChunkOf } from "../types/common";
+import { ChunkOf } from "../types/chunk";
 
 @singleton
 export class SlotsService extends Service {

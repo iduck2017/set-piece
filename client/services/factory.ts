@@ -3,12 +3,11 @@ import { AppStatus } from "../types/status";
 import { appStatus } from "../utils/status";
 import { singleton } from "../utils/decors";
 import { Service } from "./base";
-import { 
-    BaseModel, 
-    BaseTmpl, 
-    ModelChunk, 
-    ModelConf 
-} from "../types/model";
+import { BaseModel } from "../types/model";
+import { BaseTmpl } from "../types/tmpl";
+
+import { ComnConf } from "../types/conf";
+import { BaseChunk } from "../types/chunk";
 
 @singleton
 export class FactoryService extends Service {
@@ -19,7 +18,7 @@ export class FactoryService extends Service {
     }
 
     @appStatus(AppStatus.MOUNTING)
-    public unserialize<T extends BaseModel>(chunk: ModelChunk<BaseTmpl>): T {
+    public unserialize<T extends BaseModel>(chunk: BaseChunk<BaseTmpl>): T {
         const Constructor = FactoryService._products[chunk.modelId];
         const list: BaseModel[] = [];
         const dict = {} as Record<string, BaseModel>;
@@ -31,12 +30,12 @@ export class FactoryService extends Service {
             dict[key] = this.unserialize(chunk.dict[key]);
         }
 
-        const config: Required<ModelConf<BaseTmpl>>= {
+        const config: Required<ComnConf<BaseTmpl>>= {
             referId: chunk.referId,
             rule: chunk.rule,
             stat: chunk.stat,
-            emitter: chunk.emitter,
-            handler: chunk.handler,
+            sender: chunk.sender,
+            recver: chunk.recver,
             list,
             dict
         };

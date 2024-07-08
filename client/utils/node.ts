@@ -1,9 +1,9 @@
 import { BaseRecord } from "../types/base";
 
 export class Node<
-    P,
     L extends any[],
     D extends BaseRecord,
+    P,
 > {
     protected _parent?: P;
     public get parent(): P { 

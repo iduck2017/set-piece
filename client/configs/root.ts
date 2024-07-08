@@ -1,5 +1,5 @@
 import { RootModel } from "../models/root";
-import { ChunkOf } from "../types/common";
+import { ChunkOf } from "../types/chunk";
 import { GenderType } from "../types/enums";
 import { ModelId } from "../types/registry";
 
@@ -13,8 +13,8 @@ export const rootChunk: ChunkOf<RootModel> = {
     stat: {
         progress: 0
     },
-    emitter: {},
-    handler: {},
+    sender: {},
+    recver: {},
     list: [
     ],
     dict: {
@@ -27,8 +27,8 @@ export const rootChunk: ChunkOf<RootModel> = {
                 weight: 0,
                 gender: GenderType.FEMALE
             },
-            emitter: {},
-            handler: {},
+            sender: {},
+            recver: {},
             list: [],
             dict: {}
         }

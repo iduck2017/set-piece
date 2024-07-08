@@ -1,7 +1,9 @@
 import type { BunnyModel } from "../models/bunny";
+import { UnionOf } from "./base";
+import { ComnConf } from "./conf";
 import { GenderType } from "./enums";
-import { ModelConf, PureTmpl } from "./model";
 import { ModelId } from "./registry";
+import { PureTmpl, TmplId } from "./tmpl";
 
 type BunnyStat = {
     age: number;
@@ -9,13 +11,16 @@ type BunnyStat = {
     gender: GenderType;
 }
 
-type BunnyTmpl = PureTmpl<{
-    [0]: ModelId.BUNNY,
-    [3]: BunnyStat,
-    [5]: BunnyModel[],
-}>
+type BunnyTmpl = UnionOf<
+    {
+        [TmplId.ID]: ModelId.BUNNY,
+        [TmplId.STAT]: BunnyStat,
+        [TmplId.LIST]: BunnyModel[],
+    },
+    PureTmpl
+>
 
-type BunnyConf = ModelConf<BunnyTmpl>
+type BunnyConf = ComnConf<BunnyTmpl>
 
 export {
     BunnyStat,

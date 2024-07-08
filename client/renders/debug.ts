@@ -4,7 +4,7 @@ import { BaseRecord, BaseFunction } from "../types/base";
 import { EventId, UpdateDoneEvent } from "../types/events";
 import { BaseModel } from "../types/model";
 import { Renderer } from "./base";
-import { Data } from "../utils/model-data";
+import { Data } from "../utils/data";
 
 export class DebugRenderer extends Renderer<{
     [EventId.UPDATE_DONE]: UpdateDoneEvent

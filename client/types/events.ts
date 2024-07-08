@@ -1,4 +1,4 @@
-import { Data } from "../utils/model-data";
+import { Data } from "../utils/data";
 import { BaseRecord } from "./base";
 
 enum EventId {
@@ -32,6 +32,7 @@ type UpdateDoneEvent = <
 
 export {
     EventId,
+    
     CheckBeforeEvent,
     UpdateDoneEvent
 };
