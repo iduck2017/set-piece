@@ -1,11 +1,11 @@
-import { BaseRecord } from "../types/base";
+import { BaseData } from "../types/base";
 import { EventId } from "../types/events";
 import { BaseModel } from "../types/model";
 
-export class ModelData<
-    R extends BaseRecord,
-    I extends BaseRecord,
-    S extends BaseRecord,
+export class Data<
+    R extends BaseData,
+    I extends BaseData,
+    S extends BaseData,
 > {
     private _container?: BaseModel;
     public get container(): BaseModel {
@@ -69,7 +69,7 @@ export class ModelData<
             next: next
         };
         
-        const emitters = this.container.provider._emitters;
+        const emitters = this.container._emitter._intf;
         emitters[EventId.CHECK_BEFORE](data);
         this._calc[key] = data.next;
         if (prev !== data.next) {

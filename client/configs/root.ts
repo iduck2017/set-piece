@@ -13,8 +13,8 @@ export const rootChunk: ChunkOf<RootModel> = {
     stat: {
         progress: 0
     },
-    provider: {},
-    consumer: {},
+    emitter: {},
+    handler: {},
     list: [
     ],
     dict: {
@@ -27,8 +27,8 @@ export const rootChunk: ChunkOf<RootModel> = {
                 weight: 0,
                 gender: GenderType.FEMALE
             },
-            provider: {},
-            consumer: {},
+            emitter: {},
+            handler: {},
             list: [],
             dict: {}
         }

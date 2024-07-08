@@ -21,8 +21,8 @@ export class BunnyModel extends Model<BunnyTmpl> {
                 gender: randomEnum(GenderType.FEMALE, GenderType.MALE),
                 ...config.stat
             },
-            provider: config.provider || {},
-            consumer: config.consumer || {},
+            emitter: config.emitter || {},
+            handler: config.handler || {},
             handlers: {}
         });
         this.debugger.eat = this.eat.bind(this);

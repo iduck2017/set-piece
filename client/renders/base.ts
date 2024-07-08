@@ -1,13 +1,13 @@
 import type { App } from "../app";
-import { BaseEvent } from "../types/model";
-import { Consumer } from "../utils/consumer";
+import { BaseIntf } from "../types/model";
+import { Handler } from "../utils/handler";
 
 export abstract class Renderer<
-    H extends BaseEvent
+    H extends BaseIntf
 > {
     public readonly app: App;
 
-    public readonly abstract consumer: Consumer<H>;
+    public readonly abstract handler: Handler<H>;
 
     constructor(app: App) {
         this.app = app;

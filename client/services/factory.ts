@@ -1,15 +1,9 @@
-import { 
-    BaseConstructor, 
-    BaseRecord 
-} from "../types/base";
+import { BaseConstructor } from "../types/base";
 import { AppStatus } from "../types/status";
 import { appStatus } from "../utils/status";
 import { singleton } from "../utils/decors";
 import { Service } from "./base";
 import { 
-    BaseDict, 
-    BaseEvent, 
-    BaseList, 
     BaseModel, 
     BaseTmpl, 
     ModelChunk, 
@@ -25,7 +19,7 @@ export class FactoryService extends Service {
     }
 
     @appStatus(AppStatus.MOUNTING)
-    public unserialize<T extends BaseModel>(chunk: ModelChunk): T {
+    public unserialize<T extends BaseModel>(chunk: ModelChunk<BaseTmpl>): T {
         const Constructor = FactoryService._products[chunk.modelId];
         const list: BaseModel[] = [];
         const dict = {} as Record<string, BaseModel>;
@@ -37,12 +31,12 @@ export class FactoryService extends Service {
             dict[key] = this.unserialize(chunk.dict[key]);
         }
 
-        const config: Required<ModelConf>= {
+        const config: Required<ModelConf<BaseTmpl>>= {
             referId: chunk.referId,
             rule: chunk.rule,
             stat: chunk.stat,
-            provider: chunk.provider,
-            consumer: chunk.consumer,
+            emitter: chunk.emitter,
+            handler: chunk.handler,
             list,
             dict
         };

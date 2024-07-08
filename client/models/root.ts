@@ -16,8 +16,8 @@ export class RootModel extends Model<RootTmpl> {
                 progress: 0,
                 ...config.stat
             },
-            provider: config.provider || {},
-            consumer: config.consumer || {},
+            emitter: config.emitter || {},
+            handler: config.handler || {},
             list: [],
             dict: {
                 bunny: config.dict?.bunny || new BunnyModel({ rule: {} })

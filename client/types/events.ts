@@ -1,4 +1,4 @@
-import { ModelData } from "../utils/model-data";
+import { Data } from "../utils/model-data";
 import { BaseRecord } from "./base";
 
 enum EventId {
@@ -13,7 +13,7 @@ type CheckBeforeEvent = <
     S extends BaseRecord,
     K extends keyof (I & S)
 >(data: {
-    target: ModelData<BaseRecord, I, S>,
+    target: Data<BaseRecord, I, S>,
     key: K,
     prev: (I & S)[K],
     next: (I & S)[K],
@@ -24,7 +24,7 @@ type UpdateDoneEvent = <
     S extends BaseRecord,
     K extends keyof (I & S)
 >(data: {
-    target: ModelData<BaseRecord, I, S>,
+    target: Data<BaseRecord, I, S>,
     key: K,
     prev: (I & S)[K],
     next: (I & S)[K]

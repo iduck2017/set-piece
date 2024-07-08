@@ -1,18 +1,19 @@
 import type { App } from "../app";
-import { Consumer } from "../utils/consumer";
+import { Handler } from "../utils/handler";
 import { BaseRecord, BaseFunction } from "../types/base";
 import { EventId, UpdateDoneEvent } from "../types/events";
 import { BaseModel } from "../types/model";
 import { Renderer } from "./base";
-import { ModelData } from "../utils/model-data";
+import { Data } from "../utils/model-data";
 
 export class DebugRenderer extends Renderer<{
     [EventId.UPDATE_DONE]: UpdateDoneEvent
 }> {
     private _setData: React.Dispatch<React.SetStateAction<any>>;
 
-    public consumer = new Consumer({
-        handlers: {
+    public handler = new Handler({
+        list: {},
+        intf: {
             [EventId.UPDATE_DONE]: this._handleUpdateDone.bind(this)
         }
     }); 
@@ -25,11 +26,11 @@ export class DebugRenderer extends Renderer<{
     }
 
     public active(target: BaseModel) {
-        target.provider.bind(EventId.UPDATE_DONE, this.consumer);
+        target._emitter.bind(EventId.UPDATE_DONE, this.handler);
     }
 
     public deactive() {
-        this.consumer._dispose();
+        this.handler._dispose();
     }
 
     protected _handleUpdateDone<
@@ -37,7 +38,7 @@ export class DebugRenderer extends Renderer<{
         S extends BaseRecord,
         K extends keyof (I & S)
     >(data: {
-            target: ModelData<BaseRecord, I, S>,
+            target: Data<BaseRecord, I, S>,
             key: K,
             prev: (I & S)[K],
             next: (I & S)[K]

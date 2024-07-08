@@ -9,7 +9,12 @@ type BaseRecord = Record<BaseKey, any>
 type BaseFunction = (...args: any[]) => any
 type BaseConstructor = new (...args: any[]) => any & BaseRecord
 
+type ElemOf<T extends any[]> = T[number]
 type ValueOf<T extends BaseRecord> = T[keyof T];
+type UnionOf<
+    A extends BaseRecord, 
+    B extends BaseRecord
+> = A & Omit<B, keyof A> 
 
 export {
     BaseKey,
@@ -23,5 +28,7 @@ export {
     BaseFunction,
     BaseConstructor,
 
-    ValueOf
+    ElemOf,
+    ValueOf,
+    UnionOf
 };
