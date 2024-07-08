@@ -35,16 +35,18 @@ export abstract class Model<M extends BaseTmpl> {
     private _status: ModelStatus;
     public get status() { return this._status; }
 
-    public readonly _handler: Handler<M[8]>;
-    public readonly _emitter: Emitter<ModelIntf<M[7]>>;
-    private readonly _emitterRefer: ModelRefer<ModelIntf<M[7]>>;
-    private readonly _handlerRefer: ModelRefer<M[8]>;
+    private _config;
+    private readonly _handler: Handler<M[8]>;
+    private readonly _emitter: Emitter<ModelIntf<M[7]>>;
 
     public readonly modelId: M[0];
     public readonly data: Data<M[1], M[2], M[3]>;
     public readonly node: ModelNode<M[4], M[5], M[6]>;
 
     public readonly debugger: BaseIntf;
+
+    public bind;
+    public emit;
 
     public constructor(config: BaseConf<M>) {
         this._status = ModelStatus.INITED;
@@ -64,17 +66,22 @@ export abstract class Model<M extends BaseTmpl> {
         });
 
         this._emitter = new Emitter({
-            list: {}
+            target: {}
         });
         this._handler = new Handler({
-            list: {},
-            intf: config.handlers
+            map: {},
+            intf: config.intf
         });
 
-        this._emitterRefer = config.emitter;
-        this._handlerRefer = config.handler;
-
+        this._config = {
+            emitter: config.emitter,
+            handler: config.handler
+        };
         this.debugger = {};
+
+        /** intf */
+        this.bind = this._emitter.bind.bind(this._emitter);
+        this.emit = this._emitter._intf;
     }
 
     public mount(options: {
@@ -85,8 +92,8 @@ export abstract class Model<M extends BaseTmpl> {
         this._app = options.app;
 
         /** provider */
-        for (const key in this._emitterRefer) {
-            const list = this._emitterRefer[key];
+        for (const key in this._config.emitter) {
+            const list = this._config.emitter[key];
             if (list) {
                 for (const id of list) {
                     const model = this.app.refer.get<Model<any>>(id);
@@ -97,8 +104,8 @@ export abstract class Model<M extends BaseTmpl> {
             }
         }
         /** consumer */
-        for (const key in this._handlerRefer) {
-            const list = this._handlerRefer[key];
+        for (const key in this._config.handler) {
+            const list = this._config.handler[key];
             if (list) {
                 for (const id of list) {
                     const model = this.app.refer.get<Model<any>>(id);
@@ -108,7 +115,6 @@ export abstract class Model<M extends BaseTmpl> {
                 }
             }
         }
-
 
         if (!this._referId) {
             this._referId = this.app.refer.register();
@@ -142,33 +148,33 @@ export abstract class Model<M extends BaseTmpl> {
 
     public serialize(): ModelChunk<M> {
         /** provider */
-        const emitterRefer: ModelRefer<ModelIntf<M[7]>> = {};
-        for (const key in this._emitter._list) {
-            if (!emitterRefer[key]) {
-                emitterRefer[key as keyof M[7]] = [];
+        const emitter: ModelRefer<ModelIntf<M[7]>> = {};
+        for (const key in this._emitter._map) {
+            if (!emitter[key]) {
+                emitter[key as keyof M[7]] = [];
             }
-            const list = this._emitter._list[key];
+            const list = this._emitter._map[key];
             if (list) {
                 for (const item of list) {
                     if (item instanceof Handler) {
                         const container = item.container;
-                        emitterRefer[key]!.push(container.referId);
+                        emitter[key]!.push(container.referId);
                     }
                 }
             }
         }
         /** consumer */
-        const handlerRefer: ModelRefer<M[8]> = {};
-        for (const key in this._handler._list) {
-            if (!handlerRefer[key]) {
-                handlerRefer[key] = [];
+        const handler: ModelRefer<M[8]> = {};
+        for (const key in this._handler._map) {
+            if (!handler[key]) {
+                handler[key] = [];
             }
-            const list = this._handler._list[key];
+            const list = this._handler._map[key];
             if (list) {
                 for (const item of list) {
                     if (item instanceof Emitter) {
                         const container = item.container;
-                        handlerRefer[key]!.push(container.referId);
+                        handler[key]!.push(container.referId);
                     }
                 }
             }
@@ -179,8 +185,8 @@ export abstract class Model<M extends BaseTmpl> {
             referId: this.referId,
             ...this.node._serialize(),
             ...this.data._serialize(),
-            emitter: emitterRefer,
-            handler: handlerRefer
+            emitter,
+            handler
         };
     }
 }

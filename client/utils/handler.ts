@@ -6,7 +6,7 @@ export class Handler<
 > {
     public container?: T;
 
-    public readonly _list: { 
+    public readonly _map: { 
         [K in keyof H]?: Emitter<Pick<H, K>>[] 
     };
 
@@ -15,11 +15,11 @@ export class Handler<
 
     constructor(
         config: {
-            list: { [K in keyof H]?: Emitter<Pick<H, K>>[] }
+            map: { [K in keyof H]?: Emitter<Pick<H, K>>[] }
             intf: H
         }
     ) {
-        this._list = config.list;
+        this._map = config.map;
         this._intf = config.intf;
     }
 
@@ -27,18 +27,18 @@ export class Handler<
         key: K,
         target: Emitter<Pick<H, K>>
     ) {
-        let list = this._list[key];
-        if (!list) {
-            list = this._list[key] = [];
+        let emitters = this._map[key];
+        if (!emitters) {
+            emitters = this._map[key] = [];
         }
-        list.push(target);
+        emitters.push(target);
     }
 
     public _del<K extends keyof H>(
         key: K,
         target: Emitter<Pick<H, K>>
     ) {
-        const list = this._list[key];
+        const list = this._map[key];
         if (!list) {
             throw new Error();
         }
@@ -51,9 +51,9 @@ export class Handler<
     }
 
     public _dispose() {
-        for (const index in this._list) {
+        for (const index in this._map) {
             const key: keyof H = index;
-            const list = this._list[key];
+            const list = this._map[key];
             if (list) {
                 for (const item of list) {
                     item.unbind(key, this);

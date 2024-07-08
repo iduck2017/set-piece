@@ -6,16 +6,16 @@ export class Emitter<
 > {
     public container?: T;
 
-    public readonly _list: { 
+    public readonly _map: { 
         [K in keyof E]?: Array<Handler<Pick<E, K>>> 
     };
     
     public _intf: E;
     
     constructor(config: {
-        list: { [K in keyof E]?: Array<Handler<Pick<E, K>>> }
+        target: { [K in keyof E]?: Array<Handler<Pick<E, K>>> }
     }) {
-        this._list = config.list;
+        this._map = config.target;
         this._intf = new Proxy({} as E, {
             get: (target, key) => {
                 return this._emit.bind(this, key as keyof E);
@@ -27,7 +27,7 @@ export class Emitter<
         key: K,
         ...data: Parameters<E[K]>
     ) {
-        const list = this._list[key];
+        const list = this._map[key];
         if (list) {
             for (const item of list) {
                 if (item.intf) {
@@ -41,9 +41,9 @@ export class Emitter<
         key: K,
         target: Handler<Pick<E, K>>
     ) {
-        let list = this._list[key];
+        let list = this._map[key];
         if (!list) {
-            list = this._list[key] = [];
+            list = this._map[key] = [];
         }
         list.push(target);
     }
@@ -52,7 +52,7 @@ export class Emitter<
         key: K,
         target: Handler<Pick<E, K>>
     ) {
-        const list = this._list[key];
+        const list = this._map[key];
         if (!list) {
             throw new Error();
         }

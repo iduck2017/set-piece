@@ -69,11 +69,10 @@ export class Data<
             next: next
         };
         
-        const emitters = this.container._emitter._intf;
-        emitters[EventId.CHECK_BEFORE](data);
+        this.container.emit[EventId.CHECK_BEFORE](data);
         this._calc[key] = data.next;
         if (prev !== data.next) {
-            emitters[EventId.UPDATE_DONE](data);
+            this.container.emit[EventId.UPDATE_DONE](data);
         }
     }
 

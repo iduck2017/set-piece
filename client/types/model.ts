@@ -44,7 +44,7 @@ type BaseConf<M extends BaseTmpl> = {
     stat: M[3];
     list: M[5],
     dict: M[6],
-    handlers: M[8],
+    intf: M[8],
     emitter: ModelRefer<ModelIntf<M[7]>>
     handler: ModelRefer<M[8]>,
 }

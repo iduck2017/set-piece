@@ -22,7 +22,7 @@ export class RootModel extends Model<RootTmpl> {
             dict: {
                 bunny: config.dict?.bunny || new BunnyModel({ rule: {} })
             },
-            handlers: {}
+            intf: {}
         });
     }
 }

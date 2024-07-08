@@ -23,7 +23,7 @@ export class BunnyModel extends Model<BunnyTmpl> {
             },
             emitter: config.emitter || {},
             handler: config.handler || {},
-            handlers: {}
+            intf: {}
         });
         this.debugger.eat = this.eat.bind(this);
     }

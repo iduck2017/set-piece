@@ -12,7 +12,7 @@ export class DebugRenderer extends Renderer<{
     private _setData: React.Dispatch<React.SetStateAction<any>>;
 
     public handler = new Handler({
-        list: {},
+        map: {},
         intf: {
             [EventId.UPDATE_DONE]: this._handleUpdateDone.bind(this)
         }
@@ -26,7 +26,7 @@ export class DebugRenderer extends Renderer<{
     }
 
     public active(target: BaseModel) {
-        target._emitter.bind(EventId.UPDATE_DONE, this.handler);
+        target.bind(EventId.UPDATE_DONE, this.handler);
     }
 
     public deactive() {
