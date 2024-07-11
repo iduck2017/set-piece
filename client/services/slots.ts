@@ -2,11 +2,12 @@ import { SLOT_PATH } from "../configs/base";
 import { AppStatus } from "../types/status";
 import { SlotData } from "../types/app";
 import { appStatus } from "../utils/status";
-import { singleton } from "../utils/decors";
+import { singleton } from "../utils/singleton";
 import { Service } from "./base";
 import { CreateSlotForm } from "../types/forms";
 import { RootModel } from "../models/root";
-import { ChunkOf } from "../types/chunk";
+import { ModelId } from "../types/registry";
+import { SeqOf } from "../types/sequence";
 
 @singleton
 export class SlotsService extends Service {
@@ -25,17 +26,25 @@ export class SlotsService extends Service {
         const slotId = Date.now().toString(16);
         const path = `${SLOT_PATH}_${slotId}`;
         this._data.push({
-            name: options.name,
-            slotId: slotId,
+            name    : options.name,
+            slotId  : slotId,
             progress: 0
         });
         this.app.refer.reset();
-        const root = new RootModel({ rule: options });
-        root.mount({
-            app: this.app,
-            parent: root
-        });
-        const record = root.serialize();
+        const root = this.app.factory.unseq<RootModel>({
+            id  : ModelId.ROOT,
+            rule: {
+                name      : 'demo',
+                difficulty: 2
+            },
+            dict: {
+                bunny: {
+                    id  : ModelId.BUNNY,
+                    rule: {}
+                }
+            }
+        }, undefined);
+        const record = root.seq();
 
         await localStorage.setItem(path, JSON.stringify(record));
         await this.app.meta.save();
@@ -52,7 +61,7 @@ export class SlotsService extends Service {
         const raw = await localStorage.getItem(path);
         
         if (!raw) throw new Error();
-        return JSON.parse(raw) as ChunkOf<RootModel>;
+        return JSON.parse(raw) as SeqOf<RootModel>;
     }
 
     @appStatus(AppStatus.UNMOUNTED)
@@ -79,10 +88,10 @@ export class SlotsService extends Service {
         }
         const slot = this._data[index];
         const path = `${SLOT_PATH}_${slot.slotId}`;
-        const record = root.serialize();
+        const record = root.seq();
         this._data[index] = {
             ...slot,
-            progress: root.data.calc.progress
+            progress: root.data.progress
         };
         await localStorage.setItem(path, JSON.stringify(record));
         await this.app.meta.save();

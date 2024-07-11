@@ -6,14 +6,15 @@ import "./index.css";
 
 export function ModelDebugger(props: {
     target: BaseModel,
-    app: App
+    app   : App
 }) {
     const { target, app } = props;
 
-    const [data, setData] = useState(target.data.calc);
+    const [ data, setData ] = useState(target.data);
     const render = useRef(new DebugRenderer({ 
-        setData 
-    }, app));
+        setData,
+        app
+    }));
 
     useEffect(() => {
         render.current.active(target);
@@ -23,22 +24,22 @@ export function ModelDebugger(props: {
     return (
         <div
             className="model" 
-            id={target.referId}
+            id={target.key}
         >
             <div className="data">
                 <div className="title">{target.constructor.name}</div>
                 {Object.keys(data).map(key => (
                     <div className="row" key={key}>
                         <div className="key">{key}</div>
-                        <div className="value">{target.data.calc[key]}</div>
+                        <div className="value">{target.data[key]}</div>
                     </div>
                 ))}
-                {Object.keys(target.debugger).map(key => (
+                {Object.keys(target.debug).map(key => (
                     <div className="row" key={key}>
                         <div className="key">{key}</div>
                         <div 
                             className="function"
-                            onClick={target.debugger[key]}
+                            onClick={target.debug[key]}
                         >
                             function
                         </div>
@@ -46,7 +47,7 @@ export function ModelDebugger(props: {
                 ))}
             </div>
             <div className="children">
-                {target.node.children.map(item => (
+                {target.children.map(item => (
                     <ModelDebugger 
                         key={item.referId}
                         target={item}

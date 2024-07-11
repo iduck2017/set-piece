@@ -1,35 +1,31 @@
-import { BunnyConf, BunnyTmpl } from "../types/bunny";
-import { GenderType } from "../types/enums";
-import { ModelId } from "../types/registry";
-import { product } from "../utils/product";
-import { randomEnum, randomNumber } from "../utils/random";
+import { BunnyDef } from "../types/bunny";
+import { GenderType } from "../types/common";
+import { ComnConf } from "../types/config";
+import { Random } from "../utils/random";
 import { Model } from "./base";
 
-@product(ModelId.BUNNY)
-export class BunnyModel extends Model<BunnyTmpl> {
-    constructor(config: BunnyConf) {
+export class BunnyModel extends Model<BunnyDef> {
+    constructor(conf: ComnConf<BunnyDef>) {
         super({
-            referId: config.referId,
-            modelId: ModelId.BUNNY,
-            list: config.list || [],
+            ...conf,
+            key : conf.key,
+            list: conf.list || [],
             dict: {},
             rule: {},
             info: {},
             stat: {
-                age: 0,
-                weight: randomNumber(50, 100),
-                gender: randomEnum(GenderType.FEMALE, GenderType.MALE),
-                ...config.stat
+                age   : 0,
+                weight: Random.number(50, 100),
+                gender: Random.type(GenderType.FEMALE, GenderType.MALE),
+                ...conf.stat
             },
-            sender: config.sender || {},
-            recver: config.recver || {},
-            intf: {}
+            event: {}
         });
-        this.debugger.eat = this.eat.bind(this);
+        this.debug.eat = this.eat.bind(this);
     }
 
     public eat() {
         console.log('eat');
-        this.data._stat.weight += randomNumber(1, 5);
+        this.$calc.stat.weight += Random.number(1, 5);
     }
 }

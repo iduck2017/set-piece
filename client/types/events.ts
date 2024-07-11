@@ -1,38 +1,19 @@
-import { Data } from "../utils/data";
-import { BaseRecord } from "./base";
+import { Calculable } from "../utils/calculable";
+import { BaseKey, BaseRecord, BaseType } from "./base";
+import { BaseCalc } from "./common";
 
-enum EventId {
-    CHECK_BEFORE,
-    UPDATE_DONE,
-    PING_DONE,
-    PONG_DONE,
-}
+export type Event<T extends BaseRecord> = (form: T) => void; 
 
-type CheckBeforeEvent = <
-    I extends BaseRecord,
-    S extends BaseRecord,
-    K extends keyof (I & S)
->(data: {
-    target: Data<BaseRecord, I, S>,
-    key: K,
-    prev: (I & S)[K],
-    next: (I & S)[K],
-}) => void
+export type DataCheckBeforeEvent = Event<{
+    target: BaseCalc,
+    key   : BaseKey,
+    prev  : BaseType,
+    next  : BaseType,
+}>
 
-type UpdateDoneEvent = <
-    I extends BaseRecord,
-    S extends BaseRecord,
-    K extends keyof (I & S)
->(data: {
-    target: Data<BaseRecord, I, S>,
-    key: K,
-    prev: (I & S)[K],
-    next: (I & S)[K]
-}) => void
-
-export {
-    EventId,
-    
-    CheckBeforeEvent,
-    UpdateDoneEvent
-};
+export type DataUpdateDoneEvent = Event<{
+    target: BaseCalc,
+    key   : BaseKey,
+    prev  : BaseType,
+    next  : BaseType,
+}>

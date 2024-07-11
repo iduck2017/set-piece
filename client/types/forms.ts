@@ -1,5 +1,5 @@
 type CreateSlotForm = {
-    name: string,
+    name      : string,
     difficulty: number,
 }
 

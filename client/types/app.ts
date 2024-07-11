@@ -1,22 +1,16 @@
-type SlotData = {
-    slotId: string;
-    name: string;
+export type SlotData = {
+    slotId  : string;
+    name    : string;
     progress: number;
 }
 
-type SettingData = {
+export type ConfData = {
     fullscreen: boolean;
-    mute: boolean;
+    mute      : boolean;
 }
 
-type MetaData = {
-    version: string;
-    slots: SlotData[];
-    perference: SettingData;
+export type MetaData = {
+    version   : string;
+    slots     : SlotData[];
+    perference: ConfData;
 }
-
-export { 
-    MetaData,
-    SlotData,
-    SettingData
-};

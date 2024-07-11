@@ -1,23 +1,23 @@
 import { AppStatus } from "../types/status";
 import { appStatus } from "../utils/status";
-import { singleton } from "../utils/decors";
+import { singleton } from "../utils/singleton";
 import { Service } from "./base";
 import { MAX_TICKET, MIN_TICKET } from "../configs/base";
 import { BaseDict, BaseModel } from "../types/model";
 
 @singleton
 export class ReferService extends Service {
-    private readonly _refers: BaseDict = {};
-    private _timestamp: number = Date.now();
-    private _ticket: number = MIN_TICKET;
+    private readonly $ref: BaseDict = {};
+    private $ts          : number = Date.now();
+    private $ticket      : number = MIN_TICKET;
 
     @appStatus(
         AppStatus.MOUNTING,
         AppStatus.UNMOUNTED
     )
     public reset() {
-        this._timestamp = Date.now();
-        this._ticket = MIN_TICKET;
+        this.$ts = Date.now();
+        this.$ticket = MIN_TICKET;
     }
 
     @appStatus(
@@ -26,7 +26,17 @@ export class ReferService extends Service {
         AppStatus.UNMOUNTED
     )
     public get<T extends BaseModel>(key: string): T | undefined {
-        return this._refers[key] as T | undefined;
+        return this.$ref[key] as T | undefined;
+    }
+
+    public list<T extends BaseModel>(keys?: string[]): T[] {
+        if (!keys) return [];
+        const result: T[] = [];
+        for (const key of keys) {
+            const item = this.$ref[key];
+            if (item) result.push(item as T);
+        }
+        return result;
     }
 
     @appStatus(
@@ -36,14 +46,14 @@ export class ReferService extends Service {
     )
     public register(): string {
         let now = Date.now();
-        const ticket = this._ticket;
-        this._ticket += 1;
-        if (this._ticket > MAX_TICKET) {
-            this._ticket = MIN_TICKET;
-            while (now === this._timestamp) {
+        const ticket = this.$ticket;
+        this.$ticket += 1;
+        if (this.$ticket > MAX_TICKET) {
+            this.$ticket = MIN_TICKET;
+            while (now === this.$ts) {
                 now = Date.now();
             }
-            this._timestamp = now;
+            this.$ts = now;
         }
         return ticket.toString(16) + now.toString(16);
     }
@@ -54,12 +64,12 @@ export class ReferService extends Service {
         AppStatus.UNMOUNTED
     )
     public add(target: BaseModel) {
-        this._refers[target.referId] = target;
+        this.$ref[target.key] = target;
     }
 
     @appStatus(AppStatus.MOUNTED)
     public remove(target: BaseModel) {
-        delete this._refers[target.referId];
+        delete this.$ref[target.key];
     }
 }
 

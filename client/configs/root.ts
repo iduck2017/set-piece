@@ -1,34 +1,34 @@
 import { RootModel } from "../models/root";
-import { ChunkOf } from "../types/chunk";
-import { GenderType } from "../types/enums";
+import { SeqOf } from "../types/sequence";
+import { GenderType } from "../types/common";
 import { ModelId } from "../types/registry";
 
-export const rootChunk: ChunkOf<RootModel> = {
-    modelId: ModelId.ROOT,
-    referId: '',
+export const rootChunk: SeqOf<RootModel> = {
+    id  : ModelId.ROOT,
+    key : '',
     rule: {
-        name: '',
+        name      : '',
         difficulty: 0
     },
     stat: {
         progress: 0
     },
-    sender: {},
-    recver: {},
+    recv: {},
+    call: {},
     list: [
     ],
     dict: {
         bunny: {
-            modelId: ModelId.BUNNY,
-            referId: '',
+            id  : ModelId.BUNNY,
+            key : '',
             rule: {},
             stat: {
-                age: 0,
+                age   : 0,
                 weight: 0,
                 gender: GenderType.FEMALE
             },
-            sender: {},
-            recver: {},
+            recv: {},
+            call: {},
             list: [],
             dict: {}
         }

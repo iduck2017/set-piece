@@ -1,15 +1,24 @@
 import type { App } from "../app";
-import { BaseIntf } from "../types/model";
-import { Handler } from "../utils/handler";
+import { BaseIntf } from "../types/base";
+import { Receivable } from "../utils/receivable";
 
 export abstract class Renderer<
     H extends BaseIntf
 > {
-    public readonly app: App;
+    private readonly $app: App;
+    public get app() { return this.$app; }
 
-    public readonly abstract handler: Handler<H>;
+    protected readonly $recv: Receivable<H>;
 
-    constructor(app: App) {
-        this.app = app;
+    constructor(conf: {
+        app  : App,
+        event: H
+    }) {
+        this.$app = conf.app;
+        this.$recv = new Receivable({
+            target: this,
+            ref   : {},
+            event : conf.event
+        });
     }
 }

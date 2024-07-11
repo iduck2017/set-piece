@@ -1,28 +1,26 @@
 import { ModelId } from "../types/registry";
-import { product } from "../utils/product";
-import { BunnyModel } from "./bunny";
 import { Model } from "./base";
-import { RootConf, RootTmpl } from "../types/root";
+import { ComnConf } from "../types/config";
+import { RootDef } from "../types/root";
 
-@product(ModelId.ROOT)
-export class RootModel extends Model<RootTmpl> {
-    constructor(config: RootConf) {
+export class RootModel extends Model<RootDef> {
+    constructor(conf: ComnConf<RootDef>) {
         super({
-            referId: config.referId,
-            modelId: ModelId.ROOT,
-            rule: config.rule,
+            ...conf,
+            key : conf.key,
             info: {},
             stat: {
                 progress: 0,
-                ...config.stat
+                ...conf.stat
             },
-            sender: config.sender || {},
-            recver: config.recver || {},
             list: [],
             dict: {
-                bunny: config.dict?.bunny || new BunnyModel({ rule: {} })
+                bunny: conf.dict?.bunny || {
+                    id  : ModelId.BUNNY,
+                    rule: {}
+                }
             },
-            intf: {}
+            event: {}
         });
     }
 }
