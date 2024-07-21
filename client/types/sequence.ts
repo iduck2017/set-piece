@@ -27,7 +27,9 @@ export type ComnSeq<M extends BaseDef> = {
     recv?: KeyRef<RecvOf<M>>;
 };
 
-export type BaseSeq<M extends BaseDef> = ComnSeq<M> & {
+export type BaseSeq<M extends BaseDef> = {
+    id  : IdOf<M>;
+    rule: RuleOf<M>;
     key : string
     stat: Partial<StatOf<M>>
     list: ListSeq<ListOf<M>>
@@ -38,4 +40,3 @@ export type BaseSeq<M extends BaseDef> = ComnSeq<M> & {
 
 export type SeqOf<T extends BaseModel | undefined> = 
     T extends Model<infer M> ? ComnSeq<M> : undefined;
-

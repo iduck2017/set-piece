@@ -1,5 +1,4 @@
 import type { App } from "../app";
-import { Receivable } from "../utils/receivable";
 import { BaseRecord, BaseFunc } from "../types/base";
 import { DataUpdateDoneEvent } from "../types/events";
 import { BaseModel } from "../types/model";
@@ -18,21 +17,21 @@ export class DebugRenderer extends Renderer<{
         super({
             app  : config.app,
             event: {
-                dataUpdateDone: (...args) => this._handleUpdateDone(...args)  
+                dataUpdateDone: (...args) => this.$onDataUpdateDone(...args)  
             }
         });
         this.$setData = config.setData;
     }
 
     public active(target: BaseModel) {
-        target.call.bind('dataUpdateDone', this.$recv);
+        target.bind('dataUpdateDone', this.$recv);
     }
 
     public deactive() {
         this.$recv.dispose();
     }
 
-    protected _handleUpdateDone<
+    protected $onDataUpdateDone<
         I extends BaseRecord,
         S extends BaseRecord,
         K extends keyof (I & S)

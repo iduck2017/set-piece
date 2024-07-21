@@ -1,6 +1,6 @@
-import { Calculable } from "../utils/calculable";
+import type { Calculable } from "../utils/calculable";
 import { BaseData } from "./base";
-import { DataCheckBeforeEvent, DataUpdateDoneEvent } from "./events";
+import type { DataCheckBeforeEvent, DataUpdateDoneEvent } from "./events";
 
 export enum GenderType {
     MALE    = 100000,

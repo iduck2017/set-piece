@@ -1,9 +1,10 @@
 import { BunnyModel } from "../models/bunny";
-import { GenderType } from "./common";
-import { ComnDef, PureDef } from "./definition";
+import type { RootModel } from "../models/root";
+import { Union } from "./base";
+import {  PureDef } from "./definition";
 import { ModelId } from "./registry";
 
-export type RootDef = ComnDef<{
+export type RootDef = Union<{
     id  : ModelId.ROOT,
     stat: {
         progress: number,
@@ -14,5 +15,6 @@ export type RootDef = ComnDef<{
     }
     dict: {
         bunny: BunnyModel
-    }
+    },
+    parent: RootModel
 }, PureDef>

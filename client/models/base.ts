@@ -19,8 +19,8 @@ import { KeyRef } from "../types/reference";
 import { CalcIntf } from "../types/common";
 import { BaseIntf, ElemOf, Union, ValueOf } from "../types/base";
 import { BaseModel } from "../types/model";
-import { ComnConf, BaseConf } from "../types/config";
-import { DictSeq, ListSeq, SeqOf, ComnSeq, BaseSeq } from "../types/sequence";
+import { BaseConf } from "../types/config";
+import type { DictSeq, ListSeq, SeqOf, BaseSeq } from "../types/sequence";
 
 
 export abstract class Model<M extends BaseDef> {
@@ -31,8 +31,8 @@ export abstract class Model<M extends BaseDef> {
     protected readonly $calc: Calculable<RuleOf<M>, InfoOf<M>, StatOf<M>>;
     protected readonly $node: Inheritable<ListOf<M>, DictOf<M>, ParentOf<M>, BaseModel>;
     protected readonly $recv: Receivable<RecvOf<M>>;
-    
-    public readonly call : Callable<Union<CalcIntf, CallOf<M>>>;
+    protected readonly $call: Callable<Union<CalcIntf, CallOf<M>>>;
+
     public readonly debug: BaseIntf;
     
     public get id() { return this.$id; }
@@ -43,14 +43,17 @@ export abstract class Model<M extends BaseDef> {
     public get dict() { return this.$node.dict; }
     public get children() { return this.$node.children; }
 
+    public get bind() { return this.$call.bind.bind(this.$call); }
+    public get unbind() { return this.$call.unbind.bind(this.$call); }
+
     public constructor(config: BaseConf<M>) {
         this.$app = config.app;
         this.$id = config.id;
-        this.$key = config.key || config.app.refer.register();
+        this.$key = config.key || config.app.ref.register();
 
         this.debug = {};
 
-        this.call = new Callable({
+        this.$call = new Callable({
             target: this,
             ref   : {}
         });
@@ -64,10 +67,16 @@ export abstract class Model<M extends BaseDef> {
         const dict: DictOf<M> = {};
 
         for (const item of config.list) {
-            list.push(config.app.factory.unseq(item, this));
+            list.push(config.app.fact.unseq({
+                ...item,
+                parent: this
+            }));
         }
         for (const key in config.dict) {
-            dict[key] = config.app.factory.unseq(config.dict[key], this);
+            dict[key] = config.app.fact.unseq({
+                ...config.dict[key],
+                parent: this
+            });
         }
         
         this.$node = new Inheritable({
@@ -81,20 +90,20 @@ export abstract class Model<M extends BaseDef> {
             rule  : config.rule,
             info  : config.info,
             stat  : config.stat,
-            event : this.call.event
+            event : this.$call.event
         });
         
         for (const key in config.call) {
-            const models = this.app.refer.list<Model<any>>(config.call[key]);
+            const models = this.app.ref.list<Model<any>>(config.call[key]);
             for (const model of models) {
-                this.call.bind(
+                this.$call.bind(
                     key as keyof Union<CalcIntf, CallOf<M>>, 
                     model.$recv
                 );
             }
         }
         for (const key in config.recv) {
-            const models = this.app.refer.list<any>(config.recv[key]);
+            const models = this.app.ref.list<any>(config.recv[key]);
             for (const model of models) {
                 model.call.bind(key, this.$recv);
             }
@@ -108,7 +117,7 @@ export abstract class Model<M extends BaseDef> {
         for (const child of this.$node.children) {
             child.destroy();
         }
-        this.app.refer.remove(this);
+        this.app.ref.remove(this);
         this.$node.parent.$node.del(this);
     }
 
@@ -120,8 +129,8 @@ export abstract class Model<M extends BaseDef> {
         const stat = this.$calc.stat;
         const rule = this.$calc.rule;
 
-        for (const key in this.call.refer) {
-            const list = this.call.refer[key];
+        for (const key in this.$call.refer) {
+            const list = this.$call.refer[key];
             if (list) {
                 call[key as keyof Union<CalcIntf, CallOf<M>>] = [];
                 for (const item of list) {
@@ -150,7 +159,7 @@ export abstract class Model<M extends BaseDef> {
             dict[key] = this.$node.dict[key].seq() as SeqOf<ValueOf<DictOf<M>>>;
         }
 
-        return {
+        const result: BaseSeq<M> = {
             id : this.$id,
             key: this.$key,
             stat,
@@ -160,5 +169,7 @@ export abstract class Model<M extends BaseDef> {
             call,
             recv
         };
+
+        return result; 
     }
 }

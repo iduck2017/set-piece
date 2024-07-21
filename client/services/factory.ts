@@ -17,7 +17,7 @@ const $prod: Record<number, BaseClass> = {
 @singleton
 export class FactoryService extends Service {
     @appStatus(AppStatus.UNMOUNTED, AppStatus.MOUNTING)
-    public unseq<T extends BaseModel>(seq: SeqOf<T>, parent: any): T {
+    public unseq<M extends BaseModel>(seq: SeqOf<M> & { parent: any}): M {
         const Constructor = $prod[seq.id];
         return new Constructor({
             ...seq,

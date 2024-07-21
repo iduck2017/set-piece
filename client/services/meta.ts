@@ -23,7 +23,7 @@ export class MetaService extends Service {
     public async save() {
         const save: MetaData = {
             version   : this.app.version,
-            perference: this.app.config.data,
+            perference: this.app.conf.data,
             slots     : this.app.slots.data
         };
         await localStorage.setItem(META_PATH, JSON.stringify(save));

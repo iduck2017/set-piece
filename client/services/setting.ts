@@ -6,17 +6,17 @@ import { ConfData } from "../types/app";
 
 @singleton
 export class ConfigService extends Service {
-    private _data!: ConfData;
-    public get data() { return this._data; } 
+    private $data!: ConfData;
+    public get data() { return this.$data; } 
 
     @appStatus(AppStatus.INITED)
     public init(config: ConfData) {
-        this._data = config;
+        this.$data = config;
     }
 
     @appStatus(AppStatus.UNMOUNTED)
     public async update(data: ConfData) {
-        this._data = data;
+        this.$data = data;
         await this.app.meta.save();
         return;
     }

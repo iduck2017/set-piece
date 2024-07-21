@@ -15,7 +15,7 @@ export function AppDebugger(props: {
     const create = async () => {
         await app.slots.new({
             difficulty: 0,
-            name: 'iduck'
+            name      : 'iduck'
         });
         setSlots([ ...app.slots.data ]);
     };

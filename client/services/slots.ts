@@ -6,69 +6,52 @@ import { singleton } from "../utils/singleton";
 import { Service } from "./base";
 import { CreateSlotForm } from "../types/forms";
 import { RootModel } from "../models/root";
-import { ModelId } from "../types/registry";
 import { SeqOf } from "../types/sequence";
+import { rootSeq } from "../configs/root";
 
 @singleton
 export class SlotsService extends Service {
-    private _index?: number;
+    private $index?: number;
+    private $data  : SlotData[] = [];
 
-    private _data: SlotData[] = [];
-    public get data() { return this._data; } 
+    public get data() { return this.$data; } 
 
     @appStatus(AppStatus.INITED)
     public init(config: SlotData[]) {
-        this._data = config;
+        this.$data = config;
     }
 
     @appStatus(AppStatus.UNMOUNTED)
     public async new(options: CreateSlotForm) {
         const slotId = Date.now().toString(16);
         const path = `${SLOT_PATH}_${slotId}`;
-        this._data.push({
+        this.$data.push({
             name    : options.name,
             slotId  : slotId,
             progress: 0
         });
-        this.app.refer.reset();
-        const root = this.app.factory.unseq<RootModel>({
-            id  : ModelId.ROOT,
-            rule: {
-                name      : 'demo',
-                difficulty: 2
-            },
-            dict: {
-                bunny: {
-                    id  : ModelId.BUNNY,
-                    rule: {}
-                }
-            }
-        }, undefined);
-        const record = root.seq();
-
+        this.app.ref.reset();
+        const record = rootSeq({ app: this.app });
         await localStorage.setItem(path, JSON.stringify(record));
         await this.app.meta.save();
-        
         return record;
     }
 
     @appStatus(AppStatus.MOUNTING)
     public async load(index: number) {
-        this._index = index;
-        const slot = this._data[index];
+        this.$index = index;
+        const slot = this.$data[index];
         const path = `${SLOT_PATH}_${slot.slotId}`;
-
         const raw = await localStorage.getItem(path);
-        
         if (!raw) throw new Error();
         return JSON.parse(raw) as SeqOf<RootModel>;
     }
 
     @appStatus(AppStatus.UNMOUNTED)
     public async delete(index: number) {
-        const slot = this._data[index];
+        const slot = this.$data[index];
         const path = `${SLOT_PATH}_${slot.slotId}`;
-        this._data.splice(index, 1);
+        this.$data.splice(index, 1);
 
         await this.app.meta.save();
         await localStorage.removeItem(path);
@@ -76,20 +59,20 @@ export class SlotsService extends Service {
 
     @appStatus(AppStatus.MOUNTED)
     public async quit() {
-        this._index = undefined;
+        this.$index = undefined;
     }
 
     @appStatus(AppStatus.MOUNTED)
     public async save() {
-        const index = this._index;
+        const index = this.$index;
         const root = this.app.root;
         if (!root || index === undefined) {
             throw new Error();
         }
-        const slot = this._data[index];
+        const slot = this.$data[index];
         const path = `${SLOT_PATH}_${slot.slotId}`;
         const record = root.seq();
-        this._data[index] = {
+        this.$data[index] = {
             ...slot,
             progress: root.data.progress
         };
