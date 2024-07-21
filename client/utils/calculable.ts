@@ -1,5 +1,5 @@
 import { BaseData, Union } from "../types/base";
-import { CalcIntf } from "../types/common";
+import { CalcIntf } from "../types/interface";
 import { Util } from "./base";
 
 export class Calculable<
@@ -10,16 +10,16 @@ export class Calculable<
 > extends Util<T> {
     public readonly stat: S;
 
-    private readonly $rule: R;
-    private readonly $info: I;
-    private readonly $stat: S;
-    private readonly $cur : Union<S, Union<I, R>>;
+    private readonly $rule : R;
+    private readonly $info : I;
+    private readonly $stat : S;
+    private readonly $event: CalcIntf;
+    private readonly $cur  : Union<S, Union<I, R>>;
     
     public get cur() { return { ...this.$cur }; }
     public get rule() { return { ...this.$rule }; }
     public get info() { return { ...this.$info }; }
 
-    private readonly $event: CalcIntf;
 
     constructor(config: {
         target: T,

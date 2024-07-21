@@ -5,10 +5,10 @@ import { Receivable } from "../utils/receivable";
 export abstract class Renderer<
     H extends BaseIntf
 > {
-    private readonly $app: App;
-    public get app() { return this.$app; }
-
+    private readonly $app   : App;
     protected readonly $recv: Receivable<H>;
+
+    public get app() { return this.$app; }
 
     constructor(conf: {
         app  : App,
@@ -21,4 +21,5 @@ export abstract class Renderer<
             event : conf.event
         });
     }
+
 }

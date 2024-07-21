@@ -1,6 +1,5 @@
 import type { App } from "../app";
 import { Union } from "./base";
-import { CalcIntf } from "./common";
 import { 
     StatOf,
     InfoOf,
@@ -13,6 +12,7 @@ import {
     RuleOf,
     CallOf
 } from "./definition";
+import { ModelIntf } from "./interface";
 import { KeyRef } from "./reference";
 import type { ComnSeq, DictSeq, ListSeq } from "./sequence";
 
@@ -25,7 +25,7 @@ export type BaseConf<M extends BaseDef> = {
     id    : IdOf<M>;
     key?  : string;
     rule  : RuleOf<M>;
-    call? : KeyRef<Union<CalcIntf, CallOf<M>>>;
+    call? : KeyRef<Union<ModelIntf, CallOf<M>>>;
     recv? : KeyRef<RecvOf<M>>;
     app   : App,
     parent: ParentOf<M>,

@@ -1,25 +1,17 @@
-import React, { useEffect, useRef, useState } from "react";
+import React from "react";
 import { BaseModel } from "../types/model";
 import type { App } from "../app";
-import { DebugRenderer } from "../renders/debug";
+import { useModel } from "./use-model";
 import "./index.css";
 
-export function ModelDebugger(props: {
+export type ModelDebuggerProps = {
     target: BaseModel,
     app   : App
-}) {
+}
+
+export function ModelDebugger(props: ModelDebuggerProps) {
     const { target, app } = props;
-
-    const [ data, setData ] = useState(target.data);
-    const render = useRef(new DebugRenderer({ 
-        setData,
-        app
-    }));
-
-    useEffect(() => {
-        render.current.active(target);
-        return render.current.deactive.bind(render);
-    }, []);
+    const { children, data } = useModel(props);
 
     return (
         <div
@@ -39,7 +31,7 @@ export function ModelDebugger(props: {
                         <div className="key">{key}</div>
                         <div 
                             className="function"
-                            onClick={target.debug[key]}
+                            onClick={target.debug[key].bind(target)}
                         >
                             function
                         </div>
@@ -47,9 +39,9 @@ export function ModelDebugger(props: {
                 ))}
             </div>
             <div className="children">
-                {target.children.map(item => (
+                {children.map(item => (
                     <ModelDebugger 
-                        key={item}
+                        key={item.key}
                         target={item}
                         app={app}
                     />

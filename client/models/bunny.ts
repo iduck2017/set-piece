@@ -1,5 +1,5 @@
-import { BunnyDef } from "../types/bunny";
-import { GenderType } from "../types/common";
+import { BunnyDef, GenderType } from "../types/common";
+
 import { ComnConf } from "../types/config";
 import { ModelId } from "../types/registry";
 import { Random } from "../utils/random";
@@ -22,7 +22,8 @@ export class BunnyModel extends Model<BunnyDef> {
             },
             event: {}
         });
-        this.debug.eat = this.eat.bind(this);
+        this.debug.eat = this.eat;
+        this.debug.spawn = this.spawn;
     }
 
     public eat() {

@@ -1,7 +1,7 @@
 import { ModelId } from "../types/registry";
 import { Model } from "./base";
 import { ComnConf } from "../types/config";
-import { RootDef } from "../types/root";
+import { RootDef } from "../types/common";
 
 export class RootModel extends Model<RootDef> {
     constructor(conf: ComnConf<RootDef>) {

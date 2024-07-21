@@ -1,6 +1,5 @@
 import { Model } from "../models/base";
 import { ElemOf, Union } from "./base";
-import { CalcIntf } from "./common";
 import { 
     StatOf,
     ListOf,
@@ -11,6 +10,7 @@ import {
     IdOf,
     RuleOf
 } from "./definition";
+import { ModelIntf } from "./interface";
 import { BaseModel, BaseList, BaseDict } from "./model";
 import { KeyRef } from "./reference";
 
@@ -23,7 +23,7 @@ export type ComnSeq<M extends BaseDef> = {
     stat?: Partial<StatOf<M>>;
     list?: ListSeq<ListOf<M>>;
     dict?: Partial<DictSeq<DictOf<M>>>;
-    call?: KeyRef<Union<CalcIntf, CallOf<M>>>;
+    call?: KeyRef<Union<ModelIntf, CallOf<M>>>;
     recv?: KeyRef<RecvOf<M>>;
 };
 
@@ -34,7 +34,7 @@ export type BaseSeq<M extends BaseDef> = {
     stat: Partial<StatOf<M>>
     list: ListSeq<ListOf<M>>
     dict: Partial<DictSeq<DictOf<M>>>
-    call: KeyRef<Union<CalcIntf, CallOf<M>>>
+    call: KeyRef<Union<ModelIntf, CallOf<M>>>
     recv: KeyRef<RecvOf<M>>,
 }
 

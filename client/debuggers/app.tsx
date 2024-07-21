@@ -25,8 +25,14 @@ export function AppDebugger(props: {
         setStatus(app.status);
     };
 
+    const save = () => {
+        app.slot.save();
+    };
+
     useEffect(() => {
-        // start(0);
+        if (slots.length > 0) {
+            start(0);
+        }
     }, []);
 
     return <div>
@@ -44,7 +50,7 @@ export function AppDebugger(props: {
             ))
         }
         {status === AppStatus.MOUNTED && 
-            <button >save</button>
+            <button onClick={save}>save</button>
         }
         {status === AppStatus.MOUNTED && app.root && 
             <ModelDebugger
