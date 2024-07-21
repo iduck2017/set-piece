@@ -1,6 +1,6 @@
 import { BaseClass } from "../types/base";
 import { AppStatus } from "../types/status";
-import { appStatus } from "../utils/status";
+import { Lifecycle } from "../utils/lifecyle";
 import { singleton } from "../utils/singleton";
 import { Service } from "./base";
 import { BaseModel } from "../types/model";
@@ -16,7 +16,7 @@ const $prod: Record<number, BaseClass> = {
 
 @singleton
 export class FactoryService extends Service {
-    @appStatus(AppStatus.UNMOUNTED, AppStatus.MOUNTING)
+    @Lifecycle.app(AppStatus.UNMOUNTED, AppStatus.MOUNTING)
     public unseq<M extends BaseModel>(seq: SeqOf<M> & { parent: any}): M {
         const Constructor = $prod[seq.id];
         return new Constructor({

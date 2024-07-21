@@ -1,7 +1,7 @@
 import { SLOT_PATH } from "../configs/base";
 import { AppStatus } from "../types/status";
 import { SlotData } from "../types/app";
-import { appStatus } from "../utils/status";
+import { Lifecycle } from "../utils/lifecyle";
 import { singleton } from "../utils/singleton";
 import { Service } from "./base";
 import { CreateSlotForm } from "../types/forms";
@@ -10,18 +10,18 @@ import { SeqOf } from "../types/sequence";
 import { rootSeq } from "../configs/root";
 
 @singleton
-export class SlotsService extends Service {
+export class SlotService extends Service {
     private $index?: number;
     private $data  : SlotData[] = [];
 
     public get data() { return this.$data; } 
 
-    @appStatus(AppStatus.INITED)
+    @Lifecycle.app(AppStatus.INITED)
     public init(config: SlotData[]) {
         this.$data = config;
     }
 
-    @appStatus(AppStatus.UNMOUNTED)
+    @Lifecycle.app(AppStatus.UNMOUNTED)
     public async new(options: CreateSlotForm) {
         const slotId = Date.now().toString(16);
         const path = `${SLOT_PATH}_${slotId}`;
@@ -37,7 +37,7 @@ export class SlotsService extends Service {
         return record;
     }
 
-    @appStatus(AppStatus.MOUNTING)
+    @Lifecycle.app(AppStatus.MOUNTING)
     public async load(index: number) {
         this.$index = index;
         const slot = this.$data[index];
@@ -47,7 +47,7 @@ export class SlotsService extends Service {
         return JSON.parse(raw) as SeqOf<RootModel>;
     }
 
-    @appStatus(AppStatus.UNMOUNTED)
+    @Lifecycle.app(AppStatus.UNMOUNTED)
     public async delete(index: number) {
         const slot = this.$data[index];
         const path = `${SLOT_PATH}_${slot.slotId}`;
@@ -57,12 +57,12 @@ export class SlotsService extends Service {
         await localStorage.removeItem(path);
     }
 
-    @appStatus(AppStatus.MOUNTED)
+    @Lifecycle.app(AppStatus.MOUNTED)
     public async quit() {
         this.$index = undefined;
     }
 
-    @appStatus(AppStatus.MOUNTED)
+    @Lifecycle.app(AppStatus.MOUNTED)
     public async save() {
         const index = this.$index;
         const root = this.app.root;

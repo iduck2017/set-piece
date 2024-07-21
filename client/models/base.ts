@@ -38,7 +38,7 @@ export abstract class Model<M extends BaseDef> {
     public get id() { return this.$id; }
     public get app() { return this.$app; }
     public get key() { return this.$key; }
-    public get data() { return this.$calc.data; } 
+    public get data() { return this.$calc.cur; } 
     public get list() { return this.$node.list; } 
     public get dict() { return this.$node.dict; }
     public get children() { return this.$node.children; }
@@ -129,8 +129,8 @@ export abstract class Model<M extends BaseDef> {
         const stat = this.$calc.stat;
         const rule = this.$calc.rule;
 
-        for (const key in this.$call.refer) {
-            const list = this.$call.refer[key];
+        for (const key in this.$call.ref) {
+            const list = this.$call.ref[key];
             if (list) {
                 call[key as keyof Union<CalcIntf, CallOf<M>>] = [];
                 for (const item of list) {
@@ -140,8 +140,8 @@ export abstract class Model<M extends BaseDef> {
                 }
             }
         }
-        for (const key in this.$recv.refer) {
-            const list = this.$recv.refer[key];
+        for (const key in this.$recv.ref) {
+            const list = this.$recv.ref[key];
             if (list) {
                 recv[key as keyof Union<CalcIntf, CallOf<M>>] = [];
                 for (const item of list) {

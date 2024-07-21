@@ -8,16 +8,16 @@ export class Calculable<
     S extends BaseData,
     T = any,
 > extends Util<T> {
+    public readonly stat: S;
+
     private readonly $rule: R;
     private readonly $info: I;
     private readonly $stat: S;
-    private readonly $data: Union<S, Union<I, R>>;
+    private readonly $cur : Union<S, Union<I, R>>;
     
-    public readonly stat: S;
-
+    public get cur() { return { ...this.$cur }; }
     public get rule() { return { ...this.$rule }; }
     public get info() { return { ...this.$info }; }
-    public get data() { return { ...this.$data }; }
 
     private readonly $event: CalcIntf;
 
@@ -33,7 +33,7 @@ export class Calculable<
         this.$info = config.info;
         this.$stat = config.stat;
         this.$event = config.event;
-        this.$data = { 
+        this.$cur = { 
             ...config.rule,
             ...config.info,
             ...config.stat  
@@ -52,7 +52,7 @@ export class Calculable<
     }
 
     public update<K extends keyof (I & S)>(key: K) {
-        const prev = this.$data[key];
+        const prev = this.$cur[key];
         const next = {
             ...this.$rule,
             ...this.$info,
@@ -67,7 +67,7 @@ export class Calculable<
         };
 
         this.$event.dataCheckBefore(data);
-        this.$data[key] = data.next;
+        this.$cur[key] = data.next;
         if (prev !== data.next) {
             this.$event.dataUpdateDone(data);
         }

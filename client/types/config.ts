@@ -14,22 +14,14 @@ import {
     CallOf
 } from "./definition";
 import { KeyRef } from "./reference";
-import type { DictSeq, ListSeq } from "./sequence";
+import type { ComnSeq, DictSeq, ListSeq } from "./sequence";
 
-export type ComnConf<M extends BaseDef> =  {
-    id    : IdOf<M>;
-    key?  : string;
-    rule  : RuleOf<M>;
-    stat? : Partial<StatOf<M>>;
-    list? : ListSeq<ListOf<M>>;
-    dict? : Partial<DictSeq<DictOf<M>>>;
-    call? : KeyRef<Union<CalcIntf, CallOf<M>>>;
-    recv? : KeyRef<RecvOf<M>>;
+export type ComnConf<M extends BaseDef> = ComnSeq<M> & {
     app   : App,
     parent: ParentOf<M>,
 }
 
-export type BaseConf<M extends BaseDef> =  {
+export type BaseConf<M extends BaseDef> = {
     id    : IdOf<M>;
     key?  : string;
     rule  : RuleOf<M>;

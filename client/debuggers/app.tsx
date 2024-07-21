@@ -10,14 +10,14 @@ export function AppDebugger(props: {
     const { app } = props;
 
     const [ status, setStatus ] = useState<AppStatus>(app.status);
-    const [ slots, setSlots ] = useState<SlotData[]>(app.slots.data);
+    const [ slots, setSlots ] = useState<SlotData[]>(app.slot.data);
   
     const create = async () => {
-        await app.slots.new({
+        await app.slot.new({
             difficulty: 0,
             name      : 'iduck'
         });
-        setSlots([ ...app.slots.data ]);
+        setSlots([ ...app.slot.data ]);
     };
 
     const start = async (index: number) => {

@@ -10,8 +10,8 @@ export type RootDef = Union<{
         progress: number,
     },
     rule: {
-        name      : string;
-        difficulty: number;
+        name : string;
+        level: number;
     }
     dict: {
         bunny: BunnyModel

@@ -49,7 +49,7 @@ export function ModelDebugger(props: {
             <div className="children">
                 {target.children.map(item => (
                     <ModelDebugger 
-                        key={item.referId}
+                        key={item}
                         target={item}
                         app={app}
                     />

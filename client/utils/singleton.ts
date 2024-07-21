@@ -1,14 +1,14 @@
 import { BaseClass } from "../types/base";
 
-const $instances = new Set<BaseClass>();
+const $ref = new Set<BaseClass>();
 
 export function singleton(IConstructor: BaseClass) {
     return class extends IConstructor {
         constructor(...config: any[]) {
-            if ($instances.has(IConstructor)) {
+            if ($ref.has(IConstructor)) {
                 throw new Error();
             }
-            $instances.add(IConstructor);
+            $ref.add(IConstructor);
             super(...config);
         }
     } as any;

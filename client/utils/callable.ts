@@ -7,11 +7,10 @@ export class Callable<
     E extends BaseIntf, 
     T = any
 > extends Util<T> {
-    private readonly $ref: CallRef<E>;
-    
     public readonly event: E;
 
-    public get refer() {
+    private readonly $ref: CallRef<E>;
+    public get ref() {
         const result = { ...this.$ref };
         for (const key in this.$ref) {
             const list = this.$ref[key];

@@ -1,5 +1,5 @@
 import { BaseIntf } from "../types/base";
-import { RecvRef } from "../types/reference";
+import type { RecvRef } from "../types/reference";
 import { Util } from "./base";
 import { Callable } from "./callable";
 
@@ -7,11 +7,11 @@ export class Receivable<
     H extends BaseIntf, 
     T = any
 > extends Util<T> {
-    private readonly $ref  : RecvRef<H>;
     private readonly $event: H;
+    private readonly $ref  : RecvRef<H>;
 
     public get event() { return { ...this.$event }; }
-    public get refer() {
+    public get ref() {
         const result = { ...this.$ref };
         for (const key in this.$ref) {
             const list = this.$ref[key];

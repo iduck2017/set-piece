@@ -1,5 +1,5 @@
 import { AppStatus } from "../types/status";
-import { appStatus } from "../utils/status";
+import { Lifecycle } from "../utils/lifecyle";
 import { singleton } from "../utils/singleton";
 import { Service } from "./base";
 import { ConfData } from "../types/app";
@@ -9,12 +9,12 @@ export class ConfigService extends Service {
     private $data!: ConfData;
     public get data() { return this.$data; } 
 
-    @appStatus(AppStatus.INITED)
+    @Lifecycle.app(AppStatus.INITED)
     public init(config: ConfData) {
         this.$data = config;
     }
 
-    @appStatus(AppStatus.UNMOUNTED)
+    @Lifecycle.app(AppStatus.UNMOUNTED)
     public async update(data: ConfData) {
         this.$data = data;
         await this.app.meta.save();

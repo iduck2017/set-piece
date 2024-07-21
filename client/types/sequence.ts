@@ -17,8 +17,8 @@ import { KeyRef } from "./reference";
 export type ListSeq<L extends BaseList> = Array<SeqOf<ElemOf<L>>>;
 export type DictSeq<D extends BaseDict> = { [K in keyof D]: SeqOf<D[K]> };
 export type ComnSeq<M extends BaseDef> = {
-    id   : IdOf<M>;
     key? : string;
+    id   : IdOf<M>;
     rule : RuleOf<M>;
     stat?: Partial<StatOf<M>>;
     list?: ListSeq<ListOf<M>>;
@@ -28,9 +28,9 @@ export type ComnSeq<M extends BaseDef> = {
 };
 
 export type BaseSeq<M extends BaseDef> = {
+    key : string
     id  : IdOf<M>;
     rule: RuleOf<M>;
-    key : string
     stat: Partial<StatOf<M>>
     list: ListSeq<ListOf<M>>
     dict: Partial<DictSeq<DictOf<M>>>

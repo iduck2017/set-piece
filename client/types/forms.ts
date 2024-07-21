@@ -1,8 +1,4 @@
-type CreateSlotForm = {
+export type CreateSlotForm = {
     name      : string,
     difficulty: number,
 }
-
-export {
-    CreateSlotForm
-};

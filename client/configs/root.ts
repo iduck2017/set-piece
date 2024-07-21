@@ -12,8 +12,8 @@ export function rootSeq(conf: {
         id  : ModelId.ROOT,
         key : conf.app.ref.register(),
         rule: {
-            name      : '',
-            difficulty: 0
+            name : '',
+            level: 0
         },
         stat: {
             progress: 0
