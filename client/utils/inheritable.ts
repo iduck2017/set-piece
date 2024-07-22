@@ -1,12 +1,12 @@
-import { BaseRecord } from "../types/base";
+import { BaseArray, BaseRecord } from "../types/base";
 import { NodeIntf } from "../types/interface";
 import { Util } from "./base";
 
 export class Inheritable<
-    L extends any[],
+    L extends BaseArray,
     D extends BaseRecord,
-    P,
-    T,
+    P = any,
+    T = any,
 > extends Util<T> {
     private readonly $parent: P;
     private readonly $dict  : D;
@@ -41,7 +41,7 @@ export class Inheritable<
         if (this.$dict[key]) throw new Error();
         this.$dict[key] = value;
         this.$event.childUpdateDone({
-            target: this.target,
+            target: this,
             child : value
         });
     }
@@ -49,7 +49,7 @@ export class Inheritable<
     public add(value: L[number]) {
         this.$list.push(value);
         this.$event.childUpdateDone({
-            target: this.target,
+            target: this,
             child : value
         });
     }
@@ -64,7 +64,7 @@ export class Inheritable<
         if (index < 0) throw new Error();
         this.$list.splice(index, 1);
         this.$event.childUpdateDone({
-            target: this.target,
+            target: this,
             child : value
         });
     }

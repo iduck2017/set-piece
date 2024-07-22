@@ -1,5 +1,6 @@
+import { Inheritable } from "../utils/inheritable";
 import { BaseKey, BaseRecord, BaseType } from "./base";
-import { BaseCalc } from "./model";
+import { BaseCalc, BaseNode } from "./model";
 
 export type Event<T extends BaseRecord> = (form: T) => void; 
 
@@ -18,6 +19,6 @@ export type DataUpdateDoneEvent = Event<{
 }>
 
 export type ChildUpdateDoneEvent = Event<{
-    target: any
+    target: BaseNode
     child : any
 }>

@@ -1,7 +1,7 @@
 import type { App } from "../app";
 import { BaseFunc, BaseData } from "../types/base";
 import { ChildUpdateDoneEvent, DataUpdateDoneEvent } from "../types/events";
-import { BaseCalc, BaseModel } from "../types/model";
+import { BaseCalc, BaseModel, BaseNode } from "../types/model";
 import { Renderer } from "./base";
 import React from "react";
 
@@ -20,7 +20,7 @@ export class DebugRenderer extends Renderer<{
         const onDataUpdateDone = (data: { target: BaseCalc }) => {
             this.$setData(data.target.cur);
         };
-        const onChildUpdateDone = (data: { target: BaseModel }) => {
+        const onChildUpdateDone = (data: { target: BaseNode }) => {
             this.$setChildren(data.target.children);
         };
 
