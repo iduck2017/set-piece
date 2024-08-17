@@ -22,7 +22,7 @@ export class MetaService extends Service {
     )
     public async save() {
         const save: MetaData = {
-            version   : this.app.v,
+            version   : this.app.ver,
             perference: this.app.conf.data,
             slots     : this.app.slot.data
         };

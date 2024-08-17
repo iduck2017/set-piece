@@ -22,16 +22,16 @@ export class App {
     public readonly slot: SlotService;
     public readonly conf: ConfigService;
     public readonly rend: RenderService;
-    public readonly v   : string;
+    public readonly ver : string;
 
     public get root() { return this.$root; }
     public get status() { return this.$status; }
 
     public constructor() {
         this.$status = AppStatus.INITED;
-        this.v = APP_VERSION;
+        this.ver = APP_VERSION;
         this.meta = new MetaService(this);
-        this.ref = new ReferenceService(this);
+        this.ref = new ReferenceService(this),
         this.slot = new SlotService(this);
         this.rend = new RenderService(this);
         this.conf = new ConfigService(this);
@@ -52,10 +52,7 @@ export class App {
         this.$status = AppStatus.MOUNTING;
         this.ref.reset();
         const record = await this.slot.load(index);
-        this.$root = this.fact.unseq({
-            ...record,
-            parent: undefined
-        });
+        this.$root = this.fact.unseq(record, undefined);
         this.rend.mount();
         this.$status = AppStatus.MOUNTED;
     }

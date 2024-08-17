@@ -1,7 +1,7 @@
 import type { BunnyModel } from "../models/bunny";
 import type { RootModel } from "../models/root";
 import { ComnDef, PureDef } from "./definition";
-import { ModelId } from "./registry";
+import { ModelId } from "./model";
 
 export enum GenderType {
     MALE = 100000,
@@ -10,27 +10,27 @@ export enum GenderType {
 }
 
 export type BunnyDef = ComnDef<{
-    id  : ModelId.BUNNY,
+    id: ModelId.BUNNY,
     stat: {
         weight: number,
-        age   : number,
+        age: number,
         gender: GenderType,
     },
     list: BunnyModel[],
 }, PureDef>
 
 export type RootDef = ComnDef<{
-    id  : ModelId.ROOT,
+    id: ModelId.ROOT,
     stat: {
         progress: number,
     },
     rule: {
-        name : string;
+        name: string;
         level: number;
     }
     dict: {
         bunny: BunnyModel
     },
-    parent: RootModel
+    parent: undefined
 }, PureDef>
 

@@ -1,4 +1,4 @@
-import { ModelId } from "../types/registry";
+import { ModelId } from "../types/model";
 import { Model } from "./base";
 import { ComnConf } from "../types/config";
 import { RootDef } from "../types/common";

@@ -1,9 +1,10 @@
-export class Util<T = any> {
-    private readonly $target: T;
-    
-    public get target() { return this.$target; }
+import type { App } from "../app";
 
-    constructor(props: { target: T }) {
-        this.$target = props.target;
+export class Util<T = any> {
+    public readonly host: T;
+    public readonly app: App;
+    constructor(host: T, app: App) {
+        this.host = host;
+        this.app = app;
     }
 }

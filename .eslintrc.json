@@ -3,7 +3,7 @@
 	"parser": "@typescript-eslint/parser",
 	"plugins": [
 		"@typescript-eslint",
-		"import"
+		"import"  
 	],
 	"parserOptions": {
 		"project": "./tsconfig.json",
@@ -25,14 +25,13 @@
 		}
 	},
 	"rules": {
-		"no-tabs": "off",
-		"max-len": ["error", 100],
 		"indent": ["error", 4],
 		"semi": ["error", "always"],
 		"curly": ["error", "multi-line"],
       
 		"eqeqeq": "error",
 
+		"no-tabs": "off",
 		"no-multi-spaces": "off",
 		"no-underscore-dangle": "off",
 		"no-restricted-syntax": "off",
@@ -42,17 +41,14 @@
 		"guard-for-in": "off",
 
 		"keyword-spacing": "error",
-		"key-spacing": ["error", { 
-			"align": "colon",
-			"beforeColon": false,
-			"afterColon": true
-		}],
+		"key-spacing": "error",
 
 		"comma-dangle": "error",
 		"comma-spacing": "error",
 		"comma-style": "error",
 
 		"dot-location": ["error", "property"],
+
 		"object-property-newline": "error",
 		"object-curly-newline": "error",
 		"object-curly-spacing": ["error", "always"],
@@ -78,11 +74,7 @@
 		"@typescript-eslint/ban-types": "off",
 		"@typescript-eslint/no-this-alias": "warn",
 		"@typescript-eslint/no-namespace": "off",
-		"@typescript-eslint/key-spacing": ["error", { 
-			"align": "colon",
-			"beforeColon": false,
-			"afterColon": true
-		}]
+		"@typescript-eslint/key-spacing": "error"
 
 	}
 }

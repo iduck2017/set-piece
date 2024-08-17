@@ -1,63 +1,60 @@
-import { BaseIntf } from "../types/base";
-import type { RecvRef } from "../types/reference";
+import type { App } from "../app";
+import { BaseFunc } from "../types/base";
 import { Util } from "./base";
-import { Callable } from "./callable";
+import { Emittable } from "./emittable";
 
 export class Receivable<
-    H extends BaseIntf, 
+    E extends BaseFunc,
     T = any
 > extends Util<T> {
-    private readonly $event: H;
-    private readonly $ref  : RecvRef<H>;
+    public readonly key: string;
+    
+    private readonly $list: Array<Emittable<E>> = [];
+    public get list() { return [ ...this.$list ]; }
 
-    public get event() { return { ...this.$event }; }
-    public get ref() {
-        const result = { ...this.$ref };
-        for (const key in this.$ref) {
-            const list = this.$ref[key];
-            result[key] = list ? [ ...list ] : [];
-        }
-        return result;
-    }
+    public readonly func: E;
 
-    constructor(config: {
-        target: T,
-        ref   : RecvRef<H>
-        event : H
-    }) {
-        super(config);
-        this.$ref = config.ref;
-        this.$event = config.event;
-    }
-
-    public $add<K extends keyof H>(
-        key: K,
-        target: Callable<Pick<H, K>>
+    constructor(
+        func: E, 
+        conf: string[], 
+        target: T, 
+        app: App
     ) {
-        const emitters = this.$ref[key];
-        if (!emitters) this.$ref[key] = [ target ];
-        else emitters.push(target);
+        super(target, app);
+        this.func = func;
+        this.key = conf[0] || app.ref.get();
+        app.ref.recv.add(this);
+        conf.slice(1).forEach(key => {
+            const emit = app.ref.emit.map[key];
+            if (emit) emit.bind(this);
+        });   
     }
 
-    public $del<K extends keyof H>(
-        key: K,
-        target: Callable<Pick<H, K>>
-    ) {
-        const list = this.$ref[key];
-        if (!list) throw new Error();
-        const index = list.indexOf(target);
-        if (index === -1) throw new Error();
-        list.splice(index, 1);
-    }
-
-    public dispose() {
-        for (const index in this.$ref) {
-            const key: keyof H = index;
-            const list = this.$ref[key] || [];
-            for (const item of list) {
-                item.unbind(key, this);
-            }
+    public $add(target: Emittable<E>) {
+        if (this.$list.includes(target)) {
+            throw new Error();
         }
+        this.$list.push(target);
+    }
+
+    public $del(target: Emittable<E>) {
+        const index = this.$list.indexOf(target);
+        if (index === -1) {
+            throw new Error();
+        }
+        this.$list.splice(index, 1);
+    }
+
+    public distroy() {
+        this.$list.forEach(item => {
+            item.unbind(this);
+        });
+    }
+
+    public seq() {
+        return [ 
+            this.key,
+            ...this.list.map(item => item.key)
+        ];
     }
 }
-

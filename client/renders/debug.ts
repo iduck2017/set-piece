@@ -6,15 +6,15 @@ import { Renderer } from "./base";
 import React from "react";
 
 export class DebugRenderer extends Renderer<{
-    dataUpdateDone : DataUpdateDoneEvent
+    dataUpdateDone: DataUpdateDoneEvent
     childUpdateDone: ChildUpdateDoneEvent
 }> {
     private readonly $setChildren: React.Dispatch<React.SetStateAction<BaseModel[]>>;
-    private readonly $setData    : React.Dispatch<React.SetStateAction<BaseData>>;
+    private readonly $setData: React.Dispatch<React.SetStateAction<BaseData>>;
 
     constructor(config: {
-        app        : App
-        setData    : BaseFunc,
+        app: App
+        setData: BaseFunc,
         setChildren: BaseFunc
     }) {
         const onDataUpdateDone = (data: { target: BaseCalc }) => {
@@ -25,9 +25,9 @@ export class DebugRenderer extends Renderer<{
         };
 
         super({
-            app  : config.app,
+            app: config.app,
             event: { 
-                dataUpdateDone : onDataUpdateDone,
+                dataUpdateDone: onDataUpdateDone,
                 childUpdateDone: onChildUpdateDone
             }
         });
@@ -42,6 +42,6 @@ export class DebugRenderer extends Renderer<{
     }
     
     public deactive() {
-        this.$recv.dispose();
+        this.$recv.distroy();
     }
 }

@@ -3,14 +3,28 @@ import { Lifecycle } from "../utils/lifecyle";
 import { singleton } from "../utils/singleton";
 import { Service } from "./base";
 import { MAX_TICKET, MIN_TICKET } from "../configs/base";
-import { BaseDict, BaseModel } from "../types/model";
+import { BaseCall, BaseModel, BaseRecv } from "../types/model";
+import type { App } from "../app";
 
 @singleton
 export class ReferenceService extends Service {
-    private readonly $ref: BaseDict = {};
-    
-    private $ts    : number = Date.now();
-    private $ticket: number = MIN_TICKET;
+    private $dict  !: ReferenceManager<BaseModel>;
+    private $recv  !: ReferenceManager<BaseRecv>;
+    private $emit  !: ReferenceManager<BaseCall>;
+    private $ts    !: number; 
+    private $ticket!: number;
+
+    public get dict() { return this.$dict; }
+    public get recv() { return this.$recv; }
+    public get emit() { return this.$emit; }
+
+    constructor(
+        app: App 
+    ) {
+        super(app);
+        this.reset();
+    }
+
 
     @Lifecycle.app(
         AppStatus.MOUNTING,
@@ -19,25 +33,9 @@ export class ReferenceService extends Service {
     public reset() {
         this.$ts = Date.now();
         this.$ticket = MIN_TICKET;
-    }
-
-    @Lifecycle.app(
-        AppStatus.MOUNTED,
-        AppStatus.MOUNTING,
-        AppStatus.UNMOUNTED
-    )
-    public get<T extends BaseModel>(key: string): T | undefined {
-        return this.$ref[key] as T | undefined;
-    }
-
-    public list<T extends BaseModel>(keys?: string[]): T[] {
-        if (!keys) return [];
-        const result: T[] = [];
-        for (const key of keys) {
-            const item = this.$ref[key];
-            if (item) result.push(item as T);
-        }
-        return result;
+        this.$dict = new ReferenceManager();
+        this.$recv = new ReferenceManager();
+        this.$emit = new ReferenceManager();
     }
 
     @Lifecycle.app(
@@ -45,33 +43,37 @@ export class ReferenceService extends Service {
         AppStatus.MOUNTED,
         AppStatus.UNMOUNTED
     )
-    public register(): string {
+    public get(): string {
         let now = Date.now();
         const ticket = this.$ticket;
         this.$ticket += 1;
         if (this.$ticket > MAX_TICKET) {
             this.$ticket = MIN_TICKET;
-            while (now === this.$ts) {
-                now = Date.now();
-            }
+            while (now === this.$ts) now = Date.now();
             this.$ts = now;
         }
         return ticket.toString(16) + now.toString(16);
     }
+}
+
+export class ReferenceManager<T extends { key: string }> {
+    private readonly $map: Record<string, T> = {};
+    public get map() { return { ...this.$map }; }
 
     @Lifecycle.app(
         AppStatus.MOUNTING, 
         AppStatus.MOUNTED,
         AppStatus.UNMOUNTED
     )
-    public add(target: BaseModel) {
-        this.$ref[target.key] = target;
+    public add(target: T) {
+        this.$map[target.key] = target;
     }
 
     @Lifecycle.app(AppStatus.MOUNTED)
-    public remove(target: BaseModel) {
-        delete this.$ref[target.key];
+    public del(target: T) {
+        delete this.$map[target.key];
     }
+
 }
 
 
