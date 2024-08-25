@@ -1,33 +1,28 @@
-import { BaseClass } from "../types/base";
-import { AppStatus } from "../types/status";
-import { Lifecycle } from "../utils/lifecyle";
-import { singleton } from "../utils/singleton";
-import { Service } from "./base";
-import { BaseModel, ModelId } from "../types/model";
-import { SeqOf } from "../types/sequence";
+import type { App } from "../app";
+import { Model } from "../models";
 import { BunnyModel } from "../models/bunny";
 import { RootModel } from "../models/root";
-import { ParentOf } from "../types/definition";
-import { Model } from "../models/base";
+import { Base } from "../type";
+import { ModelCode } from "../type/code";
+import { ModelReflect } from "../type/model";
 
-const $prod: Record<number, BaseClass> = {
-    [ModelId.BUNNY]: BunnyModel,
-    [ModelId.ROOT]: RootModel
-};
+export class FactoryService {
+    public readonly app: App;
 
-@singleton
-export class FactoryService extends Service {
-    @Lifecycle.app(
-        AppStatus.UNMOUNTED, 
-        AppStatus.MOUNTING,
-        AppStatus.MOUNTED
-    )
-    public unseq<M extends BaseModel>(
-        seq: SeqOf<M>,
-        parent: M extends Model<infer T> ? ParentOf<T> : never
+    constructor(app: App) {
+        this.app = app;
+    }
+
+    private static $productDict: Record<ModelCode, Base.Class> = {
+        bunny: BunnyModel,
+        root: RootModel
+    }; 
+
+    public unserialize<M extends Model>(
+        config: ModelReflect.Config<M>,
+        parent: any
     ): M {
-        const Constructor = $prod[seq.id];
-        return new Constructor(seq, parent, this.app);
+        const Constructor = FactoryService.$productDict[config.code as ModelCode];
+        return new Constructor(config, parent, this.app);
     }
 }
-

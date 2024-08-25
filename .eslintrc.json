@@ -3,7 +3,7 @@
 	"parser": "@typescript-eslint/parser",
 	"plugins": [
 		"@typescript-eslint",
-		"import"  
+		"import"
 	],
 	"parserOptions": {
 		"project": "./tsconfig.json",
@@ -19,12 +19,12 @@
 	],
 	"settings": {
 		"import/resolver": {
-			"webpack": {
-				"config": "webpack.config.js"
-			}
+			"webpack": { "config": "webpack.config.js" }
 		}
 	},
 	"rules": {
+		"max-len": ["warn", 100],
+
 		"indent": ["error", 4],
 		"semi": ["error", "always"],
 		"curly": ["error", "multi-line"],
@@ -60,7 +60,7 @@
 		"block-spacing": "error",
 		"arrow-spacing": "error",
 
-		"linebreak-style": ["error", "windows"],
+		"linebreak-style": ["off", "windows"],
 
 		"import/prefer-default-export": "off",
 		"import/no-unresolved": "error",
@@ -75,7 +75,6 @@
 		"@typescript-eslint/no-this-alias": "warn",
 		"@typescript-eslint/no-namespace": "off",
 		"@typescript-eslint/key-spacing": "error"
-
 	}
 }
   

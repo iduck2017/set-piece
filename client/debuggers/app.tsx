@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from "react";
-import { AppStatus } from "../types/status";
-import { SlotData } from "../types/app";
 import type { App } from "../app";
-import { ModelDebugger } from "./model";
+import { ModelDebugger } from ".";
+import { AppInfo } from "../type/app";
+import { AppStatus } from "../type/status";
 
 export function AppDebugger(props: {
     app: App
@@ -10,29 +10,26 @@ export function AppDebugger(props: {
     const { app } = props;
 
     const [ status, setStatus ] = useState<AppStatus>(app.status);
-    const [ slots, setSlots ] = useState<SlotData[]>(app.slot.data);
+    const [ archieves, setArchieves ] = useState<AppInfo.Archieve[]>(app.archieveService.data);
   
     const create = async () => {
-        await app.slot.new({
-            difficulty: 0,
-            name      : 'iduck'
-        });
-        setSlots([ ...app.slot.data ]);
+        await app.archieveService.createArchieve();
+        setArchieves([ ...app.archieveService.data ]);
     };
 
     const start = async (index: number) => {
-        await app.mount(index);
+        await app.startGame(index);
         setStatus(app.status);
     };
 
     const save = () => {
-        app.slot.save();
+        app.archieveService.save();
     };
 
     useEffect(() => {
-        if (slots.length > 0) {
-            start(0);
-        }
+        // if (archieves.length > 0) {
+        //     start(0);
+        // }
     }, []);
 
     return <div>
@@ -40,12 +37,12 @@ export function AppDebugger(props: {
             new
         </button>
         {status === AppStatus.UNMOUNTED && 
-            slots.map((slot, index) => (
+            archieves.map((archieve, index) => (
                 <button 
-                    key={slot.slotId} 
+                    key={archieve.id} 
                     onClick={() => start(index)}
                 >
-                    slot_{slot.slotId}
+                    slot_{archieve.id}
                 </button>
             ))
         }

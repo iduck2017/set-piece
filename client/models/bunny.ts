@@ -1,40 +1,47 @@
-import { BunnyDef, GenderType } from "../types/common";
-import { ModelId } from "../types/model";
+import { Model } from ".";
+import type { App } from "../app";
+import { ModelCode } from "../type/code";
+import type { BunnyModelTmpl } from "../type/common";
+import { RawModelConfig } from "../type/config";
+import { ModelDef } from "../type/definition";
+import { SpecificModelTmpl } from "../type/template";
 import { Random } from "../utils/random";
-import { Model } from "./base";
 
-export class BunnyModel extends Model<BunnyDef> {
-    constructor(conf: ComnConf<BunnyDef>) {
-        super({
-            ...conf,
-            key: conf.key,
-            list: conf.list || [],
-            dict: {},
-            rule: {},
-            info: {},
-            stat: {
-                age: 0,
-                weight: Random.number(50, 100),
-                gender: Random.type(GenderType.FEMALE, GenderType.MALE),
-                ...conf.stat
+export class BunnyModel extends Model<BunnyModelTmpl> {
+    constructor(
+        config: RawModelConfig<BunnyModelTmpl>,
+        parent: BunnyModelTmpl[ModelDef.Parent],
+        app: App
+    ) {
+        super({}, {
+            ...config,
+            code: ModelCode.Bunny,
+            stableState: {
+                maxAge: 0,
+                maxWeight: 0
             },
-            event: {}
-        });
-        this.debug.eat = this.eat;
-        this.debug.spawn = this.spawn;
+            unstableState: {
+                age: 0,
+                color: '',
+                maxAgeOffset: 0,
+                weight: Random.number(30, 50),
+                ...config.unstableState
+            },
+            childChunkList: config.childChunkList || [],
+            childChunkDict: {}
+        }, parent, app);
+        this.debugIntf.eat = this.eatFood;
+        this.debugIntf.spawn = this.spawnChild;
     }
 
-    public eat() {
-        console.log('eat');
-        this.$calc.stat.weight += Random.number(1, 5);
+    public eatFood() {
+        this.$unstableState.weight += Random.number(1, 5);
     }
 
-    public spawn() {
-        console.log('spawn');
-        const child = this.app.fact.unseq<BunnyModel>({
-            id: ModelId.BUNNY,
-            rule: {}
+    public spawnChild() {
+        const child = this.app.factoryService.unserialize<BunnyModel>({
+            code: ModelCode.Bunny
         }, this);
-        this.$node.add(child);
+        this.$addChild(child);
     }
 }

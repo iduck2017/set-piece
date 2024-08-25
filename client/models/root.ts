@@ -1,26 +1,28 @@
-import { ModelId } from "../types/model";
-import { Model } from "./base";
-import { ComnConf } from "../types/config";
-import { RootDef } from "../types/common";
+import { Model } from ".";
+import type { App } from "../app";
+import { ModelCode } from "../type/code";
+import { RootModelTmpl } from "../type/common";
+import { RawModelConfig } from "../type/config";
+import { ModelDef } from "../type/definition";
 
-export class RootModel extends Model<RootDef> {
-    constructor(conf: ComnConf<RootDef>) {
-        super({
-            ...conf,
-            key : conf.key,
-            info: {},
-            stat: {
-                progress: 0,
-                ...conf.stat
+export class RootModel extends Model<RootModelTmpl> {
+    constructor(
+        config: RawModelConfig<RootModelTmpl>,
+        parent: RootModelTmpl[ModelDef.Parent],
+        app: App
+    ) {
+        super({}, {
+            ...config,
+            stableState: {},
+            unstableState: {
+                progress: config.unstableState?.progress || 0
             },
-            list: [],
-            dict: {
-                bunny: conf.dict?.bunny || {
-                    id  : ModelId.BUNNY,
-                    rule: {}
+            childChunkDict: {
+                bunny: config.childChunkDict?.bunny || {
+                    code: ModelCode.Bunny
                 }
             },
-            event: {}
-        });
+            childChunkList: []
+        }, parent, app);
     }
 }

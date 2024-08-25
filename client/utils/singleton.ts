@@ -1,8 +1,8 @@
-import { BaseClass } from "../types/base";
+import { Base } from "../type";
 
-const $ref = new Set<BaseClass>();
+const $ref = new Set<Base.Class>();
 
-export function singleton(IConstructor: BaseClass) {
+export function singleton(IConstructor: Base.Class) {
     return class extends IConstructor {
         constructor(...config: any[]) {
             if ($ref.has(IConstructor)) {

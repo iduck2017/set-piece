@@ -1,17 +1,17 @@
 import { useEffect, useRef, useState } from "react";
-import { DebugRenderer } from "../renders/debug";
-import type { ModelDebuggerProps } from "./model";
+import type { ModelDebuggerProps } from ".";
+import { DebugRenderer } from "../renderers/debug";
 
 export function useModel(props: ModelDebuggerProps) {
     const { target, app } = props;
 
-    const [ data, setData ] = useState(target.data);
+    const [ state, setState ] = useState(target.state);
     const [ children, setChildren ] = useState(target.children);
-    const render = useRef(new DebugRenderer({ 
-        setData,
+    const render = useRef(new DebugRenderer(
+        setState,
         setChildren,
         app
-    }));
+    ));
     
     useEffect(() => {
         render.current.active(target);
@@ -19,7 +19,7 @@ export function useModel(props: ModelDebuggerProps) {
     }, []);
 
     return {
-        data,
+        state,
         children
     };
 }
