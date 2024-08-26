@@ -13,9 +13,9 @@ export class RootModel extends Model<RootModelTmpl> {
     ) {
         super({}, {
             ...config,
-            stableState: {},
-            unstableState: {
-                progress: config.unstableState?.progress || 0
+            originState: {
+                progress: 0,
+                ...config.originState
             },
             childChunkDict: {
                 bunny: config.childChunkDict?.bunny || {

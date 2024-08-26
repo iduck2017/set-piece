@@ -5,14 +5,11 @@ import { SpecificModelTmpl } from "./template";
 export type BunnyModelTmpl = 
     SpecificModelTmpl<{
         code: ModelCode.Bunny,
-        unstableState: {
+        state: {
             age: number,
             color: string,
             maxAgeOffset: number,
-            weight: number
-        },
-        stableState: {
-            maxAge: number,
+            weight: number,
             maxWeight: number,
         },
         childList: BunnyModel[],
@@ -22,8 +19,8 @@ export type BunnyModelTmpl =
 export type RootModelTmpl = 
     SpecificModelTmpl<{
         code: ModelCode.Root,
-        unstableState: {
-            progress: number
+        state: {
+            progress: number,
         }
         childDict: {
             bunny?: BunnyModel

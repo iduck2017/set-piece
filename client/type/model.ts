@@ -15,10 +15,9 @@ export type RawModelEmitterEventDict<
 }
 
 export namespace ModelReflect {
-    export type State<M extends ModelTmpl> = M[ModelDef.UnstableState] & M[ModelDef.StableState]
     export type EmitterEventDict<M extends ModelTmpl> = M[ModelDef.EmitterEventDict] & RawModelEmitterEventDict<M> 
 
-    export type UpdaterDict<M extends ModelTmpl> = { [K in keyof State<M>]: Updater<M, K> }
+    export type UpdaterDict<M extends ModelTmpl> = { [K in keyof M[ModelDef.State]]: Updater<M, K> }
     export type ChildChunkList<M extends ModelTmpl> = Array<Config<Reflect.Iterator<M[ModelDef.ChildList]>>>
     export type ChildChunkDict<M extends ModelTmpl> = { [K in keyof M[ModelDef.ChildDict]]: Config<M[ModelDef.ChildDict][K]> }
     

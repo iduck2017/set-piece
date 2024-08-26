@@ -11,7 +11,7 @@ export class RenderService {
         this.app = app;
     }
 
-    public init() {
+    public initialize() {
         this.$root = createRoot(
             document.getElementById('root')!
         );

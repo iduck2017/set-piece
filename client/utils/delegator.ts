@@ -10,12 +10,12 @@ import { EventReflect } from "../type/event";
 import type { ModelReflect } from "../type/model";
 
 export namespace Delegator {
-    export function initUnstableState<M extends ModelTmpl>(
-        unstableState: M[ModelDef.UnstableState],
+    export function initOriginState<M extends ModelTmpl>(
+        originState: M[ModelDef.State],
         target: Model<M>
     ) {
-        return new Proxy<M[ModelDef.UnstableState]>(unstableState, {
-            set: (origin, key: keyof M[ModelDef.UnstableState], value) => {
+        return new Proxy(originState, {
+            set: (origin, key: keyof M[ModelDef.State], value) => {
                 origin[key] = value;
                 target.updateState(key);
                 return true;
@@ -81,7 +81,7 @@ export namespace Delegator {
     ) {
         return new Proxy({} as EventReflect.BindIntf<D>, {
             get: (target, key) => {
-                return dict[key].bind.bind(dict[key]);
+                return dict[key].bindHandler.bind(dict[key]);
             },
             set: () => false
         }); 
@@ -92,14 +92,14 @@ export namespace Delegator {
     ) {
         return new Proxy({} as EventReflect.BindIntf<D>, {
             get: (target, key: keyof D) => {
-                return dict[key].unbind.bind(dict[key]);
+                return dict[key].unbindHandler.bind(dict[key]);
             },
             set: () => false
         }); 
     }
 
     export function initUpdaterDict<M extends ModelTmpl>(
-        configDict: { [K in keyof ModelReflect.State<M>]?: string[] },
+        configDict: { [K in keyof M[ModelDef.State]]?: string[] },
         parent: Model<M>,
         app: App
     ) {
@@ -117,7 +117,7 @@ export namespace Delegator {
             }), dict);
         return new Proxy(origin, {
             set: () => false,
-            get: (target, key: keyof ModelReflect.State<M>) => {
+            get: (target, key: keyof M[ModelDef.State]) => {
                 if (!target[key]) { 
                     target[key] = new Updater(key, [], parent, app); 
                 }

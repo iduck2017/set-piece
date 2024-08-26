@@ -12,13 +12,13 @@ export class SettingsService {
         this.app = app;
     }
 
-    public init(config: AppInfo.Settings) {
-        this.$data = config;
+    public initialize(data: AppInfo.Settings) {
+        this.$data = data;
     }
 
-    public async update(data: AppInfo.Settings) {
+    public async updateSettings(data: AppInfo.Settings) {
         this.$data = data;
-        await this.app.saveGame();
+        await this.app.saveMetaData();
         return;
     }
 }

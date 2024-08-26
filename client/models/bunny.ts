@@ -4,7 +4,6 @@ import { ModelCode } from "../type/code";
 import type { BunnyModelTmpl } from "../type/common";
 import { RawModelConfig } from "../type/config";
 import { ModelDef } from "../type/definition";
-import { SpecificModelTmpl } from "../type/template";
 import { Random } from "../utils/random";
 
 export class BunnyModel extends Model<BunnyModelTmpl> {
@@ -16,16 +15,13 @@ export class BunnyModel extends Model<BunnyModelTmpl> {
         super({}, {
             ...config,
             code: ModelCode.Bunny,
-            stableState: {
-                maxAge: 0,
-                maxWeight: 0
-            },
-            unstableState: {
+            originState: {
                 age: 0,
                 color: '',
+                maxWeight: 0,
                 maxAgeOffset: 0,
                 weight: Random.number(30, 50),
-                ...config.unstableState
+                ...config.originState
             },
             childChunkList: config.childChunkList || [],
             childChunkDict: {}
@@ -35,7 +31,7 @@ export class BunnyModel extends Model<BunnyModelTmpl> {
     }
 
     public eatFood() {
-        this.$unstableState.weight += Random.number(1, 5);
+        this.$originState.weight += Random.number(1, 5);
     }
 
     public spawnChild() {

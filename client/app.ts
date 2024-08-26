@@ -37,8 +37,8 @@ export class App {
     public async initialize() {
         const metadata = await this.$loadMetaData();
         this.archieveService.init(metadata.archieves);
-        this.settingsService.init(metadata.settings);
-        this.renderService.init();
+        this.settingsService.initialize(metadata.settings);
+        this.renderService.initialize();
         this.$status = AppStatus.UNMOUNTED;
     }
 
@@ -63,13 +63,13 @@ export class App {
 
     public async quitGame() {
         this.$status = AppStatus.UNMOUNTING;
-        this.archieveService.save();
+        this.archieveService.saveArchieve();
         this.$root?.destroy();
         this.$root = undefined;
         this.$status = AppStatus.UNMOUNTED;
     }
 
-    public async saveGame() {
+    public async saveMetaData() {
         const save: AppInfo.MetaData = {
             version: this.version,
             settings: this.settingsService.data,

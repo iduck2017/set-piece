@@ -8,9 +8,10 @@ import { singleton } from "../utils/singleton";
 
 @singleton
 export class ArchieveService {
-
     public readonly app: App;
+
     private $index?: number;
+
     private $data: AppInfo.Archieve[] = [];
     public get data() { return this.$data; } 
 
@@ -32,14 +33,14 @@ export class ArchieveService {
         });
         const record = Generator.initRootModelConfig();
         await localStorage.setItem(`${Context.ARCHIEVE_PATH}_${id}`, JSON.stringify(record));
-        await this.app.saveGame();
+        await this.app.saveMetaData();
         return record;
     }
 
     public async loadArchieve(index: number) {
         this.$index = index;
-        const slot = this.$data[index];
-        const path = `${Context.ARCHIEVE_PATH}_${slot.id}`;
+        const archieve = this.$data[index];
+        const path = `${Context.ARCHIEVE_PATH}_${archieve.id}`;
         const raw = await localStorage.getItem(path);
         if (!raw) {
             throw new Error();
@@ -52,14 +53,14 @@ export class ArchieveService {
         const path = `${Context.ARCHIEVE_PATH}_${slot.id}`;
         this.$data.splice(index, 1);
         await localStorage.removeItem(path);
-        await this.app.saveGame();
+        await this.app.saveMetaData();
     }
 
     public async unloadArchieve() {
         this.$index = undefined;
     }
 
-    public async save() {
+    public async saveArchieve() {
         const index = this.$index;
         const rootModel = this.app.root;
         if (!rootModel || index === undefined) {
@@ -73,6 +74,6 @@ export class ArchieveService {
             progress: rootModel.state.progress
         };
         await localStorage.setItem(path, JSON.stringify(record));
-        await this.app.saveGame();
+        await this.app.saveMetaData();
     }
 }

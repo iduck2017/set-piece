@@ -25,7 +25,7 @@ export class Handler<E = any, P = any> {
         refer.forEach(key => {
             const emitter = app.referService.emitterReferManager.referDict[key];
             if (emitter) {
-                emitter.bind(this);
+                emitter.bindHandler(this);
             }
         });
     }
@@ -46,7 +46,7 @@ export class Handler<E = any, P = any> {
     }
 
     public destroy() { 
-        this.$emitterList.forEach(item => item.unbind(this)); 
+        this.$emitterList.forEach(item => item.unbindHandler(this)); 
     }
     
     public serialize() {

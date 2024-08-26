@@ -4,11 +4,11 @@ import { ModelTmpl } from "../type/template";
 import { Event } from "../type/event";
 import { Emitter } from "./emitter";
 import type { Handler } from "./handler";
-import type { ModelReflect } from "../type/model";
+import { ModelDef } from "../type/definition";
 
 export class Updater<
     M extends ModelTmpl,
-    K extends keyof ModelReflect.State<M>,
+    K extends keyof M[ModelDef.State],
 > extends Emitter<
     Event.StateUpdateBefore<M, K>, 
     Model<M>
@@ -25,13 +25,13 @@ export class Updater<
         this.key = key;
     }
 
-    public bind(handler: Handler<Event.StateUpdateBefore<M, K>>) {
-        super.bind(handler);
+    public bindHandler(handler: Handler<Event.StateUpdateBefore<M, K>>) {
+        super.bindHandler(handler);
         this.parent.updateState(this.key);
     }
 
-    public unbind(handler: Handler<Event.StateUpdateBefore<M, K>>) {
-        super.unbind(handler);
+    public unbindHandler(handler: Handler<Event.StateUpdateBefore<M, K>>) {
+        super.unbindHandler(handler);
         this.parent.updateState(this.key);
     }
 }

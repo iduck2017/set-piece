@@ -5,8 +5,7 @@ import { Base } from ".";
 export type ModelTmpl = {
     code: string
     rule: Base.Data
-    stableState: Base.Data
-    unstableState: Base.Data
+    state: Base.Data
     childList: Array<Model>
     childDict: Record<Base.Key, Model>,
     parent: Model | undefined
@@ -18,8 +17,7 @@ export type SpecificModelTmpl<M extends Partial<ModelTmpl>> =
     M & Omit<{
         code: never,
         rule: Base.VoidDict,
-        stableState: Base.VoidDict
-        unstableState: Base.VoidDict
+        state: Base.VoidDict
         childList: Array<never>
         childDict: Base.VoidDict
         parent: Model | undefined

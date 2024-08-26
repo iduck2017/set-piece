@@ -6,28 +6,27 @@ import { ModelReflect } from "./model";
 export type ModelConfig<
     M extends ModelTmpl
 > = {
-    code: M[ModelDef.Code]
     id?: string
+    code: M[ModelDef.Code]
     rule?: Partial<M[ModelDef.Rule]>
-    stableState: M[ModelDef.StableState]
-    unstableState: M[ModelDef.UnstableState]
+    originState: M[ModelDef.State]
     childChunkList: ModelReflect.ChildChunkList<M>,
     childChunkDict: ModelReflect.ChildChunkDict<M>,
     emitterChunkDict?: EventReflect.ChunkDict<ModelReflect.EmitterEventDict<M>>
     handlerChunkDict?: EventReflect.ChunkDict<M[ModelDef.HandlerEventDict]>
-    updaterChunkDict?: EventReflect.ChunkDict<ModelReflect.State<M>>
+    updaterChunkDict?: EventReflect.ChunkDict<M[ModelDef.State]>
 }
 
 export type RawModelConfig<
     M extends ModelTmpl
 > = {
-    code: M[ModelDef.Code]
     id?: string
+    code: M[ModelDef.Code]
     rule?: Partial<M[ModelDef.Rule]>
-    unstableState?: Partial<M[ModelDef.UnstableState]>
+    originState?: Partial<M[ModelDef.State]>
     childChunkList?: ModelReflect.ChildChunkList<M>,
     childChunkDict?: Partial<ModelReflect.ChildChunkDict<M>>,
     emitterChunkDict?: EventReflect.ChunkDict<ModelReflect.EmitterEventDict<M>>
     handlerChunkDict?: EventReflect.ChunkDict<M[ModelDef.HandlerEventDict]>
-    updaterChunkDict?: EventReflect.ChunkDict<ModelReflect.State<M>>
+    updaterChunkDict?: EventReflect.ChunkDict<M[ModelDef.State]>
 }

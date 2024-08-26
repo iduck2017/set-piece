@@ -10,10 +10,10 @@ export type ModelChunk<
     code: M[ModelDef.Code]
     id: string
     rule: Partial<M[ModelDef.Rule]>
-    unstableState: M[ModelDef.UnstableState]
+    originState: M[ModelDef.State]
     childChunkList: ModelReflect.ChildChunkList<M>,
     childChunkDict: ModelReflect.ChildChunkDict<M>,
     emitterChunkDict: EventReflect.ChunkDict<ModelReflect.EmitterEventDict<M>>
     handlerChunkDict: EventReflect.ChunkDict<M[ModelDef.HandlerEventDict]>
-    updaterChunkDict: EventReflect.ChunkDict<ModelReflect.State<M>>
+    updaterChunkDict: EventReflect.ChunkDict<M[ModelDef.State]>
 }

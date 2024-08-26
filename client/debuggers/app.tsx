@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import type { App } from "../app";
 import { ModelDebugger } from ".";
 import { AppInfo } from "../type/app";
@@ -12,42 +12,36 @@ export function AppDebugger(props: {
     const [ status, setStatus ] = useState<AppStatus>(app.status);
     const [ archieves, setArchieves ] = useState<AppInfo.Archieve[]>(app.archieveService.data);
   
-    const create = async () => {
+    const createArchieve = async () => {
         await app.archieveService.createArchieve();
         setArchieves([ ...app.archieveService.data ]);
     };
 
-    const start = async (index: number) => {
+    const startGame = async (index: number) => {
         await app.startGame(index);
         setStatus(app.status);
     };
 
-    const save = () => {
-        app.archieveService.save();
+    const saveArchieve = () => {
+        app.archieveService.saveArchieve();
     };
 
-    useEffect(() => {
-        // if (archieves.length > 0) {
-        //     start(0);
-        // }
-    }, []);
-
     return <div>
-        <button onClick={create}>
+        <button onClick={createArchieve}>
             new
         </button>
         {status === AppStatus.UNMOUNTED && 
             archieves.map((archieve, index) => (
                 <button 
                     key={archieve.id} 
-                    onClick={() => start(index)}
+                    onClick={() => startGame(index)}
                 >
                     slot_{archieve.id}
                 </button>
             ))
         }
         {status === AppStatus.MOUNTED && 
-            <button onClick={save}>save</button>
+            <button onClick={saveArchieve}>save</button>
         }
         {status === AppStatus.MOUNTED && app.root && 
             <ModelDebugger

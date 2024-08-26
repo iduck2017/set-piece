@@ -19,14 +19,13 @@ export class Model<
     public readonly parent: M[ModelDef.Parent];
 
     private readonly $rule: Partial<M[ModelDef.Rule]>;
-    private readonly $stableState: M[ModelDef.StableState];
-    protected readonly $unstableState: M[ModelDef.UnstableState];
-    private readonly $state: ModelReflect.State<M>;
-    public get state() { return { ...this.$state }; }
+    protected readonly $originState: M[ModelDef.State];
+    private readonly $currentState: M[ModelDef.State];
+    public get state() { return { ...this.$currentState }; }
     
     private readonly $updaterDict: ModelReflect.UpdaterDict<M>;
     public readonly updaterBindIntf: EventReflect.BindIntf<{
-        [K in keyof ModelReflect.State<M>]: Event.StateUpdateBefore<M, K>
+        [K in keyof M[ModelDef.State]]: Event.StateUpdateBefore<M, K>
     }>;
 
     private readonly $childDict: M[ModelDef.ChildDict];
@@ -61,16 +60,12 @@ export class Model<
         this.parent = parent;
 
         this.$rule = config.rule || {};
-        this.$stableState = config.stableState;
-        this.$unstableState = Delegator.initUnstableState(config.unstableState, this);
-        this.$state = {
-            ...this.$stableState,
-            ...this.$unstableState
-        };
+        this.$originState = Delegator.initOriginState(config.originState, this);
+        this.$currentState = { ...this.$originState };
 
         this.$updaterDict = Delegator.initUpdaterDict(config.updaterChunkDict || {}, this, app);
         this.updaterBindIntf = Delegator.initBindIntf<{ 
-            [K in keyof ModelReflect.State<M>]: Event.StateUpdateBefore<M, K>
+            [K in keyof M[ModelDef.State]]: Event.StateUpdateBefore<M, K>
         }>(this.$updaterDict);
         
         this.$childList = 
@@ -137,10 +132,10 @@ export class Model<
     }
 
     public updateState<
-        K extends keyof ModelReflect.State<M>
+        K extends keyof M[ModelDef.State]
     >(key: K) {
-        const prev = this.$state[key];
-        const current = this.$stableState[key] || this.$unstableState[key];
+        const prev = this.$currentState[key];
+        const current = this.$originState[key];
         const event = {
             target: this,
             prev: current,
@@ -149,7 +144,7 @@ export class Model<
         this.$updaterDict[key].execute(event);
         const next = event.next;
         if (prev !== next) {
-            this.$state[key] = next;
+            this.$currentState[key] = next;
             this.$rawEmitterDict.stateUpdateDone.execute({
                 target: this,
                 state: this.state
@@ -157,7 +152,9 @@ export class Model<
         }
     }
 
-    public serializeEntity(entityDict: Record<string, Emitter | Handler>) {
+    public serializeDict(
+        entityDict: Record<string, Emitter | Handler>
+    ) {
         return Object
             .keys(entityDict)
             .reduce((dict, key) => ({
@@ -171,7 +168,7 @@ export class Model<
             code: this.code,
             id: this.id,
             rule: this.$rule,
-            unstableState: this.$unstableState,
+            originState: this.$originState,
             childChunkList: this.$childList.map(item => item.serialize() as any),
             childChunkDict: Object
                 .keys(this.$childDict)
@@ -179,9 +176,9 @@ export class Model<
                     ...dict,
                     [key]: this.$childDict[key].serialize()   
                 }), {} as any),
-            emitterChunkDict: this.serializeEntity(this.$emitterDict),
-            handlerChunkDict: this.serializeEntity(this.$handlerDict),
-            updaterChunkDict: this.serializeEntity(this.$updaterDict)
+            emitterChunkDict: this.serializeDict(this.$emitterDict),
+            handlerChunkDict: this.serializeDict(this.$handlerDict),
+            updaterChunkDict: this.serializeDict(this.$updaterDict)
         };
     }
 }

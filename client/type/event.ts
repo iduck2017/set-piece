@@ -3,7 +3,7 @@ import { Emitter } from "../utils/emitter";
 import { Handler } from "../utils/handler";
 import { Base } from ".";
 import type { ModelTmpl } from "./template";
-import type { ModelReflect } from "./model";
+import { ModelDef } from "./definition";
 
 export namespace EventReflect {
     export type ExecuteFunc<E> = (event: E) => void;
@@ -18,18 +18,18 @@ export namespace EventReflect {
 export namespace Event {
     export type StateUpdateBefore<
         M extends ModelTmpl,
-        K extends keyof ModelReflect.State<M>
+        K extends keyof M[ModelDef.State]
     > = {
         target: Model<M>,
-        next: ModelReflect.State<M>[K],
-        prev: ModelReflect.State<M>[K]
+        next: M[ModelDef.State][K],
+        prev: M[ModelDef.State][K]
     }
 
     export type StateUpdateDone<
         M extends ModelTmpl
     > = {
         target: Model<M>,
-        state: ModelReflect.State<M>
+        state: M[ModelDef.State]
     }
 
     export type ChildUpdateDone<
