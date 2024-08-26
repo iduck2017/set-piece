@@ -8,7 +8,7 @@ import { ModelDef } from "./definition";
 export namespace EventReflect {
     export type ExecuteFunc<E> = (event: E) => void;
     export type BindFunc<E> = (handler: Handler<E>) => void
-    export type EmitterDict<D extends Base.Dict> = { [K in keyof D]: Emitter<D[K]> }
+    export type EmitterDict<D extends Base.Dict, P = any> = { [K in keyof D]: Emitter<D[K], P> }
     export type HandlerDict<D extends Base.Dict> = { [K in keyof D]: Handler<D[K]> }
     export type ExecuteIntf<D extends Base.Dict> = { [K in keyof D]: ExecuteFunc<D[K]> }
     export type BindIntf<D extends Base.Dict> = { [K in keyof D]: BindFunc<D[K]> }

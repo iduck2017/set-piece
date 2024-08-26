@@ -47,34 +47,33 @@ export namespace Delegator {
             }
         });
     }
-    
 
-    export function initEmitterDict<D extends Base.Dict, P>(
-        configDict: { [K in keyof D]?: string[] },
-        parent: P,
-        app: App
-    ) {
-        const dict = {} as EventReflect.EmitterDict<D>;
-        const origin = Object
-            .keys(configDict)
-            .reduce((result, key) => ({
-                ...result,
-                [key]: new Emitter<Base.Func, P>(
-                    configDict[key] || [],
-                    parent,
-                    app
-                )
-            }), dict);
-        return new Proxy(origin, {
-            set: () => false,
-            get: (target, key: keyof D) => {
-                if (!target[key]) {
-                    target[key] = new Emitter<any, P>([], parent, app);
-                }
-                return target[key];
-            }
-        });
-    }
+    // export function initEmitterDict<D extends Base.Dict, P>(
+    //     configDict: { [K in keyof D]?: string[] },
+    //     parent: P,
+    //     app: App
+    // ) {
+    //     const dict = {} as EventReflect.EmitterDict<D>;
+    //     const origin = Object
+    //         .keys(configDict)
+    //         .reduce((result, key) => ({
+    //             ...result,
+    //             [key]: new Emitter<Base.Func, P>(
+    //                 configDict[key] || [],
+    //                 parent,
+    //                 app
+    //             )
+    //         }), dict);
+    //     return new Proxy(origin, {
+    //         set: () => false,
+    //         get: (target, key: keyof D) => {
+    //             if (!target[key]) {
+    //                 target[key] = new Emitter<any, P>([], parent, app);
+    //             }
+    //             return target[key];
+    //         }
+    //     });
+    // }
 
     export function initBindIntf<D extends Base.Dict>(
         dict: EventReflect.EmitterDict<D>
