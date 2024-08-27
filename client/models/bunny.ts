@@ -12,7 +12,9 @@ export class BunnyModel extends Model<BunnyModelTmpl> {
         parent: BunnyModelTmpl[ModelDef.Parent],
         app: App
     ) {
-        super({}, {
+        super({
+            pong: console.log
+        }, {
             ...config,
             code: ModelCode.Bunny,
             originState: {
@@ -31,6 +33,7 @@ export class BunnyModel extends Model<BunnyModelTmpl> {
     }
 
     public eatFood() {
+        console.log("eatFood");
         this.$originState.weight += Random.number(1, 5);
     }
 

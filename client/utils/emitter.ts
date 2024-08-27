@@ -35,6 +35,7 @@ export class Emitter<E = any, P = any> {
     public bindHandler(handler: Handler<E>) {
         this.$addHandler(handler);
         handler.$addEmitter(this);
+        console.log(this, this.$handlerList);
     }
 
     public unbindHandler(handler: Handler<E>) {
@@ -62,18 +63,13 @@ export class Emitter<E = any, P = any> {
     }
     
     public serialize() {
-        return [
-            this.id,
-            ...this.$handlerList.map(item => item.id)
-        ];
+        return [ this.id, ...this.$handlerList.map(item => item.id) ];
     }
 
 }
 
 export class EmitterProxy<D extends Base.Dict, P = any> {
-    private readonly $dict: EventReflect.EmitterDict<D>;
-
-    public readonly executeIntf: EventReflect.ExecuteIntf<D>;
+    public readonly dict: EventReflect.EmitterDict<D>;
     public readonly bindIntf: EventReflect.BindIntf<D>;
     public readonly unbindIntf: EventReflect.BindIntf<D>;
 
@@ -82,28 +78,44 @@ export class EmitterProxy<D extends Base.Dict, P = any> {
         parent: P,
         app: App
     ) {
-        const originDict = Object.keys(config).reduce((result, key) => ({
+        const origin = Object.keys(config).reduce((result, key) => ({
             ...result,
-            [key]: new Emitter(config[key] || [], parent, app)
-        }),  {} as EventReflect.EmitterDict<D>);
-        this.$dict = new Proxy(originDict, {
+            [key]: new Emitter(
+                config[key] || [], 
+                parent,
+                app
+            )
+        }),  {}) as EventReflect.EmitterDict<D>;
+        
+        this.dict = new Proxy(origin, {
             get: (target, key: keyof D) => {
-                target[key] = target[key] || new Emitter<any, P>([], parent, app);
+                if (!target[key]) {
+                    target[key] = new Emitter([], parent, app);
+                }
                 return target[key];
             },
             set: () => false
         });
-        this.executeIntf = new Proxy({} as EventReflect.ExecuteIntf<D>, {
-            get: (target, key) => this.$dict[key].execute.bind(this.$dict[key]),
+
+        this.bindIntf = new Proxy({}, {
+            get: (target, key) => this.dict[key].bindHandler.bind(this.dict[key]),
             set: () => false
-        }); 
-        this.bindIntf = new Proxy({} as EventReflect.BindIntf<D>, {
-            get: (target, key) => this.$dict[key].bindHandler.bind(this.$dict[key]),
+        }) as EventReflect.BindIntf<D>;
+
+        this.unbindIntf = new Proxy({}, {
+            get: (target, key) => this.dict[key].unbindHandler.bind(this.dict[key]),
             set: () => false
-        }); 
-        this.unbindIntf = new Proxy({} as EventReflect.BindIntf<D>, {
-            get: (target, key) => this.$dict[key].unbindHandler.bind(this.$dict[key]),
-            set: () => false
-        }); 
+        }) as EventReflect.BindIntf<D>;
+    }
+
+    public serialize() {
+        return Object.keys(this.dict).reduce((dict, key) => ({
+            ...dict,
+            [key]: this.dict[key].serialize()   
+        }), {});
+    }
+
+    public destroy() {
+        Object.values(this.dict).forEach(item => item.destroy());
     }
 }

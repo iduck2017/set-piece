@@ -15,7 +15,7 @@ export function useModel(props: ModelDebuggerProps) {
     
     useEffect(() => {
         render.current.active(target);
-        return render.current.deactive.bind(render);
+        return render.current.destroy.bind(render);
     }, []);
 
     return {

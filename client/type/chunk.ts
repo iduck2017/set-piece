@@ -13,7 +13,7 @@ export type ModelChunk<
     originState: M[ModelDef.State]
     childChunkList: ModelReflect.ChildChunkList<M>,
     childChunkDict: ModelReflect.ChildChunkDict<M>,
-    emitterChunkDict: EventReflect.ChunkDict<ModelReflect.EmitterEventDict<M>>
+    emitterChunkDict: EventReflect.ChunkDict<M[ModelDef.EmitterEventDict]>
     handlerChunkDict: EventReflect.ChunkDict<M[ModelDef.HandlerEventDict]>
     updaterChunkDict: EventReflect.ChunkDict<M[ModelDef.State]>
 }

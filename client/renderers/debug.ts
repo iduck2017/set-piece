@@ -27,8 +27,8 @@ export class DebugRenderer<
     }
 
     public active(target: Model<M>) {
-        target.emitterBindIntf.stateUpdateDone(this.$handlerDict.stateUpdateDone);
-        target.emitterBindIntf.childUpdateDone(this.$handlerDict.childUpdateDone);
+        target.emitterBindIntf.stateUpdateDone(this.$handlerProxy.dict.stateUpdateDone);
+        target.emitterBindIntf.childUpdateDone(this.$handlerProxy.dict.childUpdateDone);
     }
     
 }

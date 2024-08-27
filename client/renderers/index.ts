@@ -1,13 +1,13 @@
 import type { App } from "../app";
 import { Base } from "../type";
 import { EventReflect } from "../type/event";
-import { Delegator } from "../utils/delegator";
+import { HandlerProxy } from "../utils/handler";
 
 export abstract class Renderer<
     E extends Base.Dict
 > {
     private readonly $app: App;
-    protected readonly $handlerDict: EventReflect.HandlerDict<E>;
+    protected readonly $handlerProxy: HandlerProxy<E>;
 
     public get app() { return this.$app; }
 
@@ -16,7 +16,7 @@ export abstract class Renderer<
         app: App
     ) {
         this.$app = app;
-        this.$handlerDict = Delegator.initHandlerDict(
+        this.$handlerProxy = new HandlerProxy(
             handlerExexcuteIntf,
             {},
             this,
@@ -24,9 +24,7 @@ export abstract class Renderer<
         );
     }
 
-    public deactive() {
-        for (const key in this.$handlerDict) {
-            this.$handlerDict[key].destroy();
-        }
+    public destroy() {
+        this.$handlerProxy.destroy();
     }
 }

@@ -1,5 +1,6 @@
 import type { Model } from "../models";
 import { Base } from ".";
+import { RawModelEmitterEventDict } from "./model";
 
 /** 模型定义 */
 export type ModelTmpl = {
@@ -9,8 +10,8 @@ export type ModelTmpl = {
     childList: Array<Model>
     childDict: Record<Base.Key, Model>,
     parent: Model | undefined
-    emitterEventDict: Record<string, Base.Dict>
-    handlerEventDict: Record<string, Base.Dict>
+    emitterEventDict: RawModelEmitterEventDict
+    handlerEventDict: Base.Dict
 }
 
 export type SpecificModelTmpl<M extends Partial<ModelTmpl>> = 
@@ -21,6 +22,6 @@ export type SpecificModelTmpl<M extends Partial<ModelTmpl>> =
         childList: Array<never>
         childDict: Base.VoidDict
         parent: Model | undefined
-        emitterEventDict: Base.VoidDict
+        emitterEventDict: RawModelEmitterEventDict
         handlerEventDict: Base.VoidDict
     }, keyof M>

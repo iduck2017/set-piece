@@ -1,4 +1,5 @@
 import type { App } from "../app";
+import { Base } from "../type";
 import type { EventReflect } from "../type/event";
 import type { Emitter } from "./emitter";
 
@@ -54,5 +55,41 @@ export class Handler<E = any, P = any> {
             this.id,
             ...this.$emitterList.map(item => item.id)
         ];
+    }
+}
+
+
+export class HandlerProxy<D extends Base.Dict, P = any> {
+    public readonly dict: EventReflect.HandlerDict<D>;
+
+    constructor(
+        intf: EventReflect.ExecuteIntf<D>,
+        config: EventReflect.ChunkDict<D>,
+        parent: P,
+        app: App
+    ) {
+        this.dict = new Proxy(
+            Object.keys(intf).reduce((result, key) => ({
+                ...result,
+                [key]: new Handler(
+                    intf[key],
+                    config[key] || [],
+                    parent,
+                    app
+                )
+            }), {}), 
+            { set: () => false }
+        ) as EventReflect.HandlerDict<D>;
+    }
+
+    public serialize() {
+        return Object.keys(this.dict).reduce((dict, key) => ({
+            ...dict,
+            [key]: this.dict[key].serialize()   
+        }), {});
+    }
+    
+    public destroy() {
+        Object.values(this.dict).forEach(item => item.destroy());
     }
 }
