@@ -84,7 +84,7 @@ export class Model<
     
     protected $addChild(target: Reflect.Iterator<M[ModelDef.ChildList]>) {
         this.$childList.push(target);
-        this.$emitterProxy.dict.childUpdateDone.execute({
+        this.$emitterProxy.dict.childUpdateDone.emitEvent({
             target: this,
             children: this.children
         });
@@ -94,7 +94,7 @@ export class Model<
         const index = this.$childList.indexOf(target);
         if (index >= 0) {
             this.$childList.splice(index, 1); 
-            this.$emitterProxy.dict.childUpdateDone.execute({
+            this.$emitterProxy.dict.childUpdateDone.emitEvent({
                 target: this,
                 children: this.children
             });
@@ -103,7 +103,7 @@ export class Model<
         Object.keys(this.$childDict).forEach(key => {
             if (this.$childDict[key] === target) {
                 delete this.$childDict[key];
-                this.$emitterProxy.dict.childUpdateDone.execute({
+                this.$emitterProxy.dict.childUpdateDone.emitEvent({
                     target: this,
                     children: this.children
                 });
@@ -134,11 +134,11 @@ export class Model<
             prev: current,
             next: current
         };
-        this.$updaterProxy.dict[key].execute(event);
+        this.$updaterProxy.dict[key].emitEvent(event);
         const next = event.next;
         if (prev !== next) {
             this.$currentState[key] = next;
-            this.$emitterProxy.dict.stateUpdateDone.execute({
+            this.$emitterProxy.dict.stateUpdateDone.emitEvent({
                 target: this,
                 state: this.state
             });

@@ -6,6 +6,7 @@ import { Emitter } from "./emitter";
 import type { Handler } from "./handler";
 import { ModelDef } from "../type/definition";
 import type { ModelReflect } from "../type/model";
+import { CursorConfig } from "./cursor";
 
 export class Updater<
     M extends ModelTmpl,
@@ -18,7 +19,7 @@ export class Updater<
 
     constructor(
         key: K,
-        config: string[],
+        config: CursorConfig,
         parent: Model<M>,
         app: App
     ) {
@@ -48,11 +49,11 @@ export class UpdaterProxy<M extends ModelTmpl> {
         parent: Model<M>,
         app: App
     ) {
-        const origin = Object.keys(config).reduce((result, key) => ({
+        const origin = Object.keys(config).reduce((result, key: keyof M[ModelDef.State]) => ({
             ...result,
             [key]: new Updater(
                 key,
-                config[key as keyof M[ModelDef.State]] || [], 
+                config[key] || {}, 
                 parent,
                 app
             )
@@ -61,7 +62,7 @@ export class UpdaterProxy<M extends ModelTmpl> {
         this.dict = new Proxy(origin, {
             get: (target, key: keyof M[ModelDef.State]) => {
                 if (!target[key]) {
-                    target[key] = new Updater(key, [], parent, app);
+                    target[key] = new Updater(key, {}, parent, app);
                 }
                 return target[key];
             },

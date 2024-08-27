@@ -1,71 +1,48 @@
 import type { App } from "../app";
 import { Base } from "../type";
 import type { EventReflect } from "../type/event";
+import { CurSor, CursorConfig } from "./cursor";
 import type { Handler } from "./handler";
 
-export class Emitter<E = any, P = any> {
-    public readonly id: string;
-    public readonly app: App;
-    public readonly parent: P;
-    
-    private readonly $handlerList: Array<Handler<E>> = [];
-    public get handlerList() { return [ ...this.$handlerList ]; }
-
+/** 触发器 */
+export class Emitter<
+    E = any, 
+    P = any
+> extends CurSor<Handler<E>, P> {
     constructor(
-        config: string[],
+        config: CursorConfig,
         parent: P,
         app: App
     ) {
-        const [ id, ...refer ] = config;
-        this.id = id || app.referService.getUniqId();
-        this.app = app;
-        this.parent = parent;
-        refer.forEach(key => {
-            const handler = app.referService.handlerReferManager.referDict[key];
+        super(
+            config.id || app.referService.getUniqId(),
+            parent, 
+            app
+        );
+        config.cursorIdList?.forEach(id => {
+            const handler = app.referService.handlerReferManager.referDict[id];
             if (handler) {
                 this.bindHandler(handler);
             }
         });
     }
 
-    public execute(event: E) {
-        this.$handlerList.forEach(item => item.execute(event));
+    /** 触发事件 */
+    public emitEvent(event: E) {
+        this.cursorList.forEach(item => {
+            item.handleEvent(event);
+        });
     }
 
     public bindHandler(handler: Handler<E>) {
-        this.$addHandler(handler);
-        handler.$addEmitter(this);
-        console.log(this, this.$handlerList);
+        this.addCursor(handler);
+        handler.addCursor(this);
     }
 
     public unbindHandler(handler: Handler<E>) {
-        this.$removeHandler(handler);
-        handler.$removeEmitter(this);
+        this.removeCursor(handler);
+        handler.removeCursor(this);
     }
-
-    private $addHandler(target: Handler<E>) {
-        if (this.$handlerList.includes(target)) {
-            throw new Error();
-        }
-        this.$handlerList.push(target);
-    }
-
-    private $removeHandler(target: Handler<E>) {
-        const index = this.$handlerList.indexOf(target);
-        if (index === -1) {
-            throw new Error();
-        }
-        this.$handlerList.splice(index, 1);
-    }
-    
-    public destroy() { 
-        this.$handlerList.forEach(item => this.unbindHandler(item)); 
-    }
-    
-    public serialize() {
-        return [ this.id, ...this.$handlerList.map(item => item.id) ];
-    }
-
 }
 
 export class EmitterProxy<D extends Base.Dict, P = any> {
@@ -81,7 +58,7 @@ export class EmitterProxy<D extends Base.Dict, P = any> {
         const origin = Object.keys(config).reduce((result, key) => ({
             ...result,
             [key]: new Emitter(
-                config[key] || [], 
+                config[key] || {}, 
                 parent,
                 app
             )
@@ -90,7 +67,7 @@ export class EmitterProxy<D extends Base.Dict, P = any> {
         this.dict = new Proxy(origin, {
             get: (target, key: keyof D) => {
                 if (!target[key]) {
-                    target[key] = new Emitter([], parent, app);
+                    target[key] = new Emitter({}, parent, app);
                 }
                 return target[key];
             },

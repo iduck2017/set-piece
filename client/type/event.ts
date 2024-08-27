@@ -4,6 +4,7 @@ import { Handler } from "../utils/handler";
 import { Base } from ".";
 import type { ModelTmpl } from "./template";
 import { ModelDef } from "./definition";
+import { CursorConfig } from "../utils/cursor";
 
 export namespace EventReflect {
     export type ExecuteFunc<E> = (event: E) => void;
@@ -12,7 +13,7 @@ export namespace EventReflect {
     export type HandlerDict<D extends Base.Dict> = { [K in keyof D]: Handler<D[K]> }
     export type ExecuteIntf<D extends Base.Dict> = { [K in keyof D]: ExecuteFunc<D[K]> }
     export type BindIntf<D extends Base.Dict> = { [K in keyof D]: BindFunc<D[K]> }
-    export type ChunkDict<D extends Base.Dict> = { [K in keyof D]?: string[] }
+    export type ChunkDict<D extends Base.Dict> = { [K in keyof D]?: CursorConfig }
 }
 
 export namespace Event {
