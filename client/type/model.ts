@@ -6,13 +6,30 @@ import { ModelDef } from "./definition";
 import { Event } from "./event";
 import { ModelTmpl } from "./template";
 import { Reflect } from ".";
+import { CursorType } from "./cursor";
 
-export type RawModelEmitterEventDict<
-    M extends ModelTmpl = ModelTmpl
-> = {
-    stateUpdateDone: Event.StateUpdateDone<M>
-    childUpdateDone: Event.ChildUpdateDone<M>
+export namespace ModelType {
+    /** 修饰器序列化参数 */
+    export type UpdaterConfig<K> = CursorType.Config & {
+        key: K
+    }
+
+    /** 模型修饰器序列化参数集合 */
+    export type UpdaterConfigDict<
+        M extends ModelTmpl = ModelTmpl
+    > = {
+        [K in keyof M[ModelDef.State]]: UpdaterConfig<K>
+    }
+
+    /** 模型基础触发器事件集合 */
+    export type BaseEmitterEventDict<
+        M extends ModelTmpl = ModelTmpl
+    > = {
+        stateUpdateDone: Event.StateUpdateDone<M>
+        childUpdateDone: Event.ChildUpdateDone<M>
+    } 
 }
+
 
 export namespace ModelReflect {
     // export type EmitterEventDict<M extends ModelTmpl> = M[ModelDef.EmitterEventDict] & RawModelEmitterEventDict<M> 

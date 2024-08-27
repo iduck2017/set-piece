@@ -1,11 +1,7 @@
 import type { App } from "../app";
+import { CursorType } from "../type/cursor";
 import { Entity } from "./entity";
 
-/** 链接器序列化参数 */
-export type CursorConfig = {
-    id?: string,
-    cursorIdList?: string[]
-}
 
 /** 链接器 */
 export class CurSor<
@@ -28,6 +24,7 @@ export class CurSor<
         this.parent = parent;
     }
 
+    /** 添加链接器 */
     public addCursor(target: T) {
         if (this.$cursorList.includes(target)) {
             throw new Error();
@@ -49,12 +46,12 @@ export class CurSor<
         }); 
     }
 
-    public serialize() {
-        return [ 
-            this.id, 
-            ...this.cursorList.map(item => {
+    public serialize(): CursorType.Chunk {
+        return {
+            id: this.id, 
+            cursorIdList: this.cursorList.map(item => {
                 return item.id;
             }) 
-        ];
+        };
     }
 }

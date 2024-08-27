@@ -1,12 +1,7 @@
 import type { App } from "../app";
 import type { Model } from "../models";
-import { Base } from "../type";
-import { Emitter } from "./emitter";
-import { Handler } from "./handler";
-import { Updater } from "./updater";
 import { ModelDef } from "../type/definition";
 import { ModelTmpl } from "../type/template";
-import { EventReflect } from "../type/event";
 import type { ModelReflect } from "../type/model";
 
 export namespace Delegator {

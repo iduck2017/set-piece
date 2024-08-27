@@ -1,14 +1,14 @@
 import type { App } from "../app";
 import { ModelTmpl } from "../type/template";
-import { EmitterProxy } from "../utils/emitter";
-import { HandlerProxy } from "../utils/handler";
 import { Delegator } from "../utils/delegator";
 import { Base, Reflect } from "../type";
-import { EventReflect } from "../type/event";
 import { ModelDef } from "../type/definition";
 import { ModelConfig } from "../type/config";
 import { ModelChunk } from "../type/chunk";
-import { UpdaterProxy } from "../utils/updater";
+import { UpdaterProxy } from "../utils/updater-proxy";
+import { HandlerProxy } from "../utils/handler-proxy";
+import { EmitterProxy } from "../utils/emitter-proxy";
+import { CursorType } from "../type/cursor";
 
 export class Model<
     M extends ModelTmpl = ModelTmpl
@@ -35,15 +35,15 @@ export class Model<
     private readonly $updaterProxy: UpdaterProxy<M>;
     protected readonly $handlerProxy: HandlerProxy<M[ModelDef.HandlerEventDict], Model<M>>;
     protected readonly $emitterProxy: EmitterProxy<M[ModelDef.EmitterEventDict], Model<M>>;
-    public get emitterBindIntf() { return this.$emitterProxy.bindIntf; }
-    public get emitterUnbindIntf() { return this.$emitterProxy.unbindIntf; }
-    public get updaterBindIntf() { return this.$updaterProxy.bindIntf; }
-    public get updaterUnbindIntf() { return this.$updaterProxy.unbindIntf; }
+    public get emitterBindIntf() { return this.$emitterProxy.bindHandlerIntf; }
+    public get emitterUnbindIntf() { return this.$emitterProxy.unbindHandlerIntf; }
+    public get updaterBindIntf() { return this.$updaterProxy.bindHandlerIntf; }
+    public get updaterUnbindIntf() { return this.$updaterProxy.unbindHandlerIntf; }
 
     public readonly debugIntf: Record<string, Base.Func>;
 
     constructor(
-        intf: EventReflect.ExecuteIntf<M[ModelDef.HandlerEventDict]>,
+        intf: CursorType.HandleEventIntf<M[ModelDef.HandlerEventDict]>,
         config: ModelConfig<M>,
         parent: M[ModelDef.Parent],
         app: App
@@ -84,7 +84,7 @@ export class Model<
     
     protected $addChild(target: Reflect.Iterator<M[ModelDef.ChildList]>) {
         this.$childList.push(target);
-        this.$emitterProxy.dict.childUpdateDone.emitEvent({
+        this.$emitterProxy.emitterDict.childUpdateDone.emitEvent({
             target: this,
             children: this.children
         });
@@ -94,7 +94,7 @@ export class Model<
         const index = this.$childList.indexOf(target);
         if (index >= 0) {
             this.$childList.splice(index, 1); 
-            this.$emitterProxy.dict.childUpdateDone.emitEvent({
+            this.$emitterProxy.emitterDict.childUpdateDone.emitEvent({
                 target: this,
                 children: this.children
             });
@@ -103,7 +103,7 @@ export class Model<
         Object.keys(this.$childDict).forEach(key => {
             if (this.$childDict[key] === target) {
                 delete this.$childDict[key];
-                this.$emitterProxy.dict.childUpdateDone.emitEvent({
+                this.$emitterProxy.emitterDict.childUpdateDone.emitEvent({
                     target: this,
                     children: this.children
                 });
@@ -134,11 +134,11 @@ export class Model<
             prev: current,
             next: current
         };
-        this.$updaterProxy.dict[key].emitEvent(event);
+        this.$updaterProxy.updaterDict[key].emitEvent(event);
         const next = event.next;
         if (prev !== next) {
             this.$currentState[key] = next;
-            this.$emitterProxy.dict.stateUpdateDone.emitEvent({
+            this.$emitterProxy.emitterDict.stateUpdateDone.emitEvent({
                 target: this,
                 state: this.state
             });
