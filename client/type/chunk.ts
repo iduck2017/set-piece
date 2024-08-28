@@ -1,8 +1,8 @@
 /* eslint-disable max-len */
 import { ModelDef } from "./definition";
 import { ModelTmpl } from "./template";
-import { ModelReflect } from "./model";
 import { CursorType } from "./cursor";
+import type { ModelType } from "./model";
 
 export type ModelChunk<
     M extends ModelTmpl
@@ -11,8 +11,8 @@ export type ModelChunk<
     id: string
     rule: Partial<M[ModelDef.Rule]>
     originState: M[ModelDef.State]
-    childChunkList: ModelReflect.ChildChunkList<M>,
-    childChunkDict: ModelReflect.ChildChunkDict<M>,
+    childChunkList: ModelType.ChildChunkList<M>,
+    childChunkDict: ModelType.ChildChunkDict<M>,
     emitterChunkDict: CursorType.ChunkDict<M[ModelDef.EmitterEventDict]>
     handlerChunkDict: CursorType.ChunkDict<M[ModelDef.HandlerEventDict]>
     updaterChunkDict: CursorType.ChunkDict<M[ModelDef.State]>

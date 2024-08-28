@@ -7,7 +7,7 @@ export namespace CursorType {
     /** 链接器初始化参数 */
     export type Config = {
         id?: string
-        cursorIdList?: string[]
+        list?: string[]
     }
 
     /** 链接器初始化参数集合 */

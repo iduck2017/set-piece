@@ -11,16 +11,16 @@ export class HandlerProxy<
     public readonly handlerDict: CursorType.HandlerDict<D, P>;
 
     constructor(
-        callbackIntf: CursorType.HandleEventIntf<D>,
+        callback: CursorType.HandleEventIntf<D>,
         config: CursorType.ConfigDict<D>,
         parent: P,
         app: App
     ) {
         /** 触发器集合 */
         const origin = {} as CursorType.HandlerDict<D, P>;
-        for (const key in callbackIntf) {
+        for (const key in callback) {
             origin[key] = new Handler(
-                callbackIntf[key], 
+                callback[key], 
                 config[key] || {}, 
                 parent,
                 app

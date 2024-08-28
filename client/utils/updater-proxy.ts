@@ -2,27 +2,27 @@ import type { App } from "../app";
 import type { Model } from "../models";
 import { CursorType } from "../type/cursor";
 import { ModelDef } from "../type/definition";
-import { ModelReflect } from "../type/model";
+import { ModelType } from "../type/model";
 import { ModelTmpl } from "../type/template";
 import { Updater } from "./updater";
 
-/** 修饰器代理 */
+/** 状态修饰器代理 */
 export class UpdaterProxy<
     M extends ModelTmpl
 > {
-    public readonly updaterDict: ModelReflect.UpdaterDict<M>;
+    public readonly updaterDict: ModelType.UpdaterDict<M>;
     public readonly bindHandlerIntf = 
-        {} as CursorType.BindHandlerFunc<ModelReflect.UpdaterEventDict<M>>;
+        {} as CursorType.BindHandlerFunc<ModelType.UpdaterEventDict<M>>;
     public readonly unbindHandlerIntf = 
-        {} as CursorType.UnbindHandlerFunc<ModelReflect.UpdaterEventDict<M>>;
+        {} as CursorType.UnbindHandlerFunc<ModelType.UpdaterEventDict<M>>;
 
     constructor(
         config: CursorType.ConfigDict<M[ModelDef.State]>,
         parent: Model<M>,
         app: App
     ) {
-        /** 修饰器集合 */
-        const origin = {} as ModelReflect.UpdaterDict<M>;
+        /** 状态修饰器集合 */
+        const origin = {} as ModelType.UpdaterDict<M>;
         for (const key in config) {
             origin[key] = new Updater(
                 { 

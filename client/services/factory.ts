@@ -4,7 +4,7 @@ import { BunnyModel } from "../models/bunny";
 import { RootModel } from "../models/root";
 import { Base } from "../type";
 import { ModelCode } from "../type/code";
-import { ModelReflect } from "../type/model";
+import { ModelType } from "../type/model";
 
 export class FactoryService {
     public readonly app: App;
@@ -19,7 +19,7 @@ export class FactoryService {
     }; 
 
     public unserialize<M extends Model>(
-        config: ModelReflect.Config<M>,
+        config: ModelType.ReflectConfig<M>,
         parent: any
     ): M {
         const Constructor = FactoryService.$productDict[config.code as ModelCode];

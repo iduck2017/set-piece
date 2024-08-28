@@ -22,7 +22,7 @@ export class Handler<
             app
         );
         this.handleEvent = callback;
-        config.cursorIdList?.forEach(id => {
+        config.list?.forEach(id => {
             const emitter = app.referService.emitterReferManager.referDict[id];
             if (emitter) {
                 emitter.bindHandler(this);

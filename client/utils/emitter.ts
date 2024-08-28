@@ -18,7 +18,7 @@ export class Emitter<
             parent, 
             app
         );
-        config.cursorIdList?.forEach(id => {
+        config.list?.forEach(id => {
             const handler = app.referService.handlerReferManager.referDict[id];
             if (handler) {
                 this.bindHandler(handler);

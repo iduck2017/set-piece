@@ -49,7 +49,7 @@ export class CurSor<
     public serialize(): CursorType.Chunk {
         return {
             id: this.id, 
-            cursorIdList: this.cursorList.map(item => {
+            list: this.cursorList.map(item => {
                 return item.id;
             }) 
         };

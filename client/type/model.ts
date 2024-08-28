@@ -7,14 +7,29 @@ import { Event } from "./event";
 import { ModelTmpl } from "./template";
 import { Reflect } from ".";
 import { CursorType } from "./cursor";
+import { ModelChunk } from "./chunk";
 
 export namespace ModelType {
-    /** 修饰器序列化参数 */
+    /** 状态修饰器集合 */
+    export type UpdaterDict<
+        M extends ModelTmpl = ModelTmpl
+    > = {
+        [K in keyof M[ModelDef.State]]: Updater<M, K>
+    }
+
+    /** 状态修饰器事件集合 */
+    export type UpdaterEventDict<
+        M extends ModelTmpl
+    > = { 
+        [K in keyof M[ModelDef.State]]: Event.StateUpdateBefore<M, K> 
+    }
+
+    /** 状态修饰器序列化参数 */
     export type UpdaterConfig<K> = CursorType.Config & {
         key: K
     }
 
-    /** 模型修饰器序列化参数集合 */
+    /** 状态修饰器序列化参数集合 */
     export type UpdaterConfigDict<
         M extends ModelTmpl = ModelTmpl
     > = {
@@ -28,16 +43,47 @@ export namespace ModelType {
         stateUpdateDone: Event.StateUpdateDone<M>
         childUpdateDone: Event.ChildUpdateDone<M>
     } 
-}
 
 
-export namespace ModelReflect {
-    // export type EmitterEventDict<M extends ModelTmpl> = M[ModelDef.EmitterEventDict] & RawModelEmitterEventDict<M> 
-    export type UpdaterEventDict<M extends ModelTmpl> = { [K in keyof M[ModelDef.State]]: Event.StateUpdateBefore<M, K> }
+    /** 模型序列化参数反射 */
+    export type ReflectChunk<
+        M extends Model | undefined
+    > = 
+        M extends Model<infer T> ? ModelChunk<T> : undefined
 
-    export type UpdaterDict<M extends ModelTmpl> = { [K in keyof M[ModelDef.State]]: Updater<M, K> }
-    export type ChildChunkList<M extends ModelTmpl> = Array<Config<Reflect.Iterator<M[ModelDef.ChildList]>>>
-    export type ChildChunkDict<M extends ModelTmpl> = { [K in keyof M[ModelDef.ChildDict]]: Config<M[ModelDef.ChildDict][K]> }
+
+    /** 模型初始化参数反射 */
+    export type ReflectConfig<
+        M extends Model | undefined
+    > = 
+        M extends Model<infer T> ? RawModelConfig<T> : undefined
+
+    /** 模型子节点序列化参数集合 */
+    export type ChildChunkList<
+        M extends ModelTmpl = ModelTmpl
+    > = 
+        Array<ReflectChunk<Reflect.Iterator<M[ModelDef.ChildList]>>>
+
+
+    /** 模型子节点序列化参数集合 */
+    export type ChildConfigList<
+        M extends ModelTmpl = ModelTmpl
+    > = 
+        Array<ReflectConfig<Reflect.Iterator<M[ModelDef.ChildList]>>>
+
+
+    /** 模型子节点序列化参数集合 */
+    export type ChildChunkDict<
+        M extends ModelTmpl = ModelTmpl
+    > = {
+        [K in keyof M[ModelDef.ChildDict]]: ReflectChunk<M[ModelDef.ChildDict][K]>
+    }
+
     
-    export type Config<M extends Model | undefined> =  M extends Model<infer T> ? RawModelConfig<T> : undefined
+    /** 模型子节点初始化参数集合 */
+    export type ChildConfigDict<
+        M extends ModelTmpl = ModelTmpl
+    > = {
+        [K in keyof M[ModelDef.ChildDict]]: ReflectConfig<M[ModelDef.ChildDict][K]>
+    }
 }

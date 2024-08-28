@@ -9,6 +9,7 @@ import { UpdaterProxy } from "../utils/updater-proxy";
 import { HandlerProxy } from "../utils/handler-proxy";
 import { EmitterProxy } from "../utils/emitter-proxy";
 import { CursorType } from "../type/cursor";
+import { ChildProxy } from "../utils/child-proxy";
 
 export class Model<
     M extends ModelTmpl = ModelTmpl
@@ -24,6 +25,7 @@ export class Model<
     private readonly $currentState: M[ModelDef.State];
     public get state() { return { ...this.$currentState }; }
     
+    protected readonly $childProxy: ChildProxy<M>;
     private readonly $childDict: M[ModelDef.ChildDict];
     private readonly $childList: M[ModelDef.ChildList];
     public get childDict() { return { ...this.$childDict }; }
@@ -57,9 +59,14 @@ export class Model<
         this.$originState = Delegator.initOriginState(config.originState, this);
         this.$currentState = { ...this.$originState };
 
-        this.$childList = 
-            config.childChunkList?.map(item => app.factoryService.unserialize(item, this)) || [];
-        this.$childDict = Delegator.initChildDict(config.childChunkDict, this, app);
+        this.$childProxy = new ChildProxy(
+            config,
+            this,
+            app
+        );
+        this.$childDict = this.$childProxy.childDict;
+        this.$childList = this.$childProxy.childList;
+        
 
         this.$updaterProxy = new UpdaterProxy<M>(
             config.updaterChunkDict || {},
