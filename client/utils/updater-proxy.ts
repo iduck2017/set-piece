@@ -1,6 +1,6 @@
 import type { App } from "../app";
 import type { Model } from "../models";
-import { CursorType } from "../type/cursor";
+import { LinkerType } from "../type/linker";
 import { ModelDef } from "../type/definition";
 import { ModelType } from "../type/model";
 import { ModelTmpl } from "../type/template";
@@ -11,13 +11,13 @@ export class UpdaterProxy<
     M extends ModelTmpl
 > {
     public readonly updaterDict: ModelType.UpdaterDict<M>;
-    public readonly bindHandlerIntf = 
-        {} as CursorType.BindHandlerFunc<ModelType.UpdaterEventDict<M>>;
-    public readonly unbindHandlerIntf = 
-        {} as CursorType.UnbindHandlerFunc<ModelType.UpdaterEventDict<M>>;
+    public readonly binderIntf = 
+        {} as LinkerType.BinderFunc<ModelType.UpdaterEventDict<M>>;
+    public readonly unbinderIntf = 
+        {} as LinkerType.UnbinderFunc<ModelType.UpdaterEventDict<M>>;
 
     constructor(
-        config: CursorType.ConfigDict<M[ModelDef.State]>,
+        config: LinkerType.ConfigDict<M[ModelDef.State]>,
         parent: Model<M>,
         app: App
     ) {
@@ -49,8 +49,8 @@ export class UpdaterProxy<
 
 
         /** 触发器绑定接口集合 */
-        this.bindHandlerIntf = new Proxy(
-            this.bindHandlerIntf, {
+        this.binderIntf = new Proxy(
+            this.binderIntf, {
                 get: (target, key) => {
                     return this.updaterDict[key].bindHandler.bind(
                         this.updaterDict[key]
@@ -61,8 +61,8 @@ export class UpdaterProxy<
         );
 
         /** 触发器解绑接口集合 */
-        this.unbindHandlerIntf = new Proxy(
-            this.unbindHandlerIntf, {
+        this.unbinderIntf = new Proxy(
+            this.unbinderIntf, {
                 get: (target, key) => {
                     return this.updaterDict[key].unbindHandler.bind(
                         this.updaterDict[key]
@@ -74,7 +74,7 @@ export class UpdaterProxy<
     }
 
     public serialize() {
-        const result = {} as CursorType.ChunkDict<M[ModelDef.State]>;
+        const result = {} as LinkerType.ChunkDict<M[ModelDef.State]>;
         for (const key in this.updaterDict) {
             result[key] = this.updaterDict[key].serialize();
         }

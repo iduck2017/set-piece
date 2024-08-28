@@ -1,6 +1,6 @@
 import type { App } from "../app";
 import { Base } from "../type";
-import { CursorType } from "../type/cursor";
+import { LinkerType } from "../type/linker";
 import { Emitter } from "./emitter";
 
 /** 触发器代理 */
@@ -8,17 +8,17 @@ export class EmitterProxy<
     D extends Base.Dict, 
     P = any
 > {
-    public readonly emitterDict: CursorType.EmitterDict<D, P>;
-    public readonly bindHandlerIntf = {} as CursorType.BindHandlerIntf<D>;
-    public readonly unbindHandlerIntf = {} as CursorType.UnbindHandlerIntf<D>;
+    public readonly emitterDict: LinkerType.EmitterDict<D, P>;
+    public readonly binderIntf = {} as LinkerType.BinderIntf<D>;
+    public readonly unbinderIntf = {} as LinkerType.UnbinderIntf<D>;
 
     constructor(
-        config: CursorType.ConfigDict<D>,
+        config: LinkerType.ConfigDict<D>,
         parent: P,
         app: App
     ) {
         /** 触发器集合 */
-        const origin = {} as CursorType.EmitterDict<D, P>;
+        const origin = {} as LinkerType.EmitterDict<D, P>;
         for (const key in config) {
             origin[key] = new Emitter(
                 config[key] || {}, 
@@ -41,8 +41,8 @@ export class EmitterProxy<
         });
 
         /** 触发器绑定接口集合 */
-        this.bindHandlerIntf = new Proxy(
-            this.bindHandlerIntf, {
+        this.binderIntf = new Proxy(
+            this.binderIntf, {
                 get: (target, key) => {
                     return this.emitterDict[key].bindHandler.bind(
                         this.emitterDict[key]
@@ -53,8 +53,8 @@ export class EmitterProxy<
         );
 
         /** 触发器解绑接口集合 */
-        this.unbindHandlerIntf = new Proxy(
-            this.unbindHandlerIntf, {
+        this.unbinderIntf = new Proxy(
+            this.unbinderIntf, {
                 get: (target, key) => {
                     return this.emitterDict[key].unbindHandler.bind(
                         this.emitterDict[key]
@@ -65,8 +65,8 @@ export class EmitterProxy<
         );
     }
 
-    public serialize(): CursorType.ChunkDict<D> {
-        const result = {} as CursorType.ChunkDict<D>;
+    public serialize(): LinkerType.ChunkDict<D> {
+        const result = {} as LinkerType.ChunkDict<D>;
         for (const key in this.emitterDict) {
             result[key] = this.emitterDict[key].serialize();
         }

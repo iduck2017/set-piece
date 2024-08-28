@@ -3,7 +3,7 @@ import type { Emitter } from "../utils/emitter";
 import type { Handler } from "../utils/handler";
 
 /** 链接器相关类型 */
-export namespace CursorType {
+export namespace LinkerType {
     /** 链接器初始化参数 */
     export type Config = {
         id?: string
@@ -23,19 +23,19 @@ export namespace CursorType {
     }
 
     /** 链接器触发接口 */
-    export type EmitEventFunc<E> = (event: E) => void;
+    export type EmitterFunc<E> = (event: E) => void;
 
     /** 链接器执行接口 */
-    export type HandleEventFunc<E> = (event: E) => void;
+    export type HandlerFunc<E> = (event: E) => void;
 
     /** 链接器触发接口集合 */
-    export type EmitEventIntf<D extends Base.Dict> = { 
-        [K in keyof D]: EmitEventFunc<D[K]> 
+    export type EmitterIntf<D extends Base.Dict> = { 
+        [K in keyof D]: EmitterFunc<D[K]> 
     }
 
     /** 链接器执行接口集合 */
-    export type HandleEventIntf<D extends Base.Dict> = { 
-        [K in keyof D]: HandleEventFunc<D[K]> 
+    export type HandlerIntf<D extends Base.Dict> = { 
+        [K in keyof D]: HandlerFunc<D[K]> 
     }
 
     /** 触发器集合 */
@@ -47,19 +47,19 @@ export namespace CursorType {
     }
 
     /** 链接器绑定接口 */
-    export type BindHandlerFunc<E> = (handler: Handler<E>) => void
+    export type BinderFunc<E> = (handler: Handler<E>) => void
 
     /** 链接器解绑接口 */
-    export type UnbindHandlerFunc<E> = (handler: Handler<E>) => void
+    export type UnbinderFunc<E> = (handler: Handler<E>) => void
 
     /** 链接器绑定接口集合 */
-    export type BindHandlerIntf<D extends Base.Dict> = { 
-        [K in keyof D]: BindHandlerFunc<D[K]> 
+    export type BinderIntf<D extends Base.Dict> = { 
+        [K in keyof D]: BinderFunc<D[K]> 
     }
 
     /** 链接器解绑接口集合 */
-    export type UnbindHandlerIntf<D extends Base.Dict> = { 
-        [K in keyof D]: UnbindHandlerFunc<D[K]> 
+    export type UnbinderIntf<D extends Base.Dict> = { 
+        [K in keyof D]: UnbinderFunc<D[K]> 
     }
     
     /** 接收器集合 */

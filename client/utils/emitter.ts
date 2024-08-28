@@ -1,15 +1,15 @@
 import type { App } from "../app";
-import { CursorType } from "../type/cursor";
-import { CurSor } from "./cursor";
+import { LinkerType } from "../type/linker";
+import { Linker } from "./linker";
 import type { Handler } from "./handler";
 
 /** 事件触发器 */
 export class Emitter<
     E = any, 
     P = any
-> extends CurSor<Handler<E>, P> {
+> extends Linker<Handler<E>, P> {
     constructor(
-        config: CursorType.Config,
+        config: LinkerType.Config,
         parent: P,
         app: App
     ) {
@@ -28,7 +28,7 @@ export class Emitter<
 
     /** 事件触发函数 */
     public emitEvent(event: E) {
-        this.cursorList.forEach(item => {
+        this.linkerList.forEach(item => {
             item.handleEvent(event);
         });
     }

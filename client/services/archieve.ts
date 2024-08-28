@@ -71,7 +71,7 @@ export class ArchieveService {
         const record = rootModel.serialize();
         this.$data[index] = {
             ...slot,
-            progress: rootModel.state.progress
+            progress: rootModel.currentState.progress
         };
         await localStorage.setItem(path, JSON.stringify(record));
         await this.app.saveMetaData();

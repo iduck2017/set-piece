@@ -1,7 +1,7 @@
 /* eslint-disable max-len */
 import { ModelDef } from "./definition";
 import { ModelTmpl } from "./template";
-import { CursorType } from "./cursor";
+import { LinkerType } from "./linker";
 import type { ModelType } from "./model";
 
 export type ModelChunk<
@@ -13,7 +13,7 @@ export type ModelChunk<
     originState: M[ModelDef.State]
     childChunkList: ModelType.ChildChunkList<M>,
     childChunkDict: ModelType.ChildChunkDict<M>,
-    emitterChunkDict: CursorType.ChunkDict<M[ModelDef.EmitterEventDict]>
-    handlerChunkDict: CursorType.ChunkDict<M[ModelDef.HandlerEventDict]>
-    updaterChunkDict: CursorType.ChunkDict<M[ModelDef.State]>
+    emitterChunkDict: LinkerType.ChunkDict<M[ModelDef.EmitterEventDict]>
+    handlerChunkDict: LinkerType.ChunkDict<M[ModelDef.HandlerEventDict]>
+    updaterChunkDict: LinkerType.ChunkDict<M[ModelDef.State]>
 }

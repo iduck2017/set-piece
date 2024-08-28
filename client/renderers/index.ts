@@ -1,6 +1,6 @@
 import type { App } from "../app";
 import { Base } from "../type";
-import { CursorType } from "../type/cursor";
+import { LinkerType } from "../type/linker";
 import { HandlerProxy } from "../utils/handler-proxy";
 
 export abstract class Renderer<
@@ -12,7 +12,7 @@ export abstract class Renderer<
     public get app() { return this.$app; }
 
     constructor(
-        callbackIntf: CursorType.HandleEventIntf<E>,
+        callbackIntf: LinkerType.HandlerIntf<E>,
         app: App
     ) {
         this.$app = app;

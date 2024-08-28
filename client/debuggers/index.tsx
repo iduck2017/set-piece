@@ -23,7 +23,7 @@ export function ModelDebugger(props: ModelDebuggerProps) {
                 {Object.keys(state).map(key => (
                     <div className="row" key={key}>
                         <div className="key">{key}</div>
-                        <div className="value">{target.state[key]}</div>
+                        <div className="value">{target.currentState[key]}</div>
                     </div>
                 ))}
                 {Object.keys(target.debugIntf).map(key => (

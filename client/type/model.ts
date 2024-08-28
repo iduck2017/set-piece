@@ -6,7 +6,7 @@ import { ModelDef } from "./definition";
 import { Event } from "./event";
 import { ModelTmpl } from "./template";
 import { Reflect } from ".";
-import { CursorType } from "./cursor";
+import { LinkerType } from "./linker";
 import { ModelChunk } from "./chunk";
 
 export namespace ModelType {
@@ -25,7 +25,7 @@ export namespace ModelType {
     }
 
     /** 状态修饰器序列化参数 */
-    export type UpdaterConfig<K> = CursorType.Config & {
+    export type UpdaterConfig<K> = LinkerType.Config & {
         key: K
     }
 

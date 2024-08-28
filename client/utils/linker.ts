@@ -1,18 +1,18 @@
 import type { App } from "../app";
-import { CursorType } from "../type/cursor";
+import { LinkerType } from "../type/linker";
 import { Entity } from "./entity";
 
 
 /** 链接器 */
-export class CurSor<
-    T extends CurSor = any, 
+export class Linker<
+    T extends Linker = any, 
     P = any
 > extends Entity {
     public readonly id: string;
     public readonly parent: P;
     
-    private readonly $cursorList: Array<T> = [];
-    public get cursorList() { return [ ...this.$cursorList ]; }
+    private readonly $linkerList: Array<T> = [];
+    public get linkerList() { return [ ...this.$linkerList ]; }
 
     constructor(
         id: string,
@@ -26,30 +26,30 @@ export class CurSor<
 
     /** 添加链接器 */
     public addCursor(target: T) {
-        if (this.$cursorList.includes(target)) {
+        if (this.$linkerList.includes(target)) {
             throw new Error();
         }
-        this.$cursorList.push(target);
+        this.$linkerList.push(target);
     }
 
     public removeCursor(target: T) {
-        const index = this.$cursorList.indexOf(target);
+        const index = this.$linkerList.indexOf(target);
         if (index === -1) {
             throw new Error();
         }
-        this.$cursorList.splice(index, 1);
+        this.$linkerList.splice(index, 1);
     }
     
     public destroy() { 
-        this.$cursorList.forEach(item => {
+        this.$linkerList.forEach(item => {
             item.destroy();
         }); 
     }
 
-    public serialize(): CursorType.Chunk {
+    public serialize(): LinkerType.Chunk {
         return {
             id: this.id, 
-            list: this.cursorList.map(item => {
+            list: this.linkerList.map(item => {
                 return item.id;
             }) 
         };

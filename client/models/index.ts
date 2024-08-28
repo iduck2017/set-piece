@@ -8,7 +8,7 @@ import { ModelChunk } from "../type/chunk";
 import { UpdaterProxy } from "../utils/updater-proxy";
 import { HandlerProxy } from "../utils/handler-proxy";
 import { EmitterProxy } from "../utils/emitter-proxy";
-import { CursorType } from "../type/cursor";
+import { LinkerType } from "../type/linker";
 import { ChildProxy } from "../utils/child-proxy";
 
 export class Model<
@@ -23,29 +23,36 @@ export class Model<
     private readonly $rule: Partial<M[ModelDef.Rule]>;
     protected readonly $originState: M[ModelDef.State];
     private readonly $currentState: M[ModelDef.State];
-    public get state() { return { ...this.$currentState }; }
+    public get currentState() { return { ...this.$currentState }; }
+    public get currentChildren(): Model[] {
+        return [
+            ...this.$childProxy.childList,
+            ...Object.values(this.$childProxy.childDict)
+        ];
+    }
     
     protected readonly $childProxy: ChildProxy<M>;
-    private readonly $childDict: M[ModelDef.ChildDict];
-    private readonly $childList: M[ModelDef.ChildList];
-    public get childDict() { return { ...this.$childDict }; }
-    public get childList() { return [ ...this.$childList ]; }
-    public get children() {
-        return this.$childList.concat(Object.values(this.$childDict));
-    }
-
-    private readonly $updaterProxy: UpdaterProxy<M>;
+    protected readonly $updaterProxy: UpdaterProxy<M>;
     protected readonly $handlerProxy: HandlerProxy<M[ModelDef.HandlerEventDict], Model<M>>;
     protected readonly $emitterProxy: EmitterProxy<M[ModelDef.EmitterEventDict], Model<M>>;
-    public get emitterBindIntf() { return this.$emitterProxy.bindHandlerIntf; }
-    public get emitterUnbindIntf() { return this.$emitterProxy.unbindHandlerIntf; }
-    public get updaterBindIntf() { return this.$updaterProxy.bindHandlerIntf; }
-    public get updaterUnbindIntf() { return this.$updaterProxy.unbindHandlerIntf; }
+
+    public get emitterProxy() {
+        return {
+            ...this.$emitterProxy,
+            emitterDict: undefined
+        }; 
+    }
+    public get handlerProxy() {
+        return {
+            ...this.$handlerProxy,
+            handlerDict: undefined
+        }; 
+    }
 
     public readonly debugIntf: Record<string, Base.Func>;
 
     constructor(
-        intf: CursorType.HandleEventIntf<M[ModelDef.HandlerEventDict]>,
+        intf: LinkerType.HandlerIntf<M[ModelDef.HandlerEventDict]>,
         config: ModelConfig<M>,
         parent: M[ModelDef.Parent],
         app: App
@@ -64,10 +71,6 @@ export class Model<
             this,
             app
         );
-        this.$childDict = this.$childProxy.childDict;
-        this.$childList = this.$childProxy.childList;
-        
-
         this.$updaterProxy = new UpdaterProxy<M>(
             config.updaterChunkDict || {},
             this,
@@ -90,29 +93,29 @@ export class Model<
 
     
     protected $addChild(target: Reflect.Iterator<M[ModelDef.ChildList]>) {
-        this.$childList.push(target);
+        this.$childProxy.childList.push(target);
         this.$emitterProxy.emitterDict.childUpdateDone.emitEvent({
             target: this,
-            children: this.children
+            children: this.currentChildren
         });
     }
 
     protected $removeChild(target: Model) {
-        const index = this.$childList.indexOf(target);
+        const index = this.$childProxy.childList.indexOf(target);
         if (index >= 0) {
-            this.$childList.splice(index, 1); 
+            this.$childProxy.childList.splice(index, 1); 
             this.$emitterProxy.emitterDict.childUpdateDone.emitEvent({
                 target: this,
-                children: this.children
+                children: this.currentChildren
             });
             return;
         }
-        Object.keys(this.$childDict).forEach(key => {
-            if (this.$childDict[key] === target) {
-                delete this.$childDict[key];
+        Object.keys(this.$childProxy).forEach(key => {
+            if (this.$childProxy.childDict[key] === target) {
+                delete this.$childProxy.childDict[key];
                 this.$emitterProxy.emitterDict.childUpdateDone.emitEvent({
                     target: this,
-                    children: this.children
+                    children: this.currentChildren
                 });
                 return;
             }
@@ -121,8 +124,7 @@ export class Model<
     }
 
     public destroy() {
-        this.$childList.forEach(item => item.destroy());
-        Object.values(this.$childDict).forEach(item => item.destroy());
+        this.$childProxy.destroy();
         this.$emitterProxy.destroy();
         this.$handlerProxy.destroy();
         this.$updaterProxy.destroy();
@@ -147,7 +149,7 @@ export class Model<
             this.$currentState[key] = next;
             this.$emitterProxy.emitterDict.stateUpdateDone.emitEvent({
                 target: this,
-                state: this.state
+                state: this.currentState
             });
         }
     }
@@ -161,13 +163,7 @@ export class Model<
             emitterChunkDict: this.$emitterProxy.serialize(),
             handlerChunkDict: this.$handlerProxy.serialize(),
             updaterChunkDict: this.$updaterProxy.serialize(),
-            childChunkList: this.$childList.map(item => item.serialize() as any),
-            childChunkDict: Object
-                .keys(this.$childDict)
-                .reduce((dict, key) => ({
-                    ...dict,
-                    [key]: this.$childDict[key].serialize()   
-                }), {} as any)
+            ...this.$childProxy.serialize()
         };
     }
 }

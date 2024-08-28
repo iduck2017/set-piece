@@ -1,18 +1,18 @@
 import type { App } from "../app";
-import { CursorType } from "../type/cursor";
-import { CurSor } from "./cursor";
+import { LinkerType } from "../type/linker";
+import { Linker } from "./linker";
 import type { Emitter } from "./emitter";
 
 /** 事件接收器 */
 export class Handler<
     E = any, 
     P = any
-> extends CurSor<Emitter<E>, P> {
-    public readonly handleEvent: CursorType.HandleEventFunc<E>;
+> extends Linker<Emitter<E>, P> {
+    public readonly handleEvent: LinkerType.HandlerFunc<E>;
     
     constructor(
-        callback: CursorType.HandleEventFunc<E>,
-        config: CursorType.Config,
+        callback: LinkerType.HandlerFunc<E>,
+        config: LinkerType.Config,
         parent: P,
         app: App
     ) {

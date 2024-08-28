@@ -1,6 +1,6 @@
 import type { App } from "../app";
 import { Base } from "../type";
-import { CursorType } from "../type/cursor";
+import { LinkerType } from "../type/linker";
 import { Handler } from "./handler";
 
 /** 接收器代理 */
@@ -8,16 +8,16 @@ export class HandlerProxy<
     D extends Base.Dict, 
     P = any
 > {
-    public readonly handlerDict: CursorType.HandlerDict<D, P>;
+    public readonly handlerDict: LinkerType.HandlerDict<D, P>;
 
     constructor(
-        callback: CursorType.HandleEventIntf<D>,
-        config: CursorType.ConfigDict<D>,
+        callback: LinkerType.HandlerIntf<D>,
+        config: LinkerType.ConfigDict<D>,
         parent: P,
         app: App
     ) {
         /** 触发器集合 */
-        const origin = {} as CursorType.HandlerDict<D, P>;
+        const origin = {} as LinkerType.HandlerDict<D, P>;
         for (const key in callback) {
             origin[key] = new Handler(
                 callback[key], 
@@ -31,8 +31,8 @@ export class HandlerProxy<
         });
     }
 
-    public serialize(): CursorType.ChunkDict<D> {
-        const result = {} as CursorType.ChunkDict<D>;
+    public serialize(): LinkerType.ChunkDict<D> {
+        const result = {} as LinkerType.ChunkDict<D>;
         for (const key in this.handlerDict) {
             result[key] = this.handlerDict[key].serialize();
         }

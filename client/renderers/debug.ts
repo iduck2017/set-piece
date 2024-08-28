@@ -18,17 +18,20 @@ export class DebugRenderer<
     ) {
         super({
             stateUpdateDone: (event: Event.StateUpdateDone<M>) => {
-                setState(event.target.state);
+                setState(event.target.currentState);
             },
             childUpdateDone: (data: Event.ChildUpdateDone<M>) => {
-                setChildren(data.target.children);
+                setChildren(data.target.currentChildren);
             }
         }, app);
     }
 
     public active(target: Model<M>) {
-        target.emitterBindIntf.stateUpdateDone(this.$handlerProxy.handlerDict.stateUpdateDone);
-        target.emitterBindIntf.childUpdateDone(this.$handlerProxy.handlerDict.childUpdateDone);
+        target.emitterProxy.binderIntf.stateUpdateDone(
+            this.$handlerProxy.handlerDict.stateUpdateDone
+        );
+        target.emitterProxy.binderIntf.childUpdateDone(
+            this.$handlerProxy.handlerDict.childUpdateDone
+        );
     }
-    
 }

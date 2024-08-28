@@ -2,7 +2,6 @@ import type { App } from "../app";
 import type { Model } from "../models";
 import { ModelConfig } from "../type/config";
 import { ModelDef } from "../type/definition";
-import { ModelType } from "../type/model";
 import { ModelTmpl } from "../type/template";
 
 /** 模型子节点代理 */
@@ -29,21 +28,20 @@ export class ChildProxy<
         }
     }
 
-    /** 模型子节点映射序列化 */
-    public serializeDict(): ModelType.ChildChunkDict<M> {
+    /** 模型子节点序列化 */
+    public serialize() {
         const childChunkDict = {} as any;
         for (const key in this.childDict) {
             const child = this.childDict[key];
             childChunkDict[key] = child.serialize();
         }
-        return childChunkDict;
-    }
-
-    /** 模型子节点数组序列化 */
-    public serializeList(): ModelType.ChildChunkList<M> {
-        return this.childList.map(child => {
+        const childChunkList = this.childList.map(child => {
             return child.serialize() as any;
         });
+        return {
+            childChunkDict,
+            childChunkList
+        };
     }
 
     /** 析构函数 */
