@@ -2,7 +2,7 @@ import type { Model } from "../models";
 import type { ModelTmpl } from "./template";
 import { ModelDef } from "./definition";
 
-export namespace Event {
+export namespace EventType {
     export type StateUpdateBefore<
         M extends ModelTmpl,
         K extends keyof M[ModelDef.State]

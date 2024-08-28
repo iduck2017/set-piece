@@ -8,10 +8,9 @@ export class Handler<
     E = any, 
     P = any
 > extends Linker<Emitter<E>, P> {
-    public readonly handleEvent: LinkerType.HandlerFunc<E>;
-    
+    public handleEvent: LinkerType.HandlerFunc<E>;
+
     constructor(
-        callback: LinkerType.HandlerFunc<E>,
         config: LinkerType.Config,
         parent: P,
         app: App
@@ -21,7 +20,7 @@ export class Handler<
             parent, 
             app
         );
-        this.handleEvent = callback;
+        this.handleEvent = () => {};
         config.list?.forEach(id => {
             const emitter = app.referService.emitterReferManager.referDict[id];
             if (emitter) {

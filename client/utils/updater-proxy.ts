@@ -12,9 +12,9 @@ export class UpdaterProxy<
 > {
     public readonly updaterDict: ModelType.UpdaterDict<M>;
     public readonly binderIntf = 
-        {} as LinkerType.BinderFunc<ModelType.UpdaterEventDict<M>>;
+        {} as LinkerType.BinderIntf<ModelType.UpdaterEventDict<M>>;
     public readonly unbinderIntf = 
-        {} as LinkerType.UnbinderFunc<ModelType.UpdaterEventDict<M>>;
+        {} as LinkerType.UnbinderIntf<ModelType.UpdaterEventDict<M>>;
 
     constructor(
         config: LinkerType.ConfigDict<M[ModelDef.State]>,

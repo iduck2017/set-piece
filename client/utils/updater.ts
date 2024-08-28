@@ -1,7 +1,7 @@
 import type { App } from "../app";
 import type { Model } from "../models";
 import { ModelTmpl } from "../type/template";
-import { Event } from "../type/event";
+import { EventType } from "../type/event";
 import { Emitter } from "./emitter";
 import type { Handler } from "./handler";
 import { ModelDef } from "../type/definition";
@@ -12,7 +12,7 @@ export class Updater<
     M extends ModelTmpl,
     K extends keyof M[ModelDef.State],
 > extends Emitter<
-    Event.StateUpdateBefore<M, K>, 
+    EventType.StateUpdateBefore<M, K>, 
     Model<M>
 > {
     /** 状态键值 */
@@ -27,12 +27,12 @@ export class Updater<
         this.key = config.key;
     }
 
-    public bindHandler(handler: Handler<Event.StateUpdateBefore<M, K>>) {
+    public bindHandler(handler: Handler<EventType.StateUpdateBefore<M, K>>) {
         super.bindHandler(handler);
         this.parent.updateState(this.key);
     }
 
-    public unbindHandler(handler: Handler<Event.StateUpdateBefore<M, K>>) {
+    public unbindHandler(handler: Handler<EventType.StateUpdateBefore<M, K>>) {
         super.unbindHandler(handler);
         this.parent.updateState(this.key);
     }

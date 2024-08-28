@@ -13,8 +13,6 @@ export class BunnyModel extends Model<BunnyModelTmpl> {
         app: App
     ) {
         super({
-            pong: console.log
-        }, {
             ...config,
             code: ModelCode.Bunny,
             originState: {

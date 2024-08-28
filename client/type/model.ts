@@ -3,7 +3,7 @@ import type { Model } from "../models";
 import { Updater } from "../utils/updater";
 import type { RawModelConfig } from "./config";
 import { ModelDef } from "./definition";
-import { Event } from "./event";
+import { EventType } from "./event";
 import { ModelTmpl } from "./template";
 import { Reflect } from ".";
 import { LinkerType } from "./linker";
@@ -21,7 +21,7 @@ export namespace ModelType {
     export type UpdaterEventDict<
         M extends ModelTmpl
     > = { 
-        [K in keyof M[ModelDef.State]]: Event.StateUpdateBefore<M, K> 
+        [K in keyof M[ModelDef.State]]: EventType.StateUpdateBefore<M, K> 
     }
 
     /** 状态修饰器序列化参数 */
@@ -40,8 +40,8 @@ export namespace ModelType {
     export type BaseEmitterEventDict<
         M extends ModelTmpl = ModelTmpl
     > = {
-        stateUpdateDone: Event.StateUpdateDone<M>
-        childUpdateDone: Event.ChildUpdateDone<M>
+        stateUpdateDone: EventType.StateUpdateDone<M>
+        childUpdateDone: EventType.ChildUpdateDone<M>
     } 
 
 

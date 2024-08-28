@@ -8,7 +8,6 @@ import { ModelChunk } from "../type/chunk";
 import { UpdaterProxy } from "../utils/updater-proxy";
 import { HandlerProxy } from "../utils/handler-proxy";
 import { EmitterProxy } from "../utils/emitter-proxy";
-import { LinkerType } from "../type/linker";
 import { ChildProxy } from "../utils/child-proxy";
 
 export class Model<
@@ -52,7 +51,6 @@ export class Model<
     public readonly debugIntf: Record<string, Base.Func>;
 
     constructor(
-        intf: LinkerType.HandlerIntf<M[ModelDef.HandlerEventDict]>,
         config: ModelConfig<M>,
         parent: M[ModelDef.Parent],
         app: App
@@ -82,7 +80,6 @@ export class Model<
             app
         );
         this.$handlerProxy = new HandlerProxy(
-            intf,
             config.handlerChunkDict || {},
             this,
             app

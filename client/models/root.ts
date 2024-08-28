@@ -11,7 +11,7 @@ export class RootModel extends Model<RootModelTmpl> {
         parent: RootModelTmpl[ModelDef.Parent],
         app: App
     ) {
-        super({}, {
+        super({
             ...config,
             originState: {
                 progress: 0,
