@@ -107,16 +107,16 @@ export class Model<
             });
             return;
         }
-        Object.keys(this.$childProxy).forEach(key => {
+        for (const key in this.$childProxy.childDict) {
             if (this.$childProxy.childDict[key] === target) {
                 delete this.$childProxy.childDict[key];
                 this.$emitterProxy.emitterDict.childUpdateDone.emitEvent({
                     target: this,
-                    children: this.currentChildren
+                    children: this.currentChildren  
                 });
                 return;
             }
-        });
+        }
         throw new Error();
     }
 

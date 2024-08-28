@@ -44,5 +44,11 @@ export class Emitter<
         this.removeCursor(handler);
         handler.removeCursor(this);
     }
+    
+    public destroy() { 
+        this.linkerList.forEach(item => {
+            this.unbindHandler(item);
+        }); 
+    }
 }
 

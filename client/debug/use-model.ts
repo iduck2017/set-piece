@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from "react";
-import type { ModelDebuggerProps } from ".";
+import type { ModelCompProps } from ".";
 import { DebugRenderer } from "../renderers/debug";
 
-export function useModel(props: ModelDebuggerProps) {
+export function useModel(props: ModelCompProps) {
     const { target, app } = props;
 
     const [ state, setState ] = useState(target.currentState);
@@ -16,7 +16,9 @@ export function useModel(props: ModelDebuggerProps) {
             app
         );
         render.current.active(target);
-        return render.current.destroy.bind(render);
+        return () => {
+            render.current?.destroy();
+        };
     }, [ target ]);
 
     return {

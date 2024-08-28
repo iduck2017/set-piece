@@ -4,12 +4,12 @@ import { useModel } from "./use-model";
 import "./index.css";
 import { Model } from "../models";
 
-export type ModelDebuggerProps = {
+export type ModelCompProps = {
     target: Model,
     app: App
 }
 
-export function ModelDebugger(props: ModelDebuggerProps) {
+export function ModelComp(props: ModelCompProps) {
     const { target, app } = props;
     const { children, state } = useModel(props);
 
@@ -40,7 +40,7 @@ export function ModelDebugger(props: ModelDebuggerProps) {
             </div>
             <div className="children">
                 {children.map(item => (
-                    <ModelDebugger 
+                    <ModelComp 
                         key={item.id}
                         target={item}
                         app={app}

@@ -40,12 +40,6 @@ export class Linker<
         this.$linkerList.splice(index, 1);
     }
     
-    public destroy() { 
-        this.$linkerList.forEach(item => {
-            item.destroy();
-        }); 
-    }
-
     public serialize(): LinkerType.Chunk {
         return {
             id: this.id, 

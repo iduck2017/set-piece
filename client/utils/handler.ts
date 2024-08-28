@@ -28,4 +28,10 @@ export class Handler<
             }
         });
     }
+
+    public destroy() { 
+        this.linkerList.forEach(item => {
+            item.unbindHandler(this);
+        }); 
+    }
 }

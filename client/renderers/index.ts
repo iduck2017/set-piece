@@ -20,6 +20,7 @@ export abstract class Renderer<
     }
 
     public destroy() {
+        console.log("Renderer destroyed", this);
         this.$handlerProxy.destroy();
     }
 }
