@@ -6,7 +6,7 @@ import { ModelTmpl } from "../type/template";
 import { Renderer } from ".";
 
 export class DebugRenderer<
-    M extends ModelTmpl
+    M extends ModelTmpl = ModelTmpl
 > extends Renderer<{
     stateUpdateDone: EventType.StateUpdateDone<M>
     childUpdateDone: EventType.ChildUpdateDone<M>

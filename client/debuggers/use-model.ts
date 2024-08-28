@@ -7,16 +7,17 @@ export function useModel(props: ModelDebuggerProps) {
 
     const [ state, setState ] = useState(target.currentState);
     const [ children, setChildren ] = useState(target.currentChildren);
-    const render = useRef(new DebugRenderer(
-        setState,
-        setChildren,
-        app
-    ));
+    const render = useRef<DebugRenderer>();
     
     useEffect(() => {
+        render.current = new DebugRenderer(
+            setState,
+            setChildren,
+            app
+        );
         render.current.active(target);
         return render.current.destroy.bind(render);
-    }, []);
+    }, [ target ]);
 
     return {
         state,
