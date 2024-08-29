@@ -1,15 +1,15 @@
 import type { App } from "../app";
-import { LinkerType } from "../type/linker";
-import { Linker } from "./linker";
+import { IConnector } from "../type/connector";
+import { Connector } from "./connector";
 import type { Handler } from "./handler";
 
 /** 事件触发器 */
 export class Emitter<
     E = any, 
     P = any
-> extends Linker<Handler<E>, P> {
+> extends Connector<Handler<E>, P> {
     constructor(
-        config: LinkerType.Config,
+        config: IConnector.Config,
         parent: P,
         app: App
     ) {
@@ -18,7 +18,7 @@ export class Emitter<
             parent, 
             app
         );
-        config.list?.forEach(id => {
+        config.idList?.forEach(id => {
             const handler = app.referService.handlerReferManager.referDict[id];
             if (handler) {
                 this.bindHandler(handler);
@@ -28,25 +28,25 @@ export class Emitter<
 
     /** 事件触发函数 */
     public emitEvent(event: E) {
-        this.linkerList.forEach(item => {
+        this.connectorList.forEach(item => {
             item.handleEvent(event);
         });
     }
 
     /** 绑定事件处理器 */
     public bindHandler(handler: Handler<E>) {
-        this.addCursor(handler);
-        handler.addCursor(this);
+        this.addConnector(handler);
+        handler.addConnector(this);
     }
 
     /** 解绑事件处理器 */
     public unbindHandler(handler: Handler<E>) {
-        this.removeCursor(handler);
-        handler.removeCursor(this);
+        this.removeConnector(handler);
+        handler.removeConnector(this);
     }
     
     public destroy() { 
-        this.linkerList.forEach(item => {
+        this.connectorList.forEach(item => {
             this.unbindHandler(item);
         }); 
     }

@@ -26,8 +26,8 @@ export class BunnyModel extends Model<BunnyModelTmpl> {
             childChunkList: config.childChunkList || [],
             childChunkDict: {}
         }, parent, app);
-        this.debugIntf.eat = this.eatFood;
-        this.debugIntf.spawn = this.spawnChild;
+        this.testcaseDict.eat = this.eatFood;
+        this.testcaseDict.spawn = this.spawnChild;
     }
 
     public eatFood() {

@@ -1,7 +1,7 @@
 import type { App } from "../app";
 import { ModelTmpl } from "../type/template";
 import { Delegator } from "../utils/delegator";
-import { Base, Reflect } from "../type";
+import { IBase, IReflect } from "../type";
 import { ModelDef } from "../type/definition";
 import { ModelConfig } from "../type/config";
 import { ModelChunk } from "../type/chunk";
@@ -48,7 +48,8 @@ export class Model<
         }; 
     }
 
-    public readonly debugIntf: Record<string, Base.Func>;
+    /** 测试用例 */
+    public readonly testcaseDict: Record<string, IBase.Func>;
 
     constructor(
         config: ModelConfig<M>,
@@ -85,11 +86,11 @@ export class Model<
             app
         );
 
-        this.debugIntf = {};
+        this.testcaseDict = {};
     }
 
     
-    protected $addChild(target: Reflect.Iterator<M[ModelDef.ChildList]>) {
+    protected $addChild(target: IReflect.Iterator<M[ModelDef.ChildList]>) {
         this.$childProxy.childList.push(target);
         this.$emitterProxy.emitterDict.childUpdateDone.emitEvent({
             target: this,

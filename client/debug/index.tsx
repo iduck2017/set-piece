@@ -26,12 +26,12 @@ export function ModelComp(props: ModelCompProps) {
                         <div className="value">{target.currentState[key]}</div>
                     </div>
                 ))}
-                {Object.keys(target.debugIntf).map(key => (
+                {Object.keys(target.testcaseDict).map(key => (
                     <div className="row" key={key}>
                         <div className="key">{key}</div>
                         <div 
                             className="function"
-                            onClick={target.debugIntf[key].bind(target)}
+                            onClick={target.testcaseDict[key].bind(target)}
                         >
                             function
                         </div>

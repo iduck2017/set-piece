@@ -3,13 +3,13 @@ import type { Model } from "../models";
 import { Updater } from "../utils/updater";
 import type { RawModelConfig } from "./config";
 import { ModelDef } from "./definition";
-import { EventType } from "./event";
+import { IEvent } from "./event";
 import { ModelTmpl } from "./template";
-import { Reflect } from ".";
-import { LinkerType } from "./linker";
+import { IReflect } from ".";
+import { IConnector } from "./connector";
 import { ModelChunk } from "./chunk";
 
-export namespace ModelType {
+export namespace IModel {
     /** 状态修饰器集合 */
     export type UpdaterDict<
         M extends ModelTmpl = ModelTmpl
@@ -21,11 +21,11 @@ export namespace ModelType {
     export type UpdaterEventDict<
         M extends ModelTmpl
     > = { 
-        [K in keyof M[ModelDef.State]]: EventType.StateUpdateBefore<M, K> 
+        [K in keyof M[ModelDef.State]]: IEvent.StateUpdateBefore<M, K> 
     }
 
     /** 状态修饰器序列化参数 */
-    export type UpdaterConfig<K> = LinkerType.Config & {
+    export type UpdaterConfig<K> = IConnector.Config & {
         key: K
     }
 
@@ -40,8 +40,8 @@ export namespace ModelType {
     export type BaseEmitterEventDict<
         M extends ModelTmpl = ModelTmpl
     > = {
-        stateUpdateDone: EventType.StateUpdateDone<M>
-        childUpdateDone: EventType.ChildUpdateDone<M>
+        stateUpdateDone: IEvent.StateUpdateDone<M>
+        childUpdateDone: IEvent.ChildUpdateDone<M>
     } 
 
 
@@ -62,14 +62,14 @@ export namespace ModelType {
     export type ChildChunkList<
         M extends ModelTmpl = ModelTmpl
     > = 
-        Array<ReflectChunk<Reflect.Iterator<M[ModelDef.ChildList]>>>
+        Array<ReflectChunk<IReflect.Iterator<M[ModelDef.ChildList]>>>
 
 
     /** 模型子节点序列化参数集合 */
     export type ChildConfigList<
         M extends ModelTmpl = ModelTmpl
     > = 
-        Array<ReflectConfig<Reflect.Iterator<M[ModelDef.ChildList]>>>
+        Array<ReflectConfig<IReflect.Iterator<M[ModelDef.ChildList]>>>
 
 
     /** 模型子节点序列化参数集合 */
@@ -86,4 +86,5 @@ export namespace ModelType {
     > = {
         [K in keyof M[ModelDef.ChildDict]]: ReflectConfig<M[ModelDef.ChildDict][K]>
     }
+
 }

@@ -1,17 +1,17 @@
 import type { App } from "../app";
-import { LinkerType } from "../type/linker";
-import { Linker } from "./linker";
+import { IConnector } from "../type/connector";
+import { Connector } from "./connector";
 import type { Emitter } from "./emitter";
 
 /** 事件接收器 */
 export class Handler<
     E = any, 
     P = any
-> extends Linker<Emitter<E>, P> {
-    public handleEvent: LinkerType.HandlerFunc<E>;
+> extends Connector<Emitter<E>, P> {
+    public handleEvent: IConnector.Caller<E>;
 
     constructor(
-        config: LinkerType.Config,
+        config: IConnector.Config,
         parent: P,
         app: App
     ) {
@@ -21,7 +21,7 @@ export class Handler<
             app
         );
         this.handleEvent = () => {};
-        config.list?.forEach(id => {
+        config.idList?.forEach(id => {
             const emitter = app.referService.emitterReferManager.referDict[id];
             if (emitter) {
                 emitter.bindHandler(this);
@@ -30,7 +30,7 @@ export class Handler<
     }
 
     public destroy() { 
-        this.linkerList.forEach(item => {
+        this.connectorList.forEach(item => {
             item.unbindHandler(this);
         }); 
     }

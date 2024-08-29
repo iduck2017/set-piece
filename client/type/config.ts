@@ -1,7 +1,7 @@
 import { ModelTmpl } from "./template";
 import { ModelDef } from "./definition";
-import { LinkerType } from "./linker";
-import { ModelType } from "./model";
+import { IConnector } from "./connector";
+import { IModel } from "./model";
 
 export type ModelConfig<
     M extends ModelTmpl
@@ -10,11 +10,11 @@ export type ModelConfig<
     code: M[ModelDef.Code]
     rule?: Partial<M[ModelDef.Rule]>
     originState: M[ModelDef.State]
-    childChunkList: ModelType.ChildConfigList<M>,
-    childChunkDict: ModelType.ChildConfigDict<M>,
-    emitterChunkDict?: LinkerType.ConfigDict<M[ModelDef.EmitterEventDict]>
-    handlerChunkDict?: LinkerType.ConfigDict<M[ModelDef.HandlerEventDict]>
-    updaterChunkDict?: LinkerType.ConfigDict<M[ModelDef.State]>
+    childChunkList: IModel.ChildConfigList<M>,
+    childChunkDict: IModel.ChildConfigDict<M>,
+    emitterChunkDict?: IConnector.ConfigDict<M[ModelDef.EmitterEventDict]>
+    handlerChunkDict?: IConnector.ConfigDict<M[ModelDef.HandlerEventDict]>
+    updaterChunkDict?: IConnector.ConfigDict<M[ModelDef.State]>
 }
 
 export type RawModelConfig<
@@ -24,9 +24,9 @@ export type RawModelConfig<
     code: M[ModelDef.Code]
     rule?: Partial<M[ModelDef.Rule]>
     originState?: Partial<M[ModelDef.State]>
-    childChunkList?: ModelType.ChildConfigList<M>,
-    childChunkDict?: Partial<ModelType.ChildConfigDict<M>>,
-    emitterChunkDict?: LinkerType.ConfigDict<M[ModelDef.EmitterEventDict]>
-    handlerChunkDict?: LinkerType.ConfigDict<M[ModelDef.HandlerEventDict]>
-    updaterChunkDict?: LinkerType.ConfigDict<M[ModelDef.State]>
+    childChunkList?: IModel.ChildConfigList<M>,
+    childChunkDict?: Partial<IModel.ChildConfigDict<M>>,
+    emitterChunkDict?: IConnector.ConfigDict<M[ModelDef.EmitterEventDict]>
+    handlerChunkDict?: IConnector.ConfigDict<M[ModelDef.HandlerEventDict]>
+    updaterChunkDict?: IConnector.ConfigDict<M[ModelDef.State]>
 }

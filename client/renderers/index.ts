@@ -1,10 +1,10 @@
 import type { App } from "../app";
-import { Base } from "../type";
+import { IBase } from "../type";
 import { Entity } from "../utils/entity";
 import { HandlerProxy } from "../utils/handler-proxy";
 
 export abstract class Renderer<
-    E extends Base.Dict
+    E extends IBase.Dict
 > extends Entity {
     protected readonly $handlerProxy: HandlerProxy<E>;
 

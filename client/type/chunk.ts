@@ -1,8 +1,8 @@
 /* eslint-disable max-len */
 import { ModelDef } from "./definition";
 import { ModelTmpl } from "./template";
-import { LinkerType } from "./linker";
-import type { ModelType } from "./model";
+import { IConnector } from "./connector";
+import type { IModel } from "./model";
 
 export type ModelChunk<
     M extends ModelTmpl
@@ -11,9 +11,9 @@ export type ModelChunk<
     id: string
     rule: Partial<M[ModelDef.Rule]>
     originState: M[ModelDef.State]
-    childChunkList: ModelType.ChildChunkList<M>,
-    childChunkDict: ModelType.ChildChunkDict<M>,
-    emitterChunkDict: LinkerType.ChunkDict<M[ModelDef.EmitterEventDict]>
-    handlerChunkDict: LinkerType.ChunkDict<M[ModelDef.HandlerEventDict]>
-    updaterChunkDict: LinkerType.ChunkDict<M[ModelDef.State]>
+    childChunkList: IModel.ChildChunkList<M>,
+    childChunkDict: IModel.ChildChunkDict<M>,
+    emitterChunkDict: IConnector.ChunkDict<M[ModelDef.EmitterEventDict]>
+    handlerChunkDict: IConnector.ChunkDict<M[ModelDef.HandlerEventDict]>
+    updaterChunkDict: IConnector.ChunkDict<M[ModelDef.State]>
 }

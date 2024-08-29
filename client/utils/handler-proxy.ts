@@ -1,30 +1,31 @@
 import type { App } from "../app";
-import { Base } from "../type";
-import { LinkerType } from "../type/linker";
+import { IBase } from "../type";
+import { IConnector } from "../type/connector";
 import { Entity } from "./entity";
 import { Handler } from "./handler";
 
 /** 接收器代理 */
 export class HandlerProxy<
-    D extends Base.Dict, 
+    D extends IBase.Dict, 
     P = any
 > extends Entity {
     public readonly parent: P;
 
-    private readonly $handlerDict: LinkerType.HandlerDict<D, P>;
+    /** 事件触发器集合 */
+    private readonly $handlerDict: IConnector.HandlerDict<D, P>;
     public get handlerDict() {
         return { ...this.$handlerDict };
     }
 
     constructor(
-        config: LinkerType.ConfigDict<D>,
+        config: IConnector.ConfigDict<D>,
         parent: P,
         app: App
     ) {
         super(app);
         this.parent = parent;
-        /** 触发器集合 */
-        this.$handlerDict = {} as LinkerType.HandlerDict<D, P>;
+        /** 事件触发器集合 */
+        this.$handlerDict = {} as IConnector.HandlerDict<D, P>;
         for (const key in config) {
             this.$handlerDict[key] = new Handler(
                 config[key] || {}, 
@@ -34,10 +35,11 @@ export class HandlerProxy<
         }
     }
 
+    /** 初始化函数，注入事件处理函数 */
     public initialize(
-        handlerIntf: LinkerType.HandlerIntf<D>
+        callerDict: IConnector.CallerDict<D>
     ) {
-        for (const key in handlerIntf) {
+        for (const key in callerDict) {
             if (!this.$handlerDict[key]) {
                 this.$handlerDict[key] = new Handler(
                     {},
@@ -46,12 +48,12 @@ export class HandlerProxy<
                 );
             }
             this.$handlerDict[key].handleEvent = 
-                handlerIntf[key].bind(this.parent);
+                callerDict[key].bind(this.parent);
         }
     }
 
-    public serialize(): LinkerType.ChunkDict<D> {
-        const result = {} as LinkerType.ChunkDict<D>;
+    public serialize(): IConnector.ChunkDict<D> {
+        const result = {} as IConnector.ChunkDict<D>;
         for (const key in this.handlerDict) {
             result[key] = this.handlerDict[key].serialize();
         }

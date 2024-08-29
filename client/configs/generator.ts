@@ -1,7 +1,7 @@
 import { RootModel } from "../models/root";
 import { AppInfo } from "../type/app";
 import { ModelCode } from "../type/code";
-import { ModelType } from "../type/model";
+import { IModel } from "../type/model";
 import { Context } from "./context";
 
 export namespace Generator {
@@ -16,7 +16,7 @@ export namespace Generator {
         };
     }
 
-    export function initRootModelConfig(): ModelType.ReflectConfig<RootModel> {
+    export function initRootModelConfig(): IModel.ReflectConfig<RootModel> {
         return {
             code: ModelCode.Root
         };

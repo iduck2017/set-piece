@@ -1,28 +1,28 @@
 import type { App } from "../app";
 import type { Model } from "../models";
-import { LinkerType } from "../type/linker";
+import { IConnector } from "../type/connector";
 import { ModelDef } from "../type/definition";
-import { ModelType } from "../type/model";
+import { IModel } from "../type/model";
 import { ModelTmpl } from "../type/template";
+import { Entity } from "./entity";
 import { Updater } from "./updater";
 
 /** 状态修饰器代理 */
 export class UpdaterProxy<
     M extends ModelTmpl
-> {
-    public readonly updaterDict: ModelType.UpdaterDict<M>;
-    public readonly binderIntf = 
-        {} as LinkerType.BinderIntf<ModelType.UpdaterEventDict<M>>;
-    public readonly unbinderIntf = 
-        {} as LinkerType.UnbinderIntf<ModelType.UpdaterEventDict<M>>;
+> extends Entity {
+    public readonly updaterDict: IModel.UpdaterDict<M>;
+    public readonly binderDict = {} as IConnector.BinderDict<IModel.UpdaterEventDict<M>>;
+    public readonly unbinderDict = {} as IConnector.BinderDict<IModel.UpdaterEventDict<M>>;
 
     constructor(
-        config: LinkerType.ConfigDict<M[ModelDef.State]>,
+        config: IConnector.ConfigDict<M[ModelDef.State]>,
         parent: Model<M>,
         app: App
     ) {
+        super(app);
         /** 状态修饰器集合 */
-        const origin = {} as ModelType.UpdaterDict<M>;
+        const origin = {} as IModel.UpdaterDict<M>;
         for (const key in config) {
             origin[key] = new Updater(
                 { 
@@ -49,8 +49,8 @@ export class UpdaterProxy<
 
 
         /** 触发器绑定接口集合 */
-        this.binderIntf = new Proxy(
-            this.binderIntf, {
+        this.binderDict = new Proxy(
+            this.binderDict, {
                 get: (target, key) => {
                     return this.updaterDict[key].bindHandler.bind(
                         this.updaterDict[key]
@@ -61,8 +61,8 @@ export class UpdaterProxy<
         );
 
         /** 触发器解绑接口集合 */
-        this.unbinderIntf = new Proxy(
-            this.unbinderIntf, {
+        this.unbinderDict = new Proxy(
+            this.unbinderDict, {
                 get: (target, key) => {
                     return this.updaterDict[key].unbindHandler.bind(
                         this.updaterDict[key]
@@ -73,14 +73,16 @@ export class UpdaterProxy<
         );
     }
 
+    /** 序列化 */
     public serialize() {
-        const result = {} as LinkerType.ChunkDict<M[ModelDef.State]>;
+        const result = {} as IConnector.ChunkDict<M[ModelDef.State]>;
         for (const key in this.updaterDict) {
             result[key] = this.updaterDict[key].serialize();
         }
         return result;
     }
 
+    /** 析构 */
     public destroy() {
         Object.values(this.updaterDict).forEach(item => {
             item.destroy();

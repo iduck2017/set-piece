@@ -1,24 +1,26 @@
 import type { App } from "../app";
-import { Base } from "../type";
-import { LinkerType } from "../type/linker";
+import { IBase } from "../type";
+import { IConnector } from "../type/connector";
 import { Emitter } from "./emitter";
+import { Entity } from "./entity";
 
 /** 触发器代理 */
 export class EmitterProxy<
-    D extends Base.Dict, 
+    D extends IBase.Dict, 
     P = any
-> {
-    public readonly emitterDict: LinkerType.EmitterDict<D, P>;
-    public readonly binderIntf = {} as LinkerType.BinderIntf<D>;
-    public readonly unbinderIntf = {} as LinkerType.UnbinderIntf<D>;
+> extends Entity {
+    public readonly emitterDict: IConnector.EmitterDict<D, P>;
+    public readonly emitterBinderDict = {} as IConnector.BinderDict<D>;
+    public readonly emitterUnbinderDict = {} as IConnector.BinderDict<D>;
 
     constructor(
-        config: LinkerType.ConfigDict<D>,
+        config: IConnector.ConfigDict<D>,
         parent: P,
         app: App
     ) {
+        super(app);
         /** 触发器集合 */
-        const origin = {} as LinkerType.EmitterDict<D, P>;
+        const origin = {} as IConnector.EmitterDict<D, P>;
         for (const key in config) {
             origin[key] = new Emitter(
                 config[key] || {}, 
@@ -41,8 +43,8 @@ export class EmitterProxy<
         });
 
         /** 触发器绑定接口集合 */
-        this.binderIntf = new Proxy(
-            this.binderIntf, {
+        this.emitterBinderDict = new Proxy(
+            this.emitterBinderDict, {
                 get: (target, key) => {
                     return this.emitterDict[key].bindHandler.bind(
                         this.emitterDict[key]
@@ -53,8 +55,8 @@ export class EmitterProxy<
         );
 
         /** 触发器解绑接口集合 */
-        this.unbinderIntf = new Proxy(
-            this.unbinderIntf, {
+        this.emitterUnbinderDict = new Proxy(
+            this.emitterUnbinderDict, {
                 get: (target, key) => {
                     return this.emitterDict[key].unbindHandler.bind(
                         this.emitterDict[key]
@@ -65,8 +67,8 @@ export class EmitterProxy<
         );
     }
 
-    public serialize(): LinkerType.ChunkDict<D> {
-        const result = {} as LinkerType.ChunkDict<D>;
+    public serialize(): IConnector.ChunkDict<D> {
+        const result = {} as IConnector.ChunkDict<D>;
         for (const key in this.emitterDict) {
             result[key] = this.emitterDict[key].serialize();
         }
