@@ -1,6 +1,5 @@
 import type { App } from "../app";
 import { ModelTmpl } from "../type/template";
-import { Delegator } from "../utils/delegator";
 import { IBase, IReflect } from "../type";
 import { ModelDef } from "../type/definition";
 import { ModelConfig } from "../type/config";
@@ -62,7 +61,14 @@ export class Model<
         this.parent = parent;
 
         this.$rule = config.rule || {};
-        this.$originState = Delegator.initOriginState(config.originState, this);
+        this.$originState = new Proxy(config.originState, {
+            set: (origin, key: keyof M[ModelDef.State], value) => {
+                origin[key] = value;
+                this.updateState(key);
+                return true;
+            }
+        });
+
         this.$currentState = { ...this.$originState };
 
         this.$childProxy = new ChildProxy(
