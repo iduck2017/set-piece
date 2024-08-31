@@ -5,6 +5,7 @@ import { IEvent } from "./event";
 import { IReflect } from ".";
 import { IConnector } from "./connector";
 import type { IModelDef, ModelKey } from "./definition";
+import { SafeEmitter } from "../utils/emitter";
 
 export namespace IModel {
     /** 序列化参数 */
@@ -58,6 +59,11 @@ export namespace IModel {
        M extends IModelDef.Default = IModelDef.Default
     > = {
         [K in keyof M[ModelKey.State]]: Updater<M, K>
+    }
+    export type SafeUpdaterDict<
+        M extends IModelDef.Default = IModelDef.Default
+    > = {
+        [K in keyof M[ModelKey.State]]: SafeEmitter<IEvent.StateUpdateBefore<M, K>, Model<M>>
     }
 
     /** 状态修饰器事件集合 */

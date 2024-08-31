@@ -52,13 +52,9 @@ export abstract class Model<
     }
     
     /** 状态修饰器代理 */
-    protected readonly $updaterProxy: UpdaterProxy<M>;
-    public get updaterProxy() {
-        return {
-            binderDict: this.$updaterProxy.binderDict,
-            unbinderDict: this.$updaterProxy.unbinderDict
-        }; 
-    }
+    private readonly $updaterProxy: UpdaterProxy<M>;
+    protected readonly $updaterDict: IModel.UpdaterDict<M>;
+    public readonly updaterDict: IModel.SafeUpdaterDict<M>;
 
     /** 事件接收器代理 */
     protected readonly $handlerProxy: HandlerProxy<M[ModelKey.HandlerEventDict], Model<M>>;
@@ -84,9 +80,12 @@ export abstract class Model<
         this.code = config.code;
         this.$preset = config.preset || {};
  
-        /** 初始化链接器代理 */
+        /** 初始化状态更新器 */
         this.$updaterProxy = new UpdaterProxy<M>(config.updaterChunkDict || {}, this, app);
+        this.$updaterDict = this.$updaterProxy.updaterDict;
+        this.updaterDict = this.$updaterProxy.safeUpdaterDict;
         
+        /** 初始化事件触发器 */
         this.$emitterProxy = new EmitterProxy(config.emitterChunkDict || {}, this, app);
         this.$emitterDict = this.$emitterProxy.emitterDict;
         this.emitterDict = this.$emitterProxy.safeEmitterDict;

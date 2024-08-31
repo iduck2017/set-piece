@@ -36,4 +36,3 @@ export class Updater<
         this.parent.updateState(this.key);
     }
 }
-

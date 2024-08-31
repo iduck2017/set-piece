@@ -5,14 +5,14 @@ import { IConnector } from "../type/connector";
 import { IModel } from "../type/model";
 import { Entity } from "./entity";
 import { Updater } from "./updater";
+import { SafeEmitter } from "./emitter";
 
 /** 状态修饰器代理 */
 export class UpdaterProxy<
     M extends IModelDef.Default
 > extends Entity {
     public readonly updaterDict: IModel.UpdaterDict<M>;
-    public readonly binderDict = {} as IConnector.BinderDict<IModel.UpdaterEventDict<M>>;
-    public readonly unbinderDict = {} as IConnector.BinderDict<IModel.UpdaterEventDict<M>>;
+    public readonly safeUpdaterDict = {} as IModel.SafeUpdaterDict<M>;
 
     constructor(
         config: IConnector.ConfigDict<M[ModelKey.State]>,
@@ -32,42 +32,32 @@ export class UpdaterProxy<
                 app
             );
         }
-        this.updaterDict = new Proxy(origin, {
-            get: (target, key: keyof M[ModelKey.State]) => {
-                if (!target[key]) {
-                    target[key] = new Updater(
-                        { key }, 
-                        parent,
-                        app
-                    );
-                }
-                return target[key];
-            },
-            set: () => false
-        });
 
-
-        /** 触发器绑定接口集合 */
-        this.binderDict = new Proxy(
-            this.binderDict, {
-                get: (target, key) => {
-                    return this.updaterDict[key].bindHandler.bind(
-                        this.updaterDict[key]
-                    );
+        this.updaterDict = new Proxy(
+            origin, {
+                get: (target, key: keyof M[ModelKey.State]) => {
+                    if (!target[key]) {
+                        target[key] = new Updater(
+                            { key }, 
+                            parent,
+                            app
+                        );
+                    }
+                    return target[key];
                 },
                 set: () => false
             }
         );
-
-        /** 触发器解绑接口集合 */
-        this.unbinderDict = new Proxy(
-            this.unbinderDict, {
-                get: (target, key) => {
-                    return this.updaterDict[key].unbindHandler.bind(
-                        this.updaterDict[key]
-                    );
-                },
-                set: () => false
+        this.safeUpdaterDict = new Proxy(
+            this.safeUpdaterDict, {
+                get: (target, key: keyof M[ModelKey.State]) => {
+                    if (!target[key]) {
+                        target[key] = new SafeEmitter(
+                            this.updaterDict[key]
+                        );
+                    }
+                    return target[key];
+                }
             }
         );
     }

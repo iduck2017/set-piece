@@ -19,7 +19,6 @@ export class EmitterProxy<
         app: App
     ) {
         super(app);
-        /** 触发器集合 */
         const origin = {} as IConnector.EmitterDict<D, P>;
         for (const key in config) {
             origin[key] = new Emitter(
@@ -28,19 +27,22 @@ export class EmitterProxy<
                 app
             );  
         }
-        this.emitterDict = new Proxy(origin, {
-            get: (target, key: keyof D) => {
-                if (!target[key]) {
-                    target[key] = new Emitter(
-                        {}, 
-                        parent,
-                        app
-                    );
-                }
-                return target[key];
-            },
-            set: () => false
-        });
+
+        this.emitterDict = new Proxy(
+            origin, {
+                get: (target, key: keyof D) => {
+                    if (!target[key]) {
+                        target[key] = new Emitter(
+                            {}, 
+                            parent,
+                            app
+                        );
+                    }
+                    return target[key];
+                },
+                set: () => false
+            }
+        );
         this.safeEmitterDict = new Proxy(
             this.safeEmitterDict, {
                 get: (target, key: keyof D) => {
