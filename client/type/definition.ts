@@ -26,18 +26,18 @@ export enum ModelCode {
 /** 模型定义 */
 export namespace IModelDef {
     /** 基础模型定义 */
-    export type Default = {
+    export type Base = {
         code: string
         preset: IBase.Data
         state: IBase.Data
         childList: Array<Model>
         childDict: Record<IBase.Key, Model>,
         parent: Model | undefined
-        emitterEventDict: IModel.DefaultEmitterEventDict
+        emitterEventDict: IModel.BaseEmitterEventDict
         handlerEventDict: IBase.Dict
     }
 
-    export type Common<M extends Partial<Default>> = 
+    export type Common<M extends Partial<Base>> = 
         M & Omit<{
             code: never,
             preset: IBase.VoidDict,
@@ -45,7 +45,7 @@ export namespace IModelDef {
             childList: Array<never>
             childDict: IBase.VoidDict
             parent: Model | undefined
-            emitterEventDict: IModel.DefaultEmitterEventDict
+            emitterEventDict: IModel.BaseEmitterEventDict
             handlerEventDict: IBase.VoidDict
         }, keyof M>
 
@@ -77,7 +77,7 @@ export namespace IModelDef {
         state: {
             time: number,
         },
-        emitterEventDict: IModel.DefaultEmitterEventDict & {
+        emitterEventDict: IModel.BaseEmitterEventDict & {
             timeUpdateBefore: void,
             timeUpdateDone: void
         }

@@ -8,7 +8,7 @@ import type { IModelDef, ModelKey } from "../type/definition";
 
 /** 状态修饰器 */
 export class Updater<
-    M extends IModelDef.Default,
+    M extends IModelDef.Base,
     K extends keyof M[ModelKey.State],
 > extends Emitter<
     IEvent.StateUpdateBefore<M, K>, 

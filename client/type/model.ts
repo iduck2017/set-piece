@@ -10,7 +10,7 @@ import { SafeEmitter } from "../utils/emitter";
 export namespace IModel {
     /** 序列化参数 */
     export type Chunk<
-        M extends IModelDef.Default
+        M extends IModelDef.Base
     > = {
         code: M[ModelKey.Code]
         id: string
@@ -23,10 +23,9 @@ export namespace IModel {
         updaterChunkDict: IConnector.ChunkDict<M[ModelKey.State]>
     }
 
-
     /** 初始化参数 */
     export type Config<
-        M extends IModelDef.Default
+        M extends IModelDef.Base
     > = {
         id?: string
         code: M[ModelKey.Code]
@@ -41,7 +40,7 @@ export namespace IModel {
 
     /** 原始初始化参数 */
     export type RawConfig<
-        M extends IModelDef.Default
+        M extends IModelDef.Base
     > = {
         id?: string
         code: M[ModelKey.Code]
@@ -56,19 +55,19 @@ export namespace IModel {
 
     /** 状态修饰器集合 */
     export type UpdaterDict<
-       M extends IModelDef.Default = IModelDef.Default
+       M extends IModelDef.Base = IModelDef.Base
     > = {
         [K in keyof M[ModelKey.State]]: Updater<M, K>
     }
     export type SafeUpdaterDict<
-        M extends IModelDef.Default = IModelDef.Default
+        M extends IModelDef.Base = IModelDef.Base
     > = {
         [K in keyof M[ModelKey.State]]: SafeEmitter<IEvent.StateUpdateBefore<M, K>, Model<M>>
     }
 
     /** 状态修饰器事件集合 */
     export type UpdaterEventDict<
-        M extends IModelDef.Default
+        M extends IModelDef.Base
     > = { 
         [K in keyof M[ModelKey.State]]: IEvent.StateUpdateBefore<M, K> 
     }
@@ -80,14 +79,14 @@ export namespace IModel {
 
     /** 状态修饰器序列化参数集合 */
     export type UpdaterConfigDict<
-        M extends IModelDef.Default = IModelDef.Default
+        M extends IModelDef.Base = IModelDef.Base
     > = {
         [K in keyof M[ModelKey.State]]: UpdaterConfig<K>
     }
 
     /** 模型基础触发器事件集合 */
-    export type DefaultEmitterEventDict<
-        M extends IModelDef.Default = IModelDef.Default
+    export type BaseEmitterEventDict<
+        M extends IModelDef.Base = IModelDef.Base
     > = {
         stateUpdateDone: IEvent.StateUpdateDone<M>
         childUpdateDone: IEvent.ChildUpdateDone<M>
@@ -109,21 +108,21 @@ export namespace IModel {
 
     /** 模型子节点序列化参数集合 */
     export type ChildChunkList<
-        M extends IModelDef.Default
+        M extends IModelDef.Base
     > = 
         Array<ReflectChunk<IReflect.Iterator<M[ModelKey.ChildList]>>>
 
 
     /** 模型子节点序列化参数集合 */
     export type ChildConfigList<
-        M extends IModelDef.Default
+        M extends IModelDef.Base
     > = 
         Array<ReflectConfig<IReflect.Iterator<M[ModelKey.ChildList]>>>
 
 
     /** 模型子节点序列化参数集合 */
     export type ChildChunkDict<
-        M extends IModelDef.Default    
+        M extends IModelDef.Base    
     > = {
         [K in keyof M[ModelKey.ChildDict]]: ReflectChunk<M[ModelKey.ChildDict][K]>
     }
@@ -131,7 +130,7 @@ export namespace IModel {
     
     /** 模型子节点初始化参数集合 */
     export type ChildConfigDict<
-        M extends IModelDef.Default
+        M extends IModelDef.Base
     > = {
         [K in keyof M[ModelKey.ChildDict]]: ReflectConfig<M[ModelKey.ChildDict][K]>
     }

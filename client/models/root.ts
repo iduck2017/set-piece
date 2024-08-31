@@ -2,7 +2,6 @@ import { Model } from ".";
 import type { App } from "../app";
 import { IModelDef, ModelCode, ModelKey } from "../type/definition";
 import { IModel } from "../type/model";
-import { BunnyModel } from "./bunny";
 
 export class RootModel extends Model<IModelDef.Root> {
     constructor(
@@ -27,10 +26,8 @@ export class RootModel extends Model<IModelDef.Root> {
         }, parent, app);
     }
 
-    public spawnCreature(bunny: IModel.ReflectConfig<BunnyModel>) {
-        const child = this.app.factoryService.unserialize<BunnyModel>({
-            code: ModelCode.Bunny
-        }, this);
+    public spawnCreature(bunny: IModel.RawConfig<IModelDef.Bunny>) {
+        const child = this.app.factoryService.unserialize(bunny, this);
         this.$appendChild(child);
         return child;
     }

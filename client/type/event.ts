@@ -3,7 +3,7 @@ import type { IModelDef, ModelKey } from "./definition";
 
 export namespace IEvent { 
     export type StateUpdateBefore<
-        M extends IModelDef.Default,
+        M extends IModelDef.Base,
         K extends keyof M[ModelKey.State]
     > = {
         target: Model<M>,
@@ -12,14 +12,14 @@ export namespace IEvent {
     }
 
     export type StateUpdateDone<
-        M extends IModelDef.Default,
+        M extends IModelDef.Base,
     > = {
         target: Model<M>,
         state: M[ModelKey.State]
     }
 
     export type ChildUpdateDone<
-        M extends IModelDef.Default,
+        M extends IModelDef.Base,
     > = {
         target: Model<M>,
         children: Model[]

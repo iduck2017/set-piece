@@ -6,7 +6,7 @@ import { Renderer } from ".";
 import { IModelDef } from "../type/definition";
 
 export class DebugRenderer<
-    M extends IModelDef.Default = IModelDef.Default
+    M extends IModelDef.Base = IModelDef.Base
 > extends Renderer<{
     stateUpdateDone: IEvent.StateUpdateDone<M>
     childUpdateDone: IEvent.ChildUpdateDone<M>

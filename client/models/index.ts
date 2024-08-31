@@ -8,7 +8,7 @@ import { IModel } from "../type/model";
 import { IConnector } from "../type/connector";
 
 export abstract class Model<
-    M extends IModelDef.Default = IModelDef.Default
+    M extends IModelDef.Base = IModelDef.Base
 > {
     /** 外部指针 */
     public readonly app: App;
@@ -108,12 +108,12 @@ export abstract class Model<
 
         /** 初始化节点 */
         this.$childList = config.childChunkList.map(chunk => {
-            return app.factoryService.unserialize(chunk, this);
+            return app.factoryService.$unserialize(chunk, this);
         });
         const origin = {} as M[ModelKey.ChildDict];
         for (const key in config.childChunkDict) {
             const chunk = config.childChunkDict[key];
-            origin[key] = app.factoryService.unserialize(chunk, this);
+            origin[key] = app.factoryService.$unserialize(chunk, this);
         }
         this.$childDict = new Proxy(origin, {
             set: (origin, key: keyof M[ModelKey.ChildDict], value) => {

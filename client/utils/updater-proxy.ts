@@ -9,7 +9,7 @@ import { SafeEmitter } from "./emitter";
 
 /** 状态修饰器代理 */
 export class UpdaterProxy<
-    M extends IModelDef.Default
+    M extends IModelDef.Base
 > extends Entity {
     public readonly updaterDict: IModel.UpdaterDict<M>;
     public readonly safeUpdaterDict = {} as IModel.SafeUpdaterDict<M>;
