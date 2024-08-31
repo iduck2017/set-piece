@@ -54,3 +54,15 @@ export class Emitter<
     }
 }
 
+export class SafeEmitter<
+    E = any, 
+    P = any
+> {
+    public readonly bindHandler: IConnector.Binder<E>;
+    public readonly unbindHandler: IConnector.Binder<E>;
+
+    constructor(emitter: Emitter<E, P>) {
+        this.bindHandler = emitter.bindHandler.bind(emitter);
+        this.unbindHandler = emitter.unbindHandler.bind(emitter);
+    }
+}

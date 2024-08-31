@@ -1,5 +1,5 @@
 import { IBase } from ".";
-import type { Emitter } from "../utils/emitter";
+import type { Emitter, SafeEmitter } from "../utils/emitter";
 import type { Handler } from "../utils/handler";
 
 /** 链接器相关类型 */
@@ -26,6 +26,7 @@ export namespace IConnector {
     }
 
     /** 链接器绑定及解绑函数 */
+    export type Binder<E> = (handler: Handler<E>) => void;
     export type BinderDict<D extends IBase.Dict> = { 
         [K in keyof D]: (handler: Handler<D[K]>) => void
     }
@@ -36,6 +37,12 @@ export namespace IConnector {
         P = any
     > = { 
         [K in keyof D]: Emitter<D[K], P> 
+    }
+    export type SafeEmitterDict<
+        D extends IBase.Dict, 
+        P = any
+    > = { 
+        [K in keyof D]: SafeEmitter<D[K], P> 
     }
     
     /** 事件接收器集合 */

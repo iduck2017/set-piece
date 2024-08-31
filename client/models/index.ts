@@ -5,6 +5,7 @@ import { HandlerProxy } from "../utils/handler-proxy";
 import { EmitterProxy } from "../utils/emitter-proxy";
 import { IModelDef, ModelKey } from "../type/definition";
 import { IModel } from "../type/model";
+import { IConnector } from "../type/connector";
 
 export abstract class Model<
     M extends IModelDef.Default = IModelDef.Default
@@ -62,21 +63,13 @@ export abstract class Model<
     /** 事件接收器代理 */
     protected readonly $handlerProxy: HandlerProxy<M[ModelKey.HandlerEventDict], Model<M>>;
    
-
     /** 事件触发器代理 */
     private readonly $emitterProxy: EmitterProxy<M[ModelKey.EmitterEventDict], Model<M>>;
-    protected get $emitterCallerDict() {
-        return this.$emitterProxy.callerDict;
-    }
-    public get emitterBinderDict() {
-        return this.$emitterProxy.binderDict;
-    }
-    public get emitterUnbinderDict() {
-        return this.$emitterProxy.unbinderDict;
-    }
+    protected readonly $emitterDict: IConnector.EmitterDict<M[ModelKey.EmitterEventDict], Model<M>>;
+    public readonly emitterDict: IConnector.SafeEmitterDict<M[ModelKey.EmitterEventDict], Model<M>>;
 
     /** 测试用例 */
-    public readonly testcaseDict: Record<string, IBase.Func>;
+    public testcaseDict: Record<string, IBase.Func>;
 
     constructor(
         config: IModel.Config<M>,
@@ -93,7 +86,11 @@ export abstract class Model<
  
         /** 初始化链接器代理 */
         this.$updaterProxy = new UpdaterProxy<M>(config.updaterChunkDict || {}, this, app);
+        
         this.$emitterProxy = new EmitterProxy(config.emitterChunkDict || {}, this, app);
+        this.$emitterDict = this.$emitterProxy.emitterDict;
+        this.emitterDict = this.$emitterProxy.safeEmitterDict;
+
         this.$handlerProxy = new HandlerProxy(config.handlerChunkDict || {}, this, app);
 
         /** 初始化状态 */
@@ -120,7 +117,7 @@ export abstract class Model<
         this.$childDict = new Proxy(origin, {
             set: (origin, key: keyof M[ModelKey.ChildDict], value) => {
                 origin[key] = value;
-                this.$emitterCallerDict.childUpdateDone({
+                this.$emitterDict.childUpdateDone.emitEvent({
                     target: this,
                     children: this.children
                 });
@@ -134,7 +131,7 @@ export abstract class Model<
     /** 添加子节点 */
     protected $appendChild(target: IReflect.Iterator<M[ModelKey.ChildList]>) {
         this.$childList.push(target);
-        this.$emitterCallerDict.childUpdateDone({
+        this.$emitterDict.childUpdateDone.emitEvent({
             target: this,
             children: this.children
         });
@@ -145,7 +142,7 @@ export abstract class Model<
         const index = this.$childList.indexOf(target);
         if (index >= 0) {
             this.$childList.splice(index, 1); 
-            this.$emitterCallerDict.childUpdateDone({
+            this.$emitterDict.childUpdateDone.emitEvent({
                 target: this,
                 children: this.children
             });
@@ -154,7 +151,7 @@ export abstract class Model<
         for (const key in this.$childDict) {
             if (this.$childDict[key] === target) {
                 delete this.$childDict[key];
-                this.$emitterCallerDict.childUpdateDone({
+                this.$emitterDict.childUpdateDone.emitEvent({
                     target: this,
                     children: this.children  
                 });
@@ -193,7 +190,7 @@ export abstract class Model<
         const next = event.next;
         if (prev !== next) {
             this.$currentState[key] = next;
-            this.$emitterCallerDict.stateUpdateDone({
+            this.$emitterDict.stateUpdateDone.emitEvent({
                 target: this,
                 state: this.currentState
             });

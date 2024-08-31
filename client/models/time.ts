@@ -24,8 +24,8 @@ export class TimeModel extends Model<IModelDef.Time> {
     
     /** 更新时间 */
     public updateTime(offsetTime: number) {
-        this.$emitterCallerDict.timeUpdateBefore();
+        this.$emitterDict.timeUpdateBefore.emitEvent();
         this.$originState.time += offsetTime;
-        this.$emitterCallerDict.timeUpdateDone();
+        this.$emitterDict.timeUpdateDone.emitEvent();
     }
 }

@@ -23,9 +23,11 @@ export class BunnyModel extends Model<IModelDef.Bunny> {
             childChunkList: config.childChunkList || [],
             childChunkDict: {}
         }, parent, app);
-        this.testcaseDict.eat = this.eatFood;
-        this.testcaseDict.spawn = this.spawnChild;
-        this.testcaseDict.growUp = this.growUp;
+        this.testcaseDict = {
+            eatFoood: this.eatFood,
+            spawnChild: this.spawnChild,
+            growUp: this.growUp
+        };
         this.$handlerProxy.initialize({
             timeUpdateDone: this.growUp
         });
@@ -33,7 +35,8 @@ export class BunnyModel extends Model<IModelDef.Bunny> {
 
     public initialize() {
         console.log("Bunny is initializing...");
-        this.root.childDict.time.emitterBinderDict.timeUpdateDone(
+        const timer = this.root.childDict.time;
+        timer.emitterDict.timeUpdateDone.bindHandler(
             this.$handlerProxy.handlerDict.timeUpdateDone
         );
     }

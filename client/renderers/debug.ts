@@ -37,10 +37,10 @@ export class DebugRenderer<
     }
 
     public active(target: Model<M>) {
-        target.emitterBinderDict.stateUpdateDone(
+        target.emitterDict.stateUpdateDone.bindHandler(
             this.$handlerProxy.handlerDict.stateUpdateDone
         );
-        target.emitterBinderDict.childUpdateDone(
+        target.emitterDict.childUpdateDone.bindHandler(
             this.$handlerProxy.handlerDict.childUpdateDone
         );
     }
