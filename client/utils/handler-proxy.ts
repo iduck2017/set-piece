@@ -13,9 +13,7 @@ export class HandlerProxy<
 
     /** 事件触发器集合 */
     private readonly $handlerDict: IConnector.HandlerDict<D, P>;
-    
     public readonly handlerDict = {} as IConnector.HandlerDict<D, P>;
-    public readonly callerDict = {} as IConnector.CallerDict<D>;
 
     constructor(
         config: IConnector.ConfigDict<D>,
@@ -46,14 +44,6 @@ export class HandlerProxy<
                     return target[key];
                 },
                 set: () => false 
-            }
-        );
-        this.callerDict = new Proxy(
-            this.callerDict, { 
-                set: (origin, key, value) => {
-                    this.$handlerDict[key].handleEvent = value;
-                    return true;
-                }
             }
         );
     }

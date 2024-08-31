@@ -58,6 +58,7 @@ export abstract class Model<
 
     /** 事件接收器代理 */
     protected readonly $handlerProxy: HandlerProxy<M[ModelKey.HandlerEventDict], Model<M>>;
+    protected readonly $handlerDict: IConnector.HandlerDict<M[ModelKey.HandlerEventDict], Model<M>>;
    
     /** 事件触发器代理 */
     private readonly $emitterProxy: EmitterProxy<M[ModelKey.EmitterEventDict], Model<M>>;
@@ -91,6 +92,7 @@ export abstract class Model<
         this.emitterDict = this.$emitterProxy.safeEmitterDict;
 
         this.$handlerProxy = new HandlerProxy(config.handlerChunkDict || {}, this, app);
+        this.$handlerDict = this.$handlerProxy.handlerDict;
 
         /** 初始化状态 */
         this.$originState = new Proxy(config.originState, {
@@ -106,12 +108,12 @@ export abstract class Model<
 
         /** 初始化节点 */
         this.$childList = config.childChunkList.map(chunk => {
-            return app.factoryService.unserialize(chunk, parent);
+            return app.factoryService.unserialize(chunk, this);
         });
         const origin = {} as M[ModelKey.ChildDict];
         for (const key in config.childChunkDict) {
             const chunk = config.childChunkDict[key];
-            origin[key] = app.factoryService.unserialize(chunk, parent);
+            origin[key] = app.factoryService.unserialize(chunk, this);
         }
         this.$childDict = new Proxy(origin, {
             set: (origin, key: keyof M[ModelKey.ChildDict], value) => {
@@ -170,7 +172,7 @@ export abstract class Model<
             child.$destroy();
         }
         if (this.parent) {
-            this.parent.$removeChild(this as Model);
+            this.parent.$removeChild(this);
         }
     }
 

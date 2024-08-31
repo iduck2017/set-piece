@@ -27,9 +27,12 @@ export class RootModel extends Model<IModelDef.Root> {
         }, parent, app);
     }
 
-    public async spawnCreature(bunny: BunnyModel): Promise<void> {
-        this.$appendChild(bunny);
-        bunny.initialize();
+    public spawnCreature(bunny: IModel.ReflectConfig<BunnyModel>) {
+        const child = this.app.factoryService.unserialize<BunnyModel>({
+            code: ModelCode.Bunny
+        }, this);
+        this.$appendChild(child);
+        return child;
     }
 
     public umountRoot(): void {

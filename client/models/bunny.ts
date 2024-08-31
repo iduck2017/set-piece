@@ -37,7 +37,7 @@ export class BunnyModel extends Model<IModelDef.Bunny> {
         console.log("Bunny is initializing...");
         const timer = this.root.childDict.time;
         timer.emitterDict.timeUpdateDone.bindHandler(
-            this.$handlerProxy.handlerDict.timeUpdateDone
+            this.$handlerDict.timeUpdateDone
         );
     }
 
@@ -49,10 +49,8 @@ export class BunnyModel extends Model<IModelDef.Bunny> {
 
     /** 繁殖幼崽 */
     public spawnChild() {
-        const child = this.app.factoryService.unserialize<BunnyModel>({
-            code: ModelCode.Bunny
-        }, this.root);
-        this.root.spawnCreature(child);
+        const child = this.root.spawnCreature({ code: ModelCode.Bunny });
+        child.initialize();
     }
 
     /** 年龄增长 */
@@ -65,6 +63,7 @@ export class BunnyModel extends Model<IModelDef.Bunny> {
     }
 
     private $die() {
+        console.log("Bunny is dead...", this.parent);
         this.$destroy();
     }
 }
