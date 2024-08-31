@@ -20,10 +20,12 @@ export class Handler<
             parent, 
             app
         );
+        app.referService.handlerReferManager.addRefer(this);
         this.handleEvent = () => {};
         config.idList?.forEach(id => {
             const emitter = app.referService.emitterReferManager.referDict[id];
             if (emitter) {
+                console.log('hit emitter', emitter);
                 emitter.bindHandler(this);
             }
         });

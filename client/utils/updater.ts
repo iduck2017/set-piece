@@ -1,16 +1,15 @@
 import type { App } from "../app";
 import type { Model } from "../models";
-import { ModelTmpl } from "../type/template";
 import { IEvent } from "../type/event";
 import { Emitter } from "./emitter";
 import type { Handler } from "./handler";
-import { ModelDef } from "../type/definition";
 import type { IModel } from "../type/model";
+import type { IModelDef, ModelKey } from "../type/definition";
 
 /** 状态修饰器 */
 export class Updater<
-    M extends ModelTmpl,
-    K extends keyof M[ModelDef.State],
+    M extends IModelDef.Default,
+    K extends keyof M[ModelKey.State],
 > extends Emitter<
     IEvent.StateUpdateBefore<M, K>, 
     Model<M>

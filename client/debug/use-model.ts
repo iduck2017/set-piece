@@ -6,7 +6,7 @@ export function useModel(props: ModelCompProps) {
     const { target, app } = props;
 
     const [ state, setState ] = useState(target.currentState);
-    const [ children, setChildren ] = useState(target.currentChildren);
+    const [ children, setChildren ] = useState(target.children);
     const render = useRef<DebugRenderer>();
     
     useEffect(() => {

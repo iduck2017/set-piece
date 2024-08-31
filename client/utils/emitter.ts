@@ -15,12 +15,14 @@ export class Emitter<
     ) {
         super(
             config.id || app.referService.getUniqId(),
-            parent, 
+            parent,
             app
         );
+        app.referService.emitterReferManager.addRefer(this);
         config.idList?.forEach(id => {
             const handler = app.referService.handlerReferManager.referDict[id];
             if (handler) {
+                console.log('hit handler', handler);
                 this.bindHandler(handler);
             }
         });

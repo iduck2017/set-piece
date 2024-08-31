@@ -13,9 +13,9 @@ export class HandlerProxy<
 
     /** 事件触发器集合 */
     private readonly $handlerDict: IConnector.HandlerDict<D, P>;
-    public get handlerDict() {
-        return { ...this.$handlerDict };
-    }
+    
+    public readonly handlerDict = {} as IConnector.HandlerDict<D, P>;
+    public readonly callerDict = {} as IConnector.CallerDict<D>;
 
     constructor(
         config: IConnector.ConfigDict<D>,
@@ -33,6 +33,29 @@ export class HandlerProxy<
                 app
             );  
         }
+        this.handlerDict = new Proxy(
+            this.$handlerDict, { 
+                get: (target, key: keyof D) => {
+                    if (!target[key]) {
+                        target[key] = new Handler(
+                            {}, 
+                            parent,
+                            app
+                        );
+                    }
+                    return target[key];
+                },
+                set: () => false 
+            }
+        );
+        this.callerDict = new Proxy(
+            this.callerDict, { 
+                set: (origin, key, value) => {
+                    this.$handlerDict[key].handleEvent = value;
+                    return true;
+                }
+            }
+        );
     }
 
     /** 初始化函数，注入事件处理函数 */

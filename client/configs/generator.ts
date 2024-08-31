@@ -1,6 +1,6 @@
 import { RootModel } from "../models/root";
 import { AppInfo } from "../type/app";
-import { ModelCode } from "../type/code";
+import { ModelCode } from "../type/definition";
 import { IModel } from "../type/model";
 import { Context } from "./context";
 

@@ -1,15 +1,14 @@
 import { Model } from ".";
 import type { App } from "../app";
-import { ModelCode } from "../type/code";
-import type { BunnyModelTmpl } from "../type/common";
-import { RawModelConfig } from "../type/config";
-import { ModelDef } from "../type/definition";
+import { IModelDef, ModelCode, ModelKey } from "../type/definition";
+import { IModel } from "../type/model";
+import { Decorators } from "../utils/decorators";
 import { Random } from "../utils/random";
 
-export class BunnyModel extends Model<BunnyModelTmpl> {
+export class BunnyModel extends Model<IModelDef.Bunny> {
     constructor(
-        config: RawModelConfig<BunnyModelTmpl>,
-        parent: BunnyModelTmpl[ModelDef.Parent],
+        config: IModel.RawConfig<IModelDef.Bunny>,
+        parent: IModelDef.Bunny[ModelKey.Parent],
         app: App
     ) {
         super({
@@ -17,28 +16,52 @@ export class BunnyModel extends Model<BunnyModelTmpl> {
             code: ModelCode.Bunny,
             originState: {
                 age: 0,
-                color: '',
-                maxWeight: 0,
-                maxAgeOffset: 0,
                 weight: Random.number(30, 50),
-                ...config.originState
+                ...config.originState,
+                maxAge: 10
             },
             childChunkList: config.childChunkList || [],
             childChunkDict: {}
         }, parent, app);
         this.testcaseDict.eat = this.eatFood;
         this.testcaseDict.spawn = this.spawnChild;
+        this.testcaseDict.growUp = this.growUp;
+        this.$handlerProxy.initialize({
+            timeUpdateDone: this.growUp
+        });
     }
 
+    public initialize() {
+        console.log("Bunny is initializing...");
+        this.root.childDict.time.emitterBinderDict.timeUpdateDone(
+            this.$handlerProxy.handlerDict.timeUpdateDone
+        );
+    }
+
+    /** 吃食物 */
+    @Decorators.usecase()
     public eatFood() {
-        console.log("eatFood");
         this.$originState.weight += Random.number(1, 5);
     }
 
+    /** 繁殖幼崽 */
     public spawnChild() {
         const child = this.app.factoryService.unserialize<BunnyModel>({
             code: ModelCode.Bunny
-        }, this);
-        this.$addChild(child);
+        }, this.root);
+        this.root.spawnCreature(child);
+    }
+
+    /** 年龄增长 */
+    public growUp() {
+        console.log("Bunny is growing up...");
+        this.$originState.age += 1;
+        if (this.currentState.age >= this.currentState.maxAge) {
+            this.$die();
+        }
+    }
+
+    private $die() {
+        this.$destroy();
     }
 }

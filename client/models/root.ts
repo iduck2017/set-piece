@@ -1,14 +1,13 @@
 import { Model } from ".";
 import type { App } from "../app";
-import { ModelCode } from "../type/code";
-import { RootModelTmpl } from "../type/common";
-import { RawModelConfig } from "../type/config";
-import { ModelDef } from "../type/definition";
+import { IModelDef, ModelCode, ModelKey } from "../type/definition";
+import { IModel } from "../type/model";
+import { BunnyModel } from "./bunny";
 
-export class RootModel extends Model<RootModelTmpl> {
+export class RootModel extends Model<IModelDef.Root> {
     constructor(
-        config: RawModelConfig<RootModelTmpl>,
-        parent: RootModelTmpl[ModelDef.Parent],
+        config: IModel.RawConfig<IModelDef.Root>,
+        parent: IModelDef.Root[ModelKey.Parent],
         app: App
     ) {
         super({
@@ -18,11 +17,22 @@ export class RootModel extends Model<RootModelTmpl> {
                 ...config.originState
             },
             childChunkDict: {
-                bunny: config.childChunkDict?.bunny || {
-                    code: ModelCode.Bunny
+                time: config.childChunkDict?.time || {
+                    code: ModelCode.Time
                 }
             },
-            childChunkList: []
+            childChunkList: config.childChunkList || [
+                { code: ModelCode.Bunny }
+            ]
         }, parent, app);
+    }
+
+    public async spawnCreature(bunny: BunnyModel): Promise<void> {
+        this.$appendChild(bunny);
+        bunny.initialize();
+    }
+
+    public umountRoot(): void {
+        this.$destroy();
     }
 }

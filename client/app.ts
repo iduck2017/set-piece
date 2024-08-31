@@ -64,7 +64,7 @@ export class App {
     public async quitGame() {
         this.$status = AppStatus.UNMOUNTING;
         this.archieveService.saveArchieve();
-        this.$root?.destroy();
+        this.$root?.umountRoot();
         this.$root = undefined;
         this.$status = AppStatus.UNMOUNTED;
     }
@@ -72,7 +72,7 @@ export class App {
     public async saveMetaData() {
         const save: AppInfo.MetaData = {
             version: this.version,
-            settings: this.settingsService.data,
+            settings: this.settingsService.settingsData,
             archieves: this.archieveService.data
         };
         await localStorage.setItem(Context.META_PATH, JSON.stringify(save));

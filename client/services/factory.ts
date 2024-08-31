@@ -2,8 +2,9 @@ import type { App } from "../app";
 import { Model } from "../models";
 import { BunnyModel } from "../models/bunny";
 import { RootModel } from "../models/root";
+import { TimeModel } from "../models/time";
 import { IBase } from "../type";
-import { ModelCode } from "../type/code";
+import { ModelCode } from "../type/definition";
 import { IModel } from "../type/model";
 
 export class FactoryService {
@@ -15,7 +16,8 @@ export class FactoryService {
 
     private static $productDict: Record<ModelCode, IBase.Class> = {
         bunny: BunnyModel,
-        root: RootModel
+        root: RootModel,
+        time: TimeModel
     }; 
 
     public unserialize<M extends Model>(

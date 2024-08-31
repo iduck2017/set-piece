@@ -2,11 +2,11 @@ import type { App } from "../app";
 import { Model } from "../models";
 import { IBase } from "../type";
 import { IEvent } from "../type/event";
-import { ModelTmpl } from "../type/template";
 import { Renderer } from ".";
+import { IModelDef } from "../type/definition";
 
 export class DebugRenderer<
-    M extends ModelTmpl = ModelTmpl
+    M extends IModelDef.Default = IModelDef.Default
 > extends Renderer<{
     stateUpdateDone: IEvent.StateUpdateDone<M>
     childUpdateDone: IEvent.ChildUpdateDone<M>
@@ -37,10 +37,10 @@ export class DebugRenderer<
     }
 
     public active(target: Model<M>) {
-        target.emitterProxy.emitterBinderDict.stateUpdateDone(
+        target.emitterBinderDict.stateUpdateDone(
             this.$handlerProxy.handlerDict.stateUpdateDone
         );
-        target.emitterProxy.emitterBinderDict.childUpdateDone(
+        target.emitterBinderDict.childUpdateDone(
             this.$handlerProxy.handlerDict.childUpdateDone
         );
     }

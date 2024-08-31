@@ -9,9 +9,11 @@ export class EmitterProxy<
     D extends IBase.Dict, 
     P = any
 > extends Entity {
-    public readonly emitterDict: IConnector.EmitterDict<D, P>;
-    public readonly emitterBinderDict = {} as IConnector.BinderDict<D>;
-    public readonly emitterUnbinderDict = {} as IConnector.BinderDict<D>;
+    private readonly $emitterDict: IConnector.EmitterDict<D, P>;
+
+    public readonly callerDict = {} as IConnector.CallerDict<D>;
+    public readonly binderDict = {} as IConnector.BinderDict<D>;
+    public readonly unbinderDict = {} as IConnector.BinderDict<D>;
 
     constructor(
         config: IConnector.ConfigDict<D>,
@@ -28,7 +30,7 @@ export class EmitterProxy<
                 app
             );  
         }
-        this.emitterDict = new Proxy(origin, {
+        this.$emitterDict = new Proxy(origin, {
             get: (target, key: keyof D) => {
                 if (!target[key]) {
                     target[key] = new Emitter(
@@ -42,12 +44,23 @@ export class EmitterProxy<
             set: () => false
         });
 
-        /** 触发器绑定接口集合 */
-        this.emitterBinderDict = new Proxy(
-            this.emitterBinderDict, {
+        this.callerDict = new Proxy(
+            this.callerDict, {
                 get: (target, key) => {
-                    return this.emitterDict[key].bindHandler.bind(
-                        this.emitterDict[key]
+                    return this.$emitterDict[key].emitEvent.bind(
+                        this.$emitterDict[key]
+                    );
+                },
+                set: () => false
+            }
+        );
+
+        /** 触发器绑定接口集合 */
+        this.binderDict = new Proxy(
+            this.binderDict, {
+                get: (target, key) => {
+                    return this.$emitterDict[key].bindHandler.bind(
+                        this.$emitterDict[key]
                     );
                 },
                 set: () => false
@@ -55,11 +68,11 @@ export class EmitterProxy<
         );
 
         /** 触发器解绑接口集合 */
-        this.emitterUnbinderDict = new Proxy(
-            this.emitterUnbinderDict, {
+        this.unbinderDict = new Proxy(
+            this.unbinderDict, {
                 get: (target, key) => {
-                    return this.emitterDict[key].unbindHandler.bind(
-                        this.emitterDict[key]
+                    return this.$emitterDict[key].unbindHandler.bind(
+                        this.$emitterDict[key]
                     );
                 },
                 set: () => false
@@ -69,14 +82,14 @@ export class EmitterProxy<
 
     public serialize(): IConnector.ChunkDict<D> {
         const result = {} as IConnector.ChunkDict<D>;
-        for (const key in this.emitterDict) {
-            result[key] = this.emitterDict[key].serialize();
+        for (const key in this.$emitterDict) {
+            result[key] = this.$emitterDict[key].serialize();
         }
         return result;
     }
 
     public destroy() {
-        Object.values(this.emitterDict).forEach(item => {
+        Object.values(this.$emitterDict).forEach(item => {
             item.destroy();
         });
     }

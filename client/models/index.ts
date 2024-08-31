@@ -1,125 +1,162 @@
 import type { App } from "../app";
-import { ModelTmpl } from "../type/template";
 import { IBase, IReflect } from "../type";
-import { ModelDef } from "../type/definition";
-import { ModelConfig } from "../type/config";
-import { ModelChunk } from "../type/chunk";
 import { UpdaterProxy } from "../utils/updater-proxy";
 import { HandlerProxy } from "../utils/handler-proxy";
 import { EmitterProxy } from "../utils/emitter-proxy";
-import { ChildProxy } from "../utils/child-proxy";
+import { IModelDef, ModelKey } from "../type/definition";
+import { IModel } from "../type/model";
 
-export class Model<
-    M extends ModelTmpl = ModelTmpl
+export abstract class Model<
+    M extends IModelDef.Default = IModelDef.Default
 > {
-    public readonly id: string;
-    public readonly code: M[ModelDef.Code];
-    
+    /** 外部指针 */
     public readonly app: App;
-    public readonly parent: M[ModelDef.Parent];
+    public readonly parent: M[ModelKey.Parent];
+    public get root() {
+        const result = this.app.root;
+        if (!result) {
+            throw new Error();
+        }
+        return result;
+    }
 
-    private readonly $rule: Partial<M[ModelDef.Rule]>;
-    protected readonly $originState: M[ModelDef.State];
-    private readonly $currentState: M[ModelDef.State];
-    public get currentState() { return { ...this.$currentState }; }
-    public get currentChildren(): Model[] {
+    /** 基本信息 */
+    public readonly id: string;
+    public readonly code: M[ModelKey.Code];
+
+    /** 预设参数 */
+    private readonly $preset: Partial<M[ModelKey.Preset]>;
+
+    /** 状态 */
+    protected readonly $originState: M[ModelKey.State];
+    private readonly $currentState: M[ModelKey.State]; 
+    public get currentState() { 
+        return { ...this.$currentState }; 
+    }
+    
+    /** 子节点 */
+    public readonly $childDict: M[ModelKey.ChildDict];
+    public readonly $childList: M[ModelKey.ChildList];
+    public get childList() {
+        return [ ...this.$childList ];
+    }
+    public get childDict() {
+        return { ...this.$childDict };
+    }
+    public get children(): Model[] {
         return [
-            ...this.$childProxy.childList,
-            ...Object.values(this.$childProxy.childDict)
+            ...this.childList,
+            ...Object.values(this.childDict)
         ];
     }
     
-    protected readonly $childProxy: ChildProxy<M>;
+    /** 状态修饰器代理 */
     protected readonly $updaterProxy: UpdaterProxy<M>;
-    protected readonly $handlerProxy: HandlerProxy<M[ModelDef.HandlerEventDict], Model<M>>;
-    protected readonly $emitterProxy: EmitterProxy<M[ModelDef.EmitterEventDict], Model<M>>;
-
-    public get emitterProxy() {
+    public get updaterProxy() {
         return {
-            ...this.$emitterProxy,
-            emitterDict: undefined
+            binderDict: this.$updaterProxy.binderDict,
+            unbinderDict: this.$updaterProxy.unbinderDict
         }; 
     }
-    public get handlerProxy() {
-        return {
-            ...this.$handlerProxy,
-            handlerDict: undefined
-        }; 
+
+    /** 事件接收器代理 */
+    protected readonly $handlerProxy: HandlerProxy<M[ModelKey.HandlerEventDict], Model<M>>;
+   
+
+    /** 事件触发器代理 */
+    private readonly $emitterProxy: EmitterProxy<M[ModelKey.EmitterEventDict], Model<M>>;
+    protected get $emitterCallerDict() {
+        return this.$emitterProxy.callerDict;
+    }
+    public get emitterBinderDict() {
+        return this.$emitterProxy.binderDict;
+    }
+    public get emitterUnbinderDict() {
+        return this.$emitterProxy.unbinderDict;
     }
 
     /** 测试用例 */
     public readonly testcaseDict: Record<string, IBase.Func>;
 
     constructor(
-        config: ModelConfig<M>,
-        parent: M[ModelDef.Parent],
+        config: IModel.Config<M>,
+        parent: M[ModelKey.Parent],
         app: App
     ) {
         this.app = app;
-        this.code = config.code;
-        this.id = config.id || app.referService.getUniqId();
         this.parent = parent;
 
-        this.$rule = config.rule || {};
+        /** 基本信息 */
+        this.id = config.id || app.referService.getUniqId();
+        this.code = config.code;
+        this.$preset = config.preset || {};
+ 
+        /** 初始化链接器代理 */
+        this.$updaterProxy = new UpdaterProxy<M>(config.updaterChunkDict || {}, this, app);
+        this.$emitterProxy = new EmitterProxy(config.emitterChunkDict || {}, this, app);
+        this.$handlerProxy = new HandlerProxy(config.handlerChunkDict || {}, this, app);
+
+        /** 初始化状态 */
         this.$originState = new Proxy(config.originState, {
-            set: (origin, key: keyof M[ModelDef.State], value) => {
+            set: (origin, key: keyof M[ModelKey.State], value) => {
                 origin[key] = value;
                 this.updateState(key);
                 return true;
             }
         });
+        this.$currentState = { 
+            ...this.$originState
+        };
 
-        this.$currentState = { ...this.$originState };
-
-        this.$childProxy = new ChildProxy(
-            config,
-            this,
-            app
-        );
-        this.$updaterProxy = new UpdaterProxy<M>(
-            config.updaterChunkDict || {},
-            this,
-            app
-        );
-        this.$emitterProxy = new EmitterProxy(
-            config.emitterChunkDict || {}, 
-            this,
-            app
-        );
-        this.$handlerProxy = new HandlerProxy(
-            config.handlerChunkDict || {},
-            this,
-            app
-        );
-
+        /** 初始化节点 */
+        this.$childList = config.childChunkList.map(chunk => {
+            return app.factoryService.unserialize(chunk, parent);
+        });
+        const origin = {} as M[ModelKey.ChildDict];
+        for (const key in config.childChunkDict) {
+            const chunk = config.childChunkDict[key];
+            origin[key] = app.factoryService.unserialize(chunk, parent);
+        }
+        this.$childDict = new Proxy(origin, {
+            set: (origin, key: keyof M[ModelKey.ChildDict], value) => {
+                origin[key] = value;
+                this.$emitterCallerDict.childUpdateDone({
+                    target: this,
+                    children: this.children
+                });
+                return true;
+            }
+        });
+        
         this.testcaseDict = {};
     }
 
-    
-    protected $addChild(target: IReflect.Iterator<M[ModelDef.ChildList]>) {
-        this.$childProxy.childList.push(target);
-        this.$emitterProxy.emitterDict.childUpdateDone.emitEvent({
+    /** 添加子节点 */
+    protected $appendChild(target: IReflect.Iterator<M[ModelKey.ChildList]>) {
+        this.$childList.push(target);
+        this.$emitterCallerDict.childUpdateDone({
             target: this,
-            children: this.currentChildren
+            children: this.children
         });
     }
 
+    /** 移除子节点 */
     protected $removeChild(target: Model) {
-        const index = this.$childProxy.childList.indexOf(target);
+        const index = this.$childList.indexOf(target);
         if (index >= 0) {
-            this.$childProxy.childList.splice(index, 1); 
-            this.$emitterProxy.emitterDict.childUpdateDone.emitEvent({
+            this.$childList.splice(index, 1); 
+            this.$emitterCallerDict.childUpdateDone({
                 target: this,
-                children: this.currentChildren
+                children: this.children
             });
             return;
         }
-        for (const key in this.$childProxy.childDict) {
-            if (this.$childProxy.childDict[key] === target) {
-                delete this.$childProxy.childDict[key];
-                this.$emitterProxy.emitterDict.childUpdateDone.emitEvent({
+        for (const key in this.$childDict) {
+            if (this.$childDict[key] === target) {
+                delete this.$childDict[key];
+                this.$emitterCallerDict.childUpdateDone({
                     target: this,
-                    children: this.currentChildren  
+                    children: this.children  
                 });
                 return;
             }
@@ -127,18 +164,23 @@ export class Model<
         throw new Error();
     }
 
-    public destroy() {
-        this.$childProxy.destroy();
+    protected $destroy() {
         this.$emitterProxy.destroy();
         this.$handlerProxy.destroy();
         this.$updaterProxy.destroy();
+        this.$childList.forEach(child => child.$destroy());
+        for (const key in this.$childDict) {
+            const child = this.childDict[key];
+            child.$destroy();
+        }
         if (this.parent) {
             this.parent.$removeChild(this as Model);
         }
     }
 
+    /** 更新状态 */
     public updateState<
-        K extends keyof M[ModelDef.State]
+        K extends keyof M[ModelKey.State]
     >(key: K) {
         const prev = this.$currentState[key];
         const current = this.$originState[key];
@@ -151,23 +193,33 @@ export class Model<
         const next = event.next;
         if (prev !== next) {
             this.$currentState[key] = next;
-            this.$emitterProxy.emitterDict.stateUpdateDone.emitEvent({
+            this.$emitterCallerDict.stateUpdateDone({
                 target: this,
                 state: this.currentState
             });
         }
     }
 
-    public serialize(): ModelChunk<M> {
+    /** 序列化函数 */
+    public serialize(): IModel.Chunk<M> {
+        const childChunkDict = {} as any;
+        for (const key in this.childDict) {
+            const child = this.childDict[key];
+            childChunkDict[key] = child.serialize();
+        }
+        const childChunkList = this.childList.map(child => {
+            return child.serialize() as any;
+        });
         return {
             id: this.id,
             code: this.code,
-            rule: this.$rule,
+            preset: this.$preset,
             originState: this.$originState,
+            childChunkDict,
+            childChunkList,
             emitterChunkDict: this.$emitterProxy.serialize(),
             handlerChunkDict: this.$handlerProxy.serialize(),
-            updaterChunkDict: this.$updaterProxy.serialize(),
-            ...this.$childProxy.serialize()
+            updaterChunkDict: this.$updaterProxy.serialize()
         };
     }
 }
