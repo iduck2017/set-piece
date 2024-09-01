@@ -1,7 +1,8 @@
 import { Model } from ".";
 import type { App } from "../app";
-import { IModelDef, ModelCode, ModelKey } from "../type/definition";
+import { IModelDef } from "../type/definition";
 import { IModel } from "../type/model";
+import { ModelCode, ModelKey } from "../type/registry";
 import { BunnyModel } from "./bunny";
 
 export class RootModel extends Model<IModelDef.Root> {

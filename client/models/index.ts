@@ -3,9 +3,10 @@ import { IBase, IReflect } from "../type";
 import { UpdaterProxy } from "../utils/updater-proxy";
 import { HandlerProxy } from "../utils/handler-proxy";
 import { EmitterProxy } from "../utils/emitter-proxy";
-import { IModelDef, ModelKey } from "../type/definition";
+import { IModelDef } from "../type/definition";
 import { IModel } from "../type/model";
 import { IConnector } from "../type/connector";
+import { ModelKey } from "../type/registry";
 
 export abstract class Model<
     M extends IModelDef.Base = IModelDef.Base

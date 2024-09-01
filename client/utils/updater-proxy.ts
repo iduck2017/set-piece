@@ -1,11 +1,12 @@
 import type { App } from "../app";
 import type { Model } from "../models";
-import { IModelDef, ModelKey } from "../type/definition";
+import { IModelDef } from "../type/definition";
 import { IConnector } from "../type/connector";
 import { IModel } from "../type/model";
 import { Entity } from "./entity";
 import { Updater } from "./updater";
 import { SafeEmitter } from "./emitter";
+import { ModelKey } from "../type/registry";
 
 /** 状态修饰器代理 */
 export class UpdaterProxy<

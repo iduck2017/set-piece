@@ -4,8 +4,8 @@ import { BunnyModel } from "../models/bunny";
 import { RootModel } from "../models/root";
 import { TimeModel } from "../models/time";
 import { IBase } from "../type";
-import { ModelCode } from "../type/definition";
 import { IModel } from "../type/model";
+import { ModelCode } from "../type/registry";
 
 export class FactoryService {
     public readonly app: App;

@@ -4,7 +4,8 @@ import { IEvent } from "../type/event";
 import { Emitter } from "./emitter";
 import type { Handler } from "./handler";
 import type { IModel } from "../type/model";
-import type { IModelDef, ModelKey } from "../type/definition";
+import type { IModelDef } from "../type/definition";
+import { ModelKey } from "../type/registry";
 
 /** 状态修饰器 */
 export class Updater<

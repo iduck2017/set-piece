@@ -4,8 +4,9 @@ import { Updater } from "../utils/updater";
 import { IEvent } from "./event";
 import { IReflect } from ".";
 import { IConnector } from "./connector";
-import type { IModelDef, ModelKey } from "./definition";
+import type { IModelDef } from "./definition";
 import { SafeEmitter } from "../utils/emitter";
+import { ModelKey } from "./registry";
 
 export namespace IModel {
     /** 序列化参数 */
@@ -16,8 +17,8 @@ export namespace IModel {
         id: string
         preset: Partial<M[ModelKey.Preset]>
         originState: M[ModelKey.State]
-        childChunkList: IModel.ChildChunkList<M>,
-        childChunkDict: IModel.ChildChunkDict<M>,
+        childChunkList: ChildChunkList<M>,
+        childChunkDict: ChildChunkDict<M>,
         emitterChunkDict: IConnector.ChunkDict<M[ModelKey.EmitterEventDict]>
         handlerChunkDict: IConnector.ChunkDict<M[ModelKey.HandlerEventDict]>
         updaterChunkDict: IConnector.ChunkDict<M[ModelKey.State]>
@@ -31,8 +32,8 @@ export namespace IModel {
         code: M[ModelKey.Code]
         preset?: Partial<M[ModelKey.Preset]>
         originState: M[ModelKey.State]
-        childChunkList: IModel.ChildConfigList<M>,
-        childChunkDict: IModel.ChildConfigDict<M>,
+        childChunkList: ChildConfigList<M>,
+        childChunkDict: ChildConfigDict<M>,
         emitterChunkDict?: IConnector.ConfigDict<M[ModelKey.EmitterEventDict]>
         handlerChunkDict?: IConnector.ConfigDict<M[ModelKey.HandlerEventDict]>
         updaterChunkDict?: IConnector.ConfigDict<M[ModelKey.State]>
@@ -46,8 +47,8 @@ export namespace IModel {
         code: M[ModelKey.Code]
         preset?: Partial<M[ModelKey.Preset]>
         originState?: Partial<M[ModelKey.State]>
-        childChunkList?: IModel.ChildConfigList<M>,
-        childChunkDict?: Partial<IModel.ChildConfigDict<M>>,
+        childChunkList?: ChildConfigList<M>,
+        childChunkDict?: Partial<ChildConfigDict<M>>,
         emitterChunkDict?: IConnector.ConfigDict<M[ModelKey.EmitterEventDict]>
         handlerChunkDict?: IConnector.ConfigDict<M[ModelKey.HandlerEventDict]>
         updaterChunkDict?: IConnector.ConfigDict<M[ModelKey.State]>

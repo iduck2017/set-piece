@@ -3,25 +3,7 @@ import type { Model } from "../models";
 import type { BunnyModel } from "../models/bunny";
 import type { TimeModel } from "../models/time";
 import { IModel } from "./model";
-
-/** 模型定义 */
-export enum ModelKey {
-    Code = 'code',
-    State = 'state',
-    Preset = 'preset',
-    Parent = 'parent',
-    ChildList = 'childList',
-    ChildDict = 'childDict',
-    EmitterEventDict = 'emitterEventDict',
-    HandlerEventDict = 'handlerEventDict'
-}
-
-/** 模型注册表 */
-export enum ModelCode {
-    Bunny = 'bunny',
-    Root = 'root',
-    Time = 'time'
-}
+import { ModelCode } from "./registry";
 
 /** 模型定义 */
 export namespace IModelDef {

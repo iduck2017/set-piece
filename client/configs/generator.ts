@@ -1,7 +1,7 @@
 import { RootModel } from "../models/root";
 import { AppInfo } from "../type/app";
-import { ModelCode } from "../type/definition";
 import { IModel } from "../type/model";
+import { ModelCode } from "../type/registry";
 import { Context } from "./context";
 
 export namespace Generator {

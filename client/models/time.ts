@@ -1,7 +1,8 @@
 import { Model } from ".";
 import type { App } from "../app";
-import { IModelDef, ModelKey } from "../type/definition";
+import { IModelDef } from "../type/definition";
 import { IModel } from "../type/model";
+import { ModelKey } from "../type/registry";
 
 export class TimeModel extends Model<IModelDef.Time> {
     constructor(

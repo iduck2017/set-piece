@@ -1,5 +1,6 @@
 import type { Model } from "../models";
-import type { IModelDef, ModelKey } from "./definition";
+import type { IModelDef } from "./definition";
+import { ModelKey } from "./registry";
 
 export namespace IEvent { 
     export type StateUpdateBefore<
