@@ -37,12 +37,14 @@ export class BunnyModel extends Model<IModelDef.Bunny> {
         };
     }
 
-    public initialize() {
-        console.log("Bunny is initializing...");
-        const timer = this.root.childDict.time;
-        timer.emitterDict.timeUpdateDone.bindHandler(
-            this.$handlerDict.timeUpdateDone
-        );
+    protected $initialize() {
+        if (!this.$inited) {
+            const timer = this.root.childDict.time;
+            timer.emitterDict.timeUpdateDone.bindHandler(
+                this.$handlerDict.timeUpdateDone
+            );
+        }
+        super.$initialize();
     }
 
     /** 吃食物 */
@@ -53,8 +55,7 @@ export class BunnyModel extends Model<IModelDef.Bunny> {
 
     /** 繁殖幼崽 */
     public spawnChild() {
-        const child = this.root.spawnCreature({ code: ModelCode.Bunny });
-        child.initialize();
+        this.root.spawnCreature({ code: ModelCode.Bunny });
     }
 
     /** 年龄增长 */

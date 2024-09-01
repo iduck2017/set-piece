@@ -27,6 +27,7 @@ export abstract class Model<
     public readonly code: M[ModelKey.Code];
 
     /** 预设参数 */
+    protected $inited: boolean;
     private readonly $preset: Partial<M[ModelKey.Preset]>;
 
     /** 状态 */
@@ -81,6 +82,7 @@ export abstract class Model<
         /** 基本信息 */
         this.id = config.id || app.referService.getUniqId();
         this.code = config.code;
+        this.$inited = config.inited || false;
         this.$preset = config.preset || {};
  
         /** 初始化状态更新器 */
@@ -123,12 +125,12 @@ export abstract class Model<
 
         /** 初始化节点 */
         this.$childList = config.childChunkList.map(chunk => {
-            return app.factoryService.unserialize(chunk, this as any);
+            return app.factoryService.unserialize(chunk, this);
         });
         const origin = {} as M[ModelKey.ChildDict];
         for (const key in config.childChunkDict) {
             const chunk = config.childChunkDict[key];
-            origin[key] = app.factoryService.unserialize(chunk, this as any);
+            origin[key] = app.factoryService.unserialize(chunk, this);
         }
         this.$childDict = new Proxy(origin, {
             set: (origin, key: keyof M[ModelKey.ChildDict], value) => {
@@ -140,8 +142,17 @@ export abstract class Model<
                 return true;
             }
         });
-        
         this.testcaseDict = {};
+    }
+
+    /** 初始化 */
+    protected $initialize() {
+        this.$inited = true;
+        this.$childList.forEach(child => child.$initialize());
+        for (const key in this.$childDict) {
+            const child = this.childDict[key];
+            child.$initialize();
+        }
     }
 
     /** 添加子节点 */
@@ -224,6 +235,7 @@ export abstract class Model<
             return child.serialize() as any;
         });
         return {
+            inited: true,
             id: this.id,
             code: this.code,
             preset: this.$preset,

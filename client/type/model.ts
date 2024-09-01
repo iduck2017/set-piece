@@ -13,8 +13,9 @@ export namespace IModel {
     export type Chunk<
         M extends IModelDef.Base = IModelDef.Base
     > = {
-        code: M[ModelKey.Code]
         id: string
+        inited: true
+        code: M[ModelKey.Code]
         preset: Partial<M[ModelKey.Preset]>
         originState: M[ModelKey.State]
         childChunkList: ChildChunkList<M>,
@@ -29,6 +30,7 @@ export namespace IModel {
         M extends IModelDef.Base = IModelDef.Base
     > = {
         id?: string
+        inited?: boolean
         code: M[ModelKey.Code]
         preset?: Partial<M[ModelKey.Preset]>
         originState: M[ModelKey.State]
@@ -44,6 +46,7 @@ export namespace IModel {
         M extends IModelDef.Base = IModelDef.Base
     > = {
         id?: string
+        inited?: boolean
         code: M[ModelKey.Code]
         preset?: Partial<M[ModelKey.Preset]>
         originState?: Partial<M[ModelKey.State]>

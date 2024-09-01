@@ -22,7 +22,7 @@ export class FactoryService {
 
     public unserialize<M extends Model>(
         config: IModel.ReflectConfig<M>,
-        parent: IModel.ReflectParent<M>
+        parent: Model
     ): M {
         const Constructor = FactoryService.$productDict[config.code];
         return new Constructor(config, parent, this.app);

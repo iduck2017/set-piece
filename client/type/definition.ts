@@ -61,7 +61,8 @@ export namespace IModelDef {
         },
         emitterEventDict: IModel.BaseEmitterEventDict & {
             timeUpdateBefore: void,
-            timeUpdateDone: void
+            timeUpdateDone: void,
+            gameStart: void,
         }
     }>
 }

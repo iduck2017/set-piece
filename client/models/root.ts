@@ -34,12 +34,16 @@ export class RootModel extends Model<IModelDef.Root> {
     }
 
     public spawnCreature(bunny: IModel.RawConfig<IModelDef.Bunny>) {
-        const child = this.app.factoryService.unserialize<BunnyModel>(bunny, this);
+        const child = new BunnyModel(bunny, this, this.app);
         this.$appendChild(child);
         return child;
     }
 
-    public umountRoot(): void {
+    public startGame(): void {
+        this.$initialize();
+    }
+
+    public quitGame(): void {
         this.$destroy();
     }
 }

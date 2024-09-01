@@ -55,13 +55,14 @@ export class App {
             await this.archieveService.createArchieve() :
             await this.archieveService.loadArchieve(index);
         this.$root = new RootModel(config, undefined, this);
+        this.$root.startGame();
         this.$status = AppStatus.MOUNTED;
     }
 
     public async quitGame() {
         this.$status = AppStatus.UNMOUNTING;
         this.archieveService.saveArchieve();
-        this.$root?.umountRoot();
+        this.$root?.quitGame();
         this.$root = undefined;
         this.$status = AppStatus.UNMOUNTED;
     }
