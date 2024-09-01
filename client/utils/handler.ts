@@ -11,6 +11,7 @@ export class Handler<
     public handleEvent: IConnector.Caller<E>;
 
     constructor(
+        caller: IConnector.Caller<E>,
         config: IConnector.Config,
         parent: P,
         app: App
@@ -21,7 +22,7 @@ export class Handler<
             app
         );
         app.referService.handlerReferManager.addRefer(this);
-        this.handleEvent = () => {};
+        this.handleEvent = caller;
         config.idList?.forEach(id => {
             const emitter = app.referService.emitterReferManager.referDict[id];
             if (emitter) {

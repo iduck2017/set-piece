@@ -16,7 +16,8 @@ export class HandlerProxy<
     public readonly handlerDict = {} as IConnector.HandlerDict<D, P>;
 
     constructor(
-        config: IConnector.ConfigDict<D>,
+        loader: IConnector.CallerDict<D>,
+        config: IConnector.ConfigDict<D> | undefined,
         parent: P,
         app: App
     ) {
@@ -24,45 +25,17 @@ export class HandlerProxy<
         this.parent = parent;
         /** 事件触发器集合 */
         this.$handlerDict = {} as IConnector.HandlerDict<D, P>;
-        for (const key in config) {
+        for (const key in loader) {
             this.$handlerDict[key] = new Handler(
-                config[key] || {}, 
+                loader[key].bind(parent), 
+                config?.[key] || {}, 
                 parent,
                 app
             );  
         }
         this.handlerDict = new Proxy(
-            this.$handlerDict, { 
-                get: (target, key: keyof D) => {
-                    if (!target[key]) {
-                        target[key] = new Handler(
-                            {}, 
-                            parent,
-                            app
-                        );
-                    }
-                    return target[key];
-                },
-                set: () => false 
-            }
+            this.$handlerDict, { set: () => false }
         );
-    }
-
-    /** 初始化函数，注入事件处理函数 */
-    public initialize(
-        callerDict: IConnector.CallerDict<D>
-    ) {
-        for (const key in callerDict) {
-            if (!this.$handlerDict[key]) {
-                this.$handlerDict[key] = new Handler(
-                    {},
-                    this.parent,
-                    this.app
-                );
-            }
-            this.$handlerDict[key].handleEvent = 
-                callerDict[key].bind(this.parent);
-        }
     }
 
     public serialize(): IConnector.ChunkDict<D> {

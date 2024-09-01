@@ -15,7 +15,7 @@ export class UpdaterProxy<
     public readonly safeUpdaterDict = {} as IModel.SafeUpdaterDict<M>;
 
     constructor(
-        config: IConnector.ConfigDict<M[ModelKey.State]>,
+        config: IConnector.ConfigDict<M[ModelKey.State]> | undefined,
         parent: Model<M>,
         app: App
     ) {

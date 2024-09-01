@@ -57,7 +57,7 @@ export abstract class Model<
     public readonly updaterDict: IModel.SafeUpdaterDict<M>;
 
     /** 事件接收器代理 */
-    protected readonly $handlerProxy: HandlerProxy<M[ModelKey.HandlerEventDict], Model<M>>;
+    private readonly $handlerProxy: HandlerProxy<M[ModelKey.HandlerEventDict], Model<M>>;
     protected readonly $handlerDict: IConnector.HandlerDict<M[ModelKey.HandlerEventDict], Model<M>>;
    
     /** 事件触发器代理 */
@@ -69,6 +69,7 @@ export abstract class Model<
     public testcaseDict: Record<string, IBase.Func>;
 
     constructor(
+        loader: IConnector.CallerDict<M[ModelKey.HandlerEventDict]>, 
         config: IModel.Config<M>,
         parent: M[ModelKey.Parent],
         app: App
@@ -82,16 +83,29 @@ export abstract class Model<
         this.$preset = config.preset || {};
  
         /** 初始化状态更新器 */
-        this.$updaterProxy = new UpdaterProxy<M>(config.updaterChunkDict || {}, this, app);
+        this.$updaterProxy = new UpdaterProxy<M>(
+            config.updaterChunkDict, 
+            this,
+            app
+        );
         this.$updaterDict = this.$updaterProxy.updaterDict;
         this.updaterDict = this.$updaterProxy.safeUpdaterDict;
         
         /** 初始化事件触发器 */
-        this.$emitterProxy = new EmitterProxy(config.emitterChunkDict || {}, this, app);
+        this.$emitterProxy = new EmitterProxy(
+            config.emitterChunkDict, 
+            this,
+            app
+        );
         this.$emitterDict = this.$emitterProxy.emitterDict;
         this.emitterDict = this.$emitterProxy.safeEmitterDict;
 
-        this.$handlerProxy = new HandlerProxy(config.handlerChunkDict || {}, this, app);
+        this.$handlerProxy = new HandlerProxy(
+            loader,
+            config.handlerChunkDict,
+            this,
+            app
+        );
         this.$handlerDict = this.$handlerProxy.handlerDict;
 
         /** 初始化状态 */
@@ -108,12 +122,12 @@ export abstract class Model<
 
         /** 初始化节点 */
         this.$childList = config.childChunkList.map(chunk => {
-            return app.factoryService.$unserialize(chunk, this);
+            return app.factoryService.unserialize(chunk, this as any);
         });
         const origin = {} as M[ModelKey.ChildDict];
         for (const key in config.childChunkDict) {
             const chunk = config.childChunkDict[key];
-            origin[key] = app.factoryService.$unserialize(chunk, this);
+            origin[key] = app.factoryService.unserialize(chunk, this as any);
         }
         this.$childDict = new Proxy(origin, {
             set: (origin, key: keyof M[ModelKey.ChildDict], value) => {

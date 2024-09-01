@@ -19,13 +19,15 @@ export class DebugRenderer<
         setChildren: IBase.Func,
         app: App
     ) {
-        super(app);
+        super(
+            {
+                stateUpdateDone: (e) => this.handleStateUpdateDone(e),
+                childUpdateDone: (e) => this.handleChildUpdateDone(e)
+            },
+            app
+        );
         this.$setState = setState;
         this.$setChildren = setChildren;
-        this.$handlerProxy.initialize({
-            stateUpdateDone: this.handleStateUpdateDone,
-            childUpdateDone: this.handleChildUpdateDone
-        });
     }
 
     private handleStateUpdateDone(event: IEvent.StateUpdateDone<M>) {

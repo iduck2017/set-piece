@@ -54,10 +54,7 @@ export class App {
         const config = index === undefined ?
             await this.archieveService.createArchieve() :
             await this.archieveService.loadArchieve(index);
-        this.$root = this.factoryService.unserialize(
-            config,
-            undefined
-        ); 
+        this.$root = new RootModel(config, undefined, this);
         this.$status = AppStatus.MOUNTED;
     }
 

@@ -27,7 +27,7 @@ export enum ModelCode {
 export namespace IModelDef {
     /** 基础模型定义 */
     export type Base = {
-        code: string
+        code: ModelCode
         preset: IBase.Data
         state: IBase.Data
         childList: Array<Model>

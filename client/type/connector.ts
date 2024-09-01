@@ -24,8 +24,6 @@ export namespace IConnector {
     export type CallerDict<D extends IBase.Dict> = { 
         [K in keyof D]: (event: D[K]) => void;
     }
-
-    /** 链接器绑定及解绑函数 */
     export type Binder<E> = (handler: Handler<E>) => void;
     export type BinderDict<D extends IBase.Dict> = { 
         [K in keyof D]: (handler: Handler<D[K]>) => void
@@ -44,8 +42,6 @@ export namespace IConnector {
     > = { 
         [K in keyof D]: SafeEmitter<D[K], P> 
     }
-    
-    /** 事件接收器集合 */
     export type HandlerDict<
         D extends IBase.Dict, 
         P = any

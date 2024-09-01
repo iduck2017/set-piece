@@ -11,26 +11,29 @@ export class BunnyModel extends Model<IModelDef.Bunny> {
         parent: IModelDef.Bunny[ModelKey.Parent],
         app: App
     ) {
-        super({
-            ...config,
-            code: ModelCode.Bunny,
-            originState: {
-                age: 0,
-                weight: Random.number(30, 50),
-                ...config.originState,
-                maxAge: 10
+        super(
+            {
+                timeUpdateDone: () => this.handleTimeUpdateDone()
             },
-            childChunkList: config.childChunkList || [],
-            childChunkDict: {}
-        }, parent, app);
+            {
+                ...config,
+                code: ModelCode.Bunny,
+                originState: {
+                    age: 0,
+                    weight: Random.number(30, 50),
+                    ...config.originState,
+                    maxAge: 10
+                },
+                childChunkList: config.childChunkList || [],
+                childChunkDict: {}
+            }, 
+            parent,
+            app
+        );
         this.testcaseDict = {
             eatFoood: this.eatFood,
-            spawnChild: this.spawnChild,
-            growUp: this.growUp
+            spawnChild: this.spawnChild
         };
-        this.$handlerProxy.initialize({
-            timeUpdateDone: this.growUp
-        });
     }
 
     public initialize() {
@@ -54,7 +57,7 @@ export class BunnyModel extends Model<IModelDef.Bunny> {
     }
 
     /** 年龄增长 */
-    public growUp() {
+    private handleTimeUpdateDone() {
         console.log("Bunny is growing up...");
         this.$originState.age += 1;
         if (this.currentState.age >= this.currentState.maxAge) {

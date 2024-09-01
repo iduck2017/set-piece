@@ -9,15 +9,20 @@ export class TimeModel extends Model<IModelDef.Time> {
         parent: IModelDef.Time[ModelKey.Parent],
         app: App
     ) {
-        super({
-            ...config,
-            originState: {
-                time: 0,
-                ...config.originState
+        super(
+            {},
+            {
+                ...config,
+                originState: {
+                    time: 0,
+                    ...config.originState
+                },
+                childChunkDict: {},
+                childChunkList: []
             },
-            childChunkDict: {},
-            childChunkList: []
-        }, parent, app);
+            parent,
+            app
+        );
         console.log("TimeModel created");
         this.testcaseDict.updateTime = this.updateTime.bind(this, 1);
     }

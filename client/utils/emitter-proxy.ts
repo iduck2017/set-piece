@@ -14,7 +14,7 @@ export class EmitterProxy<
     public readonly safeEmitterDict = {} as IConnector.SafeEmitterDict<D, P>;
 
     constructor(
-        config: IConnector.ConfigDict<D>,
+        config: IConnector.ConfigDict<D> | undefined,
         parent: P,
         app: App
     ) {
