@@ -1,5 +1,5 @@
 import type { App } from "../app";
-import { ConnectorDecl } from "../type/connector";
+import { ConnectorType } from "../type/connector";
 import { Connector } from "./connector";
 import type { Handler } from "./handler";
 
@@ -9,7 +9,7 @@ export class Emitter<
     P = any
 > extends Connector<Handler<E>, P> {
     constructor(
-        config: ConnectorDecl.Config,
+        config: ConnectorType.Config,
         parent: P,
         app: App
     ) {
@@ -59,8 +59,8 @@ export class SafeEmitter<
     E = any, 
     P = any
 > {
-    public readonly bindHandler: ConnectorDecl.Binder<E>;
-    public readonly unbindHandler: ConnectorDecl.Binder<E>;
+    public readonly bindHandler: ConnectorType.Binder<E>;
+    public readonly unbindHandler: ConnectorType.Binder<E>;
 
     constructor(emitter: Emitter<E, P>) {
         this.bindHandler = emitter.bindHandler.bind(emitter);

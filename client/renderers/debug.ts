@@ -1,15 +1,15 @@
 import type { App } from "../app";
 import { Model } from "../models";
 import { IBase } from "../type";
-import { EventDecl } from "../type/event";
+import { EventType } from "../type/event";
 import { Renderer } from ".";
-import { IModelDef } from "../type/definition";
+import { BaseModelDef } from "../type/definition";
 
 export class DebugRenderer<
-    M extends IModelDef.Base = IModelDef.Base
+    M extends BaseModelDef = BaseModelDef
 > extends Renderer<{
-    stateUpdateDone: EventDecl.StateUpdateDone<M>
-    childUpdateDone: EventDecl.ChildUpdateDone<M>
+    stateUpdateDone: EventType.StateUpdateDone<M>
+    childUpdateDone: EventType.ChildUpdateDone<M>
 }> {
     private readonly $setState: IBase.Func;
     private readonly $setChildren: IBase.Func;
@@ -30,11 +30,11 @@ export class DebugRenderer<
         this.$setChildren = setChildren;
     }
 
-    private handleStateUpdateDone(event: EventDecl.StateUpdateDone<M>) {
+    private handleStateUpdateDone(event: EventType.StateUpdateDone<M>) {
         this.$setState(event.state);
     }
 
-    private handleChildUpdateDone(event: EventDecl.ChildUpdateDone<M>) {
+    private handleChildUpdateDone(event: EventType.ChildUpdateDone<M>) {
         this.$setChildren(event.children);
     }
 

@@ -1,13 +1,13 @@
 import { Model } from ".";
 import type { App } from "../app";
-import { IModelDef } from "../type/definition";
-import { ModelDecl } from "../type/model";
+import { ForagerModelDef } from "../type/definition";
+import { ModelType } from "../type/model";
 import { ModelKey } from "../type/registry";
 
-export class ForagerModel extends Model<IModelDef.Forager> {
+export class ForagerModel extends Model<ForagerModelDef> {
     constructor(
-        config: ModelDecl.RawConfig<IModelDef.Forager>,
-        parent: IModelDef.Forager[ModelKey.Parent],
+        config: ModelType.RawConfig<ForagerModelDef>,
+        parent: ForagerModelDef[ModelKey.Parent],
         app: App
     ) {
         super(

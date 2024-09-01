@@ -1,7 +1,7 @@
 import type { BunnyModel } from "../models/bunny";
 import type { ForagerModel } from "../models/forager";
 import type { RootModel } from "../models/root";
-import type { TimeModel } from "../models/time";
+import type { TimerModel } from "../models/time";
 
 /** 模型定义 */
 export enum ModelKey {
@@ -26,6 +26,6 @@ export enum ModelCode {
 export type ModelReg = {
     bunny: typeof BunnyModel,
     root: typeof RootModel,
-    time: typeof TimeModel,
+    time: typeof TimerModel,
     forager: typeof ForagerModel
 };

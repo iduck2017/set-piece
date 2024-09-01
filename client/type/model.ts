@@ -1,17 +1,17 @@
 /* eslint-disable max-len */
 import type { Model } from "../models";
 import type { Updater } from "../utils/updater";
-import type { EventDecl } from "./event";
+import type { EventType } from "./event";
 import { IReflect } from ".";
-import { ConnectorDecl } from "./connector";
-import type { IModelDef } from "./definition";
+import { ConnectorType } from "./connector";
 import { SafeEmitter } from "../utils/emitter";
 import type { ModelKey, ModelReg } from "./registry";
+import { BaseModelDef } from "./definition";
 
-export namespace ModelDecl {
+export namespace ModelType {
     /** 序列化参数 */
     export type Chunk<
-        M extends IModelDef.Base = IModelDef.Base
+        M extends BaseModelDef = BaseModelDef
     > = {
         id: string
         inited: true
@@ -20,14 +20,14 @@ export namespace ModelDecl {
         originState: M[ModelKey.State]
         childChunkList: ChildChunkList<M>,
         childChunkDict: ChildChunkDict<M>,
-        emitterChunkDict: ConnectorDecl.ChunkDict<M[ModelKey.EmitterEventDict]>
-        handlerChunkDict: ConnectorDecl.ChunkDict<M[ModelKey.HandlerEventDict]>
-        updaterChunkDict: ConnectorDecl.ChunkDict<M[ModelKey.State]>
+        emitterChunkDict: ConnectorType.ChunkDict<M[ModelKey.EmitterEventDict]>
+        handlerChunkDict: ConnectorType.ChunkDict<M[ModelKey.HandlerEventDict]>
+        updaterChunkDict: ConnectorType.ChunkDict<M[ModelKey.State]>
     }
 
     /** 初始化参数 */
     export type Config<
-        M extends IModelDef.Base = IModelDef.Base
+        M extends BaseModelDef = BaseModelDef
     > = {
         id?: string
         inited?: boolean
@@ -36,14 +36,14 @@ export namespace ModelDecl {
         originState: M[ModelKey.State]
         childChunkList: ChildConfigList<M>,
         childChunkDict: ChildConfigDict<M>,
-        emitterChunkDict?: ConnectorDecl.ConfigDict<M[ModelKey.EmitterEventDict]>
-        handlerChunkDict?: ConnectorDecl.ConfigDict<M[ModelKey.HandlerEventDict]>
-        updaterChunkDict?: ConnectorDecl.ConfigDict<M[ModelKey.State]>
+        emitterChunkDict?: ConnectorType.ConfigDict<M[ModelKey.EmitterEventDict]>
+        handlerChunkDict?: ConnectorType.ConfigDict<M[ModelKey.HandlerEventDict]>
+        updaterChunkDict?: ConnectorType.ConfigDict<M[ModelKey.State]>
     }
 
     /** 原始初始化参数 */
     export type RawConfig<
-        M extends IModelDef.Base = IModelDef.Base
+        M extends BaseModelDef = BaseModelDef
     > = {
         id?: string
         inited?: boolean
@@ -52,52 +52,52 @@ export namespace ModelDecl {
         originState?: Partial<M[ModelKey.State]>
         childChunkList?: ChildConfigList<M>,
         childChunkDict?: Partial<ChildConfigDict<M>>,
-        emitterChunkDict?: ConnectorDecl.ConfigDict<M[ModelKey.EmitterEventDict]>
-        handlerChunkDict?: ConnectorDecl.ConfigDict<M[ModelKey.HandlerEventDict]>
-        updaterChunkDict?: ConnectorDecl.ConfigDict<M[ModelKey.State]>
+        emitterChunkDict?: ConnectorType.ConfigDict<M[ModelKey.EmitterEventDict]>
+        handlerChunkDict?: ConnectorType.ConfigDict<M[ModelKey.HandlerEventDict]>
+        updaterChunkDict?: ConnectorType.ConfigDict<M[ModelKey.State]>
     }
 
     /** 状态修饰器集合 */
-    export type UpdaterDict<M extends IModelDef.Base> = {
+    export type UpdaterDict<M extends BaseModelDef> = {
         [K in keyof M[ModelKey.State]]: Updater<M, K>
     }
-    export type UpdaterConfig<K> = ConnectorDecl.Config & { key: K }
-    export type UpdaterConfigDict<M extends IModelDef.Base> = {
+    export type UpdaterConfig<K> = ConnectorType.Config & { key: K }
+    export type UpdaterConfigDict<M extends BaseModelDef> = {
         [K in keyof M[ModelKey.State]]: UpdaterConfig<K>
     }
-    export type UpdaterEventDict<M extends IModelDef.Base> = { 
-        [K in keyof M[ModelKey.State]]: EventDecl.StateUpdateBefore<M, K> 
+    export type UpdaterEventDict<M extends BaseModelDef> = { 
+        [K in keyof M[ModelKey.State]]: EventType.StateUpdateBefore<M, K> 
     }
-    export type SafeUpdaterDict<M extends IModelDef.Base> = { 
+    export type SafeUpdaterDict<M extends BaseModelDef> = { 
         [K in keyof M[ModelKey.State]]: 
-            SafeEmitter<EventDecl.StateUpdateBefore<M, K>, Model<M>> 
+            SafeEmitter<EventType.StateUpdateBefore<M, K>, Model<M>> 
     }
 
     /** 模型基础触发器事件集合 */
     export type BaseEmitterEventDict<
-        M extends IModelDef.Base = IModelDef.Base
+        M extends BaseModelDef = BaseModelDef
     > = {
-        stateUpdateDone: EventDecl.StateUpdateDone<M>
-        childUpdateDone: EventDecl.ChildUpdateDone<M>
+        stateUpdateDone: EventType.StateUpdateDone<M>
+        childUpdateDone: EventType.ChildUpdateDone<M>
     } 
 
-    export type ChildDict<M extends IModelDef.Base> = {
+    export type ChildDict<M extends BaseModelDef> = {
         [K in keyof M[ModelKey.ChildDefDict]]: InstanceType<ModelReg[M[ModelKey.ChildDefDict][K][ModelKey.Code]]>
     }
-    export type ChildList<M extends IModelDef.Base> = 
+    export type ChildList<M extends BaseModelDef> = 
         Array<InstanceType<ModelReg[IReflect.Iterator<M[ModelKey.ChildDefList]>[ModelKey.Code]]>>
 
     /** 模型子节点序列化参数集合 */
-    export type ChildChunkList<M extends IModelDef.Base> = 
-        Array<ModelDecl.Chunk<IReflect.Iterator<M[ModelKey.ChildDefList]>>>
-    export type ChildConfigList<M extends IModelDef.Base> = 
-        Array<ModelDecl.RawConfig<IReflect.Iterator<M[ModelKey.ChildDefList]>>>
+    export type ChildChunkList<M extends BaseModelDef> = 
+        Array<ModelType.Chunk<IReflect.Iterator<M[ModelKey.ChildDefList]>>>
+    export type ChildConfigList<M extends BaseModelDef> = 
+        Array<ModelType.RawConfig<IReflect.Iterator<M[ModelKey.ChildDefList]>>>
 
     /** 模型子节点序列化参数集合 */
-    export type ChildChunkDict<M extends IModelDef.Base> = {
-        [K in keyof M[ModelKey.ChildDefDict]]: ModelDecl.Chunk<M[ModelKey.ChildDefDict][K]>
+    export type ChildChunkDict<M extends BaseModelDef> = {
+        [K in keyof M[ModelKey.ChildDefDict]]: ModelType.Chunk<M[ModelKey.ChildDefDict][K]>
     }
-    export type ChildConfigDict<M extends IModelDef.Base> = {
-        [K in keyof M[ModelKey.ChildDefDict]]: ModelDecl.RawConfig<M[ModelKey.ChildDefDict][K]>
+    export type ChildConfigDict<M extends BaseModelDef> = {
+        [K in keyof M[ModelKey.ChildDefDict]]: ModelType.RawConfig<M[ModelKey.ChildDefDict][K]>
     }
 }

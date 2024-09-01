@@ -1,13 +1,13 @@
 import { Model } from ".";
 import type { App } from "../app";
-import { IModelDef } from "../type/definition";
-import { ModelDecl } from "../type/model";
+import { TimerModelDef } from "../type/definition";
+import { ModelType } from "../type/model";
 import { ModelKey } from "../type/registry";
 
-export class TimeModel extends Model<IModelDef.Time> {
+export class TimerModel extends Model<TimerModelDef> {
     constructor(
-        config: ModelDecl.RawConfig<IModelDef.Time>,
-        parent: IModelDef.Time[ModelKey.Parent],
+        config: ModelType.RawConfig<TimerModelDef>,
+        parent: TimerModelDef[ModelKey.Parent],
         app: App
     ) {
         super(

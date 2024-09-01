@@ -1,13 +1,13 @@
 import { Model } from ".";
 import type { App } from "../app";
-import { IModelDef } from "../type/definition";
-import { ModelDecl } from "../type/model";
+import { BunnyModelDef, RootModelDef } from "../type/definition";
+import { ModelType } from "../type/model";
 import { ModelCode, ModelKey } from "../type/registry";
 
-export class RootModel extends Model<IModelDef.Root> {
+export class RootModel extends Model<RootModelDef> {
     constructor(
-        config: ModelDecl.RawConfig<IModelDef.Root>,
-        parent: IModelDef.Root[ModelKey.Parent],
+        config: ModelType.RawConfig<RootModelDef>,
+        parent: RootModelDef[ModelKey.Parent],
         app: App
     ) {
         super(
@@ -32,7 +32,7 @@ export class RootModel extends Model<IModelDef.Root> {
         );
     }
 
-    public spawnCreature(bunny: ModelDecl.RawConfig<IModelDef.Bunny>) {
+    public spawnCreature(bunny: ModelType.RawConfig<BunnyModelDef>) {
         const child = this.app.factoryService.unserialize(bunny, this);
         this.$appendChild(child);
         child.$initialize();

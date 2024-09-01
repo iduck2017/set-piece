@@ -1,15 +1,15 @@
 import { Model } from ".";
 import type { App } from "../app";
-import { IModelDef } from "../type/definition";
-import { ModelDecl } from "../type/model";
+import { BunnyModelDef } from "../type/definition";
+import { ModelType } from "../type/model";
 import { ModelCode, ModelKey } from "../type/registry";
 import { Decorators } from "../utils/decorators";
 import { Random } from "../utils/random";
 
-export class BunnyModel extends Model<IModelDef.Bunny> {
+export class BunnyModel extends Model<BunnyModelDef> {
     constructor(
-        config: ModelDecl.RawConfig<IModelDef.Bunny>,
-        parent: IModelDef.Bunny[ModelKey.Parent],
+        config: ModelType.RawConfig<BunnyModelDef>,
+        parent: BunnyModelDef[ModelKey.Parent],
         app: App
     ) {
         super(

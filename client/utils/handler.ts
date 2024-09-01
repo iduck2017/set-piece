@@ -1,5 +1,5 @@
 import type { App } from "../app";
-import { ConnectorDecl } from "../type/connector";
+import { ConnectorType } from "../type/connector";
 import { Connector } from "./connector";
 import type { Emitter } from "./emitter";
 
@@ -8,11 +8,11 @@ export class Handler<
     E = any, 
     P = any
 > extends Connector<Emitter<E>, P> {
-    public handleEvent: ConnectorDecl.Caller<E>;
+    public handleEvent: ConnectorType.Caller<E>;
 
     constructor(
-        caller: ConnectorDecl.Caller<E>,
-        config: ConnectorDecl.Config,
+        caller: ConnectorType.Caller<E>,
+        config: ConnectorType.Config,
         parent: P,
         app: App
     ) {

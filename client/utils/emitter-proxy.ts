@@ -1,6 +1,6 @@
 import type { App } from "../app";
 import { IBase } from "../type";
-import { ConnectorDecl } from "../type/connector";
+import { ConnectorType } from "../type/connector";
 import { Emitter, SafeEmitter } from "./emitter";
 import { Entity } from "./entity";
 
@@ -9,17 +9,17 @@ export class EmitterProxy<
     D extends IBase.Dict, 
     P = any
 > extends Entity {
-    public readonly emitterDict: ConnectorDecl.EmitterDict<D, P>;
+    public readonly emitterDict: ConnectorType.EmitterDict<D, P>;
     /** 防止成员泄露 */
-    public readonly safeEmitterDict = {} as ConnectorDecl.SafeEmitterDict<D, P>;
+    public readonly safeEmitterDict = {} as ConnectorType.SafeEmitterDict<D, P>;
 
     constructor(
-        config: ConnectorDecl.ConfigDict<D> | undefined,
+        config: ConnectorType.ConfigDict<D> | undefined,
         parent: P,
         app: App
     ) {
         super(app);
-        const origin = {} as ConnectorDecl.EmitterDict<D, P>;
+        const origin = {} as ConnectorType.EmitterDict<D, P>;
         for (const key in config) {
             origin[key] = new Emitter(
                 config[key] || {}, 
@@ -57,8 +57,8 @@ export class EmitterProxy<
         );
     }
 
-    public serialize(): ConnectorDecl.ChunkDict<D> {
-        const result = {} as ConnectorDecl.ChunkDict<D>;
+    public serialize(): ConnectorType.ChunkDict<D> {
+        const result = {} as ConnectorType.ChunkDict<D>;
         for (const key in this.emitterDict) {
             result[key] = this.emitterDict[key].serialize();
         }

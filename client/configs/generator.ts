@@ -1,6 +1,6 @@
 import { AppInfo } from "../type/app";
-import { IModelDef } from "../type/definition";
-import { ModelDecl } from "../type/model";
+import { RootModelDef } from "../type/definition";
+import { ModelType } from "../type/model";
 import { ModelCode } from "../type/registry";
 import { Context } from "./context";
 
@@ -16,7 +16,7 @@ export namespace Generator {
         };
     }
 
-    export function initRootModelConfig(): ModelDecl.RawConfig<IModelDef.Root> {
+    export function initRootModelConfig(): ModelType.RawConfig<RootModelDef> {
         return {
             code: ModelCode.Root
         };

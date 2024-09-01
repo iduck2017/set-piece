@@ -1,10 +1,10 @@
 import type { Model } from "../models";
-import type { IModelDef } from "./definition";
+import { BaseModelDef } from "./definition";
 import { ModelKey } from "./registry";
 
-export namespace EventDecl { 
+export namespace EventType { 
     export type StateUpdateBefore<
-        M extends IModelDef.Base,
+        M extends BaseModelDef,
         K extends keyof M[ModelKey.State]
     > = {
         target: Model<M>,
@@ -13,14 +13,14 @@ export namespace EventDecl {
     }
 
     export type StateUpdateDone<
-        M extends IModelDef.Base,
+        M extends BaseModelDef,
     > = {
         target: Model<M>,
         state: M[ModelKey.State]
     }
 
     export type ChildUpdateDone<
-        M extends IModelDef.Base,
+        M extends BaseModelDef,
     > = {
         target: Model<M>,
         children: Model[]

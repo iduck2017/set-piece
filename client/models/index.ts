@@ -3,14 +3,17 @@ import { IBase, IReflect } from "../type";
 import { UpdaterProxy } from "../utils/updater-proxy";
 import { HandlerProxy } from "../utils/handler-proxy";
 import { EmitterProxy } from "../utils/emitter-proxy";
-import { IModelDef } from "../type/definition";
-import { ModelDecl } from "../type/model";
-import { ConnectorDecl } from "../type/connector";
+import { BaseModelDef } from "../type/definition";
+import { ModelType } from "../type/model";
+import { ConnectorType } from "../type/connector";
 import { ModelKey } from "../type/registry";
+import { ModelStatus } from "../type/status";
 
 export abstract class Model<
-    M extends IModelDef.Base = IModelDef.Base
+    M extends BaseModelDef = BaseModelDef
 > {
+    private status: ModelStatus;
+
     /** 外部指针 */
     public readonly app: App;
     public readonly parent: M[ModelKey.Parent];
@@ -38,8 +41,8 @@ export abstract class Model<
     }
     
     /** 子节点 */
-    public readonly $childDict: ModelDecl.ChildDict<M>;
-    public readonly $childList: ModelDecl.ChildList<M>;
+    public readonly $childDict: ModelType.ChildDict<M>;
+    public readonly $childList: ModelType.ChildList<M>;
     public get childList() {
         return [ ...this.$childList ];
     }
@@ -55,24 +58,24 @@ export abstract class Model<
     
     /** 状态修饰器代理 */
     private readonly $updaterProxy: UpdaterProxy<M>;
-    protected readonly $updaterDict: ModelDecl.UpdaterDict<M>;
-    public readonly updaterDict: ModelDecl.SafeUpdaterDict<M>;
+    protected readonly $updaterDict: ModelType.UpdaterDict<M>;
+    public readonly updaterDict: ModelType.SafeUpdaterDict<M>;
 
     /** 事件接收器代理 */
     private readonly $handlerProxy: HandlerProxy<M[ModelKey.HandlerEventDict], Model<M>>;
-    protected readonly $handlerDict: ConnectorDecl.HandlerDict<M[ModelKey.HandlerEventDict], Model<M>>;
+    protected readonly $handlerDict: ConnectorType.HandlerDict<M[ModelKey.HandlerEventDict], Model<M>>;
    
     /** 事件触发器代理 */
     private readonly $emitterProxy: EmitterProxy<M[ModelKey.EmitterEventDict], Model<M>>;
-    protected readonly $emitterDict: ConnectorDecl.EmitterDict<M[ModelKey.EmitterEventDict], Model<M>>;
-    public readonly emitterDict: ConnectorDecl.SafeEmitterDict<M[ModelKey.EmitterEventDict], Model<M>>;
+    protected readonly $emitterDict: ConnectorType.EmitterDict<M[ModelKey.EmitterEventDict], Model<M>>;
+    public readonly emitterDict: ConnectorType.SafeEmitterDict<M[ModelKey.EmitterEventDict], Model<M>>;
 
     /** 测试用例 */
     public testcaseDict: Record<string, IBase.Func>;
 
     constructor(
-        loader: ConnectorDecl.CallerDict<M[ModelKey.HandlerEventDict]>, 
-        config: ModelDecl.Config<M>,
+        loader: ConnectorType.CallerDict<M[ModelKey.HandlerEventDict]>, 
+        config: ModelType.Config<M>,
         parent: M[ModelKey.Parent],
         app: App
     ) {
@@ -127,7 +130,7 @@ export abstract class Model<
         this.$childList = config.childChunkList.map(chunk => {
             return app.factoryService.unserialize(chunk, this);
         });
-        const origin = {} as ModelDecl.ChildDict<M>;
+        const origin = {} as ModelType.ChildDict<M>;
         for (const key in config.childChunkDict) {
             const chunk = config.childChunkDict[key];
             origin[key] = app.factoryService.unserialize(chunk, this);
@@ -143,6 +146,8 @@ export abstract class Model<
             }
         });
         this.testcaseDict = {};
+
+        this.status = ModelStatus.UNMOUNTED;
     }
 
     /** 初始化 */
@@ -158,7 +163,7 @@ export abstract class Model<
     }
 
     /** 添加子节点 */
-    protected $appendChild(target: IReflect.Iterator<ModelDecl.ChildList<M>>) {
+    protected $appendChild(target: IReflect.Iterator<ModelType.ChildList<M>>) {
         this.$childList.push(target);
         this.$emitterDict.childUpdateDone.emitEvent({
             target: this,
@@ -229,7 +234,7 @@ export abstract class Model<
     }
 
     /** 序列化函数 */
-    public serialize(): ModelDecl.Chunk<M> {
+    public serialize(): ModelType.Chunk<M> {
         const childChunkDict = {} as any;
         for (const key in this.childDict) {
             const child = this.childDict[key];
