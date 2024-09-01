@@ -1,11 +1,11 @@
 import type { App } from "../app";
-import { Model } from "../models";
 import { BunnyModel } from "../models/bunny";
+import { ForagerModel } from "../models/forager";
 import { RootModel } from "../models/root";
 import { TimeModel } from "../models/time";
-import { IBase } from "../type";
-import { IModel } from "../type/model";
-import { ModelCode } from "../type/registry";
+import { IModelDef } from "../type/definition";
+import { ModelDecl } from "../type/model";
+import { ModelKey, ModelReg } from "../type/registry";
 
 export class FactoryService {
     public readonly app: App;
@@ -14,17 +14,18 @@ export class FactoryService {
         this.app = app;
     }
 
-    private static $productDict: Record<ModelCode, IBase.Class> = {
+    private static $productDict: ModelReg = {
         bunny: BunnyModel,
         root: RootModel,
-        time: TimeModel
+        time: TimeModel,
+        forager: ForagerModel
     }; 
 
-    public unserialize<M extends Model>(
-        config: IModel.ReflectConfig<M>,
-        parent: Model
-    ): M {
-        const Constructor = FactoryService.$productDict[config.code];
+    public unserialize<M extends IModelDef.Base>(
+        config: ModelDecl.RawConfig<M>,
+        parent: M[ModelKey.Parent]
+    ): InstanceType<ModelReg[M[ModelKey.Code]]> {
+        const Constructor = FactoryService.$productDict[config.code] as any;
         return new Constructor(config, parent, this.app);
     }
 }

@@ -2,7 +2,7 @@ import type { Model } from "../models";
 import type { IModelDef } from "./definition";
 import { ModelKey } from "./registry";
 
-export namespace IEvent { 
+export namespace EventDecl { 
     export type StateUpdateBefore<
         M extends IModelDef.Base,
         K extends keyof M[ModelKey.State]

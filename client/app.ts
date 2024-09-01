@@ -54,15 +54,15 @@ export class App {
         const config = index === undefined ?
             await this.archieveService.createArchieve() :
             await this.archieveService.loadArchieve(index);
-        this.$root = new RootModel(config, undefined, this);
-        this.$root.startGame();
+        this.$root = this.factoryService.unserialize(config, undefined);
+        this.$root.$initialize();
         this.$status = AppStatus.MOUNTED;
     }
 
     public async quitGame() {
         this.$status = AppStatus.UNMOUNTING;
         this.archieveService.saveArchieve();
-        this.$root?.quitGame();
+        this.$root?.destroy();
         this.$root = undefined;
         this.$status = AppStatus.UNMOUNTED;
     }

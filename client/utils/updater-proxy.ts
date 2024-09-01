@@ -1,8 +1,8 @@
 import type { App } from "../app";
 import type { Model } from "../models";
 import { IModelDef } from "../type/definition";
-import { IConnector } from "../type/connector";
-import { IModel } from "../type/model";
+import { ConnectorDecl } from "../type/connector";
+import { ModelDecl } from "../type/model";
 import { Entity } from "./entity";
 import { Updater } from "./updater";
 import { SafeEmitter } from "./emitter";
@@ -12,17 +12,17 @@ import { ModelKey } from "../type/registry";
 export class UpdaterProxy<
     M extends IModelDef.Base
 > extends Entity {
-    public readonly updaterDict: IModel.UpdaterDict<M>;
-    public readonly safeUpdaterDict = {} as IModel.SafeUpdaterDict<M>;
+    public readonly updaterDict: ModelDecl.UpdaterDict<M>;
+    public readonly safeUpdaterDict = {} as ModelDecl.SafeUpdaterDict<M>;
 
     constructor(
-        config: IConnector.ConfigDict<M[ModelKey.State]> | undefined,
+        config: ConnectorDecl.ConfigDict<M[ModelKey.State]> | undefined,
         parent: Model<M>,
         app: App
     ) {
         super(app);
         /** 状态修饰器集合 */
-        const origin = {} as IModel.UpdaterDict<M>;
+        const origin = {} as ModelDecl.UpdaterDict<M>;
         for (const key in config) {
             origin[key] = new Updater(
                 { 
@@ -65,7 +65,7 @@ export class UpdaterProxy<
 
     /** 序列化 */
     public serialize() {
-        const result = {} as IConnector.ChunkDict<M[ModelKey.State]>;
+        const result = {} as ConnectorDecl.ChunkDict<M[ModelKey.State]>;
         for (const key in this.updaterDict) {
             result[key] = this.updaterDict[key].serialize();
         }

@@ -1,12 +1,12 @@
 import { Model } from ".";
 import type { App } from "../app";
 import { IModelDef } from "../type/definition";
-import { IModel } from "../type/model";
+import { ModelDecl } from "../type/model";
 import { ModelKey } from "../type/registry";
 
 export class TimeModel extends Model<IModelDef.Time> {
     constructor(
-        config: IModel.RawConfig<IModelDef.Time>,
+        config: ModelDecl.RawConfig<IModelDef.Time>,
         parent: IModelDef.Time[ModelKey.Parent],
         app: App
     ) {

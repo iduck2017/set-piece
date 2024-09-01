@@ -1,11 +1,16 @@
+import type { BunnyModel } from "../models/bunny";
+import type { ForagerModel } from "../models/forager";
+import type { RootModel } from "../models/root";
+import type { TimeModel } from "../models/time";
+
 /** 模型定义 */
 export enum ModelKey {
     Code = 'code',
     State = 'state',
     Preset = 'preset',
     Parent = 'parent',
-    ChildList = 'childList',
-    ChildDict = 'childDict',
+    ChildDefList = 'childList',
+    ChildDefDict = 'childDict',
     EmitterEventDict = 'emitterEventDict',
     HandlerEventDict = 'handlerEventDict'
 }
@@ -14,5 +19,13 @@ export enum ModelKey {
 export enum ModelCode {
     Bunny = 'bunny',
     Root = 'root',
-    Time = 'time'
+    Time = 'time', 
+    Forager = 'forager'
 }
+
+export type ModelReg = {
+    bunny: typeof BunnyModel,
+    root: typeof RootModel,
+    time: typeof TimeModel,
+    forager: typeof ForagerModel
+};

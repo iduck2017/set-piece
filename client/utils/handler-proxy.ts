@@ -1,6 +1,6 @@
 import type { App } from "../app";
 import { IBase } from "../type";
-import { IConnector } from "../type/connector";
+import { ConnectorDecl } from "../type/connector";
 import { Entity } from "./entity";
 import { Handler } from "./handler";
 
@@ -12,19 +12,19 @@ export class HandlerProxy<
     public readonly parent: P;
 
     /** 事件触发器集合 */
-    private readonly $handlerDict: IConnector.HandlerDict<D, P>;
-    public readonly handlerDict = {} as IConnector.HandlerDict<D, P>;
+    private readonly $handlerDict: ConnectorDecl.HandlerDict<D, P>;
+    public readonly handlerDict = {} as ConnectorDecl.HandlerDict<D, P>;
 
     constructor(
-        loader: IConnector.CallerDict<D>,
-        config: IConnector.ConfigDict<D> | undefined,
+        loader: ConnectorDecl.CallerDict<D>,
+        config: ConnectorDecl.ConfigDict<D> | undefined,
         parent: P,
         app: App
     ) {
         super(app);
         this.parent = parent;
         /** 事件触发器集合 */
-        this.$handlerDict = {} as IConnector.HandlerDict<D, P>;
+        this.$handlerDict = {} as ConnectorDecl.HandlerDict<D, P>;
         for (const key in loader) {
             this.$handlerDict[key] = new Handler(
                 loader[key].bind(parent), 
@@ -38,8 +38,8 @@ export class HandlerProxy<
         );
     }
 
-    public serialize(): IConnector.ChunkDict<D> {
-        const result = {} as IConnector.ChunkDict<D>;
+    public serialize(): ConnectorDecl.ChunkDict<D> {
+        const result = {} as ConnectorDecl.ChunkDict<D>;
         for (const key in this.handlerDict) {
             result[key] = this.handlerDict[key].serialize();
         }

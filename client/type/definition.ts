@@ -1,9 +1,7 @@
 import { IBase } from ".";
 import type { Model } from "../models";
-import type { BunnyModel } from "../models/bunny";
-import type { TimeModel } from "../models/time";
-import { IModel } from "./model";
-import { ModelCode } from "./registry";
+import type { ModelDecl } from "./model";
+import type { ModelCode } from "./registry";
 
 /** 模型定义 */
 export namespace IModelDef {
@@ -12,24 +10,23 @@ export namespace IModelDef {
         code: ModelCode
         preset: IBase.Data
         state: IBase.Data
-        childList: Array<Model>
-        childDict: Record<IBase.Key, Model>,
+        childList: Array<Base>
+        childDict: Record<IBase.Key, Base>,
         parent: Model | undefined
-        emitterEventDict: IModel.BaseEmitterEventDict
+        emitterEventDict: ModelDecl.BaseEmitterEventDict
         handlerEventDict: IBase.Dict
     }
 
-    export type Common<M extends Partial<Base>> = 
-        M & Omit<{
-            code: never,
-            preset: IBase.VoidDict,
-            state: IBase.VoidDict
-            childList: Array<never>
-            childDict: IBase.VoidDict
-            parent: Model | undefined
-            emitterEventDict: IModel.BaseEmitterEventDict
-            handlerEventDict: IBase.VoidDict
-        }, keyof M>
+    export type Common<M extends Partial<Base>> = M & Omit<{
+        code: never,
+        preset: IBase.VoidDict,
+        state: IBase.VoidDict
+        childList: Array<never>
+        childDict: IBase.VoidDict
+        parent: Model | undefined
+        emitterEventDict: ModelDecl.BaseEmitterEventDict
+        handlerEventDict: {}
+    }, keyof M>
 
     export type Bunny = Common<{
         code: ModelCode.Bunny,
@@ -37,6 +34,9 @@ export namespace IModelDef {
             age: number,
             weight: number,
             maxAge: number,
+        },
+        childDict: {
+            forager: Forager,
         },
         handlerEventDict: {
             timeUpdateDone: void,
@@ -49,9 +49,9 @@ export namespace IModelDef {
             progress: number,
         }
         childDict: {
-            time: TimeModel,
+            time: Time,
         }
-        childList: BunnyModel[],
+        childList: Bunny[],
     }>
     
     export type Time = Common<{
@@ -59,10 +59,21 @@ export namespace IModelDef {
         state: {
             time: number,
         },
-        emitterEventDict: IModel.BaseEmitterEventDict & {
+        emitterEventDict: ModelDecl.BaseEmitterEventDict & {
             timeUpdateBefore: void,
             timeUpdateDone: void,
-            gameStart: void,
+        }
+    }>
+
+    export type Forager = Common<{
+        code: ModelCode.Forager,
+        state: {
+            energy: number,
+            maxEnergy: number,
+            energyWaste: number,
+        },
+        handlerEventDict: {
+            timeUpdateDone: void,
         }
     }>
 }

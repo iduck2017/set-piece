@@ -1,5 +1,5 @@
 import type { App } from "../app";
-import { IConnector } from "../type/connector";
+import { ConnectorDecl } from "../type/connector";
 import { Entity } from "./entity";
 
 /** 链接器 */
@@ -39,7 +39,7 @@ export class Connector<
         this.$connectorList.splice(index, 1);
     }
     
-    public serialize(): IConnector.Chunk {
+    public serialize(): ConnectorDecl.Chunk {
         return {
             id: this.id, 
             idList: this.connectorList.map(item => {

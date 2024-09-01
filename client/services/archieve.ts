@@ -1,9 +1,9 @@
 import type { App } from "../app";
 import { Context } from "../configs/context";
 import { Generator } from "../configs/generator";
-import { RootModel } from "../models/root";
 import { AppInfo } from "../type/app";
-import { IModel } from "../type/model";
+import { IModelDef } from "../type/definition";
+import { ModelDecl } from "../type/model";
 import { singleton } from "../utils/singleton";
 
 @singleton
@@ -45,7 +45,7 @@ export class ArchieveService {
         if (!raw) {
             throw new Error();
         }
-        return JSON.parse(raw) as IModel.ReflectConfig<RootModel>;
+        return JSON.parse(raw) as ModelDecl.RawConfig<IModelDef.Root>;
     }
 
     public async removeArchieve(index: number) {

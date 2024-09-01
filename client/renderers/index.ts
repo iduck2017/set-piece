@@ -1,6 +1,6 @@
 import type { App } from "../app";
 import { IBase } from "../type";
-import { IConnector } from "../type/connector";
+import { ConnectorDecl } from "../type/connector";
 import { Entity } from "../utils/entity";
 import { HandlerProxy } from "../utils/handler-proxy";
 
@@ -10,7 +10,7 @@ export abstract class Renderer<
     protected readonly $handlerProxy: HandlerProxy<E>;
 
     constructor(
-        loader: IConnector.CallerDict<E>,
+        loader: ConnectorDecl.CallerDict<E>,
         app: App
     ) {
         super(app);

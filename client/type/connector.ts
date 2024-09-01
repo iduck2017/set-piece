@@ -3,7 +3,7 @@ import type { Emitter, SafeEmitter } from "../utils/emitter";
 import type { Handler } from "../utils/handler";
 
 /** 链接器相关类型 */
-export namespace IConnector {
+export namespace ConnectorDecl {
     /** 链接器序列化参数 */
     export type Chunk = Required<Config>
     export type ChunkDict<T extends IBase.Dict> = {

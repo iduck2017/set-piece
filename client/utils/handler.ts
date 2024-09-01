@@ -1,5 +1,5 @@
 import type { App } from "../app";
-import { IConnector } from "../type/connector";
+import { ConnectorDecl } from "../type/connector";
 import { Connector } from "./connector";
 import type { Emitter } from "./emitter";
 
@@ -8,11 +8,11 @@ export class Handler<
     E = any, 
     P = any
 > extends Connector<Emitter<E>, P> {
-    public handleEvent: IConnector.Caller<E>;
+    public handleEvent: ConnectorDecl.Caller<E>;
 
     constructor(
-        caller: IConnector.Caller<E>,
-        config: IConnector.Config,
+        caller: ConnectorDecl.Caller<E>,
+        config: ConnectorDecl.Config,
         parent: P,
         app: App
     ) {
@@ -36,5 +36,6 @@ export class Handler<
         this.connectorList.forEach(item => {
             item.unbindHandler(this);
         }); 
+        this.app.referService.handlerReferManager.removeRefer(this);
     }
 }

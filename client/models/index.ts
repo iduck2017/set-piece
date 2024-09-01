@@ -4,8 +4,8 @@ import { UpdaterProxy } from "../utils/updater-proxy";
 import { HandlerProxy } from "../utils/handler-proxy";
 import { EmitterProxy } from "../utils/emitter-proxy";
 import { IModelDef } from "../type/definition";
-import { IModel } from "../type/model";
-import { IConnector } from "../type/connector";
+import { ModelDecl } from "../type/model";
+import { ConnectorDecl } from "../type/connector";
 import { ModelKey } from "../type/registry";
 
 export abstract class Model<
@@ -38,8 +38,8 @@ export abstract class Model<
     }
     
     /** 子节点 */
-    public readonly $childDict: M[ModelKey.ChildDict];
-    public readonly $childList: M[ModelKey.ChildList];
+    public readonly $childDict: ModelDecl.ChildDict<M>;
+    public readonly $childList: ModelDecl.ChildList<M>;
     public get childList() {
         return [ ...this.$childList ];
     }
@@ -55,24 +55,24 @@ export abstract class Model<
     
     /** 状态修饰器代理 */
     private readonly $updaterProxy: UpdaterProxy<M>;
-    protected readonly $updaterDict: IModel.UpdaterDict<M>;
-    public readonly updaterDict: IModel.SafeUpdaterDict<M>;
+    protected readonly $updaterDict: ModelDecl.UpdaterDict<M>;
+    public readonly updaterDict: ModelDecl.SafeUpdaterDict<M>;
 
     /** 事件接收器代理 */
     private readonly $handlerProxy: HandlerProxy<M[ModelKey.HandlerEventDict], Model<M>>;
-    protected readonly $handlerDict: IConnector.HandlerDict<M[ModelKey.HandlerEventDict], Model<M>>;
+    protected readonly $handlerDict: ConnectorDecl.HandlerDict<M[ModelKey.HandlerEventDict], Model<M>>;
    
     /** 事件触发器代理 */
     private readonly $emitterProxy: EmitterProxy<M[ModelKey.EmitterEventDict], Model<M>>;
-    protected readonly $emitterDict: IConnector.EmitterDict<M[ModelKey.EmitterEventDict], Model<M>>;
-    public readonly emitterDict: IConnector.SafeEmitterDict<M[ModelKey.EmitterEventDict], Model<M>>;
+    protected readonly $emitterDict: ConnectorDecl.EmitterDict<M[ModelKey.EmitterEventDict], Model<M>>;
+    public readonly emitterDict: ConnectorDecl.SafeEmitterDict<M[ModelKey.EmitterEventDict], Model<M>>;
 
     /** 测试用例 */
     public testcaseDict: Record<string, IBase.Func>;
 
     constructor(
-        loader: IConnector.CallerDict<M[ModelKey.HandlerEventDict]>, 
-        config: IModel.Config<M>,
+        loader: ConnectorDecl.CallerDict<M[ModelKey.HandlerEventDict]>, 
+        config: ModelDecl.Config<M>,
         parent: M[ModelKey.Parent],
         app: App
     ) {
@@ -127,13 +127,13 @@ export abstract class Model<
         this.$childList = config.childChunkList.map(chunk => {
             return app.factoryService.unserialize(chunk, this);
         });
-        const origin = {} as M[ModelKey.ChildDict];
+        const origin = {} as ModelDecl.ChildDict<M>;
         for (const key in config.childChunkDict) {
             const chunk = config.childChunkDict[key];
             origin[key] = app.factoryService.unserialize(chunk, this);
         }
         this.$childDict = new Proxy(origin, {
-            set: (origin, key: keyof M[ModelKey.ChildDict], value) => {
+            set: (origin, key: keyof M[ModelKey.ChildDefDict], value) => {
                 origin[key] = value;
                 this.$emitterDict.childUpdateDone.emitEvent({
                     target: this,
@@ -146,17 +146,19 @@ export abstract class Model<
     }
 
     /** 初始化 */
-    protected $initialize() {
+    public $initialize() {
         this.$inited = true;
-        this.$childList.forEach(child => child.$initialize());
+        this.$childList.forEach((child: Model) => {
+            child.$initialize();
+        });
         for (const key in this.$childDict) {
-            const child = this.childDict[key];
+            const child: Model = this.childDict[key];
             child.$initialize();
         }
     }
 
     /** 添加子节点 */
-    protected $appendChild(target: IReflect.Iterator<M[ModelKey.ChildList]>) {
+    protected $appendChild(target: IReflect.Iterator<ModelDecl.ChildList<M>>) {
         this.$childList.push(target);
         this.$emitterDict.childUpdateDone.emitEvent({
             target: this,
@@ -166,7 +168,7 @@ export abstract class Model<
 
     /** 移除子节点 */
     protected $removeChild(target: Model) {
-        const index = this.$childList.indexOf(target);
+        const index = this.$childList.indexOf(target as any);
         if (index >= 0) {
             this.$childList.splice(index, 1); 
             this.$emitterDict.childUpdateDone.emitEvent({
@@ -192,9 +194,11 @@ export abstract class Model<
         this.$emitterProxy.destroy();
         this.$handlerProxy.destroy();
         this.$updaterProxy.destroy();
-        this.$childList.forEach(child => child.$destroy());
+        this.$childList.forEach((child: Model) => {
+            child.$destroy();
+        });
         for (const key in this.$childDict) {
-            const child = this.childDict[key];
+            const child: Model = this.childDict[key];
             child.$destroy();
         }
         if (this.parent) {
@@ -225,14 +229,14 @@ export abstract class Model<
     }
 
     /** 序列化函数 */
-    public serialize(): IModel.Chunk<M> {
+    public serialize(): ModelDecl.Chunk<M> {
         const childChunkDict = {} as any;
         for (const key in this.childDict) {
             const child = this.childDict[key];
             childChunkDict[key] = child.serialize();
         }
         const childChunkList = this.childList.map(child => {
-            return child.serialize() as any;
+            return child.serialize(); 
         });
         return {
             inited: true,
