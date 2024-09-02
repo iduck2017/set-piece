@@ -1,5 +1,6 @@
 import { IBase } from ".";
 import type { Model } from "../models";
+import type { EventType } from "./event";
 import type { ModelType } from "./model";
 import type { ModelCode } from "./registry";
 
@@ -15,6 +16,7 @@ export type BaseModelDef = {
     handlerEventDict: IBase.Dict
 }
 
+export type CommonModelDef<M extends Partial<BaseModelDef>> = M & Omit<BaseModelDef, keyof M>
 export type CustomModelDef<M extends Partial<BaseModelDef>> = M & Omit<{
     code: never,
     preset: IBase.VoidDict,
@@ -37,7 +39,8 @@ export type BunnyModelDef = CustomModelDef<{
         forager: ForagerModelDef,
     },
     handlerEventDict: {
-        timeUpdateDone: void,
+        timeTickDone: void,
+        timeUpdateBefore: EventType.StateUpdateBefore<TimerModelDef>,
     }
 }>
 
@@ -58,8 +61,8 @@ export type TimerModelDef = CustomModelDef<{
         time: number,
     },
     emitterEventDict: ModelType.BaseEmitterEventDict & {
-        timeUpdateBefore: void,
-        timeUpdateDone: void,
+        timeTickBefore: void,
+        timeTickDone: void,
     }
 }>
 
@@ -71,7 +74,7 @@ export type ForagerModelDef = CustomModelDef<{
         energyWaste: number,
     },
     handlerEventDict: {
-        timeUpdateDone: void,
+        timeTickDone: void,
     }
 }>
 

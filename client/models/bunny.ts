@@ -14,7 +14,8 @@ export class BunnyModel extends Model<BunnyModelDef> {
     ) {
         super(
             {
-                timeUpdateDone: () => this.handleTimeUpdateDone()
+                timeTickDone: () => this.handleTimeUpdateDone(),
+                timeUpdateBefore: () => this.handleTimeUpdateDone()
             },
             {
                 ...config,
@@ -48,9 +49,11 @@ export class BunnyModel extends Model<BunnyModelDef> {
     public $initialize() {
         if (!this.$inited) {
             const timer = this.root.childDict.time;
-            timer.emitterDict.timeUpdateDone.bindHandler(
-                this.$handlerDict.timeUpdateDone
+            timer.emitterDict.timeTickDone.bindHandler(
+                this.$handlerDict.timeTickDone
             );
+            timer.emitterBinderDict.timeTickDone(this);
+            timer.updaterBinderDict.timeUpdateBefore(this);
         }
         super.$initialize();
     }

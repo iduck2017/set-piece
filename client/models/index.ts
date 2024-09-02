@@ -7,12 +7,27 @@ import { BaseModelDef } from "../type/definition";
 import { ModelType } from "../type/model";
 import { ConnectorType } from "../type/connector";
 import { ModelKey } from "../type/registry";
-import { ModelStatus } from "../type/status";
 
+
+/**
+ * 反序列化阶段
+ * 1. 节点被创建 Inited
+ * 2. 节点挂载到父节点 Binded
+ * 3. 节点挂载到根节点 Mounted
+ * 
+ * 初始化阶段
+ * 4. 节点业务逻辑执行 Activated
+ * 5. 节点业务状态流转，例如生物成熟、生殖死亡
+ * 6. 节点业务逻辑销毁 Deactivated 
+ * 
+ * 销毁阶段
+ * 7. 节点卸载自根节点 Unmounted
+ * 8. 节点卸载自父节点 Unbinded
+ * 9. 节点销毁完成 Destroyed
+ */
 export abstract class Model<
     M extends BaseModelDef = BaseModelDef
 > {
-    private status: ModelStatus;
 
     /** 外部指针 */
     public readonly app: App;
@@ -55,7 +70,19 @@ export abstract class Model<
             ...Object.values(this.childDict)
         ];
     }
-    
+
+
+    /** 事件触发器 */
+    protected readonly $relatedHandlerDict!: ModelType.RelatedHandlerDict<M>;
+    protected readonly $relatedEmitterDict!: ModelType.RelatedEmitterDict<M>;
+    protected readonly $handlerCallerDict!: ModelType.CallerDict<M[ModelKey.HandlerEventDict]>;
+    protected readonly $emitterCallerDict!: ModelType.CallerDict<M[ModelKey.EmitterEventDict]>;
+    protected readonly $updaterCallerDict!: ModelType.UpdaterCallerDict<M>;
+    public readonly emitterBinderDict!: ModelType.EmitterBinderDict<M>;
+    public readonly emitterUnbinderDict!: ModelType.EmitterBinderDict<M>;
+    public readonly updaterBinderDict!: ModelType.UpdaterBinderDict<M>;
+    public readonly updaterUnbinderDict!: ModelType.UpdaterBinderDict<M>;
+
     /** 状态修饰器代理 */
     private readonly $updaterProxy: UpdaterProxy<M>;
     protected readonly $updaterDict: ModelType.UpdaterDict<M>;
@@ -63,12 +90,17 @@ export abstract class Model<
 
     /** 事件接收器代理 */
     private readonly $handlerProxy: HandlerProxy<M[ModelKey.HandlerEventDict], Model<M>>;
-    protected readonly $handlerDict: ConnectorType.HandlerDict<M[ModelKey.HandlerEventDict], Model<M>>;
-   
+    protected readonly $handlerDict: 
+        ConnectorType.HandlerDict<M[ModelKey.HandlerEventDict], Model<M>>;
+    protected set handlerCallerDict(dict: ConnectorType.CallerDict<M[ModelKey.HandlerEventDict]>) {
+    }
+
     /** 事件触发器代理 */
     private readonly $emitterProxy: EmitterProxy<M[ModelKey.EmitterEventDict], Model<M>>;
-    protected readonly $emitterDict: ConnectorType.EmitterDict<M[ModelKey.EmitterEventDict], Model<M>>;
-    public readonly emitterDict: ConnectorType.SafeEmitterDict<M[ModelKey.EmitterEventDict], Model<M>>;
+    protected readonly $emitterDict: 
+        ConnectorType.EmitterDict<M[ModelKey.EmitterEventDict], Model<M>>;
+    public readonly emitterDict: 
+        ConnectorType.SafeEmitterDict<M[ModelKey.EmitterEventDict], Model<M>>;
 
     /** 测试用例 */
     public testcaseDict: Record<string, IBase.Func>;
@@ -146,8 +178,6 @@ export abstract class Model<
             }
         });
         this.testcaseDict = {};
-
-        this.status = ModelStatus.UNMOUNTED;
     }
 
     /** 初始化 */

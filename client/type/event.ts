@@ -5,7 +5,7 @@ import { ModelKey } from "./registry";
 export namespace EventType { 
     export type StateUpdateBefore<
         M extends BaseModelDef,
-        K extends keyof M[ModelKey.State]
+        K extends keyof M[ModelKey.State] = keyof M[ModelKey.State]
     > = {
         target: Model<M>,
         next: M[ModelKey.State][K],

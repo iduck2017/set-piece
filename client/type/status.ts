@@ -11,14 +11,3 @@ export enum AppStatus {
     /** 应用正在卸载节点 */
     UNMOUNTING,
 }
-
-export enum ModelStatus {
-    /** 模型未建立连接 */
-    UNMOUNTED,
-    /** 模型正在建立连接,接入节点树 */
-    MOUNTED,
-    /** 模型初始化完成 */
-    ACTIVATED,
-    /** 模型断开连接并销毁 */
-    DESTROYED,
-}

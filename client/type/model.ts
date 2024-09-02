@@ -2,11 +2,11 @@
 import type { Model } from "../models";
 import type { Updater } from "../utils/updater";
 import type { EventType } from "./event";
-import { IReflect } from ".";
+import { IBase, IReflect } from ".";
 import { ConnectorType } from "./connector";
 import { SafeEmitter } from "../utils/emitter";
 import type { ModelKey, ModelReg } from "./registry";
-import { BaseModelDef } from "./definition";
+import { BaseModelDef, CommonModelDef } from "./definition";
 
 export namespace ModelType {
     /** 序列化参数 */
@@ -100,4 +100,40 @@ export namespace ModelType {
     export type ChildConfigDict<M extends BaseModelDef> = {
         [K in keyof M[ModelKey.ChildDefDict]]: ModelType.RawConfig<M[ModelKey.ChildDefDict][K]>
     }
+
+
+    export type RelatedHandlerDict<M extends BaseModelDef> = {
+        [K in keyof M[ModelKey.EmitterEventDict]]: Model<CommonModelDef<{
+            handlerEventDict: Pick<M[ModelKey.EmitterEventDict], K>
+        }>>
+    }
+    export type RelatedEmitterDict<M extends BaseModelDef> = {
+        [K in keyof M[ModelKey.HandlerEventDict]]: Model<CommonModelDef<{
+            emitterEventDict: Pick<M[ModelKey.HandlerEventDict], K> & BaseEmitterEventDict
+        }>>
+    }
+
+    export type EmitterBinderDict<M extends BaseModelDef> = {
+        [K in keyof M[ModelKey.EmitterEventDict]]: 
+            (handler: Model<CommonModelDef<{
+                handlerEventDict: Pick<M[ModelKey.EmitterEventDict], K>
+            }>>) => void
+    }
+    export type CallerDict<E extends IBase.Dict> = {
+        [K in keyof E]: (event: E[K]) => void   
+    }
+
+    export type StateUpdateBefore<S> = S extends string ? `${S}UpdateBefore` : never
+
+    export type UpdaterCallerDict<M extends BaseModelDef> = {
+        [K in keyof M[ModelKey.State] as StateUpdateBefore<K>]: (value: M[ModelKey.State][K]) => void
+    }
+    export type UpdaterBinderDict<M extends BaseModelDef> = {
+        [K in keyof M[ModelKey.State] as StateUpdateBefore<K>]: 
+            (handler: Model<CommonModelDef<{
+                handlerEventDict: Record<StateUpdateBefore<K>, EventType.StateUpdateBefore<M, K>>
+            }>>) => void
+    }
+
 }
+

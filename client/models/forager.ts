@@ -12,7 +12,7 @@ export class ForagerModel extends Model<ForagerModelDef> {
     ) {
         super(
             {
-                timeUpdateDone: () => this.handleTimeUpdateDone()
+                timeTickDone: () => this.handleTimeUpdateDone()
             },
             {
                 ...config,
@@ -33,7 +33,7 @@ export class ForagerModel extends Model<ForagerModelDef> {
     public $initialize(): void {
         if (!this.$inited) {
             const timer = this.root.childDict.time;
-            timer.emitterDict.timeUpdateDone.bindHandler(this.$handlerDict.timeUpdateDone);
+            timer.emitterDict.timeTickDone.bindHandler(this.$handlerDict.timeTickDone);
         }
         super.$initialize();
     }
