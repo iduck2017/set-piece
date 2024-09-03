@@ -5,15 +5,16 @@ import { ModelType } from "../type/model";
 import { ModelKey } from "../type/registry";
 
 export class ForagerModel extends Model<ForagerModelDef> {
+    protected $handlerCallerDict: ModelType.HandlerCallerDict<ForagerModelDef> = {
+        timeTickDone: this.handleTimeUpdateDone
+    };
+
     constructor(
         config: ModelType.RawConfig<ForagerModelDef>,
         parent: ForagerModelDef[ModelKey.Parent],
         app: App
     ) {
         super(
-            {
-                timeTickDone: () => this.handleTimeUpdateDone()
-            },
             {
                 ...config,
                 originState: {
@@ -33,7 +34,7 @@ export class ForagerModel extends Model<ForagerModelDef> {
     public $initialize(): void {
         if (!this.$inited) {
             const timer = this.root.childDict.time;
-            timer.emitterDict.timeTickDone.bindHandler(this.$handlerModelDict.timeTickDone);
+            timer.emitterBinderDict.timeTickDone(this);
         }
         super.$initialize();
     }

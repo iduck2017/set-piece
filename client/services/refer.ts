@@ -1,6 +1,4 @@
 import type { App } from "../app";
-import { Handler } from "../utils/handler";
-import { Emitter } from "../utils/emitter";
 import { Model } from "../models";
 import { singleton } from "../utils/singleton";
 
@@ -16,22 +14,18 @@ export class ReferService {
         this.reset();
     }
 
-    private $modelReferManager!: ReferManager<Model>;
-    private $handlerReferManager!: ReferManager<Handler>;
-    private $emitterReferManager!: ReferManager<Emitter>;
+    private $referDict: Record<string, Model> = {};
+    public get referDict() { return { ...this.$referDict }; }
+    public addRefer(target: Model) { this.$referDict[target.id] = target; }
+    public removeRefer(target: Model) { delete this.$referDict[target.id]; }
+
     private $timestamp!: number; 
     private $ticket!: number;
-
-    public get modelReferManager() { return this.$modelReferManager; }
-    public get handlerReferManager() { return this.$handlerReferManager; }
-    public get emitterReferManager() { return this.$emitterReferManager; }
 
     public reset() {
         this.$timestamp = Date.now();
         this.$ticket = MIN_TICKET;
-        this.$modelReferManager = new ReferManager();
-        this.$handlerReferManager = new ReferManager();
-        this.$emitterReferManager = new ReferManager();
+        this.$referDict = {};
     }
 
     public getUniqId(): string {
@@ -45,13 +39,6 @@ export class ReferService {
         }
         return ticket.toString(16) + now.toString(16);
     }
-}
-
-export class ReferManager<T extends { id: string }> {
-    private readonly $referDict: Record<string, T> = {};
-    public get referDict() { return { ...this.$referDict }; }
-    public addRefer(target: T) { this.$referDict[target.id] = target; }
-    public removeRefer(target: T) { delete this.$referDict[target.id]; }
 }
 
 

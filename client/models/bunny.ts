@@ -7,16 +7,17 @@ import { Decorators } from "../utils/decorators";
 import { Random } from "../utils/random";
 
 export class BunnyModel extends Model<BunnyModelDef> {
+    protected $handlerCallerDict: ModelType.HandlerCallerDict<BunnyModelDef> = {
+        timeTickDone: this.handleTimeUpdateDone,
+        timeUpdateBefore: this.handleTimeUpdateDone
+    };
+
     constructor(
         config: ModelType.RawConfig<BunnyModelDef>,
         parent: BunnyModelDef[ModelKey.Parent],
         app: App
     ) {
         super(
-            {
-                timeTickDone: () => this.handleTimeUpdateDone(),
-                timeUpdateBefore: () => this.handleTimeUpdateDone()
-            },
             {
                 ...config,
                 code: ModelCode.Bunny,
@@ -49,11 +50,7 @@ export class BunnyModel extends Model<BunnyModelDef> {
     public $initialize() {
         if (!this.$inited) {
             const timer = this.root.childDict.time;
-            timer.emitterDict.timeTickDone.bindHandler(
-                this.$handlerModelDict.timeTickDone
-            );
             timer.emitterBinderDict.timeTickDone(this);
-            timer.updaterBinderDict.timeUpdateBefore(this);
         }
         super.$initialize();
     }
@@ -72,7 +69,6 @@ export class BunnyModel extends Model<BunnyModelDef> {
 
     /** 年龄增长 */
     private handleTimeUpdateDone() {
-        console.log("Bunny is growing up...");
         this.$originState.age += 1;
         if (this.currentState.age >= this.currentState.maxAge) {
             this.$die();
@@ -80,7 +76,6 @@ export class BunnyModel extends Model<BunnyModelDef> {
     }
 
     private $die() {
-        console.log("Bunny is dead...", this.parent);
         this.$destroy();
     }
 }

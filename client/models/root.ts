@@ -5,13 +5,14 @@ import { ModelType } from "../type/model";
 import { ModelCode, ModelKey } from "../type/registry";
 
 export class RootModel extends Model<RootModelDef> {
+    protected $handlerCallerDict: ModelType.HandlerCallerDict<RootModelDef> = {};
+
     constructor(
         config: ModelType.RawConfig<RootModelDef>,
         parent: RootModelDef[ModelKey.Parent],
         app: App
     ) {
         super(
-            {},
             {
                 ...config,
                 originState: {

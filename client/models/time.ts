@@ -5,13 +5,14 @@ import { ModelType } from "../type/model";
 import { ModelKey } from "../type/registry";
 
 export class TimerModel extends Model<TimerModelDef> {
+    protected $handlerCallerDict: ModelType.HandlerCallerDict<TimerModelDef> = {};
+
     constructor(
         config: ModelType.RawConfig<TimerModelDef>,
         parent: TimerModelDef[ModelKey.Parent],
         app: App
     ) {
         super(
-            {},
             {
                 ...config,
                 originState: {
@@ -30,8 +31,8 @@ export class TimerModel extends Model<TimerModelDef> {
     
     /** 更新时间 */
     public updateTime(offsetTime: number) {
-        this.$emitterModelDict.timeTickBefore.emitEvent();
+        this.$emitterCallerDict.timeTickBefore();
         this.$originState.time += offsetTime;
-        this.$emitterModelDict.timeTickDone.emitEvent();
+        this.$emitterCallerDict.timeTickDone();
     }
 }

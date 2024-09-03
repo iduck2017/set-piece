@@ -10,7 +10,7 @@ export type BaseModelDef = {
     preset: IBase.Data
     state: IBase.Data
     childList: Array<BaseModelDef>
-    childDict: Record<IBase.Key, BaseModelDef>,
+    childDict: Record<string, BaseModelDef>,
     parent: Model | undefined
     emitterEventDict: ModelType.BaseEmitterEventDict
     handlerEventDict: IBase.Dict
@@ -19,10 +19,10 @@ export type BaseModelDef = {
 export type CommonModelDef<M extends Partial<BaseModelDef>> = M & Omit<BaseModelDef, keyof M>
 export type CustomModelDef<M extends Partial<BaseModelDef>> = M & Omit<{
     code: never,
-    preset: IBase.VoidDict,
-    state: IBase.VoidDict
+    preset: {},
+    state: {}
     childList: Array<never>
-    childDict: IBase.VoidDict
+    childDict: {}
     parent: Model | undefined
     emitterEventDict: ModelType.BaseEmitterEventDict
     handlerEventDict: {}
