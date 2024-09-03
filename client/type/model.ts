@@ -20,9 +20,9 @@ export namespace ModelType {
         originState: M[ModelKey.State]
         childChunkList: ChildChunkList<M>,
         childChunkDict: ChildChunkDict<M>,
-        emitterChunkDict: ConnectorType.ChunkDict<M[ModelKey.EmitterEventDict]>
-        handlerChunkDict: ConnectorType.ChunkDict<M[ModelKey.HandlerEventDict]>
-        updaterChunkDict: ConnectorType.ChunkDict<M[ModelKey.State]>
+        emitterChunkDict: ConnectorType.ChunkDictV2<M[ModelKey.EmitterEventDict]>
+        handlerChunkDict: ConnectorType.ChunkDictV2<M[ModelKey.HandlerEventDict]>
+        updaterChunkDict: UpdaterChunkDict<M>
     }
 
     /** 初始化参数 */
@@ -36,9 +36,9 @@ export namespace ModelType {
         originState: M[ModelKey.State]
         childChunkList: ChildConfigList<M>,
         childChunkDict: ChildConfigDict<M>,
-        emitterChunkDict?: ConnectorType.ConfigDict<M[ModelKey.EmitterEventDict]>
-        handlerChunkDict?: ConnectorType.ConfigDict<M[ModelKey.HandlerEventDict]>
-        updaterChunkDict?: ConnectorType.ConfigDict<M[ModelKey.State]>
+        emitterChunkDict?: ConnectorType.ChunkDictV2<M[ModelKey.EmitterEventDict]>
+        handlerChunkDict?: ConnectorType.ChunkDictV2<M[ModelKey.HandlerEventDict]>
+        updaterChunkDict?: UpdaterChunkDict<M>
     }
 
     /** 原始初始化参数 */
@@ -52,9 +52,9 @@ export namespace ModelType {
         originState?: Partial<M[ModelKey.State]>
         childChunkList?: ChildConfigList<M>,
         childChunkDict?: Partial<ChildConfigDict<M>>,
-        emitterChunkDict?: ConnectorType.ConfigDict<M[ModelKey.EmitterEventDict]>
-        handlerChunkDict?: ConnectorType.ConfigDict<M[ModelKey.HandlerEventDict]>
-        updaterChunkDict?: ConnectorType.ConfigDict<M[ModelKey.State]>
+        emitterChunkDict?: ConnectorType.ChunkDictV2<M[ModelKey.EmitterEventDict]>
+        handlerChunkDict?: ConnectorType.ChunkDictV2<M[ModelKey.HandlerEventDict]>
+        updaterChunkDict?: UpdaterChunkDict<M>
     }
 
     /** 状态修饰器集合 */
@@ -102,15 +102,20 @@ export namespace ModelType {
     }
 
 
-    export type RelatedHandlerDict<M extends BaseModelDef> = {
-        [K in keyof M[ModelKey.EmitterEventDict]]: Model<CommonModelDef<{
+    export type EmitterModelDict<M extends BaseModelDef> = {
+        [K in keyof M[ModelKey.EmitterEventDict]]?: Model<CommonModelDef<{
             handlerEventDict: Pick<M[ModelKey.EmitterEventDict], K>
-        }>>
+        }>>[]
     }
-    export type RelatedEmitterDict<M extends BaseModelDef> = {
-        [K in keyof M[ModelKey.HandlerEventDict]]: Model<CommonModelDef<{
+    export type HandlerModelDict<M extends BaseModelDef> = {
+        [K in keyof M[ModelKey.HandlerEventDict]]?: Model<CommonModelDef<{
             emitterEventDict: Pick<M[ModelKey.HandlerEventDict], K> & BaseEmitterEventDict
-        }>>
+        }>>[]
+    }
+    export type UpdaterModelDict<M extends BaseModelDef> = {
+        [K in keyof M[ModelKey.State] as StateUpdateBefore<K>]?: Model<CommonModelDef<{
+            handlerEventDict: Record<StateUpdateBefore<K>, EventType.StateUpdateBefore<M, K>>
+        }>>[]
     }
 
     export type EmitterBinderDict<M extends BaseModelDef> = {
@@ -123,7 +128,7 @@ export namespace ModelType {
         [K in keyof E]: (event: E[K]) => void   
     }
 
-    export type StateUpdateBefore<S> = S extends string ? `${S}UpdateBefore` : never
+    export type StateUpdateBefore<S> = S extends string ? `${S}UpdateBefore` : S
 
     export type UpdaterCallerDict<M extends BaseModelDef> = {
         [K in keyof M[ModelKey.State] as StateUpdateBefore<K>]: (value: M[ModelKey.State][K]) => void
@@ -135,5 +140,6 @@ export namespace ModelType {
             }>>) => void
     }
 
+    export type UpdaterChunkDict<M extends BaseModelDef> = Record<StateUpdateBefore<keyof M[ModelKey.State]>, string[] | undefined>
 }
 

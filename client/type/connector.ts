@@ -10,6 +10,8 @@ export namespace ConnectorType {
         [K in keyof T]?: Chunk
     }
 
+    export type ChunkDictV2<T extends IBase.Dict> = Record<keyof T, string[] | undefined>
+
     /** 链接器初始化参数 */
     export type Config = {
         id?: string

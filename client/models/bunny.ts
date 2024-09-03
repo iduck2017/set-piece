@@ -50,7 +50,7 @@ export class BunnyModel extends Model<BunnyModelDef> {
         if (!this.$inited) {
             const timer = this.root.childDict.time;
             timer.emitterDict.timeTickDone.bindHandler(
-                this.$handlerDict.timeTickDone
+                this.$handlerModelDict.timeTickDone
             );
             timer.emitterBinderDict.timeTickDone(this);
             timer.updaterBinderDict.timeUpdateBefore(this);
