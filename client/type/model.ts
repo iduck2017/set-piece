@@ -5,21 +5,102 @@ import { IReflect } from ".";
 import type { ModelKey, ModelReg } from "./registry";
 import { BaseModelDef, CommonModelDef } from "./definition";
 
+/**
+ * emitterEventDict: 事件触发器集合
+ * handlerEventDict: 事件处理器集合
+ * updaterStateDict: 状态修饰符集合
+ * checkerStateDict: 状态检查器集合
+ */
 export namespace ModelType {
-    export type UpdateBefore<K extends string> = `${K}UpdateBefore`
-    export type UpdaterEventDict<M extends BaseModelDef> = {
-        [K in IReflect.KeyOf<M[ModelKey.State]> as UpdateBefore<K>]: EventType.StateUpdateBefore<M, K>
+    export type StateUpdateBefore<S extends string> = `${S}UpdateBefore`
+    export type StateUpdateDone<S extends string> = `${S}UpdateDone`
+
+    /** 事件参数 */
+    export type EmitterEventDict<M extends BaseModelDef> = {
+        [K in IReflect.KeyOf<M[ModelKey.EmitterDefDict]>]: 
+            {
+                event: M[ModelKey.EmitterDefDict][K], 
+                model: Model<CommonModelDef<{
+                    emitterDefDict: Record<K, M>
+                }>>
+            }
+    } & { 
+        [K in IReflect.KeyOf<M[ModelKey.State]> as StateUpdateBefore<K>]: 
+            {
+                event: EventType.StateUpdateBefore<M, K>, 
+                model: Model<CommonModelDef<{
+                    updaterDefDict: Record<K, M>
+                }>>
+            }
+    } & {
+        [K in IReflect.KeyOf<M[ModelKey.State]> as StateUpdateDone<K>]: 
+            {
+                event: EventType.StateUpdateDone<M, K>, 
+                model: Model<CommonModelDef<{
+                    watcherDefDict: Record<K, M>
+                }>>
+            }
+    }
+
+    export type HandlerEventDict<M extends BaseModelDef> = {
+        [K in IReflect.KeyOf<M[ModelKey.EmitterDefDict]>]?: 
+            [
+                Pick<M[ModelKey.EmitterDefDict][K][ModelKey.EventDict], K>,
+                InstanceType<ModelReg[M[ModelKey.EmitterDefDict][K][ModelKey.Code]]>
+            ]
+    } & { 
+        [K in IReflect.KeyOf<M[ModelKey.UpdaterDefDict]> as StateUpdateBefore<K>]?: 
+            [
+                EventType.StateUpdateBefore<M[ModelKey.UpdaterDefDict][K], K>,
+                InstanceType<ModelReg[M[ModelKey.UpdaterDefDict][K][ModelKey.Code]]>
+            ]
+    } & {
+        [K in IReflect.KeyOf<M[ModelKey.WatcherDefDict]> as StateUpdateDone<K>]?: 
+            [
+                EventType.StateUpdateDone<M[ModelKey.WatcherDefDict][K], K>,
+                InstanceType<ModelReg[M[ModelKey.WatcherDefDict][K][ModelKey.Code]]>
+            ]
+    }
+
+    /** 模型参数 */
+    // export type HandlerDict<M extends BaseModelDef> = {
+    //     [K in IReflect.KeyOf<M[ModelKey.EventDict]>]: Model<CommonModelDef<{
+    //         emitterDefDict: { [k in K]: M }  & Record<string, BaseModelDef>
+    //     }>>
+    // } & {
+    //     [K in IReflect.KeyOf<M[ModelKey.State]> as StateUpdateBefore<K>]: Model<CommonModelDef<{
+    //         updaterDefDict: { [k in K]: M }  & Record<string, BaseModelDef>
+    //     }>>
+    // } & {
+    //     [K in IReflect.KeyOf<M[ModelKey.State]> as StateUpdateDone<K>]: Model<CommonModelDef<{
+    //         watcherDefDict: Record<K, M>  & Record<string, BaseModelDef>
+    //     }>>
+    // }
+    // export type EmitterDict<M extends BaseModelDef> = {
+    //     [K in IReflect.KeyOf<M[ModelKey.EmitterDefDict]>]: 
+    //         InstanceType<ModelReg[M[ModelKey.EmitterDefDict][K][ModelKey.Code]]>
+    // } & {
+    //     [K in IReflect.KeyOf<M[ModelKey.UpdaterDefDict]> as StateUpdateBefore<K>]: 
+    //         InstanceType<ModelReg[M[ModelKey.UpdaterDefDict][K][ModelKey.Code]]>
+    // } & {
+    //     [K in IReflect.KeyOf<M[ModelKey.WatcherDefDict]> as StateUpdateDone<K>]: 
+    //         InstanceType<ModelReg[M[ModelKey.WatcherDefDict][K][ModelKey.Code]]>
+    // }
+
+    /** 模型指针 */
+    export type EmitterListDict<M extends BaseModelDef> = {
+        [K in IReflect.KeyOf<HandlerEventDict<M>>]: EmitterEventDict<M>[K]['model'][] 
+    }
+    export type HandlerListDict<M extends BaseModelDef> = {
+        [K in IReflect.KeyOf<EmitterEventDict<M>>]: HandlerDict<M>[K][] 
     }
 
     /** 唯一标识符索引 */
     export type EmitterChunkDict<M extends BaseModelDef> = {
-        [K in IReflect.KeyOf<M[ModelKey.EmitterEventDict]>]?: string[]
+        [K in IReflect.KeyOf<EmitterEventDict<M>>]?: string[]
     }
     export type HandlerChunkDict<M extends BaseModelDef> = {
-        [K in IReflect.KeyOf<M[ModelKey.HandlerEventDict]>]?: string[]
-    }
-    export type UpdaterChunkDict<M extends BaseModelDef> = {
-        [K in IReflect.KeyOf<UpdaterEventDict<M>>]?: string[]
+        [K in IReflect.KeyOf<HandlerEventDict<M>>]?: string[]
     }
 
     /** 序列化参数 */
@@ -35,7 +116,6 @@ export namespace ModelType {
         childChunkDict: ChildChunkDict<M>,
         emitterIdDict: EmitterChunkDict<M>
         handlerIdDict: HandlerChunkDict<M>
-        updaterIdDict: UpdaterChunkDict<M>
     }
 
     /** 初始化参数 */
@@ -51,7 +131,6 @@ export namespace ModelType {
         childChunkDict: ChildConfigDict<M>,
         emitterChunkDict?: EmitterChunkDict<M>
         handlerChunkDict?: HandlerChunkDict<M>
-        updaterChunkDict?: UpdaterChunkDict<M>
     }
 
     /** 原始初始化参数 */
@@ -67,48 +146,19 @@ export namespace ModelType {
         childChunkDict?: Partial<ChildConfigDict<M>>,
         emitterChunkDict?: EmitterChunkDict<M>
         handlerChunkDict?: HandlerChunkDict<M>
-        updaterChunkDict?: UpdaterChunkDict<M>
-    }
-
-    /** 指针集合 */
-    export type EmitterModelDict<M extends BaseModelDef> = {
-        [K in IReflect.KeyOf<M[ModelKey.EmitterEventDict]>]: Model<CommonModelDef<{
-            handlerEventDict: Pick<M[ModelKey.EmitterEventDict], K>
-        }>>[]
-    }
-    export type HandlerModelDict<M extends BaseModelDef> = {
-        [K in IReflect.KeyOf<M[ModelKey.HandlerEventDict]>]: Model<CommonModelDef<{
-            emitterEventDict: Pick<M[ModelKey.HandlerEventDict], K> & BaseEmitterEventDict
-        }>>[]
-    }
-    export type UpdaterModelDict<M extends BaseModelDef> = {
-        [K in IReflect.KeyOf<UpdaterEventDict<M>>]: Model<CommonModelDef<{
-            handlerEventDict: Record<K, EventType.StateUpdateBefore<M, K>>
-        }>>[]
     }
 
 
     /** 绑定解绑函数集合 */
     export type EmitterBinderDict<M extends BaseModelDef> = {
-        [K in IReflect.KeyOf<M[ModelKey.EmitterEventDict]>]: 
-            (handler: IReflect.IteratorOf<EmitterModelDict<M>[K]>) => void
+        [K in IReflect.KeyOf<HandlerDict<M>>]: (handler: HandlerDict<M>[K]) => void
     }
-    export type UpdaterBinderDict<M extends BaseModelDef> = {
-        [K in IReflect.KeyOf<UpdaterEventDict<M>>]: 
-            (handler: IReflect.IteratorOf<UpdaterModelDict<M>[K]>) => void
-    }
-
-    /** 触发处理函数集合 */
     export type EmitterCallerDict<M extends BaseModelDef> = {
-        [K in IReflect.KeyOf<M[ModelKey.EmitterEventDict]>]: (event: M[ModelKey.EmitterEventDict][K]) => void
+        [K in IReflect.KeyOf<EmitterEventDict<M>>]: (event: EmitterEventDict<M>[K]) => void
     }
     export type HandlerCallerDict<M extends BaseModelDef> = {
-        [K in IReflect.KeyOf<M[ModelKey.HandlerEventDict]>]: (event: M[ModelKey.HandlerEventDict][K]) => void
+        [K in IReflect.KeyOf<HandlerEventDict<M>>]: (event: HandlerEventDict<M>[K]) => void
     }
-    export type UpdaterCallerDict<M extends BaseModelDef> = {
-        [K in IReflect.KeyOf<UpdaterEventDict<M>>]: (event: EventType.StateUpdateBefore<M, K>) => void
-    }
-
 
     /** 子节点列表 */
     export type ChildList<M extends BaseModelDef> = 
@@ -132,12 +182,5 @@ export namespace ModelType {
             ModelType.RawConfig<M[ModelKey.ChildDefDict][K]>
     }
 
-    /** 模型基础触发器事件集合 */
-    export type BaseEmitterEventDict<
-        M extends BaseModelDef = BaseModelDef
-    > = {
-        stateUpdateDone: EventType.StateUpdateDone<M>
-        childUpdateDone: EventType.ChildUpdateDone<M>
-    } 
 }
 

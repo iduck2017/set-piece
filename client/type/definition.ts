@@ -1,7 +1,5 @@
 import { IBase } from ".";
 import type { Model } from "../models";
-import type { EventType } from "./event";
-import type { ModelType } from "./model";
 import type { ModelCode } from "./registry";
 
 /** 基础模型定义 */
@@ -9,11 +7,13 @@ export type BaseModelDef = {
     code: ModelCode
     preset: IBase.Data
     state: IBase.Data
-    childList: Array<BaseModelDef>
-    childDict: Record<string, BaseModelDef>,
     parent: Model | undefined
-    emitterEventDict: ModelType.BaseEmitterEventDict
-    handlerEventDict: IBase.Dict
+    eventDict: IBase.Dict,
+    childDefList: Array<BaseModelDef>
+    childDefDict: Record<IBase.Key, BaseModelDef>,
+    updaterDefDict: Record<IBase.Key, BaseModelDef>
+    watcherDefDict: Record<IBase.Key, BaseModelDef>
+    emitterDefDict: Record<IBase.Key, BaseModelDef>
 }
 
 export type CommonModelDef<M extends Partial<BaseModelDef>> = M & Omit<BaseModelDef, keyof M>
@@ -21,11 +21,13 @@ export type CustomModelDef<M extends Partial<BaseModelDef>> = M & Omit<{
     code: never,
     preset: {},
     state: {}
-    childList: Array<never>
-    childDict: {}
     parent: Model | undefined
-    emitterEventDict: ModelType.BaseEmitterEventDict
-    handlerEventDict: {}
+    eventDict: {},
+    childDefList: []
+    childDefDict: {}
+    updaterDefDict: {}
+    watcherDefDict: {}
+    emitterDefDict: {}
 }, keyof M>
 
 export type BunnyModelDef = CustomModelDef<{
@@ -35,13 +37,15 @@ export type BunnyModelDef = CustomModelDef<{
         weight: number,
         maxAge: number,
     },
-    childDict: {
+    childDefDict: {
         forager: ForagerModelDef,
     },
-    handlerEventDict: {
-        timeTickDone: void,
-        timeUpdateBefore: EventType.StateUpdateBefore<TimerModelDef>,
-    }
+    updaterDefDict: {
+        time: TimerModelDef,
+    },
+    emitterDefDict: {
+        tickDone: TimerModelDef,
+    },
 }>
 
 export type RootModelDef = CustomModelDef<{
@@ -49,10 +53,10 @@ export type RootModelDef = CustomModelDef<{
     state: {
         progress: number,
     }
-    childDict: {
+    childDefDict: {
         time: TimerModelDef,
     }
-    childList: BunnyModelDef[],
+    childDefList: BunnyModelDef[],
 }>
 
 export type TimerModelDef = CustomModelDef<{
@@ -60,9 +64,9 @@ export type TimerModelDef = CustomModelDef<{
     state: {
         time: number,
     },
-    emitterEventDict: ModelType.BaseEmitterEventDict & {
-        timeTickBefore: void,
-        timeTickDone: void,
+    eventDict: {
+        tickBefore: void,
+        tickDone: void,
     }
 }>
 
@@ -73,8 +77,8 @@ export type ForagerModelDef = CustomModelDef<{
         maxEnergy: number,
         energyWaste: number,
     },
-    handlerEventDict: {
-        timeTickDone: void,
+    emitterDefDict: {
+        tickDone: TimerModelDef,
     }
 }>
 

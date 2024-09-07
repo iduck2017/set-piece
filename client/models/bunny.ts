@@ -1,6 +1,6 @@
 import { Model } from ".";
 import type { App } from "../app";
-import { BunnyModelDef } from "../type/definition";
+import { BaseModelDef, BunnyModelDef, CommonModelDef, TimerModelDef } from "../type/definition";
 import { ModelType } from "../type/model";
 import { ModelCode, ModelKey } from "../type/registry";
 import { Decorators } from "../utils/decorators";
@@ -8,8 +8,8 @@ import { Random } from "../utils/random";
 
 export class BunnyModel extends Model<BunnyModelDef> {
     protected $handlerCallerDict: ModelType.HandlerCallerDict<BunnyModelDef> = {
-        timeTickDone: this.handleTimeUpdateDone,
-        timeUpdateBefore: this.handleTimeUpdateDone
+        timeUpdateBefore: this.handleTimeUpdateDone,
+        tickDone: this.handleTimeUpdateDone
     };
 
     constructor(
@@ -49,8 +49,11 @@ export class BunnyModel extends Model<BunnyModelDef> {
 
     public $initialize() {
         if (!this.$inited) {
+            const a: Model<CommonModelDef<{ 
+                emitterDefDict: { tickDone: TimerModelDef; } & Record<string, BaseModelDef>; 
+            }>> = this;
             const timer = this.root.childDict.time;
-            timer.emitterBinderDict.timeTickDone(this);
+            timer.event.tickDone.bind(this);
         }
         super.$initialize();
     }

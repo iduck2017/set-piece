@@ -3,8 +3,6 @@ import { IBase, IReflect } from "../type";
 import { BaseModelDef } from "../type/definition";
 import { ModelType } from "../type/model";
 import { ModelKey } from "../type/registry";
-import { EventType } from "../type/event";
-
 
 /**
  * 反序列化阶段
@@ -25,7 +23,6 @@ import { EventType } from "../type/event";
 export abstract class Model<
     M extends BaseModelDef = BaseModelDef
 > {
-
     /** 外部指针 */
     public readonly app: App;
     public readonly parent: M[ModelKey.Parent];
@@ -70,80 +67,56 @@ export abstract class Model<
 
 
     /** 事件触发器 */
-    protected readonly $emitterModelDict: ModelType.EmitterModelDict<M>;
-    protected readonly $handlerModelDict: ModelType.HandlerModelDict<M>;
-    protected readonly $updaterModelDict: ModelType.UpdaterModelDict<M>;
-
+    protected readonly $event: {
+        [K in IReflect.KeyOf<ModelType.HandlerDict<M>>]: {
+            call: ModelType.EmitterCallerDict<M>[K];
+            bind: ModelType.EmitterBinderDict<M>[K];
+            unbind: ModelType.EmitterBinderDict<M>[K];
+        }
+    };
+    public readonly event: {
+        [K in IReflect.KeyOf<ModelType.HandlerDict<M>>]: {
+            bind: ModelType.EmitterBinderDict<M>[K];
+            unbind: ModelType.EmitterBinderDict<M>[K];
+        }
+    };
+    protected readonly $emitterListDict: ModelType.EmitterListDict<M>;
+    protected readonly $handlerListDict: ModelType.HandlerListDict<M>;
     protected abstract readonly $handlerCallerDict: ModelType.HandlerCallerDict<M>;
-    protected readonly $emitterCallerDict: ModelType.EmitterCallerDict<M>;
-    protected readonly $updaterCallerDict: ModelType.UpdaterCallerDict<M>;
-    
-    public readonly emitterBinderDict: ModelType.EmitterBinderDict<M>;
-    public readonly updaterBinderDict: ModelType.UpdaterBinderDict<M>;
 
-    public readonly emitterUnbinderDict: ModelType.EmitterBinderDict<M>;
-    public readonly updaterUnbinderDict: ModelType.UpdaterBinderDict<M>;
-
-    protected $callEmitter<K extends IReflect.KeyOf<M[ModelKey.EmitterEventDict]>>(
+    protected $callEmitter<
+        K extends IReflect.KeyOf<ModelType.EmitterEventDict<M>>
+    >(
         key: K,
-        event: M[ModelKey.EmitterEventDict][K]
+        event: ModelType.EmitterEventDict<M>[K]
     ) {
-        const emitterModelList = this.$emitterModelDict[key];
-        for (const model of emitterModelList) {
-            model.$handlerCallerDict[key](event);
-        }
+        const emitterModelList = this.$emitterListDict[key];
+        emitterModelList.forEach((model: any) => {
+            model.$event[key].call(event);
+        });
     }
 
-    protected $callUpdater<K extends IReflect.KeyOf<ModelType.UpdaterEventDict<M>>>(
+    private $bindHandler<
+        K extends IReflect.KeyOf<ModelType.HandlerDict<M>>
+    >(
         key: K,
-        event: EventType.StateUpdateBefore<M, K>
+        handler: ModelType.HandlerDict<M>[K]
     ) {
-        const updaterModelList = this.$updaterModelDict[key];
-        for (const model of updaterModelList) {
-            model.$handlerCallerDict[key](event);
-        }
+        handler.$emitterListDict[key].push(this as any);
+        this.$handlerListDict[key].push(handler);
     }
 
-    private $bindEmitter<K extends IReflect.KeyOf<M[ModelKey.EmitterEventDict]>>(
+    private $unbindHandler<K extends IReflect.KeyOf<ModelType.HandlerDict<M>>>(
         key: K,
-        handler: IReflect.IteratorOf<ModelType.EmitterModelDict<M>[K]>
+        handler: ModelType.HandlerDict<M>[K]
     ) {
-        handler.$handlerModelDict[key].push(this as any);
-        this.$emitterModelDict[key].push(handler);
-    }
-
-    private $bindUpdater<K extends IReflect.KeyOf<ModelType.UpdaterEventDict<M>>>(
-        key: K,
-        handler: IReflect.IteratorOf<ModelType.UpdaterModelDict<M>[K]>
-    ) {
-        handler.$handlerModelDict[key].push(this as any);
-        this.$updaterModelDict[key].push(handler);
-    }
-
-    private $unbindUpdater<K extends IReflect.KeyOf<ModelType.UpdaterEventDict<M>>>(
-        key: K,
-        handler: IReflect.IteratorOf<ModelType.UpdaterModelDict<M>[K]>
-    ) {
-        const handlerIndex = handler.$handlerModelDict[key].indexOf(this as any);
-        const updaterIndex = this.$updaterModelDict[key].indexOf(handler);
-        if (handlerIndex < 0 || updaterIndex < 0) {
-            throw new Error();
-        }
-        handler.$handlerModelDict[key]?.splice(handlerIndex, 1);
-        this.$updaterModelDict[key]?.splice(updaterIndex, 1);
-    }
-
-    private $unbindEmitter<K extends IReflect.KeyOf<M[ModelKey.EmitterEventDict]>>(
-        key: K,
-        handler: IReflect.IteratorOf<ModelType.EmitterModelDict<M>[K]>
-    ) {
-        const handlerIndex = handler.$handlerModelDict[key].indexOf(this as any);
-        const emitterIndex = this.$emitterModelDict[key].indexOf(handler);
+        const handlerIndex = handler.$emitterListDict[key].indexOf(this as any);
+        const emitterIndex = this.$handlerListDict[key].indexOf(handler);
         if (handlerIndex < 0 || emitterIndex < 0) {
             throw new Error();
         }
-        handler.$handlerModelDict[key]?.splice(handlerIndex, 1);
-        this.$emitterModelDict[key]?.splice(emitterIndex, 1);
+        handler.$emitterListDict[key]?.splice(handlerIndex, 1);
+        this.$handlerListDict[key]?.splice(emitterIndex, 1);
     }
 
     public unserializeModelDict(chunk?: Record<string, string[] | undefined>) {
@@ -231,72 +204,35 @@ export abstract class Model<
         // );
         // this.$handlerDict = this.$handlerProxy.handlerDict;
 
-        this.$handlerModelDict = this.unserializeModelDict(config.handlerChunkDict);
-        this.$emitterModelDict = this.unserializeModelDict(config.emitterChunkDict);
-        this.$updaterModelDict = this.unserializeModelDict(config.updaterChunkDict);
+        this.$handlerListDict = this.unserializeModelDict(config.handlerChunkDict);
+        this.$emitterListDict = this.unserializeModelDict(config.emitterChunkDict);
 
-        this.$emitterCallerDict = new Proxy(
-            {} as ModelType.EmitterCallerDict<M>,
+        this.$event = new Proxy(
+            {} as any,
             {
-                get: ($target, key) => {
-                    return this.$callEmitter.bind(this, key);
+                get: (target, key) => {
+                    return {
+                        call: this.$callEmitter.bind(this, key),
+                        bind: this.$bindHandler.bind(this, key),
+                        unbind: this.$unbindHandler.bind(this, key)
+                    };
                 },
                 set: () => false
             }
         );
-
-        this.$updaterCallerDict = new Proxy(
-            {} as ModelType.UpdaterCallerDict<M>,
+        this.event = new Proxy(
+            {} as any,
             {
-                get: ($target, key) => {
-                    return this.$callUpdater.bind(this, key);
-                },
-                set: () => false
-            }
-        );
-        
-        this.emitterBinderDict = new Proxy(
-            {} as ModelType.EmitterBinderDict<M>,
-            {
-                get: ($target, key) => {
-                    return this.$bindEmitter.bind(this, key);
+                get: (target, key) => {
+                    return {
+                        bind: this.$bindHandler.bind(this, key),
+                        unbind: this.$unbindHandler.bind(this, key)
+                    };
                 },
                 set: () => false
             }
         );
 
-        this.updaterBinderDict = new Proxy(
-            {} as ModelType.UpdaterBinderDict<M>,
-            {
-                get: ($target, key) => {
-                    return this.$callUpdater.bind(this, key);
-                },
-                set: () => false
-            }
-        );
-        
-        this.updaterUnbinderDict = new Proxy(
-            {} as ModelType.UpdaterBinderDict<M>,
-            {
-                get: ($target, key) => {
-                    return this.$unbindUpdater.bind(this, key);
-                },
-                set: () => false
-            }
-        );
-
-        this.emitterUnbinderDict = new Proxy(
-            {} as ModelType.EmitterBinderDict<M>,
-            {
-                get: ($target, key) => {
-                    return this.$unbindEmitter.bind(
-                        this, 
-                        key as keyof M[ModelKey.EmitterEventDict]
-                    );
-                },
-                set: () => false
-            }
-        );
 
         /** 初始化状态 */
         this.$originState = new Proxy(config.originState, {
@@ -322,10 +258,10 @@ export abstract class Model<
         this.$childDict = new Proxy(origin, {
             set: (origin, key: IReflect.KeyOf<M[ModelKey.ChildDefDict]>, value) => {
                 origin[key] = value;
-                this.$emitterCallerDict.childUpdateDone({
-                    target: this,
-                    children: this.children
-                });
+                // this.$emitterCallerDict.childUpdateDone({
+                //     target: this,
+                //     children: this.children
+                // });
                 return true;
             }
         });
@@ -347,10 +283,10 @@ export abstract class Model<
     /** 添加子节点 */
     protected $appendChild(target: IReflect.IteratorOf<ModelType.ChildList<M>>) {
         this.$childList.push(target);
-        this.$emitterCallerDict.childUpdateDone({
-            target: this,
-            children: this.children
-        });
+        // this.$emitterCallerDict.childUpdateDone({
+        //     target: this,
+        //     children: this.children
+        // });
     }
 
     /** 移除子节点 */
@@ -358,19 +294,19 @@ export abstract class Model<
         const index = this.$childList.indexOf(target as any);
         if (index >= 0) {
             this.$childList.splice(index, 1); 
-            this.$emitterCallerDict.childUpdateDone({
-                target: this,
-                children: this.children
-            });
+            // this.$emitterCallerDict.childUpdateDone({
+            //     target: this,
+            //     children: this.children
+            // });
             return;
         }
         for (const key in this.$childDict) {
             if (this.$childDict[key] === target) {
                 delete this.$childDict[key];
-                this.$emitterCallerDict.childUpdateDone({
-                    target: this,
-                    children: this.children  
-                });
+                // this.$emitterCallerDict.childUpdateDone({
+                //     target: this,
+                //     children: this.children  
+                // });
                 return;
             }
         }
@@ -381,20 +317,12 @@ export abstract class Model<
         // this.$emitterProxy.destroy();
         // this.$handlerProxy.destroy();
         // this.$updaterProxy.destroy();
-        Object.keys(this.$emitterModelDict).forEach((
-            key: IReflect.KeyOf<M[ModelKey.EmitterEventDict]>
+        Object.keys(this.$handlerListDict).forEach((
+            key: IReflect.KeyOf<M[ModelKey.EventDict]>
         ) => {
-            const emitterModelList = this.$emitterModelDict[key];
-            emitterModelList.forEach(model => {
-                this.$unbindEmitter(key, model);
-            });
-        });
-        Object.keys(this.$updaterModelDict).forEach((
-            key: IReflect.KeyOf<ModelType.UpdaterEventDict<M>>
-        ) => {
-            const updaterModelList = this.$updaterModelDict[key];
-            updaterModelList.forEach(model => {
-                this.$unbindUpdater(key, model);
+            const handlerList = this.$handlerListDict[key];
+            handlerList.forEach(model => {
+                this.$unbindHandler(key, model);
             });
         });
         // Object.keys(this.$handlerModelDict).forEach((
@@ -419,9 +347,7 @@ export abstract class Model<
     }
 
     /** 更新状态 */
-    public updateState<
-        K extends IReflect.KeyOf<ModelType.UpdaterEventDict<M>>
-    >(key: K) {
+    public updateState<K extends IReflect.KeyOf<M[ModelKey.State]>>(key: K) {
         const prev = this.$currentState[key];
         const current = this.$originState[key];
         const event = {
@@ -429,14 +355,17 @@ export abstract class Model<
             prev: current,
             next: current
         };
-        this.$updaterCallerDict[key](event);
+        this.$callEmitter(
+            `${key}UpdateBefore` as ModelType.StateUpdateBefore<K>, 
+            event as ModelType.EmitterEventDict<M>[ModelType.StateUpdateBefore<K>]
+        );
         const next = event.next;
         if (prev !== next) {
             this.$currentState[key] = next;
-            this.$emitterCallerDict.stateUpdateDone({
-                target: this,
-                state: this.currentState
-            });
+            // this.$emitterCallerDict.stateUpdateDone({
+            //     target: this,
+            //     state: this.currentState
+            // });
         }
     }
 
@@ -452,29 +381,20 @@ export abstract class Model<
         });
 
         const emitterIdDict = {} as ModelType.EmitterChunkDict<M>;
-        Object.keys(this.$emitterModelDict).forEach((
-            key: IReflect.KeyOf<M[ModelKey.EmitterEventDict]>
+        Object.keys(this.$emitterListDict).forEach((
+            key: IReflect.KeyOf<M[ModelKey.EventDict]>
         ) => {
-            const emitterModelList = this.$emitterModelDict[key];
+            const emitterModelList = this.$emitterListDict[key];
             emitterIdDict[key] = emitterModelList.map(model => {
                 return model.id;
             });
         });
         const handlerIdDict = {} as ModelType.HandlerChunkDict<M>;
-        Object.keys(this.$handlerModelDict).forEach((
-            key: IReflect.KeyOf<M[ModelKey.HandlerEventDict]>
+        Object.keys(this.$handlerListDict).forEach((
+            key: IReflect.KeyOf<M[ModelKey.EmitterDefDict]>
         ) => {
-            const handlerModelList = this.$handlerModelDict[key];
+            const handlerModelList = this.$handlerListDict[key];
             handlerIdDict[key] = handlerModelList.map(model => {
-                return model.id;
-            });
-        });
-        const updaterIdDict = {} as ModelType.UpdaterChunkDict<M>;
-        Object.keys(this.$updaterModelDict).forEach((
-            key: IReflect.KeyOf<ModelType.UpdaterEventDict<M>>
-        ) => {
-            const updaterModelList = this.$updaterModelDict[key];
-            updaterIdDict[key] = updaterModelList.map(model => {
                 return model.id;
             });
         });
@@ -488,11 +408,7 @@ export abstract class Model<
             childChunkDict,
             childChunkList,
             emitterIdDict,
-            handlerIdDict,
-            updaterIdDict
-            // emitterIdDict: this.$emitterProxy.serialize(),
-            // handlerIdDict: this.$handlerProxy.serialize(),
-            // updaterIdDict: this.$updaterProxy.serialize()
+            handlerIdDict
         };
     }
 }

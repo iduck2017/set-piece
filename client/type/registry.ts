@@ -9,11 +9,14 @@ export enum ModelKey {
     State = 'state',
     Preset = 'preset',
     Parent = 'parent',
-    ChildDefList = 'childList',
-    ChildDefDict = 'childDict',
-    EmitterEventDict = 'emitterEventDict',
-    HandlerEventDict = 'handlerEventDict'
+    EventDict = 'eventDict',
+    ChildDefList = 'childDefList',
+    ChildDefDict = 'childDefDict',
+    UpdaterDefDict = 'updaterDefDict',
+    WatcherDefDict = 'watcherDefDict',
+    EmitterDefDict = 'emitterDefDict',
 }
+
 
 /** 模型注册表 */
 export enum ModelCode {
@@ -23,6 +26,7 @@ export enum ModelCode {
     Forager = 'forager'
 }
 
+/** 数据到模型 */
 export type ModelReg = {
     bunny: typeof BunnyModel,
     root: typeof RootModel,
