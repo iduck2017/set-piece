@@ -11,9 +11,9 @@ export type BaseModelDef = {
     eventDict: IBase.Dict,
     childDefList: Array<BaseModelDef>
     childDefDict: Record<IBase.Key, BaseModelDef>,
-    updaterDefDict: Record<IBase.Key, BaseModelDef>
-    watcherDefDict: Record<IBase.Key, BaseModelDef>
-    emitterDefDict: Record<IBase.Key, BaseModelDef>
+    computerDefDict: Record<IBase.Key, BaseModelDef>
+    observerDefDict: Record<IBase.Key, BaseModelDef>
+    producerDefDict: Record<IBase.Key, BaseModelDef>
 }
 
 export type CommonModelDef<M extends Partial<BaseModelDef>> = M & Omit<BaseModelDef, keyof M>
@@ -25,9 +25,9 @@ export type CustomModelDef<M extends Partial<BaseModelDef>> = M & Omit<{
     eventDict: {},
     childDefList: []
     childDefDict: {}
-    updaterDefDict: {}
-    watcherDefDict: {}
-    emitterDefDict: {}
+    computerDefDict: {}
+    observerDefDict: {}
+    producerDefDict: {}
 }, keyof M>
 
 export type BunnyModelDef = CustomModelDef<{
@@ -40,10 +40,10 @@ export type BunnyModelDef = CustomModelDef<{
     childDefDict: {
         forager: ForagerModelDef,
     },
-    updaterDefDict: {
+    computerDefDict: {
         time: TimerModelDef,
     },
-    emitterDefDict: {
+    producerDefDict: {
         tickDone: TimerModelDef,
     },
 }>
@@ -77,7 +77,7 @@ export type ForagerModelDef = CustomModelDef<{
         maxEnergy: number,
         energyWaste: number,
     },
-    emitterDefDict: {
+    producerDefDict: {
         tickDone: TimerModelDef,
     }
 }>

@@ -9,12 +9,12 @@ export enum ModelKey {
     State = 'state',
     Preset = 'preset',
     Parent = 'parent',
-    EventDict = 'eventDict',
     ChildDefList = 'childDefList',
     ChildDefDict = 'childDefDict',
-    UpdaterDefDict = 'updaterDefDict',
-    WatcherDefDict = 'watcherDefDict',
-    EmitterDefDict = 'emitterDefDict',
+    EventDict = 'eventDict',
+    ProducerDefDict = 'producerDefDict',
+    ComputerDefDict = 'computerDefDict',
+    ObserverDefDict = 'observerDefDict',
 }
 
 

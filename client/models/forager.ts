@@ -5,8 +5,8 @@ import { ModelType } from "../type/model";
 import { ModelKey } from "../type/registry";
 
 export class ForagerModel extends Model<ForagerModelDef> {
-    protected $handlerCallerDict: ModelType.HandlerCallerDict<ForagerModelDef> = {
-        timeTickDone: this.handleTimeUpdateDone
+    protected $handlerDict: ModelType.HandlerDict<ForagerModelDef> = {
+        tickDone: this.handleTimeUpdateDone
     };
 
     constructor(
@@ -34,7 +34,7 @@ export class ForagerModel extends Model<ForagerModelDef> {
     public $initialize(): void {
         if (!this.$inited) {
             const timer = this.root.childDict.time;
-            timer.emitterBinderDict.timeTickDone(this);
+            timer.ev.tickDone.bind(this);
         }
         super.$initialize();
     }
