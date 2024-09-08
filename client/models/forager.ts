@@ -34,7 +34,7 @@ export class ForagerModel extends Model<ForagerModelDef> {
     public $initialize(): void {
         if (!this.$inited) {
             const timer = this.root.childDict.time;
-            timer.ev.tickDone.bind(this);
+            timer.event.tickDone.bind(this);
         }
         super.$initialize();
     }

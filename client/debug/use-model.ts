@@ -1,23 +1,22 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import type { ModelCompProps } from ".";
-import { DebugRenderer } from "../renderers/debug";
 
 export function useModel(props: ModelCompProps) {
-    const { target, app } = props;
+    const { target } = props;
 
     const [ state, setState ] = useState(target.currentState);
     const [ children, setChildren ] = useState(target.children);
-    const render = useRef<DebugRenderer>();
     
     useEffect(() => {
-        render.current = new DebugRenderer(
-            setState,
-            setChildren,
-            app
-        );
-        render.current.active(target);
+        target.stateSetterList.push(setState);
+        target.childrenSetterList.push(setChildren);
         return () => {
-            render.current?.destroy();
+            target.stateSetterList.splice(
+                target.stateSetterList.indexOf(setState), 1
+            );
+            target.childrenSetterList.splice(
+                target.childrenSetterList.indexOf(setChildren), 1
+            );
         };
     }, [ target ]);
 

@@ -56,13 +56,16 @@ export namespace ModelType {
     /** 事件生产者 */
     export type ProducerDict<M extends BaseModelDef> = {
         [K in IReflect.KeyOf<M[ModelKey.ProducerDefDict]>]: 
-            InstanceType<ModelReg[M[ModelKey.ProducerDefDict][K][ModelKey.Code]]>
+            Model<M[ModelKey.ProducerDefDict][K]>
+            // InstanceType<ModelReg[M[ModelKey.ProducerDefDict][K][ModelKey.Code]]>
     } & {
         [K in IReflect.KeyOf<M[ModelKey.ComputerDefDict]> as StateUpdateBefore<K>]: 
-            InstanceType<ModelReg[M[ModelKey.ComputerDefDict][K][ModelKey.Code]]>
+            Model<M[ModelKey.ComputerDefDict][K]>
+            // InstanceType<ModelReg[M[ModelKey.ComputerDefDict][K][ModelKey.Code]]>
     } & {
         [K in IReflect.KeyOf<M[ModelKey.ObserverDefDict]> as StateUpdateDone<K>]: 
-            InstanceType<ModelReg[M[ModelKey.ObserverDefDict][K][ModelKey.Code]]>
+            Model<M[ModelKey.ObserverDefDict][K]>
+            // InstanceType<ModelReg[M[ModelKey.ObserverDefDict][K][ModelKey.Code]]>
     }
 
     /** 事件消费者队列 */
@@ -133,11 +136,11 @@ export namespace ModelType {
     export type HandlerDict<M extends BaseModelDef> = {
         [K in IReflect.KeyOf<ProducerEventDict<M>>]: (event: ProducerEventDict<M>[K]) => void
     }
-    export type EmitterDict
-
     export type EmitterDict<M extends BaseModelDef> = {
+        [K in IReflect.KeyOf<ConsumerEventDict<M>>]: (event: ConsumerEventDict<M>[K]) => void
+    }
+    export type BinderDict<M extends BaseModelDef> = {
         [K in IReflect.KeyOf<ConsumerEventDict<M>>]: {
-            call: (event: ConsumerEventDict<M>[K]) => void,
             bind: (handler: ConsumerDict<M>[K]) => void
             unbind: (handler: ConsumerDict<M>[K]) => void
         }

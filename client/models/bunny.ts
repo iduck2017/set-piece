@@ -41,7 +41,7 @@ export class BunnyModel extends Model<BunnyModelDef> {
             parent,
             app
         );
-        this.testcaseDict = {
+        this.debuggerDict = {
             eatFoood: this.eatFood,
             spawnChild: this.spawnChild
         };
@@ -50,7 +50,7 @@ export class BunnyModel extends Model<BunnyModelDef> {
     public $initialize() {
         if (!this.$inited) {
             const timer = this.root.childDict.time;
-            timer.provideDict.tickDone.bind(this);
+            timer.event.tickDone.bind(this);
         }
         super.$initialize();
     }

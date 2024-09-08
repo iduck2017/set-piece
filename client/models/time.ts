@@ -26,13 +26,13 @@ export class TimerModel extends Model<TimerModelDef> {
             app
         );
         console.log("TimeModel created");
-        this.testcaseDict.updateTime = this.updateTime.bind(this, 1);
+        this.debuggerDict.updateTime = this.updateTime.bind(this, 1);
     }
     
     /** 更新时间 */
     public updateTime(offsetTime: number) {
-        this.provideDict.tickBefore.call();
+        this.$emitterDict.tickBefore();
         this.$originState.time += offsetTime;
-        this.provideDict.tickDone.call();
+        this.$emitterDict.tickDone();
     }
 }
