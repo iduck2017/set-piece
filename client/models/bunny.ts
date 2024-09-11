@@ -8,8 +8,11 @@ import { Random } from "../utils/random";
 
 export class BunnyModel extends Model<BunnyModelDef> {
     protected $handlerDict: ModelType.HandlerDict<BunnyModelDef> = {
-        timeUpdateBefore: this.handleTimeUpdateDone,
-        tickDone: this.handleTimeUpdateDone
+        tickDone: this.handleTimeUpdateDone,
+        stateUpdateBefore: {},
+        stateUpdateDone: {
+            time: this.handleTimeUpdateDone  
+        }
     };
 
     constructor(

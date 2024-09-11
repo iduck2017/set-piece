@@ -5,7 +5,10 @@ import { ModelType } from "../type/model";
 import { ModelKey } from "../type/registry";
 
 export class TimerModel extends Model<TimerModelDef> {
-    protected $handlerDict: ModelType.HandlerDict<TimerModelDef> = {};
+    protected $handlerDict: ModelType.HandlerDict<TimerModelDef> = {
+        stateUpdateBefore: {},
+        stateUpdateDone: {}
+    };
 
     constructor(
         config: ModelType.RawConfig<TimerModelDef>,

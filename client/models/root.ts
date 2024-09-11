@@ -5,7 +5,10 @@ import { ModelType } from "../type/model";
 import { ModelCode, ModelKey } from "../type/registry";
 
 export class RootModel extends Model<RootModelDef> {
-    protected $handlerDict: ModelType.HandlerDict<RootModelDef> = {};
+    protected $handlerDict: ModelType.HandlerDict<RootModelDef> = {
+        stateUpdateBefore: {},
+        stateUpdateDone: {}
+    };
 
     constructor(
         config: ModelType.RawConfig<RootModelDef>,

@@ -40,7 +40,7 @@ export type BunnyModelDef = CustomModelDef<{
     childDefDict: {
         forager: ForagerModelDef,
     },
-    computerDefDict: {
+    observerDefDict: {
         time: TimerModelDef,
     },
     producerDefDict: {

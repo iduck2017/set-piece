@@ -6,7 +6,9 @@ import { ModelKey } from "../type/registry";
 
 export class ForagerModel extends Model<ForagerModelDef> {
     protected $handlerDict: ModelType.HandlerDict<ForagerModelDef> = {
-        tickDone: this.handleTimeUpdateDone
+        tickDone: this.handleTimeUpdateDone,
+        stateUpdateBefore: {},
+        stateUpdateDone: {}
     };
 
     constructor(
