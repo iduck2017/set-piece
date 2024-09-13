@@ -1,18 +1,18 @@
 import { Model } from ".";
 import type { App } from "../app";
 import { ForagerModelDef } from "../type/definition";
-import { ModelType } from "../type/model";
+import { IModel } from "../type/model";
 import { ModelKey } from "../type/registry";
 
 export class ForagerModel extends Model<ForagerModelDef> {
-    protected $handlerDict: ModelType.HandlerDict<ForagerModelDef> = {
+    protected $handlerDict: IModel.HandleReqDict<ForagerModelDef> = {
         tickDone: this.handleTimeUpdateDone,
         stateUpdateBefore: {},
         stateUpdateDone: {}
     };
 
     constructor(
-        config: ModelType.RawConfig<ForagerModelDef>,
+        config: IModel.RawConfig<ForagerModelDef>,
         parent: ForagerModelDef[ModelKey.Parent],
         app: App
     ) {

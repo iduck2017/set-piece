@@ -1,6 +1,6 @@
 import type { Model } from "../models";
 import { BaseModelDef } from "./definition";
-import { ModelType } from "./model";
+import { IModel } from "./model";
 import { ModelKey } from "./registry";
 
 export namespace EventType { 
@@ -29,8 +29,8 @@ export namespace EventType {
     > = {
         // target: InstanceType<ModelReg[M[ModelKey.Code]]>
         target: Model<M>,
-        list: ModelType.ChildList<M>
-        dict: ModelType.ChildDict<M>
+        list: IModel.ChildList<M>
+        dict: IModel.ChildDict<M>
         children: Model[],
         child: Model,
     }

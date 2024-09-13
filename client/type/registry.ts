@@ -11,10 +11,7 @@ export enum ModelKey {
     Parent = 'parent',
     ChildDefList = 'childDefList',
     ChildDefDict = 'childDefDict',
-    EventDict = 'eventDict',
-    ProducerDefDict = 'producerDefDict',
-    ComputerDefDict = 'computerDefDict',
-    ObserverDefDict = 'observerDefDict',
+    EffectDict = 'effectDict',
 }
 
 

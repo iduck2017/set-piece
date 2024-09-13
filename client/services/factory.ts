@@ -4,7 +4,7 @@ import { ForagerModel } from "../models/forager";
 import { RootModel } from "../models/root";
 import { TimerModel } from "../models/time";
 import { BaseModelDef } from "../type/definition";
-import { ModelType } from "../type/model";
+import { IModel } from "../type/model";
 import { ModelKey, ModelReg } from "../type/registry";
 
 export class FactoryService {
@@ -22,7 +22,7 @@ export class FactoryService {
     }; 
 
     public unserialize<M extends BaseModelDef>(
-        config: ModelType.RawConfig<M>,
+        config: IModel.RawConfig<M>,
         parent: M[ModelKey.Parent]
     ): InstanceType<ModelReg[M[ModelKey.Code]]> {
         const Constructor = FactoryService.$productDict[config.code] as any;

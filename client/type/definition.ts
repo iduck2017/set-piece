@@ -1,19 +1,31 @@
 import { IBase } from ".";
 import type { Model } from "../models";
+import { IModel } from "./model";
 import type { ModelCode } from "./registry";
 
 /** 基础模型定义 */
+/**
+ * effector
+ * effected
+ * 
+ * computer
+ * computed
+ * 
+ * modifier
+ * modified
+ * 
+ */
 export type BaseModelDef = {
     code: ModelCode
+    parent?: Model
     preset: IBase.Data
     state: IBase.Data
-    parent: Model | undefined
-    eventDict: IBase.Dict,
     childDefList: Array<BaseModelDef>
     childDefDict: Record<IBase.Key, BaseModelDef>,
-    computerDefDict: Record<IBase.Key, BaseModelDef>
-    observerDefDict: Record<IBase.Key, BaseModelDef>
-    producerDefDict: Record<IBase.Key, BaseModelDef>
+    eventDict: IBase.Dict,
+    effecterDefDict: Record<IBase.Key, BaseModelDef>,
+    computerDefDict: Record<IBase.Key, BaseModelDef>,
+    modifierDefDict: Record<IBase.Key, BaseModelDef>,
 }
 
 export type CommonModelDef<M extends Partial<BaseModelDef>> = M & Omit<BaseModelDef, keyof M>
@@ -21,13 +33,13 @@ export type CustomModelDef<M extends Partial<BaseModelDef>> = M & Omit<{
     code: never,
     preset: {},
     state: {}
-    parent: Model | undefined
-    eventDict: {},
+    parent?: Model
     childDefList: []
     childDefDict: {}
-    computerDefDict: {}
-    observerDefDict: {}
-    producerDefDict: {}
+    effectBodyDict: {}
+    effectReqDefDict: {}
+    updateReqDefDict: {}
+    reduceReqDefDict: {}
 }, keyof M>
 
 export type BunnyModelDef = CustomModelDef<{
@@ -40,12 +52,15 @@ export type BunnyModelDef = CustomModelDef<{
     childDefDict: {
         forager: ForagerModelDef,
     },
-    observerDefDict: {
-        time: TimerModelDef,
-    },
-    producerDefDict: {
-        tickDone: TimerModelDef,
-    },
+    reqDefDict: {
+        effect: {
+            tickDone: TimerModelDef,
+        },
+        update: {
+            time: TimerModelDef,
+        },
+        reduce: {}
+    }
 }>
 
 export type RootModelDef = CustomModelDef<{
@@ -64,7 +79,7 @@ export type TimerModelDef = CustomModelDef<{
     state: {
         time: number,
     },
-    eventDict: {
+    effectDict: {
         tickBefore: void,
         tickDone: void,
     }
@@ -77,8 +92,12 @@ export type ForagerModelDef = CustomModelDef<{
         maxEnergy: number,
         energyWaste: number,
     },
-    producerDefDict: {
-        tickDone: TimerModelDef,
+    reqDefDict: {
+        effect: {
+            tickDone: TimerModelDef,
+        },
+        reduce: {},
+        update: {}
     }
 }>
 

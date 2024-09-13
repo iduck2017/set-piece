@@ -1,13 +1,13 @@
 import { Model } from ".";
 import type { App } from "../app";
 import { BunnyModelDef } from "../type/definition";
-import { ModelType } from "../type/model";
+import { IModel } from "../type/model";
 import { ModelCode, ModelKey } from "../type/registry";
 import { Decorators } from "../utils/decorators";
 import { Random } from "../utils/random";
 
 export class BunnyModel extends Model<BunnyModelDef> {
-    protected $handlerDict: ModelType.HandlerDict<BunnyModelDef> = {
+    protected $handlerDict: IModel.HandleReqDict<BunnyModelDef> = {
         tickDone: this.handleTimeUpdateDone,
         stateUpdateBefore: {},
         stateUpdateDone: {
@@ -16,7 +16,7 @@ export class BunnyModel extends Model<BunnyModelDef> {
     };
 
     constructor(
-        config: ModelType.RawConfig<BunnyModelDef>,
+        config: IModel.RawConfig<BunnyModelDef>,
         parent: BunnyModelDef[ModelKey.Parent],
         app: App
     ) {

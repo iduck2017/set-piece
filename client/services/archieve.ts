@@ -3,7 +3,7 @@ import { Context } from "../configs/context";
 import { Generator } from "../configs/generator";
 import { AppInfo } from "../type/app";
 import { RootModelDef } from "../type/definition";
-import { ModelType } from "../type/model";
+import { IModel } from "../type/model";
 import { singleton } from "../utils/singleton";
 
 @singleton
@@ -45,7 +45,7 @@ export class ArchieveService {
         if (!raw) {
             throw new Error();
         }
-        return JSON.parse(raw) as ModelType.RawConfig<RootModelDef>;
+        return JSON.parse(raw) as IModel.RawConfig<RootModelDef>;
     }
 
     public async removeArchieve(index: number) {

@@ -2,7 +2,7 @@ import type { App } from "../app";
 import { IBase, IReflect } from "../type";
 import { BaseModelDef, CommonModelDef } from "../type/definition";
 import { EventType } from "../type/event";
-import { ModelType } from "../type/model";
+import { IModel } from "../type/model";
 import { ModelKey } from "../type/registry";
 
 /**
@@ -51,8 +51,8 @@ export abstract class Model<
     }
     
     /** 子节点 */
-    public readonly $childDict: ModelType.ChildDict<M>;
-    public readonly $childList: ModelType.ChildList<M>;
+    public readonly $childDict: IModel.ChildDict<M>;
+    public readonly $childList: IModel.ChildList<M>;
     public get childList() {
         return [ ...this.$childList ];
     }
@@ -67,170 +67,123 @@ export abstract class Model<
     }
 
     /** 事件触发器 */
-    protected readonly $producerListDict: ModelType.ProducerListDict<M>;
-    protected readonly $consumerListDict: ModelType.ConsumerListDict<M>;
+    protected readonly reqDict!: IModel.ReqDict<M>;
+    protected readonly resDict!: IModel.ResDict<M>;
+    protected readonly handleReqDict!: IModel.HandleReqDict<M>;
+    protected readonly callResDict!: IModel.CallResDict<M>;
+    protected readonly bindResDict!: IModel.BindResDict<M>;
+    protected readonly unbindResDict!: IModel.BindResDict<M>;
 
-    protected abstract readonly $handlerDict: ModelType.HandlerDict<M>;
-    protected readonly $emitterDict!: ModelType.EmitterDict<M>;
-    public readonly event!: ModelType.BinderDict<M>;
-
-    protected $emitProvider<
-        K extends IReflect.KeyOf<M[ModelKey.EventDict]>
+    private $callEffectRes<
+        K extends IReflect.KeyOf<M[ModelKey.EffectDict]>
     >(
         key: K,
-        event: M[ModelKey.EventDict][K]
+        event: M[ModelKey.EffectDict][K]
     ) {
-        const consumerModelList = this.$consumerListDict[key];
-        consumerModelList.forEach(model => {
-            model.$handlerDict[key].call(model, event);
+        const effectResList = this.resDict.effect[key];
+        effectResList.forEach(model => {
+            model.handleReqDict.effect[key].call(model, event);
         });
     }
 
-    protected $emitComputer<
-        K extends IReflect.KeyOf<M[ModelKey.State]>
-    >(
-        key: K,
-        event: EventType.StateUpdateBefore<M, K>
-    ) {
-        const consumerModelList = this.$consumerListDict.stateUpdateBefore[key];
-        consumerModelList.forEach(model => {
-            model.$handlerDict.stateUpdateBefore[key].call(model, event);
-        });
-    }
-
-    protected $emitObserver<
+    private $callUpdateRes<        
         K extends IReflect.KeyOf<M[ModelKey.State]>
     >(
         key: K,
         event: EventType.StateUpdateDone<M, K>
     ) {
-        const consumerModelList = this.$consumerListDict.stateUpdateDone[key];
-        consumerModelList.forEach(model => {
-            model.$handlerDict.stateUpdateDone[key].call(model, event);
+        const updateResList = this.resDict.update[key];
+        updateResList.forEach(model => {
+            model.handleReqDict.update[key].call(model, event);
         });
     }
 
-    private $bindConsumer<
-        K extends IReflect.KeyOf<M[ModelKey.EventDict]>
+    private $callReducerRes<
+        K extends IReflect.KeyOf<M[ModelKey.State]>
     >(
         key: K,
-        handler: Model<CommonModelDef<{
-            producerDefDict: Record<K, M>
-        }>>
+        event: EventType.StateUpdateBefore<M, K>
     ) {
-        handler.$producerListDict[key].push(this);
-        this.$consumerListDict[key].push(handler);
+        const reducerResList = this.resDict.reduce[key];
+        reducerResList.forEach(model => {
+            model.handleReqDict.reduce[key].call(model, event);
+        });
+    }
+    
+    private $bindEffectRes<
+        K extends IReflect.KeyOf<M[ModelKey.EffectDict]>
+    >(
+        key: K,
+        handler: IModel.EffectRes<Record<K, M>>
+    ) {
+        handler.reqDict.effect[key].push(this);
+        this.resDict.effect[key].push(handler);
     }
 
-    private $unbindConsumer<
-        K extends IReflect.KeyOf<M[ModelKey.EventDict]>
+    private $unbindEffectRes<
+        K extends IReflect.KeyOf<M[ModelKey.EffectDict]>
     >(
         key: K,
-        handler: Model<CommonModelDef<{
-            producerDefDict: Record<K, M>
-        }>>                                            
+        handler: IModel.EffectRes<Record<K, M>>                                       
     ) { 
-        const handlerIndex = handler.$producerListDict[key].indexOf(this);
-        const emitterIndex = this.$consumerListDict[key].indexOf(handler);
+        const handlerIndex = handler.reqDict.effect[key].indexOf(this);
+        const emitterIndex = this.resDict.effect[key].indexOf(handler);
         if (handlerIndex < 0 || emitterIndex < 0) {
             throw new Error();
         }
-        handler.$producerListDict[key].splice(handlerIndex, 1);
-        this.$consumerListDict[key].splice(emitterIndex, 1);
+        handler.reqDict.effect[key].splice(handlerIndex, 1);
+        this.resDict.effect[key].splice(emitterIndex, 1);
     }
 
-    private $bindObserver<
+    private $bindUpdateRes<
         K extends IReflect.KeyOf<M[ModelKey.State]>
     >(
         key: K,
-        handler: Model<CommonModelDef<{
-            observerDefDict: Record<K, M>
-        }>> 
+        handler: IModel.UpdateRes<Record<K, M>>
     ) {
-        handler.$producerListDict.stateUpdateDone[key].push(this);
-        this.$consumerListDict.stateUpdateDone[key].push(handler);
+        handler.reqDict.update[key].push(this);
+        this.resDict.update[key].push(handler);
     }
 
-    private $unbindObserver<
+    private $unbindUpdateRes<
         K extends IReflect.KeyOf<M[ModelKey.State]>
     >(
         key: K,
-        handler: Model<CommonModelDef<{
-            observerDefDict: Record<K, M>
-        }>> 
+        handler: IModel.UpdateRes<Record<K, M>>
     ) {
-        const handlerIndex = handler.$producerListDict.stateUpdateDone[key].indexOf(this);
-        const observerIndex = this.$consumerListDict.stateUpdateDone[key].indexOf(handler);
-        if (handlerIndex < 0 || observerIndex < 0) {
+        const handlerIndex = handler.reqDict.update[key].indexOf(this);
+        const emitterIndex = this.resDict.update[key].indexOf(handler);
+        if (handlerIndex < 0 || emitterIndex < 0) {
             throw new Error();
         }
-        handler.$producerListDict.stateUpdateDone[key].splice(handlerIndex, 1);
-        this.$consumerListDict.stateUpdateDone[key].splice(observerIndex, 1);
+        handler.reqDict.update[key].splice(handlerIndex, 1);
+        this.resDict.update[key].splice(emitterIndex, 1);
     }
 
-    private $bindComputer<
+    private $bindReduceRes<
         K extends IReflect.KeyOf<M[ModelKey.State]>
     >(
         key: K,
-        handler: Model<CommonModelDef<{ 
-            computerDefDict: Record<K, M>
-        }>> 
+        handler: IModel.ReduceRes<Record<K, M>>
     ) {
-        handler.$producerListDict.stateUpdateBefore[key].push(this);
-        this.$consumerListDict.stateUpdateBefore[key].push(handler);
+        handler.reqDict.reduce[key].push(this);
+        this.resDict.reduce[key].push(handler);
     }
 
-    private $unbindComputer<
+    private $unbindReducerRes<
         K extends IReflect.KeyOf<M[ModelKey.State]>
     >(
         key: K,
-        handler: Model<CommonModelDef<{
-            computerDefDict: Record<K, M>
-        }>> 
+        handler: IModel.ReduceRes<Record<K, M>>
     ) {
-        const handlerIndex = handler.$producerListDict.stateUpdateBefore[key].indexOf(this);
-        const observerIndex = this.$consumerListDict.stateUpdateBefore[key].indexOf(handler);
-        if (handlerIndex < 0 || observerIndex < 0) {
+        const handlerIndex = handler.reqDict.reduce[key].indexOf(this);
+        const emitterIndex = this.resDict.reduce[key].indexOf(handler);
+        if (handlerIndex < 0 || emitterIndex < 0) {
             throw new Error();
         }
-        handler.$producerListDict.stateUpdateBefore[key].splice(handlerIndex, 1);
-        this.$consumerListDict.stateUpdateBefore[key].splice(observerIndex, 1);
+        handler.reqDict.reduce[key].splice(handlerIndex, 1);
+        this.resDict.reduce[key].splice(emitterIndex, 1);
     }
-
-
-    private $initListProxy() {
-        const stateUpdateBefore = new Proxy({} as any, {
-            get: (target, key) => {
-                if (!target[key]) {
-                    target[key] = [];
-                }
-                return target[key];
-            },
-            set: () => false
-        });
-        const stateUpdateDone = new Proxy({} as any, {
-            get: (target, key) => {
-                if (!target[key]) {
-                    target[key] = [];  
-                }
-                return target[key];
-            },
-            set: () => false
-        });
-        return new Proxy({
-            stateUpdateBefore,
-            stateUpdateDone
-        } as any, {
-            get: (target, key) => {
-                if (!target[key]) {
-                    target[key] = [];
-                }
-                return target[key];
-            },
-            set: () => false
-        });
-    }
-
 
     /** 测试用例 */
     public debuggerDict: Record<string, IBase.Func>;
@@ -249,19 +202,9 @@ export abstract class Model<
             setter(this.currentState);
         });
     }
-    private $setProducers() {
-        this.producerSetterList.forEach(setter => {
-            setter(this.$producerListDict);
-        });
-    }
-    private $setConsumers() {
-        this.consumerSetterList.forEach(setter => {
-            setter(this.$consumerListDict);
-        });
-    }
 
     constructor(
-        config: ModelType.Config<M>,
+        config: IModel.Config<M>,
         parent: M[ModelKey.Parent],
         app: App
     ) {
@@ -275,8 +218,6 @@ export abstract class Model<
         this.$preset = config.preset || {};
 
         /** 事件 */
-        this.$producerListDict = this.$initListProxy();
-        this.$consumerListDict = this.$initListProxy();
         // Object.keys(config.producerChunkDict || {}).forEach(<
         //     K extends IReflect.KeyOf<ModelType.ProducerDict<M>>
         // >(key: K) => {
@@ -349,7 +290,7 @@ export abstract class Model<
         this.$childList = config.childChunkList.map(chunk => {
             return app.factoryService.unserialize(chunk, this);
         });
-        const origin = {} as ModelType.ChildDict<M>;
+        const origin = {} as IModel.ChildDict<M>;
         for (const key in config.childChunkDict) {
             const chunk = config.childChunkDict[key];
             origin[key] = app.factoryService.unserialize(chunk, this);
@@ -377,7 +318,7 @@ export abstract class Model<
     }
 
     /** 添加子节点 */
-    protected $appendChild(target: IReflect.IteratorOf<ModelType.ChildList<M>>) {
+    protected $appendChild(target: IReflect.IteratorOf<IModel.ChildList<M>>) {
         this.$childList.push(target);
         this.$setChildren();
     }
@@ -401,18 +342,6 @@ export abstract class Model<
     }
 
     protected $destroy() {
-        Object.keys(this.$consumerListDict).forEach(key => {
-            const consumerList = this.$consumerListDict[key];
-            consumerList.forEach(model => {
-                this.$unbindConsumer(key, model);
-            });
-        });
-        Object.keys(this.$producerListDict).forEach(key => {
-            const producerList = this.$producerListDict[key];
-            producerList.forEach(model => {
-                model.$unbindConsumer(key, this);
-            });
-        });
         this.app.referService.removeRefer(this);
         this.$childList.forEach((child: Model) => {
             child.$destroy();
@@ -435,17 +364,17 @@ export abstract class Model<
             prev: current,
             next: current
         };
-        this.$emitComputer(key, event);
+        this.$callReducerRes(key, event);
         const next = event.next;
         if (prev !== next) {
             this.$currentState[key] = next;
-            this.$emitObserver(key, event);
+            this.$callUpdateRes(key, event);
             this.$setState();
         }
     }
 
     /** 序列化函数 */
-    public serialize(): ModelType.Chunk<M> {
+    public serialize(): IModel.Chunk<M> {
         const childChunkDict = {} as any;
         for (const key in this.childDict) {
             const child = this.childDict[key];
@@ -455,64 +384,6 @@ export abstract class Model<
             return child.serialize(); 
         });
 
-        const producerChunkDict = {
-            stateUpdateBefore: {},
-            stateUpdateDone: {}
-        } as any;
-        Object.keys(this.$producerListDict.stateUpdateBefore).forEach((
-            key: IReflect.KeyOf<M[ModelKey.ComputerDefDict]>
-        ) => {
-            const producerList = this.$producerListDict.stateUpdateBefore[key];
-            producerChunkDict.stateUpdateBefore[key] = producerList.map(model => {
-                return model.id;
-            });
-        });
-        Object.keys(this.$producerListDict.stateUpdateDone).forEach((
-            key: IReflect.KeyOf<M[ModelKey.ObserverDefDict]>
-        ) => {
-            const producerList = this.$producerListDict.stateUpdateDone[key];
-            producerChunkDict.stateUpdateDone[key] = producerList.map(model => {
-                return model.id;
-            });
-        });
-        Object.keys(this.$producerListDict).forEach((
-            key: IReflect.KeyOf<M[ModelKey.EventDict]>
-        ) => {
-            const producerList = this.$producerListDict[key];
-            producerChunkDict[key] = producerList.map(model => {
-                return model.id;
-            });
-        });
-
-        const consumerChunkDict = {
-            stateUpdateBefore: {},
-            stateUpdateDone: {}
-        } as any;
-        Object.keys(this.$consumerListDict.stateUpdateBefore).forEach((
-            key: IReflect.KeyOf<M[ModelKey.ComputerDefDict]>
-        ) => {
-            const consumerList = this.$consumerListDict.stateUpdateBefore[key];
-            consumerChunkDict.stateUpdateBefore[key] = consumerList.map(model => {
-                return model.id;
-            });
-        });
-        Object.keys(this.$consumerListDict.stateUpdateDone).forEach((
-            key: IReflect.KeyOf<M[ModelKey.ObserverDefDict]>
-        ) => {
-            const consumerList = this.$consumerListDict.stateUpdateDone[key];
-            consumerChunkDict.stateUpdateDone[key] = consumerList.map(model => {
-                return model.id;
-            });
-        });
-        Object.keys(this.$consumerListDict).forEach((
-            key: IReflect.KeyOf<M[ModelKey.EventDict]>
-        ) => {
-            const consumerList = this.$consumerListDict[key];
-            consumerChunkDict[key] = consumerList.map(model => {
-                return model.id;
-            });
-        });
-
         return {
             inited: true,
             id: this.id,
@@ -520,9 +391,7 @@ export abstract class Model<
             preset: this.$preset,
             originState: this.$originState,
             childChunkDict,
-            childChunkList,
-            producerChunkDict,
-            consumerChunkDict
-        };
+            childChunkList
+        } as any;
     }
 }

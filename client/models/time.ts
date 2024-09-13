@@ -1,17 +1,14 @@
 import { Model } from ".";
 import type { App } from "../app";
 import { TimerModelDef } from "../type/definition";
-import { ModelType } from "../type/model";
+import { IModel } from "../type/model";
 import { ModelKey } from "../type/registry";
 
 export class TimerModel extends Model<TimerModelDef> {
-    protected $handlerDict: ModelType.HandlerDict<TimerModelDef> = {
-        stateUpdateBefore: {},
-        stateUpdateDone: {}
-    };
+    protected handleReqDict: IModel.HandleReqDict<TimerModelDef>;
 
     constructor(
-        config: ModelType.RawConfig<TimerModelDef>,
+        config: IModel.RawConfig<TimerModelDef>,
         parent: TimerModelDef[ModelKey.Parent],
         app: App
     ) {

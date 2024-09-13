@@ -1,17 +1,18 @@
 import { Model } from ".";
 import type { App } from "../app";
 import { BunnyModelDef, RootModelDef } from "../type/definition";
-import { ModelType } from "../type/model";
+import { IModel } from "../type/model";
 import { ModelCode, ModelKey } from "../type/registry";
 
 export class RootModel extends Model<RootModelDef> {
-    protected $handlerDict: ModelType.HandlerDict<RootModelDef> = {
-        stateUpdateBefore: {},
-        stateUpdateDone: {}
+    protected handleReqDict: IModel.HandleReqDict<RootModelDef> = {
+        effect: {},
+        reduce: {},
+        update: {}
     };
 
     constructor(
-        config: ModelType.RawConfig<RootModelDef>,
+        config: IModel.RawConfig<RootModelDef>,
         parent: RootModelDef[ModelKey.Parent],
         app: App
     ) {
@@ -36,7 +37,7 @@ export class RootModel extends Model<RootModelDef> {
         );
     }
 
-    public spawnCreature(bunny: ModelType.RawConfig<BunnyModelDef>) {
+    public spawnCreature(bunny: IModel.RawConfig<BunnyModelDef>) {
         const child = this.app.factoryService.unserialize(bunny, this);
         this.$appendChild(child);
         child.$initialize();

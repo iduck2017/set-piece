@@ -2,142 +2,85 @@
 import type { Model } from "../models";
 import type { EventType } from "./event";
 import { IReflect } from ".";
-import type { ModelKey, ModelReg } from "./registry";
+import type { ModelReg } from "./registry";
 import { BaseModelDef, CommonModelDef } from "./definition";
 
-/**
- * emitterEventDict: 事件触发器集合
- * handlerEventDict: 事件处理器集合
- * updaterStateDict: 状态修饰符集合
- * checkerStateDict: 状态检查器集合
- */
-export namespace ModelType {
-    // export type StateUpdateBefore<S extends string> = `${S}UpdateBefore`
-    // export type StateUpdateDone<S extends string> = `${S}UpdateDone`
+export namespace IModel {
+    export type Code<M extends BaseModelDef> = M['code']
+    export type State<M extends BaseModelDef> = M['state']
+    export type Preset<M extends BaseModelDef> = M['preset']
+    export type ChildDefList<M extends BaseModelDef> = M['childDefList']
+    export type ChildDefDict<M extends BaseModelDef> = M['childDefDict']
+    export type ReqDefDict<M extends BaseModelDef> = M['effectReqDefDict']
+    export type EffectDict<M extends BaseModelDef> = M['effectDict']
+    export type EffectReqDefDict<M extends BaseModelDef> = M['effectReqDefDict']['effect']
+    export type ReduceReqDefDict<M extends BaseModelDef> = M['effectReqDefDict']['reduce']
+    export type UpdateReqDefDict<M extends BaseModelDef> = M['effectReqDefDict']['update']
 
-    /** 事件消费者参数 */
-    // export type ConsumerEventDict<
-    //     M extends BaseModelDef
-    // > = M[ModelKey.EventDict] & { 
-    //     [K in IReflect.KeyOf<M[ModelKey.State]> as StateUpdateBefore<K>]: 
-    //         EventType.StateUpdateBefore<M, K>
-    // } & {
-    //     [K in IReflect.KeyOf<M[ModelKey.State]> as StateUpdateDone<K>]: 
-    //         EventType.StateUpdateDone<M, K>
-    // }
-
-    /** 事件生产者参数 */
-    // export type ProducerEventDict<M extends BaseModelDef> = {
-    //     [K in IReflect.KeyOf<M[ModelKey.ProducerDefDict]>]: 
-    //         Pick<M[ModelKey.ProducerDefDict][K][ModelKey.EventDict], K>
-    // } & { 
-    //     [K in IReflect.KeyOf<M[ModelKey.ComputerDefDict]> as StateUpdateBefore<K>]: 
-    //         EventType.StateUpdateBefore<M[ModelKey.ComputerDefDict][K], K>
-    // } & {
-    //     [K in IReflect.KeyOf<M[ModelKey.ObserverDefDict]> as StateUpdateDone<K>]: 
-    //         EventType.StateUpdateDone<M[ModelKey.ObserverDefDict][K], K>
-    // }
-
-    /** 事件消费者 */
-    // export type ConsumerDict<M extends BaseModelDef> = {
-    //     [K in IReflect.KeyOf<M[ModelKey.EventDict]>]: Model<CommonModelDef<{
-    //         producerDefDict: Record<K, M>
-    //     }>>
-    // } & {
-    //     [K in IReflect.KeyOf<M[ModelKey.State]> as StateUpdateBefore<K>]: Model<CommonModelDef<{
-    //         computerDefDict: Record<K, M>
-    //     }>>
-    // } & {
-    //     [K in IReflect.KeyOf<M[ModelKey.State]> as StateUpdateDone<K>]: Model<CommonModelDef<{
-    //         observerDefDict: Record<K, M>
-    //     }>>
-    // }
-
-    /** 事件生产者 */
-    // export type ProducerDict<M extends BaseModelDef> = {
-    //     [K in IReflect.KeyOf<M[ModelKey.ProducerDefDict]>]: 
-    //         Model<M[ModelKey.ProducerDefDict][K]>
-    //         // InstanceType<ModelReg[M[ModelKey.ProducerDefDict][K][ModelKey.Code]]>
-    // } & {
-    //     [K in IReflect.KeyOf<M[ModelKey.ComputerDefDict]> as StateUpdateBefore<K>]: 
-    //         Model<M[ModelKey.ComputerDefDict][K]>
-    //         // InstanceType<ModelReg[M[ModelKey.ComputerDefDict][K][ModelKey.Code]]>
-    // } & {
-    //     [K in IReflect.KeyOf<M[ModelKey.ObserverDefDict]> as StateUpdateDone<K>]: 
-    //         Model<M[ModelKey.ObserverDefDict][K]>
-    //         // InstanceType<ModelReg[M[ModelKey.ObserverDefDict][K][ModelKey.Code]]>
-    // }
-
-
-    export type ProducerListDict<M extends BaseModelDef> = {
-        [K in Extract<IReflect.KeyOf<M[ModelKey.ProducerDefDict]>, 'stateUpdateBefore' | 'stateUpdateDone'>]: 
-            Model<M[ModelKey.ProducerDefDict][K]>[]
-    } & {
-        stateUpdateBefore: {
-            [K in IReflect.KeyOf<M[ModelKey.ComputerDefDict]>]: Model<M[ModelKey.ComputerDefDict][K]>[]
-        },
-        stateUpdateDone: {
-            [K in IReflect.KeyOf<M[ModelKey.ObserverDefDict]>]: Model<M[ModelKey.ObserverDefDict][K]>[]
+    export type EffectRes<R extends Record<string, BaseModelDef>> = Model<CommonModelDef<{
+        reqDefDict: {
+            effect: R,
+            update: Record<string, BaseModelDef>,
+            reduce: Record<string, BaseModelDef>,
         }
+    }>>
+    export type ReduceRes<R extends Record<string, BaseModelDef>> = Model<CommonModelDef<{
+        reqDefDict: {
+            effect: Record<string, BaseModelDef>,
+            update: Record<string, BaseModelDef>,
+            reduce: R,
+        }
+    }>>
+    export type UpdateRes<R extends Record<string, BaseModelDef>> = Model<CommonModelDef<{
+        reqDefDict: {
+            effect: Record<string, BaseModelDef>,
+            update: R,
+            reduce: Record<string, BaseModelDef>,
+        }
+    }>>
+
+
+    export type ReqChunkDict<M extends BaseModelDef> = {
+        effect: { [K in IReflect.KeyOf<EffectReqDefDict<M>>]?: string[] },
+        reduce: { [K in IReflect.KeyOf<ReduceReqDefDict<M>>]?: string[] },
+        update: { [K in IReflect.KeyOf<UpdateReqDefDict<M>>]?: string[] },
     }
 
-    export type ConsumerListDict<M extends BaseModelDef> = {
-        [K in IReflect.KeyOf<M[ModelKey.EventDict]>]: Model<CommonModelDef<{
-            producerDefDict: Record<K, M>
-        }>>[]
-    } &  {
-        stateUpdateBefore: {
-            [K in IReflect.KeyOf<M[ModelKey.State]>]: Model<CommonModelDef<{
-                computerDefDict: Record<K, M>
-            }>>[]
-        },
-        stateUpdateDone: {
-            [K in IReflect.KeyOf<M[ModelKey.State]>]: Model<CommonModelDef<{
-                observerDefDict: Record<K, M>
-            }>>[]
-        }
-    } 
-
-    export type ConsumerChunkDict<M extends BaseModelDef> = {
-        [K in IReflect.KeyOf<M[ModelKey.EventDict]>]: string[]
-    } & {
-        stateUpdateBefore: {
-            [K in IReflect.KeyOf<M[ModelKey.State]>]: string[]
-        },
-        stateUpdateDone: {
-            [K in IReflect.KeyOf<M[ModelKey.State]>]: string[]
-        }
+    export type ResChunkDict<M extends BaseModelDef> = {
+        effect: { [K in IReflect.KeyOf<EffectDict<M>>]?: string[] },
+        reduce: { [K in IReflect.KeyOf<State<M>>]?: string[] },
+        update: { [K in IReflect.KeyOf<State<M>>]?: string[] },
     }
 
-    export type ProducerChunkDict<M extends BaseModelDef> = {
-        [K in IReflect.KeyOf<M[ModelKey.ProducerDefDict]>]: string[]
-    } & {
-        stateUpdateBefore: {
-            [K in IReflect.KeyOf<M[ModelKey.ComputerDefDict]>]: string[]
-        },
-        stateUpdateDone: {
-            [K in IReflect.KeyOf<M[ModelKey.ObserverDefDict]>]: string[]
-        }
+    export type ReqDict<M extends BaseModelDef> = {
+        effect: { [K in IReflect.KeyOf<EffectReqDefDict<M>>]: Model<EffectReqDefDict<M>[K]>[] }
+        reduce: { [K in IReflect.KeyOf<ReduceReqDefDict<M>>]: Model<ReduceReqDefDict<M>[K]>[] }
+        update: { [K in IReflect.KeyOf<UpdateReqDefDict<M>>]: Model<UpdateReqDefDict<M>[K]>[] }
     }
 
+    export type ResDict<M extends BaseModelDef> = {
+        effect: { [K in IReflect.KeyOf<EffectDict<M>>]: EffectRes<Record<K, M>>[] }
+        reduce: { [K in IReflect.KeyOf<State<M>>]: ReduceRes<Record<K, M>>[] }
+        update: { [K in IReflect.KeyOf<State<M>>]: UpdateRes<Record<K, M>>[] }
+    }
 
-    /** 事件消费者队列 */
-    // export type ConsumerListDict<M extends BaseModelDef> = {
-    //     [K in IReflect.KeyOf<ConsumerDict<M>>]: ConsumerDict<M>[K][] 
-    // }
+    export type HandleReqDict<M extends BaseModelDef> = {
+        effect: { [K in IReflect.KeyOf<EffectReqDefDict<M>>]: (event: EffectDict<EffectReqDefDict<M>[K]>[K]) => void },
+        reduce: { [K in IReflect.KeyOf<ReduceReqDefDict<M>>]: (event: EventType.StateUpdateDone<UpdateReqDefDict<M>[K], K>) => void }
+        update: { [K in IReflect.KeyOf<UpdateReqDefDict<M>>]: (event: EventType.StateUpdateDone<UpdateReqDefDict<M>[K], K>) => void },
+    }
+    
+    export type CallResDict<M extends BaseModelDef> = {
+        effect: { [K in IReflect.KeyOf<EffectDict<M>>]: (event: EffectDict<M>[K]) => void },
+        reduce: { [K in IReflect.KeyOf<State<M>>]: (event: EventType.StateUpdateBefore<M, K>) => void },
+        update: { [K in IReflect.KeyOf<State<M>>]: (event: EventType.StateUpdateDone<M, K>) => void },
+    }
 
-    // /** 事件生产者队列 */
-    // export type ProducerListDict<M extends BaseModelDef> = {
-    //     [K in IReflect.KeyOf<ProducerDict<M>>]: ProducerDict<M>[K][] 
-    // }
-
-    // export type ConsumerChunkDict<M extends BaseModelDef> = {
-    //     [K in IReflect.KeyOf<ConsumerDict<M>>]?: string[]
-    // }
-
-    // export type ProducerChunkDict<M extends BaseModelDef> = {
-    //     [K in IReflect.KeyOf<ProducerDict<M>>]?: string[]
-    // }
+    export type BindResDict<M extends BaseModelDef> = {
+        effect: { [K in IReflect.KeyOf<EffectDict<M>>]: (model: EffectRes<Record<K, M>>) => void }
+        reduce: { [K in IReflect.KeyOf<State<M>>]: (model: ReduceRes<Record<K, M>>) => void }
+        update: { [K in IReflect.KeyOf<State<M>>]: (model: UpdateRes<Record<K, M>>) => void },
+    }
 
     /** 序列化参数 */
     export type Chunk<
@@ -145,13 +88,13 @@ export namespace ModelType {
     > = {
         id: string
         inited: true
-        code: M[ModelKey.Code]
-        preset: Partial<M[ModelKey.Preset]>
-        originState: M[ModelKey.State]
+        code: Code<M>
+        preset: Partial<Preset<M>>
+        originState: State<M>
         childChunkList: ChildChunkList<M>,
         childChunkDict: ChildChunkDict<M>,
-        producerChunkDict: ProducerChunkDict<M>
-        consumerChunkDict: ConsumerChunkDict<M>
+        reqChunkDict: ReqChunkDict<M>,
+        resChunkDict: ResChunkDict<M>,
     }
 
     /** 初始化参数 */
@@ -160,13 +103,13 @@ export namespace ModelType {
     > = {
         id?: string
         inited?: boolean
-        code: M[ModelKey.Code]
-        preset?: Partial<M[ModelKey.Preset]>
-        originState: M[ModelKey.State]
+        code: Code<M>
+        preset?: Partial<Preset<M>>
+        originState: State<M>
         childChunkList: ChildConfigList<M>,
         childChunkDict: ChildConfigDict<M>,
-        producerChunkDict?: ProducerChunkDict<M>
-        consumerChunkDict?: ConsumerChunkDict<M>
+        reqChunkDict?: Partial<ReqChunkDict<M>>,
+        resChunkDict?: Partial<ResChunkDict<M>>,
     }
 
     /** 原始初始化参数 */
@@ -175,109 +118,30 @@ export namespace ModelType {
     > = {
         id?: string
         inited?: boolean
-        code: M[ModelKey.Code]
-        preset?: Partial<M[ModelKey.Preset]>
-        originState?: Partial<M[ModelKey.State]>
+        code: Code<M>
+        preset?: Partial<Preset<M>>
+        originState?: Partial<State<M>>
         childChunkList?: ChildConfigList<M>,
         childChunkDict?: Partial<ChildConfigDict<M>>,
-        producerChunkDict?: ProducerChunkDict<M>
-        consumerChunkDict?: ConsumerChunkDict<M>
+        reqChunkDict?: Partial<ReqChunkDict<M>>,
+        resChunkDict?: Partial<ResChunkDict<M>>,
     }
 
-
-    /** 绑定解绑函数集合 */
-    export type HandlerDict<M extends BaseModelDef> = {
-        [K in IReflect.KeyOf<M[ModelKey.ProducerDefDict]>]: (event: Pick<M[ModelKey.ProducerDefDict][K][ModelKey.EventDict], K>) => void
-    } & {
-        stateUpdateBefore: {
-            [K in IReflect.KeyOf<M[ModelKey.ComputerDefDict]>]: (event: EventType.StateUpdateBefore<M[ModelKey.ComputerDefDict][K], K>) => void
-        }
-        stateUpdateDone: {
-            [K in IReflect.KeyOf<M[ModelKey.ObserverDefDict]>]: (event: EventType.StateUpdateDone<M[ModelKey.ObserverDefDict][K], K>) => void
-        }
-    }
-
-    export type EmitterDict<M extends BaseModelDef> = {
-        [K in IReflect.KeyOf<M[ModelKey.EventDict]>]: (event: M[ModelKey.EventDict][K]) => void
-    } & {
-        stateUpdateBefore: {
-            [K in IReflect.KeyOf<M[ModelKey.State]>]: (event: EventType.StateUpdateBefore<M, K>) => void
-        }
-        stateUpdateDone: {
-            [K in IReflect.KeyOf<M[ModelKey.State]>]: (event: EventType.StateUpdateDone<M, K>) => void
-        }
-    }
-
-    export type BinderDict<M extends BaseModelDef> = {
-        [K in IReflect.KeyOf<M[ModelKey.EventDict]>]: {
-            bind: (handler: Model<CommonModelDef<{
-                producerDefDict: Record<K, M>
-            }>>) => void
-            unbind: (handler: Model<CommonModelDef<{
-                producerDefDict: Record<K, M>
-            }>>) => void
-        }
-    } & {
-        stateUpdateBefore: {
-            [K in IReflect.KeyOf<M[ModelKey.State]>]: {
-                bind: (handler: Model<CommonModelDef<{
-                    computerDefDict: Record<K, M>
-                }>>) => void
-                unbind: (handler: Model<CommonModelDef<{
-                    computerDefDict: Record<K, M>
-                }>>) => void
-            }
-        }
-        stateUpdateDone: {
-            [K in IReflect.KeyOf<M[ModelKey.State]>]: {
-                bind: (handler: Model<CommonModelDef<{
-                    observerDefDict: Record<K, M>
-                }>>) => void
-                unbind: (handler: Model<CommonModelDef<{
-                    observerDefDict: Record<K, M>
-                }>>) => void
-            }
-        }
-    }
-
-    // export type EmitterDict<M extends BaseModelDef> = {
-    //     [K in IReflect.KeyOf<ConsumerEventDict<M>>]: (event: ConsumerEventDict<M>[K]) => void
-    // }
-    // export type BinderDict<M extends BaseModelDef> = {
-    //     [K in IReflect.KeyOf<ConsumerEventDict<M>>]: {
-    //         bind: (handler: ConsumerDict<M>[K]) => void
-    //         unbind: (handler: ConsumerDict<M>[K]) => void
-    //     }
-    // }
 
     /** 子节点列表 */
-    export type ChildList<M extends BaseModelDef> = Array<InstanceType<
-        ModelReg[IReflect.IteratorOf<M[ModelKey.ChildDefList]>[ModelKey.Code]]
-    >>
-    
-    export type ChildChunkList<M extends BaseModelDef> = Array<
-        ModelType.Chunk<IReflect.IteratorOf<M[ModelKey.ChildDefList]>>
-    >
-
-    export type ChildConfigList<M extends BaseModelDef> = Array<
-        ModelType.RawConfig<IReflect.IteratorOf<M[ModelKey.ChildDefList]>>
-    >
+    export type ChildList<M extends BaseModelDef> = Array<InstanceType<ModelReg[Code<IReflect.IteratorOf<ChildDefList<M>>>]>>
+    export type ChildChunkList<M extends BaseModelDef> = Array<IModel.Chunk<IReflect.IteratorOf<ChildDefList<M>>>>
+    export type ChildConfigList<M extends BaseModelDef> = Array<IModel.RawConfig<IReflect.IteratorOf<ChildDefList<M>>>>
 
     /** 子节点集合 */
     export type ChildDict<M extends BaseModelDef> = {
-        [K in keyof M[ModelKey.ChildDefDict]]: 
-            InstanceType<ModelReg[M[ModelKey.ChildDefDict][K][ModelKey.Code]]>
+        [K in keyof ChildDefDict<M>]: InstanceType<ModelReg[Code<ChildDefDict<M>[K]>]>
     }
-
     export type ChildChunkDict<M extends BaseModelDef> = {
-        [K in keyof M[ModelKey.ChildDefDict]]: 
-            ModelType.Chunk<M[ModelKey.ChildDefDict][K]>
+        [K in keyof ChildDefDict<M>]: IModel.Chunk<ChildDefDict<M>[K]>
     }
-
     export type ChildConfigDict<M extends BaseModelDef> = {
-        [K in keyof M[ModelKey.ChildDefDict]]: 
-            ModelType.RawConfig<M[ModelKey.ChildDefDict][K]>
+        [K in keyof ChildDefDict<M>]: IModel.RawConfig<ChildDefDict<M>[K]>
     }
-
 }
 
