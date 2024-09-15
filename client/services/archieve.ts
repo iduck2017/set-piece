@@ -1,10 +1,15 @@
 import type { App } from "../app";
-import { Context } from "../configs/context";
+import { ARCHIEVE_SAVE_PATH } from "../configs/context";
 import { Generator } from "../configs/generator";
-import { AppInfo } from "../type/app";
-import { RootModelDef } from "../type/definition";
+import { RootModelDefine } from "../models/root";
 import { IModel } from "../type/model";
 import { singleton } from "../utils/singleton";
+
+export type ArchieveData = {
+    id: string
+    name: string,
+    progress: number
+}
 
 @singleton
 export class ArchieveService {
@@ -12,27 +17,27 @@ export class ArchieveService {
 
     private $index?: number;
 
-    private $data: AppInfo.Archieve[] = [];
+    private $data: ArchieveData[] = [];
     public get data() { return this.$data; } 
 
     constructor(app: App) {
         this.app = app;
     }
 
-    public init(config: AppInfo.Archieve[]) {
+    public init(config: ArchieveData[]) {
         this.$data = config;
     }
 
     public async createArchieve() {
-        this.app.referService.reset();
-        const id = this.app.referService.getUniqId();
+        this.app.referenceService.reset();
+        const id = this.app.referenceService.getUniqId();
         this.$data.push({
             id,
             name: 'hello',
             progress: 0
         });
-        const record = Generator.initRootModelConfig();
-        await localStorage.setItem(`${Context.ARCHIEVE_PATH}_${id}`, JSON.stringify(record));
+        const record = Generator.rootModelConfig();
+        await localStorage.setItem(`${ARCHIEVE_SAVE_PATH}_${id}`, JSON.stringify(record));
         await this.app.saveMetaData();
         return record;
     }
@@ -40,17 +45,17 @@ export class ArchieveService {
     public async loadArchieve(index: number) {
         this.$index = index;
         const archieve = this.$data[index];
-        const path = `${Context.ARCHIEVE_PATH}_${archieve.id}`;
+        const path = `${ARCHIEVE_SAVE_PATH}_${archieve.id}`;
         const raw = await localStorage.getItem(path);
         if (!raw) {
             throw new Error();
         }
-        return JSON.parse(raw) as IModel.RawConfig<RootModelDef>;
+        return JSON.parse(raw) as IModel.Config<RootModelDefine>;
     }
 
     public async removeArchieve(index: number) {
         const slot = this.$data[index];
-        const path = `${Context.ARCHIEVE_PATH}_${slot.id}`;
+        const path = `${ARCHIEVE_SAVE_PATH}_${slot.id}`;
         this.$data.splice(index, 1);
         await localStorage.removeItem(path);
         await this.app.saveMetaData();
@@ -67,7 +72,7 @@ export class ArchieveService {
             throw new Error();
         }
         const slot = this.$data[index];
-        const path = `${Context.ARCHIEVE_PATH}_${slot.id}`;
+        const path = `${ARCHIEVE_SAVE_PATH}_${slot.id}`;
         const record = rootModel.serialize();
         this.$data[index] = {
             ...slot,

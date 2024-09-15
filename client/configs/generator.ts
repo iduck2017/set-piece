@@ -1,24 +1,44 @@
-import { AppInfo } from "../type/app";
-import { RootModelDef } from "../type/definition";
+import { MetaData } from "../app";
+import { RootModelDefine } from "../models/root";
+import { IBase, IReflect } from "../type";
 import { IModel } from "../type/model";
 import { ModelCode } from "../type/registry";
-import { Context } from "./context";
+import { MAJOR_VERSION, MINOR_VERSION, PATCH_VERSION } from "./context";
 
 export namespace Generator {
-    export function initAppMetaData(): AppInfo.MetaData {
+    export function appMetaData(): MetaData {
         return {
-            version: Context.APP_VERSION,
-            archieves: [],
-            settings: {
+            majorVersion: MAJOR_VERSION,
+            minorVersion: MINOR_VERSION,
+            patchVersion: PATCH_VERSION,
+            archieveDataList: [],
+            perferenceData: {
                 mute: false,
                 fullscreen: true
             }
         };
     }
 
-    export function initRootModelConfig(): IModel.RawConfig<RootModelDef> {
+    export function rootModelConfig(): IModel.Config<RootModelDefine> {
         return {
             code: ModelCode.Root
         };
+    }
+
+    export function pureHandlerDict(): IModel.EventHandlerDict<IModel.PureDefine> {
+        return {
+            modifier: {},
+            listener: {},
+            observer: {}
+        };
+    }
+
+    export function readonlyProxy<T extends IBase.Dict>(
+        get: <K extends IReflect.Key<T>>(target: T, key: K) => T[K]
+    ) {
+        return new Proxy({} as T, {
+            get: get,
+            set: () => false
+        });
     }
 }

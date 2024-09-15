@@ -1,23 +1,27 @@
 import type { App } from "../app";
-import { AppInfo } from "../type/app";
 import { singleton } from "../utils/singleton";
 
+export type PerferenceData = {
+    fullscreen: boolean
+    mute: boolean
+}
+
 @singleton
-export class SettingsService {
+export class PreferenceService {
     public readonly app: App;
 
-    private $settingsData!: AppInfo.Settings;
+    private $settingsData!: PerferenceData;
     public get settingsData() { return { ...this.$settingsData }; } 
 
     constructor(app: App) {
         this.app = app;
     }
 
-    public initialize(data: AppInfo.Settings) {
+    public initialize(data: PerferenceData) {
         this.$settingsData = data;
     }
 
-    public async updateSettings(data: AppInfo.Settings) {
+    public async updateSettings(data: PerferenceData) {
         this.$settingsData = data;
         await this.app.saveMetaData();
         return;

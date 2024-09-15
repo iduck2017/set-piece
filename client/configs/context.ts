@@ -1,5 +1,6 @@
-export namespace Context {
-    export const APP_VERSION = '0.1.0';
-    export const META_PATH = 'META';
-    export const ARCHIEVE_PATH = 'SLOT';
-}
+export const MAJOR_VERSION = 0;
+export const MINOR_VERSION = 1;
+export const PATCH_VERSION = 0;
+
+export const META_SAVE_PATH = 'meta';
+export const ARCHIEVE_SAVE_PATH = 'archieve';

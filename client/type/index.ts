@@ -8,8 +8,7 @@ export namespace IBase {
 }
 
 export namespace IReflect {
-    export type IteratorOf<L extends any[]> = L[number]
-    export type ValueOf<M extends IBase.Dict> = M[keyof M]
-    export type KeyOf<M extends IBase.Dict> = keyof M & string
-    export type Optional<D> = D extends infer T | undefined ? T : never
+    export type Iterator<L extends any[]> = L[number]
+    export type Value<M extends IBase.Dict> = M[keyof M]
+    export type Key<M extends IBase.Dict> = keyof M & string
 }

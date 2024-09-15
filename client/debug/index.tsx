@@ -1,8 +1,8 @@
 import React from "react";
 import type { App } from "../app";
 import { useModel } from "./use-model";
+import type { Model } from "../models";
 import "./index.css";
-import { Model } from "../models";
 
 export type ModelCompProps = {
     target: Model,

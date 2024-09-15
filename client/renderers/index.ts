@@ -9,9 +9,7 @@ export abstract class Renderer<
         [K in keyof E]: (event: E[K]) => void;
     }
 
-    constructor(
-        app: App
-    ) {
+    constructor(app: App) {
         super(app);
     }
 }

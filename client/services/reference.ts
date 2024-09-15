@@ -6,7 +6,7 @@ export const MIN_TICKET = 100000;
 export const MAX_TICKET = 999999;
 
 @singleton
-export class ReferService {
+export class ReferenceService {
     public readonly app: App;
 
     constructor(app: App) {

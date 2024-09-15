@@ -1,16 +1,14 @@
 import React, { useState } from "react";
-import type { App } from "../app";
+import { App, AppStatus } from "../app";
 import { ModelComp } from ".";
-import { AppInfo } from "../type/app";
-import { AppStatus } from "../type/status";
+import { ArchieveData } from "../services/archieve";
 
 export function AppComp(props: {
     app: App
 }) {
     const { app } = props;
-
     const [ status, setStatus ] = useState<AppStatus>(app.status);
-    const [ archieves, setArchieves ] = useState<AppInfo.Archieve[]>(app.archieveService.data);
+    const [ archieves, setArchieves ] = useState<ArchieveData[]>(app.archieveService.data);
   
     const createArchieve = async () => {
         await app.archieveService.createArchieve();

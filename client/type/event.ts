@@ -1,31 +1,29 @@
 import type { Model } from "../models";
-import { BaseModelDef } from "./definition";
 import { IModel } from "./model";
-import { ModelKey } from "./registry";
 
-export namespace EventType { 
+export namespace IEvent { 
     export type StateUpdateBefore<
-        M extends BaseModelDef,
-        K extends keyof M[ModelKey.State] = keyof M[ModelKey.State]
+        M extends IModel.Define,
+        K extends keyof IModel.State<M> = keyof IModel.State<M>
     > = {
         // target: InstanceType<ModelReg[M[ModelKey.Code]]>,
         target: Model<M>,
-        next: M[ModelKey.State][K],
-        prev: M[ModelKey.State][K]
+        next: IModel.State<M>[K],
+        prev: IModel.State<M>[K]
     }
 
     export type StateUpdateDone<
-        M extends BaseModelDef,
-        K extends keyof M[ModelKey.State] = keyof M[ModelKey.State]
+        M extends IModel.Define,
+        K extends keyof IModel.State<M> = keyof IModel.State<M>
     > = {
         // target: InstanceType<ModelReg[M[ModelKey.Code]]>
         target: Model<M>,
-        next: M[ModelKey.State][K],
-        prev: M[ModelKey.State][K]
+        next: IModel.State<M>[K],
+        prev: IModel.State<M>[K]
     }
 
     export type ChildUpdateDone<
-        M extends BaseModelDef,
+        M extends IModel.Define,
     > = {
         // target: InstanceType<ModelReg[M[ModelKey.Code]]>
         target: Model<M>,

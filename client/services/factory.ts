@@ -3,9 +3,8 @@ import { BunnyModel } from "../models/bunny";
 import { ForagerModel } from "../models/forager";
 import { RootModel } from "../models/root";
 import { TimerModel } from "../models/time";
-import { BaseModelDef } from "../type/definition";
 import { IModel } from "../type/model";
-import { ModelKey, ModelReg } from "../type/registry";
+import { ModelReg } from "../type/registry";
 
 export class FactoryService {
     public readonly app: App;
@@ -21,10 +20,10 @@ export class FactoryService {
         forager: ForagerModel
     }; 
 
-    public unserialize<M extends BaseModelDef>(
-        config: IModel.RawConfig<M>,
-        parent: M[ModelKey.Parent]
-    ): InstanceType<ModelReg[M[ModelKey.Code]]> {
+    public unserialize<M extends IModel.Define>(
+        config: IModel.Config<M>,
+        parent: IModel.Parent<M>
+    ): InstanceType<ModelReg[IModel.Code<M>]> {
         const Constructor = FactoryService.$productDict[config.code] as any;
         return new Constructor(config, parent, this.app);
     }

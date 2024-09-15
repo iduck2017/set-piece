@@ -1,23 +1,44 @@
 import { Model } from ".";
 import type { App } from "../app";
-import { BunnyModelDef } from "../type/definition";
 import { IModel } from "../type/model";
-import { ModelCode, ModelKey } from "../type/registry";
+import { ModelCode } from "../type/registry";
 import { Decorators } from "../utils/decorators";
 import { Random } from "../utils/random";
+import { ForagerModelDefine } from "./forager";
+import { TimerModelDefine } from "./time";
 
-export class BunnyModel extends Model<BunnyModelDef> {
-    protected $handlerDict: IModel.HandleReqDict<BunnyModelDef> = {
-        tickDone: this.handleTimeUpdateDone,
-        stateUpdateBefore: {},
-        stateUpdateDone: {
-            time: this.handleTimeUpdateDone  
-        }
+export type BunnyModelDefine = IModel.CommonDefine<{
+    code: ModelCode.Bunny,
+    state: {
+        age: number,
+        weight: number,
+        maxAge: number,
+    },
+    childDefDict: {
+        forager: ForagerModelDefine,
+    },
+    listenedDefDict: {
+        tickDone: TimerModelDefine
+    },
+    observedDefDict: {
+        time: TimerModelDefine
+    },
+}>
+
+export class BunnyModel extends Model<BunnyModelDefine> {
+    protected $eventHandlerDict: IModel.EventHandlerDict<BunnyModelDefine> = {
+        listener: {
+            tickDone: this.handleTimeUpdateDone
+        },
+        observer: {
+            time: this.handleTimeUpdateDone
+        },
+        modifier: {}
     };
 
     constructor(
-        config: IModel.RawConfig<BunnyModelDef>,
-        parent: BunnyModelDef[ModelKey.Parent],
+        config: IModel.Config<BunnyModelDefine>,
+        parent: IModel.Parent<BunnyModelDefine>,
         app: App
     ) {
         super(
@@ -30,9 +51,9 @@ export class BunnyModel extends Model<BunnyModelDef> {
                     ...config.originState,
                     maxAge: 100
                 },
-                childChunkList: config.childChunkList || [],
-                childChunkDict: {
-                    forager: config.childChunkDict?.forager || {
+                childBundleList: [],
+                childBundleDict: {
+                    forager: config.childBundleDict?.forager || {
                         code: ModelCode.Forager,
                         originState: {
                             energyWaste: 1,
@@ -53,7 +74,7 @@ export class BunnyModel extends Model<BunnyModelDef> {
     public $initialize() {
         if (!this.$inited) {
             const timer = this.root.childDict.time;
-            timer.event.tickDone.bind(this);
+            timer.eventChannelDict.listened.tickDone.bind(this);
         }
         super.$initialize();
     }

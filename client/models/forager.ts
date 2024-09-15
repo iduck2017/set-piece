@@ -1,19 +1,33 @@
 import { Model } from ".";
 import type { App } from "../app";
-import { ForagerModelDef } from "../type/definition";
 import { IModel } from "../type/model";
-import { ModelKey } from "../type/registry";
+import { ModelCode } from "../type/registry";
+import { TimerModelDefine } from "./time";
 
-export class ForagerModel extends Model<ForagerModelDef> {
-    protected $handlerDict: IModel.HandleReqDict<ForagerModelDef> = {
-        tickDone: this.handleTimeUpdateDone,
-        stateUpdateBefore: {},
-        stateUpdateDone: {}
+export type ForagerModelDefine = IModel.CommonDefine<{
+    code: ModelCode.Forager,
+    state: {
+        energy: number,
+        maxEnergy: number,
+        energyWaste: number,
+    },
+    listenedDefDict: {
+        tickDone: TimerModelDefine
+    }
+}>
+
+export class ForagerModel extends Model<ForagerModelDefine> {
+    protected $eventHandlerDict: IModel.EventHandlerDict<ForagerModelDefine> = {
+        listener: {
+            tickDone: this.handleTimeUpdateDone
+        },
+        observer: {},
+        modifier: {}
     };
 
     constructor(
-        config: IModel.RawConfig<ForagerModelDef>,
-        parent: ForagerModelDef[ModelKey.Parent],
+        config: IModel.Config<ForagerModelDefine>,
+        parent: IModel.Parent<ForagerModelDefine>,
         app: App
     ) {
         super(
@@ -25,8 +39,8 @@ export class ForagerModel extends Model<ForagerModelDef> {
                     energyWaste: 1,
                     ...config.originState
                 },
-                childChunkList: [],
-                childChunkDict: {}
+                childBundleList: [],
+                childBundleDict: {}
             }, 
             parent,
             app
@@ -36,7 +50,7 @@ export class ForagerModel extends Model<ForagerModelDef> {
     public $initialize(): void {
         if (!this.$inited) {
             const timer = this.root.childDict.time;
-            timer.event.tickDone.bind(this);
+            timer.eventChannelDict.listened.tickDone.bind(this);
         }
         super.$initialize();
     }

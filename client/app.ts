@@ -1,19 +1,42 @@
 import { FactoryService } from "./services/factory";
-import { ReferService } from "./services/refer";
-import { AppInfo } from "./type/app";
-import { Context } from "./configs/context";
+import { ReferenceService } from "./services/reference";
 import { Generator } from "./configs/generator";
-import { ArchieveService } from "./services/archieve";
-import { SettingsService } from "./services/settings";
+import { ArchieveData, ArchieveService } from "./services/archieve";
+import { PerferenceData, PreferenceService } from "./services/perference";
 import { RootModel } from "./models/root";
-import { AppStatus } from "./type/status";
 import { RenderService } from "./services/render";
+import { META_SAVE_PATH } from "./configs/context";
+
+export enum AppStatus {
+    /** 应用未初始化 */
+    UNINITED,
+    /** 应用初始化完成,节点未挂载 */
+    UNMOUNTED,
+    /** 应用正在挂载节点 */
+    MOUNTING,
+    /** 应用已挂载节点 */
+    MOUNTED,
+    /** 应用正在卸载节点 */
+    UNMOUNTING,
+}
+
+
+export type MetaData = {
+    majorVersion: number
+    minorVersion: number
+    patchVersion: number
+    perferenceData: PerferenceData
+    archieveDataList: ArchieveData[]
+}
 
 export class App {
-    public readonly version: string;
+    public readonly majorVersion: number;
+    public readonly minorVersion: number;
+    public readonly patchVersion: number;
+
     public readonly factoryService: FactoryService;
-    public readonly referService: ReferService;
-    public readonly settingsService: SettingsService;
+    public readonly referenceService: ReferenceService;
+    public readonly perferenceService: PreferenceService;
     public readonly archieveService: ArchieveService;
     public readonly renderService: RenderService;
 
@@ -24,10 +47,13 @@ export class App {
     public get root() { return this.$root; }
 
     constructor() {
-        this.version = '1.0.0';
+        this.majorVersion = 0;
+        this.minorVersion = 1;
+        this.patchVersion = 0;
+
         this.factoryService = new FactoryService(this);
-        this.referService = new ReferService(this);
-        this.settingsService = new SettingsService(this);
+        this.referenceService = new ReferenceService(this);
+        this.perferenceService = new PreferenceService(this);
         this.archieveService = new ArchieveService(this);
         this.renderService = new RenderService(this);
         this.$status = AppStatus.UNINITED;
@@ -36,16 +62,16 @@ export class App {
 
     public async initialize() {
         const metadata = await this.$loadMetaData();
-        this.archieveService.init(metadata.archieves);
-        this.settingsService.initialize(metadata.settings);
+        this.archieveService.init(metadata.archieveDataList);
+        this.perferenceService.initialize(metadata.perferenceData);
         this.renderService.initialize();
         this.$status = AppStatus.UNMOUNTED;
     }
 
-    private async $loadMetaData(): Promise<AppInfo.MetaData> {
-        const raw = await localStorage.getItem(Context.META_PATH);
-        if (!raw) return Generator.initAppMetaData();
-        const result = JSON.parse(raw) as AppInfo.MetaData;
+    private async $loadMetaData(): Promise<MetaData> {
+        const raw = await localStorage.getItem(META_SAVE_PATH);
+        if (!raw) return Generator.appMetaData();
+        const result = JSON.parse(raw) as MetaData;
         return result;
     }
 
@@ -68,11 +94,13 @@ export class App {
     }
 
     public async saveMetaData() {
-        const save: AppInfo.MetaData = {
-            version: this.version,
-            settings: this.settingsService.settingsData,
-            archieves: this.archieveService.data
+        const save: MetaData = {
+            majorVersion: this.majorVersion,
+            minorVersion: this.minorVersion,
+            patchVersion: this.patchVersion,
+            perferenceData: this.perferenceService.settingsData,
+            archieveDataList: this.archieveService.data
         };
-        await localStorage.setItem(Context.META_PATH, JSON.stringify(save));
+        await localStorage.setItem(META_SAVE_PATH, JSON.stringify(save));
     } 
 }

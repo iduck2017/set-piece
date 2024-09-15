@@ -1,15 +1,27 @@
 import { Model } from ".";
 import type { App } from "../app";
-import { TimerModelDef } from "../type/definition";
+import { Generator } from "../configs/generator";
 import { IModel } from "../type/model";
-import { ModelKey } from "../type/registry";
+import { ModelCode } from "../type/registry";
 
-export class TimerModel extends Model<TimerModelDef> {
-    protected handleReqDict: IModel.HandleReqDict<TimerModelDef>;
+export type TimerModelDefine = IModel.CommonDefine<{
+    code: ModelCode.Time,
+    state: {
+        time: number,
+    },
+    eventDict: {
+        tickBefore: void,
+        tickDone: void,
+    }
+}>
+
+export class TimerModel extends Model<TimerModelDefine> {
+    protected $eventHandlerDict: IModel.EventHandlerDict<TimerModelDefine> = 
+        Generator.pureHandlerDict();
 
     constructor(
-        config: IModel.RawConfig<TimerModelDef>,
-        parent: TimerModelDef[ModelKey.Parent],
+        config: IModel.Config<TimerModelDefine>,
+        parent: IModel.Parent<TimerModelDefine>,
         app: App
     ) {
         super(
@@ -19,8 +31,8 @@ export class TimerModel extends Model<TimerModelDef> {
                     time: 0,
                     ...config.originState
                 },
-                childChunkDict: {},
-                childChunkList: []
+                childBundleDict: {},
+                childBundleList: []
             },
             parent,
             app
@@ -31,8 +43,8 @@ export class TimerModel extends Model<TimerModelDef> {
     
     /** 更新时间 */
     public updateTime(offsetTime: number) {
-        this.$emitterDict.tickBefore();
+        this.$eventEmitterDict.listened.tickBefore();
         this.$originState.time += offsetTime;
-        this.$emitterDict.tickDone();
+        this.$eventEmitterDict.listened.tickDone();
     }
 }

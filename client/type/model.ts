@@ -1,147 +1,266 @@
 /* eslint-disable max-len */
 import type { Model } from "../models";
-import type { EventType } from "./event";
-import { IReflect } from ".";
-import type { ModelReg } from "./registry";
-import { BaseModelDef, CommonModelDef } from "./definition";
+import type { IEvent } from "./event";
+import { IBase, IReflect } from ".";
+import type { ModelCode, ModelReg } from "./registry";
 
+/** 模型 */
 export namespace IModel {
-    export type Code<M extends BaseModelDef> = M['code']
-    export type State<M extends BaseModelDef> = M['state']
-    export type Preset<M extends BaseModelDef> = M['preset']
-    export type ChildDefList<M extends BaseModelDef> = M['childDefList']
-    export type ChildDefDict<M extends BaseModelDef> = M['childDefDict']
-    export type ReqDefDict<M extends BaseModelDef> = M['effectReqDefDict']
-    export type EffectDict<M extends BaseModelDef> = M['effectDict']
-    export type EffectReqDefDict<M extends BaseModelDef> = M['effectReqDefDict']['effect']
-    export type ReduceReqDefDict<M extends BaseModelDef> = M['effectReqDefDict']['reduce']
-    export type UpdateReqDefDict<M extends BaseModelDef> = M['effectReqDefDict']['update']
-
-    export type EffectRes<R extends Record<string, BaseModelDef>> = Model<CommonModelDef<{
-        reqDefDict: {
-            effect: R,
-            update: Record<string, BaseModelDef>,
-            reduce: Record<string, BaseModelDef>,
-        }
-    }>>
-    export type ReduceRes<R extends Record<string, BaseModelDef>> = Model<CommonModelDef<{
-        reqDefDict: {
-            effect: Record<string, BaseModelDef>,
-            update: Record<string, BaseModelDef>,
-            reduce: R,
-        }
-    }>>
-    export type UpdateRes<R extends Record<string, BaseModelDef>> = Model<CommonModelDef<{
-        reqDefDict: {
-            effect: Record<string, BaseModelDef>,
-            update: R,
-            reduce: Record<string, BaseModelDef>,
-        }
-    }>>
-
-
-    export type ReqChunkDict<M extends BaseModelDef> = {
-        effect: { [K in IReflect.KeyOf<EffectReqDefDict<M>>]?: string[] },
-        reduce: { [K in IReflect.KeyOf<ReduceReqDefDict<M>>]?: string[] },
-        update: { [K in IReflect.KeyOf<UpdateReqDefDict<M>>]?: string[] },
+    /** 基础模型定义 */
+    export type Define = {
+        /** 数据结构定义 */
+        code: ModelCode
+        rule: IBase.Data
+        state: IBase.Data
+        /** 从属关系定义 */
+        parent?: Model
+        childDefList: Array<Define>
+        childDefDict: Record<IBase.Key, Define>,
+        /** 依赖关系定义 */
+        eventDict: IBase.Dict,
+        listenedDefDict: Record<IBase.Key, Define>,
+        modifiedDefDict: Record<IBase.Key, Define>,
+        observedDefDict: Record<IBase.Key, Define>,
     }
 
-    export type ResChunkDict<M extends BaseModelDef> = {
-        effect: { [K in IReflect.KeyOf<EffectDict<M>>]?: string[] },
-        reduce: { [K in IReflect.KeyOf<State<M>>]?: string[] },
-        update: { [K in IReflect.KeyOf<State<M>>]?: string[] },
+    export type PureDefine = {
+        /** 数据结构定义 */
+        code: never,
+        rule: {},
+        state: {}
+        /** 从属关系定义 */
+        parent?: Model
+        childDefList: []
+        childDefDict: {}
+        /** 依赖关系定义 */
+        eventDict: {}
+        listenedDefDict: {}
+        modifiedDefDict: {}
+        observedDefDict: {} 
     }
 
-    export type ReqDict<M extends BaseModelDef> = {
-        effect: { [K in IReflect.KeyOf<EffectReqDefDict<M>>]: Model<EffectReqDefDict<M>[K]>[] }
-        reduce: { [K in IReflect.KeyOf<ReduceReqDefDict<M>>]: Model<ReduceReqDefDict<M>[K]>[] }
-        update: { [K in IReflect.KeyOf<UpdateReqDefDict<M>>]: Model<UpdateReqDefDict<M>[K]>[] }
-    }
+    /** 通用模型定义 */
+    export type CommonDefine<
+        M extends Partial<Define>,
+        D = PureDefine
+    > = M & Omit<D, keyof M>
 
-    export type ResDict<M extends BaseModelDef> = {
-        effect: { [K in IReflect.KeyOf<EffectDict<M>>]: EffectRes<Record<K, M>>[] }
-        reduce: { [K in IReflect.KeyOf<State<M>>]: ReduceRes<Record<K, M>>[] }
-        update: { [K in IReflect.KeyOf<State<M>>]: UpdateRes<Record<K, M>>[] }
-    }
+    /** 
+     * 基础模型定义字段反射
+     * 数据结构定义
+     */
+    export type Code<M extends Define> = M['code']
+    export type Rule<M extends Define> = M['rule']
+    export type State<M extends Define> = M['state']
 
-    export type HandleReqDict<M extends BaseModelDef> = {
-        effect: { [K in IReflect.KeyOf<EffectReqDefDict<M>>]: (event: EffectDict<EffectReqDefDict<M>[K]>[K]) => void },
-        reduce: { [K in IReflect.KeyOf<ReduceReqDefDict<M>>]: (event: EventType.StateUpdateDone<UpdateReqDefDict<M>[K], K>) => void }
-        update: { [K in IReflect.KeyOf<UpdateReqDefDict<M>>]: (event: EventType.StateUpdateDone<UpdateReqDefDict<M>[K], K>) => void },
-    }
+    /** 从属关系定义 */
+    export type Parent<M extends Define> = M['parent']
+    export type ChildDefList<M extends Define> = M['childDefList']
+    export type ChildDefDict<M extends Define> = M['childDefDict']
+
+    /** 依赖关系定义 */
+    export type EventDict<M extends Define> = M['eventDict']
+    export type ListenedDefDict<M extends Define> = M['listenedDefDict']
+    export type ModifiedDefDict<M extends Define> = M['modifiedDefDict']
+    export type ObservedDefDict<M extends Define> = M['observedDefDict']
+
+    /**
+     * 特殊模型
+     * 事件监听器
+    */
+    export type Listener<
+        R extends Record<IBase.Key, Define>
+    > = Model<
+        CommonDefine<{
+            listenedDefDict: R
+        }, Define>
+    >
+
+    /** 状态修饰器 */
+    export type Modifier<
+        R extends Record<IBase.Key, Define>
+    > = Model<
+        CommonDefine<{
+            modifiedDefDict: R
+        }, Define>
+    >
     
-    export type CallResDict<M extends BaseModelDef> = {
-        effect: { [K in IReflect.KeyOf<EffectDict<M>>]: (event: EffectDict<M>[K]) => void },
-        reduce: { [K in IReflect.KeyOf<State<M>>]: (event: EventType.StateUpdateBefore<M, K>) => void },
-        update: { [K in IReflect.KeyOf<State<M>>]: (event: EventType.StateUpdateDone<M, K>) => void },
+    /** 状态观察器 */
+    export type Observer<
+        R extends Record<IBase.Key, Define>
+    > = Model<
+        CommonDefine<{
+            observedDefDict: R
+        }, Define>
+    >
+
+    /** 依赖标识符集合 */
+    export type ListenerIdDict<M extends Define> = {
+        [K in IReflect.Key<EventDict<M>>]?: string[]
+    }
+    export type ModifierIdDict<M extends Define> = {
+        [K in IReflect.Key<State<M>>]?: string[]
+    }
+    export type ObserverIdDict<M extends Define> = {
+        [K in IReflect.Key<State<M>>]?: string[]
+    }
+    export type ListenedIdDict<M extends Define> = {
+        [K in IReflect.Key<ListenedDefDict<M>>]?: string[]
+    }
+    export type ModifiedIdDict<M extends Define> = {
+        [K in IReflect.Key<ModifiedDefDict<M>>]?: string[]
+    }
+    export type ObservedIdDict<M extends Define> = {
+        [K in IReflect.Key<ObservedDefDict<M>>]?: string[]
     }
 
-    export type BindResDict<M extends BaseModelDef> = {
-        effect: { [K in IReflect.KeyOf<EffectDict<M>>]: (model: EffectRes<Record<K, M>>) => void }
-        reduce: { [K in IReflect.KeyOf<State<M>>]: (model: ReduceRes<Record<K, M>>) => void }
-        update: { [K in IReflect.KeyOf<State<M>>]: (model: UpdateRes<Record<K, M>>) => void },
+    /** 依赖集合 */
+    export type ListenerDict<M extends Define> = {
+        [K in IReflect.Key<EventDict<M>>]: Listener<Record<K, M>>[]
+    }
+    export type ModifierDict<M extends Define> = {
+        [K in IReflect.Key<State<M>>]: Modifier<Record<K, M>>[]
+    }
+    export type ObserverDict<M extends Define> = {
+        [K in IReflect.Key<State<M>>]: Observer<Record<K, M>>[]
+    }
+    export type ListenedDict<M extends Define> = {
+        [K in IReflect.Key<ListenedDefDict<M>>]: Model<ListenedDefDict<M>[K]>[]
+    }
+    export type ModifiedDict<M extends Define> = {
+        [K in IReflect.Key<ModifiedDefDict<M>>]: Model<ModifiedDefDict<M>[K]>[]
+    }
+    export type ObservedDict<M extends Define> = {
+        [K in IReflect.Key<ObservedDefDict<M>>]: Model<ObservedDefDict<M>[K]>[]
+    }
+
+    /** 事件触发器集合 */
+    export type EventEmitterDict<M extends Define> = {
+        listened: {
+            [K in IReflect.Key<EventDict<M>>]: (event: EventDict<M>[K]) => void
+        },
+        modified: {
+            [K in IReflect.Key<State<M>>]: (event: IEvent.StateUpdateBefore<M, K>) => void
+        },
+        observed: {
+            [K in IReflect.Key<State<M>>]: (event: IEvent.StateUpdateDone<M, K>) => void
+        }
+    }
+    /** 事件处理器集合 */
+    export type EventHandlerDict<M extends Define> = {
+        listener: {
+            [K in IReflect.Key<ListenedDefDict<M>>]: (
+                event: EventDict<ListenedDefDict<M>[K]>[K]
+            ) => void
+        },
+        modifier: {
+            [K in IReflect.Key<ModifiedDefDict<M>>]: (
+                event: IEvent.StateUpdateBefore<ModifiedDefDict<M>[K], K>
+            ) => void
+        },
+        observer: {
+            [K in IReflect.Key<ObservedDefDict<M>>]: (
+                event: IEvent.StateUpdateDone<ModifiedDefDict<M>[K], K>
+            ) => void
+        }
+    }
+
+    /** 事件绑定器集合 */
+    export type EventChannelDict<M extends Define> = {
+        listened: {
+            [K in IReflect.Key<EventDict<M>>]: {
+                bind: (model: Listener<Record<K, M>>) => void,
+                unbind: (model: Listener<Record<K, M>>) => void,
+            }
+        },
+        modified: {
+            [K in IReflect.Key<State<M>>]: {
+                bind: (model: Modifier<Record<K, M>>) => void,
+                unbind: (model: Modifier<Record<K, M>>) => void,
+            }
+        },
+        observed: {
+            [K in IReflect.Key<State<M>>]: {
+                bind: (model: Observer<Record<K, M>>) => void,
+                unbind: (model: Observer<Record<K, M>>) => void,
+            }
+        }
     }
 
     /** 序列化参数 */
-    export type Chunk<
-        M extends BaseModelDef = BaseModelDef
+    export type Bundle<
+        M extends Define = Define
     > = {
         id: string
         inited: true
         code: Code<M>
-        preset: Partial<Preset<M>>
+        rule: Partial<Rule<M>>
         originState: State<M>
-        childChunkList: ChildChunkList<M>,
-        childChunkDict: ChildChunkDict<M>,
-        reqChunkDict: ReqChunkDict<M>,
-        resChunkDict: ResChunkDict<M>,
+        childBundleList: ChildBundleList<M>,
+        childBundleDict: ChildBundleDict<M>,
+        listenedIdDict: ListenedIdDict<M>,
+        listenerIdDict: ListenerIdDict<M>,
+        modifiedIdDict: ModifiedIdDict<M>,
+        modifierIdDict: ModifierIdDict<M>,
+        observedIdDict: ObservedIdDict<M>,
+        observerIdDict: ObserverIdDict<M>,
     }
 
     /** 初始化参数 */
-    export type Config<
-        M extends BaseModelDef = BaseModelDef
+    export type BaseConfig<
+        M extends Define = Define
     > = {
         id?: string
         inited?: boolean
         code: Code<M>
-        preset?: Partial<Preset<M>>
+        rule?: Partial<Rule<M>>
         originState: State<M>
-        childChunkList: ChildConfigList<M>,
-        childChunkDict: ChildConfigDict<M>,
-        reqChunkDict?: Partial<ReqChunkDict<M>>,
-        resChunkDict?: Partial<ResChunkDict<M>>,
+        childBundleList: ChildConfigList<M>,
+        childBundleDict: ChildConfigDict<M>,
+        listenedIdDict?: ListenedIdDict<M>,
+        listenerIdDict?: ListenerIdDict<M>,
+        modifiedIdDict?: ModifiedIdDict<M>,
+        modifierIdDict?: ModifierIdDict<M>,
+        observedIdDict?: ObservedIdDict<M>,
+        observerIdDict?: ObserverIdDict<M>,
     }
 
     /** 原始初始化参数 */
-    export type RawConfig<
-        M extends BaseModelDef = BaseModelDef
+    export type Config<
+        M extends Define = Define
     > = {
         id?: string
         inited?: boolean
         code: Code<M>
-        preset?: Partial<Preset<M>>
+        rule?: Partial<Rule<M>>
         originState?: Partial<State<M>>
-        childChunkList?: ChildConfigList<M>,
-        childChunkDict?: Partial<ChildConfigDict<M>>,
-        reqChunkDict?: Partial<ReqChunkDict<M>>,
-        resChunkDict?: Partial<ResChunkDict<M>>,
+        childBundleList?: ChildConfigList<M>,
+        childBundleDict?: Partial<ChildConfigDict<M>>,
+        listenedIdDict?: ListenedIdDict<M>,
+        listenerIdDict?: ListenerIdDict<M>,
+        modifiedIdDict?: ModifiedIdDict<M>,
+        modifierIdDict?: ModifierIdDict<M>,
+        observedIdDict?: ObservedIdDict<M>,
+        observerIdDict?: ObserverIdDict<M>,
     }
 
+    /** 从属模型列表 */
+    export type ChildList<M extends Define> =
+        Array<InstanceType<ModelReg[Code<IReflect.Iterator<ChildDefList<M>>>]>>
+    export type ChildBundleList<M extends Define> = 
+        Array<IModel.Bundle<IReflect.Iterator<ChildDefList<M>>>>
+    export type ChildConfigList<M extends Define> = 
+        Array<IModel.Config<IReflect.Iterator<ChildDefList<M>>>>
 
-    /** 子节点列表 */
-    export type ChildList<M extends BaseModelDef> = Array<InstanceType<ModelReg[Code<IReflect.IteratorOf<ChildDefList<M>>>]>>
-    export type ChildChunkList<M extends BaseModelDef> = Array<IModel.Chunk<IReflect.IteratorOf<ChildDefList<M>>>>
-    export type ChildConfigList<M extends BaseModelDef> = Array<IModel.RawConfig<IReflect.IteratorOf<ChildDefList<M>>>>
-
-    /** 子节点集合 */
-    export type ChildDict<M extends BaseModelDef> = {
+    /** 从属模型集合 */
+    export type ChildDict<M extends Define> = {
         [K in keyof ChildDefDict<M>]: InstanceType<ModelReg[Code<ChildDefDict<M>[K]>]>
     }
-    export type ChildChunkDict<M extends BaseModelDef> = {
-        [K in keyof ChildDefDict<M>]: IModel.Chunk<ChildDefDict<M>[K]>
+    export type ChildBundleDict<M extends Define> = {
+        [K in keyof ChildDefDict<M>]: IModel.Bundle<ChildDefDict<M>[K]>
     }
-    export type ChildConfigDict<M extends BaseModelDef> = {
-        [K in keyof ChildDefDict<M>]: IModel.RawConfig<ChildDefDict<M>[K]>
+    export type ChildConfigDict<M extends Define> = {
+        [K in keyof ChildDefDict<M>]: IModel.Config<ChildDefDict<M>[K]>
     }
 }
 

@@ -1,19 +1,29 @@
 import { Model } from ".";
 import type { App } from "../app";
-import { BunnyModelDef, RootModelDef } from "../type/definition";
+import { Generator } from "../configs/generator";
 import { IModel } from "../type/model";
-import { ModelCode, ModelKey } from "../type/registry";
+import { ModelCode } from "../type/registry";
+import type { BunnyModelDefine } from "./bunny";
+import { TimerModelDefine } from "./time";
 
-export class RootModel extends Model<RootModelDef> {
-    protected handleReqDict: IModel.HandleReqDict<RootModelDef> = {
-        effect: {},
-        reduce: {},
-        update: {}
-    };
+export type RootModelDefine = IModel.CommonDefine<{
+    code: ModelCode.Root,
+    state: {
+        progress: number,
+    }
+    childDefDict: {
+        time: TimerModelDefine,
+    }
+    childDefList: BunnyModelDefine[],
+}>
+
+export class RootModel extends Model<RootModelDefine> {
+    protected $eventHandlerDict: IModel.EventHandlerDict<RootModelDefine> = 
+        Generator.pureHandlerDict();
 
     constructor(
-        config: IModel.RawConfig<RootModelDef>,
-        parent: RootModelDef[ModelKey.Parent],
+        config: IModel.Config<RootModelDefine>,
+        parent: IModel.Parent<RootModelDefine>,
         app: App
     ) {
         super(
@@ -23,21 +33,21 @@ export class RootModel extends Model<RootModelDef> {
                     progress: 0,
                     ...config.originState
                 },
-                childChunkDict: {
-                    time: config.childChunkDict?.time || {
+                childBundleDict: {
+                    time: config.childBundleDict?.time || {
                         code: ModelCode.Time
                     }
                 },
-                childChunkList: config.childChunkList || [
+                childBundleList: config.childBundleList || [
                     { code: ModelCode.Bunny }
                 ]
-            },
+            },  
             parent,
             app
         );
     }
 
-    public spawnCreature(bunny: IModel.RawConfig<BunnyModelDef>) {
+    public spawnCreature(bunny: IModel.Config<BunnyModelDefine>) {
         const child = this.app.factoryService.unserialize(bunny, this);
         this.$appendChild(child);
         child.$initialize();
