@@ -21,10 +21,9 @@ export class FactoryService {
     }; 
 
     public unserialize<M extends IModel.Define>(
-        config: IModel.Config<M>,
-        parent: IModel.Parent<M>
+        config: IModel.Config<M>
     ): InstanceType<ModelReg[IModel.Code<M>]> {
         const Constructor = FactoryService.$productDict[config.code] as any;
-        return new Constructor(config, parent, this.app);
+        return new Constructor(config, this.app);
     }
 }

@@ -3,6 +3,7 @@ import type { Model } from "../models";
 import type { IEvent } from "./event";
 import { IBase, IReflect } from ".";
 import type { ModelCode, ModelReg } from "./registry";
+import type { App } from "../app";
 
 /** 模型 */
 export namespace IModel {
@@ -13,7 +14,7 @@ export namespace IModel {
         rule: IBase.Data
         state: IBase.Data
         /** 从属关系定义 */
-        parent?: Model
+        parent: Model;
         childDefList: Array<Define>
         childDefDict: Record<IBase.Key, Define>,
         /** 依赖关系定义 */
@@ -29,7 +30,7 @@ export namespace IModel {
         rule: {},
         state: {}
         /** 从属关系定义 */
-        parent?: Model
+        parent: Model
         childDefList: []
         childDefDict: {}
         /** 依赖关系定义 */
@@ -192,7 +193,7 @@ export namespace IModel {
         M extends Define = Define
     > = {
         id: string
-        inited: true
+        activated: true
         code: Code<M>
         rule: Partial<Rule<M>>
         originState: State<M>
@@ -230,7 +231,7 @@ export namespace IModel {
         M extends Define = Define
     > = {
         id?: string
-        inited?: boolean
+        activated?: boolean
         code: Code<M>
         rule?: Partial<Rule<M>>
         originState?: Partial<State<M>>

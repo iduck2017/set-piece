@@ -3,29 +3,20 @@ import { Generator } from "../configs/generator";
 import { IBase, IReflect } from "../type";
 import { IEvent } from "../type/event";
 import { IModel } from "../type/model";
+import { ModelStatus } from "../type/status";
+import { Entity } from "../utils/entity";
 
-/**
- * 反序列化阶段
- * 1. 节点被创建 Inited
- * 2. 节点挂载到父节点 Binded
- * 3. 节点挂载到根节点 Mounted
- * 
- * 初始化阶段
- * 4. 节点业务逻辑执行 Activated
- * 5. 节点业务状态流转，例如生物成熟、生殖死亡
- * 6. 节点业务逻辑销毁 Deactivated 
- * 
- * 销毁阶段
- * 7. 节点卸载自根节点 Unmounted
- * 8. 节点卸载自父节点 Unbinded
- * 9. 节点销毁完成 Destroyed
- */
+/** 数据模型基类 */
 export abstract class Model<
     M extends IModel.Define = IModel.Define
-> {
+> extends Entity {
     /** 外部指针 */
-    public readonly app: App;
-    public readonly parent: IModel.Parent<M>;
+    private $parent?: IModel.Parent<M>;
+    public get parent() {
+        if (!this.$parent) throw new Error();
+        return this.$parent;
+    }
+
     public get root() {
         const result = this.app.root;
         if (!result) {
@@ -34,12 +25,19 @@ export abstract class Model<
         return result;
     }
 
+    /** 状态机 */
+    private $status: ModelStatus;
+    public get status() {
+        return this.$status;
+    }
+
     /** 基本信息 */
     public readonly id: string;
     public readonly code: IModel.Code<M>;
     public readonly rule: Partial<IModel.Rule<M>>;
 
-    protected $inited: boolean;
+    private readonly $config: IModel.BaseConfig<M>;
+    protected $activated: boolean;
 
     /** 状态 */
     protected readonly $originState: IModel.State<M>;
@@ -76,6 +74,392 @@ export abstract class Model<
     protected readonly $eventEmitterDict: IModel.EventEmitterDict<M>;
     public readonly eventChannelDict: IModel.EventChannelDict<M>;
 
+
+    /** 测试用例 */
+    public debuggerDict: Record<string, IBase.Func>;
+    public readonly stateSetterList: IBase.Func[] = [];
+    public readonly childrenSetterList: IBase.Func[] = [];
+
+    private $setChildren() {
+        this.childrenSetterList.forEach(setter => {
+            setter(this.children);
+        });
+    }
+    private $setState() {
+        this.stateSetterList.forEach(setter => {
+            setter(this.currentState);
+        });
+    }
+
+    constructor(
+        config: IModel.BaseConfig<M>,
+        app: App
+    ) {
+        super(app);
+        this.$status = ModelStatus.UNINITED;
+        this.$config = config;
+
+        /** 基本信息 */
+        this.id = config.id || app.referenceService.getUniqId();
+        this.code = config.code;
+        this.rule = config.rule || {};
+        
+        this.$activated = config.inited || false;
+        this.$listenedDict = Generator.readonlyProxy(
+            (target, key) => {
+                if (!target[key]) target[key] = [];
+                return target[key];
+            }
+        );
+        this.$listenerDict = Generator.readonlyProxy(
+            (target, key) => {
+                if (!target[key]) target[key] = [];
+                return target[key];
+            }
+        );
+        this.$observerDict = Generator.readonlyProxy(
+            (target, key) => {
+                if (!target[key]) target[key] = [];
+                return target[key];
+            }
+        );
+        this.$observedDict = Generator.readonlyProxy(
+            (target, key) => {
+                if (!target[key]) target[key] = [];
+                return target[key];
+            }
+        );
+        this.$modifiedDict = Generator.readonlyProxy(
+            (target, key) => {
+                if (!target[key]) target[key] = [];
+                return target[key];
+            }
+        );
+        this.$modifierDict = Generator.readonlyProxy(
+            (target, key) => {
+                if (!target[key]) target[key] = [];
+                return target[key];
+            }
+        );
+
+        this.$eventEmitterDict = {
+            listened: Generator.readonlyProxy(
+                <K extends IReflect.Key<IModel.EventDict<M>>>(
+                    target: any, key: K
+                ) => {
+                    return this.$emitListener.bind(this, key);
+                }
+            ),
+            observed: Generator.readonlyProxy(
+                <K extends IReflect.Key<IModel.State<M>>>(
+                    target: any, key: K
+                ) => {
+                    return this.$emitObserver.bind(this, key);
+                }
+            ),
+            modified: Generator.readonlyProxy(
+                <K extends IReflect.Key<IModel.State<M>>>(
+                    target: any, key: K
+                ) => {
+                    return this.$emitModifier.bind(this, key);
+                }
+            )
+        };
+        this.eventChannelDict = {
+            listened: Generator.readonlyProxy(
+                <K extends IReflect.Key<IModel.EventDict<M>>>(
+                    target: any, key: K
+                ) => {
+                    return {
+                        bind: this.$bindListener.bind(this, key),
+                        unbind: this.$unbindListener.bind(this, key)
+                    };
+                }
+            ),
+            observed: Generator.readonlyProxy(
+                <K extends IReflect.Key<IModel.State<M>>>(
+                    target: any, key: K
+                ) => {
+                    return {
+                        bind: this.$bindObserver.bind(this, key),
+                        unbind: this.$unbindObserver.bind(this, key)
+                    };
+                }
+            ),
+            modified: Generator.readonlyProxy(
+                <K extends IReflect.Key<IModel.State<M>>>(
+                    target: any, key: K
+                ) => {
+                    return {
+                        bind: this.$bindModifier.bind(this, key),
+                        unbind: this.$unbindModifier.bind(this, key)
+                    };
+                }
+            )
+        };
+
+        /** 初始化状态 */
+        this.$originState = new Proxy(config.originState, {
+            set: (origin, key: IReflect.Key<IModel.State<M>>, value) => {
+                origin[key] = value;
+                this.updateState(key);
+                return true;
+            }
+        });
+        this.$currentState = { 
+            ...this.$originState
+        };
+
+        /** 树形结构 */
+        this.$childList = [];
+        this.$childDict = new Proxy({} as IModel.ChildDict<M>, {
+            set: (origin, key: IReflect.Key<IModel.ChildDefDict<M>>, value: Model) => {
+                origin[key] = value as any;
+                value.$bindParent(this as any);
+                if (this.$status === ModelStatus.ACTIVATED) {
+                    value.$activate();
+                }
+                this.$setChildren();
+                return true;
+            }
+        });
+        for (const key in config.childBundleDict) {
+            const chunk = config.childBundleDict[key];
+            this.childDict[key] = app.factoryService.unserialize(chunk);
+        }
+        for (const bundle of config.childBundleList) {
+            const model = app.factoryService.unserialize(bundle);
+            this.$appendChild(model);
+        }
+
+        /** 调试器 */
+        this.debuggerDict = {};
+    }
+
+    /** 挂载父节点 */
+    private $bindParent(parent: IModel.Parent<M>) {
+        this.$parent = parent;
+        /** 如果父节点从属于根节点，则触发根节点挂载 */
+        if (
+            this.$parent?.status === ModelStatus.MOUNTED ||
+            this.$parent?.status === ModelStatus.ACTIVATED
+        ) {
+            this.$mountRoot();
+        }
+        this.$status = ModelStatus.BINDED;
+    }
+
+    /** 挂载根节点 */
+    private $mountRoot() {
+        this.$status = ModelStatus.MOUNTING;
+        /** 注册 */
+        this.app.referenceService.addRefer(this);
+        /** 初始化依赖关系 */
+        for (const key in this.$config.listenedIdDict) {
+            if (this.$config.listenedIdDict) {
+                const listenedList = this.$config.listenedIdDict[key] || [];
+                listenedList.forEach(id => {
+                    const model = this.app.referenceService.referDict[id];
+                    if (model) {
+                        model.$bindListener(key, this);
+                    }
+                });
+            }
+        }
+        for (const key in this.$config.listenerIdDict) {
+            if (this.$config.listenerIdDict) {
+                const listenerList = this.$config.listenerIdDict[key] || [];
+                listenerList.forEach(id => {
+                    const model: any = this.app.referenceService.referDict[id];
+                    if (model) {
+                        this.$bindListener(key, model);
+                    }
+                });
+            }
+        }
+        for (const key in this.$config.observedIdDict) {
+            if (this.$config.observedIdDict) {
+                const observerList = this.$config.observedIdDict[key] || [];
+                observerList.forEach(id => {
+                    const model = this.app.referenceService.referDict[id];
+                    if (model) {
+                        model.$bindObserver(key, this);
+                    }
+                });
+            }
+        }
+        for (const key in this.$config.observerIdDict) {
+            if (this.$config.observerIdDict) {
+                const observerList = this.$config.observerIdDict[key] || [];
+                observerList.forEach(id => {
+                    const model: any = this.app.referenceService.referDict[id];
+                    if (model) {
+                        this.$bindObserver(key, model);
+                    }
+                });
+            }
+        }
+        for (const key in this.$config.modifiedIdDict) {
+            if (this.$config.modifiedIdDict) {
+                const modifierList = this.$config.modifiedIdDict[key] || [];
+                modifierList.forEach(id => {
+                    const model = this.app.referenceService.referDict[id];
+                    if (model) {
+                        model.$bindModifier(key, this);
+                    }
+                });
+            }
+        }
+        for (const key in this.$config.modifierIdDict) {
+            if (this.$config.modifierIdDict) {
+                const modifierList = this.$config.modifierIdDict[key] || [];
+                modifierList.forEach(id => {
+                    const model: any = this.app.referenceService.referDict[id];
+                    if (model) {
+                        this.$bindModifier(key, model);
+                    }
+                });
+            }
+        }
+        /** 遍历子节点 */
+        for (const child of this.$childList) {
+            child.$mountRoot();
+        }
+        for (const key in this.$childDict) {
+            const child = this.childDict[key];
+            child.$mountRoot();
+        }
+        this.$status = ModelStatus.MOUNTED;
+    }
+
+    /** 初始化 */
+    private $activate() {
+        this.$status = ModelStatus.ACTIVATING;
+        if (!this.$activated) {
+            this.activate();
+            this.$activated = true;
+        }
+        /** 遍历 */
+        this.$childList.forEach(child => {
+            child.$activate();
+        });
+        for (const key in this.$childDict) {
+            const child = this.childDict[key];
+            child.$activate();
+        }
+        this.$status = ModelStatus.ACTIVATED;
+    }
+
+    public activate() {}
+
+    /** 添加子节点 */
+    protected $appendChild(target: IReflect.Iterator<IModel.ChildList<M>>) {
+        this.$childList.push(target);
+        target.$bindParent(this);
+        this.$setChildren();
+    }
+
+    /** 移除子节点 */
+    protected $removeChild(target: 
+        IReflect.Iterator<IModel.ChildList<M>> | 
+        IReflect.Value<IModel.ChildDict<M>>) {
+        const index = this.$childList.indexOf(target);
+        if (index >= 0) {
+            this.$childList.splice(index, 1); 
+            this.$setChildren();
+            return;
+        }
+        for (const key in this.$childDict) {
+            if (this.$childDict[key] === target) {
+                delete this.$childDict[key];
+                this.$setChildren();
+                return;
+            }
+        }
+        throw new Error();
+    }
+
+    public $destroy() {
+        this.app.referenceService.removeRefer(this);
+        this.$childList.forEach(child => {
+            child.$destroy();
+        });
+        for (const key in this.$childDict) {
+            const child: Model = this.childDict[key];
+            child.$destroy();
+        }
+        if (this.$parent) {
+            (this.$parent as Model).$removeChild(this as any);
+        }
+    }
+
+    /** 更新状态 */
+    public updateState<K extends IReflect.Key<IModel.State<M>>>(key: K) {   
+        const prev = this.$currentState[key];
+        const current = this.$originState[key];
+        const event = {
+            target: this,
+            prev: current,
+            next: current
+        };
+        this.$emitModifier(key, event);
+        const next = event.next;
+        if (prev !== next) {
+            this.$currentState[key] = next;
+            if (this.$status === ModelStatus.ACTIVATED) {
+                this.$emitObserver(key, event);
+                this.$setState();
+            }
+        }
+    }
+    
+    public serializeIdDict<T extends Record<IBase.Key, Model[]>>(target: T) {
+        const result = {} as Record<keyof T, string[]>;
+        for (const key in target) {
+            result[key] = target[key].map(model => {
+                return model.id;
+            });
+        }
+        return result;
+    }
+
+    /** 序列化函数 */
+    public serialize(): IModel.Bundle<M> {
+        const childBundleDict = {} as any;
+        for (const key in this.childDict) {
+            const child = this.childDict[key];
+            childBundleDict[key] = child.serialize();
+        }
+        const childBundleList = this.childList.map(child => {
+            return child.serialize(); 
+        });
+
+        const listenedIdDict = {} as any;
+        for (const key in this.$listenedDict) {
+            const listenedList = this.$listenedDict[key];
+            listenedIdDict[key] = listenedList.map(model => {
+                return model.id;
+            });
+        }
+
+        return {
+            id: this.id,
+            code: this.code,
+            rule: this.rule,
+            originState: this.$originState,
+            childBundleDict,
+            childBundleList,
+            activated: true,
+            listenedIdDict: this.serializeIdDict(this.$listenedDict),
+            listenerIdDict: this.serializeIdDict(this.$listenerDict),
+            observedIdDict: this.serializeIdDict(this.$observedDict),
+            observerIdDict: this.serializeIdDict(this.$observerDict),
+            modifiedIdDict: this.serializeIdDict(this.$modifiedDict),
+            modifierIdDict: this.serializeIdDict(this.$modifierDict)
+        };
+    }
+
+    
     private $emitListener<
         K extends IReflect.Key<IModel.EventDict<M>>
     >(
@@ -89,7 +473,7 @@ export abstract class Model<
     }
 
     private $emitObserver<
-        K extends IReflect.Key<IModel.EventDict<M>>
+        K extends IReflect.Key<IModel.State<M>>
     >(
         key: K,
         event: IEvent.StateUpdateDone<M, K>
@@ -101,7 +485,7 @@ export abstract class Model<
     }
 
     private $emitModifier<
-        K extends IReflect.Key<IModel.EventDict<M>>
+        K extends IReflect.Key<IModel.State<M>>
     >(
         key: K,
         event: IEvent.StateUpdateBefore<M, K>
@@ -185,351 +569,5 @@ export abstract class Model<
         }
         handler.$modifiedDict[key].splice(handlerIndex, 1);
         this.$modifierDict[key].splice(modifierIndex, 1);
-    }
-
-    /** 测试用例 */
-    public debuggerDict: Record<string, IBase.Func>;
-    public readonly stateSetterList: IBase.Func[] = [];
-    public readonly childrenSetterList: IBase.Func[] = [];
-
-    private $setChildren() {
-        this.childrenSetterList.forEach(setter => {
-            setter(this.children);
-        });
-    }
-    private $setState() {
-        this.stateSetterList.forEach(setter => {
-            setter(this.currentState);
-        });
-    }
-
-    constructor(
-        config: IModel.BaseConfig<M>,
-        parent: IModel.Parent<M>,
-        app: App
-    ) {
-        this.app = app;
-        this.parent = parent;
-
-        /** 基本信息 */
-        this.id = config.id || app.referenceService.getUniqId();
-        this.code = config.code;
-        this.rule = config.rule || {};
-        
-        this.$inited = config.inited || false;
-        this.$listenedDict = Generator.readonlyProxy(
-            (target, key) => {
-                if (!target[key]) target[key] = [];
-                return target[key];
-            }
-        );
-        this.$listenerDict = Generator.readonlyProxy(
-            (target, key) => {
-                if (!target[key]) target[key] = [];
-                return target[key];
-            }
-        );
-        this.$observerDict = Generator.readonlyProxy(
-            (target, key) => {
-                if (!target[key]) target[key] = [];
-                return target[key];
-            }
-        );
-        this.$observedDict = Generator.readonlyProxy(
-            (target, key) => {
-                if (!target[key]) target[key] = [];
-                return target[key];
-            }
-        );
-        this.$modifiedDict = Generator.readonlyProxy(
-            (target, key) => {
-                if (!target[key]) target[key] = [];
-                return target[key];
-            }
-        );
-        this.$modifierDict = Generator.readonlyProxy(
-            (target, key) => {
-                if (!target[key]) target[key] = [];
-                return target[key];
-            }
-        );
-
-        app.referenceService.addRefer(this);
-
-        /** 事件 */
-        for (const key in config.listenedIdDict) {
-            if (config.listenedIdDict) {
-                const listenedList = config.listenedIdDict[key] || [];
-                listenedList.forEach(id => {
-                    const model = app.referenceService.referDict[id];
-                    if (model) {
-                        model.$bindListener(key, this);
-                    }
-                });
-            }
-        }
-        for (const key in config.listenerIdDict) {
-            if (config.listenerIdDict) {
-                const listenerList = config.listenerIdDict[key] || [];
-                listenerList.forEach(id => {
-                    const model: any = app.referenceService.referDict[id];
-                    if (model) {
-                        this.$bindListener(key, model);
-                    }
-                });
-            }
-        }
-
-        for (const key in config.observedIdDict) {
-            if (config.observedIdDict) {
-                const observerList = config.observedIdDict[key] || [];
-                observerList.forEach(id => {
-                    const model = app.referenceService.referDict[id];
-                    if (model) {
-                        model.$bindObserver(key, this);
-                    }
-                });
-            }
-        }
-        for (const key in config.observerIdDict) {
-            if (config.observerIdDict) {
-                const observerList = config.observerIdDict[key] || [];
-                observerList.forEach(id => {
-                    const model: any = app.referenceService.referDict[id];
-                    if (model) {
-                        this.$bindObserver(key, model);
-                    }
-                });
-            }
-        }
-
-        for (const key in config.modifiedIdDict) {
-            if (config.modifiedIdDict) {
-                const modifierList = config.modifiedIdDict[key] || [];
-                modifierList.forEach(id => {
-                    const model = app.referenceService.referDict[id];
-                    if (model) {
-                        model.$bindModifier(key, this);
-                    }
-                });
-            }
-        }
-        for (const key in config.modifierIdDict) {
-            if (config.modifierIdDict) {
-                const modifierList = config.modifierIdDict[key] || [];
-                modifierList.forEach(id => {
-                    const model: any = app.referenceService.referDict[id];
-                    if (model) {
-                        this.$bindModifier(key, model);
-                    }
-                });
-            }
-        }
-
-        this.$eventEmitterDict = {
-            listened: Generator.readonlyProxy(
-                <K extends IReflect.Key<IModel.EventDict<M>>>(
-                    target: any, key: K
-                ) => {
-                    return this.$emitListener.bind(this, key);
-                }
-            ),
-            observed: Generator.readonlyProxy(
-                <K extends IReflect.Key<IModel.State<M>>>(
-                    target: any, key: K
-                ) => {
-                    return this.$emitObserver.bind(this, key);
-                }
-            ),
-            modified: Generator.readonlyProxy(
-                <K extends IReflect.Key<IModel.State<M>>>(
-                    target: any, key: K
-                ) => {
-                    return this.$emitModifier.bind(this, key);
-                }
-            )
-        };
-        this.eventChannelDict = {
-            listened: Generator.readonlyProxy(
-                <K extends IReflect.Key<IModel.EventDict<M>>>(
-                    target: any, key: K
-                ) => {
-                    return {
-                        bind: this.$bindListener.bind(this, key),
-                        unbind: this.$unbindListener.bind(this, key)
-                    };
-                }
-            ),
-            observed: Generator.readonlyProxy(
-                <K extends IReflect.Key<IModel.State<M>>>(
-                    target: any, key: K
-                ) => {
-                    return {
-                        bind: this.$bindObserver.bind(this, key),
-                        unbind: this.$unbindObserver.bind(this, key)
-                    };
-                }
-            ),
-            modified: Generator.readonlyProxy(
-                <K extends IReflect.Key<IModel.State<M>>>(
-                    target: any, key: K
-                ) => {
-                    return {
-                        bind: this.$bindModifier.bind(this, key),
-                        unbind: this.$unbindModifier.bind(this, key)
-                    };
-                }
-            )
-        };
-     
-
-        /** 初始化状态 */
-        this.$originState = new Proxy(config.originState, {
-            set: (origin, key: IReflect.Key<IModel.State<M>>, value) => {
-                origin[key] = value;
-                this.updateState(key);
-                return true;
-            }
-        });
-        this.$currentState = { 
-            ...this.$originState
-        };
-
-        /** 树形结构 */
-        this.$childList = config.childBundleList.map(bundle => {
-            return app.factoryService.unserialize(bundle, this);
-        });
-        const origin = {} as IModel.ChildDict<M>;
-        for (const key in config.childBundleDict) {
-            const chunk = config.childBundleDict[key];
-            origin[key] = app.factoryService.unserialize(chunk, this);
-        }
-        this.$childDict = new Proxy(origin, {
-            set: (origin, key: IReflect.Key<IModel.ChildDefDict<M>>, value) => {
-                origin[key] = value;
-                this.$setChildren();
-                return true;
-            }
-        });
-
-
-        /** 调试器 */
-        this.debuggerDict = {};
-    }
-
-    /** 初始化 */
-    public $initialize() {
-        this.$inited = true;
-        this.$childList.forEach(child => {
-            child.$initialize();
-        });
-        for (const key in this.$childDict) {
-            const child = this.childDict[key];
-            child.$initialize();
-        }
-    }
-
-    /** 添加子节点 */
-    protected $appendChild(target: IReflect.Iterator<IModel.ChildList<M>>) {
-        this.$childList.push(target);
-        this.$setChildren();
-    }
-
-    /** 移除子节点 */
-    protected $removeChild(target: 
-        IReflect.Iterator<IModel.ChildList<M>> | 
-        IReflect.Value<IModel.ChildDict<M>>) {
-        const index = this.$childList.indexOf(target);
-        if (index >= 0) {
-            this.$childList.splice(index, 1); 
-            this.$setChildren();
-            return;
-        }
-        for (const key in this.$childDict) {
-            if (this.$childDict[key] === target) {
-                delete this.$childDict[key];
-                this.$setChildren();
-                return;
-            }
-        }
-        throw new Error();
-    }
-
-    protected $destroy() {
-        this.app.referenceService.removeRefer(this);
-        this.$childList.forEach((child: Model) => {
-            child.$destroy();
-        });
-        for (const key in this.$childDict) {
-            const child: Model = this.childDict[key];
-            child.$destroy();
-        }
-        if (this.parent) {
-            this.parent.$removeChild(this as any);
-        }
-    }
-
-    /** 更新状态 */
-    public updateState<K extends IReflect.Key<IModel.State<M>>>(key: K) {   
-        const prev = this.$currentState[key];
-        const current = this.$originState[key];
-        const event = {
-            target: this,
-            prev: current,
-            next: current
-        };
-        this.$emitModifier(key, event);
-        const next = event.next;
-        if (prev !== next) {
-            this.$currentState[key] = next;
-            this.$emitObserver(key, event);
-            this.$setState();
-        }
-    }
-    
-    public serializeIdDict<T extends Record<IBase.Key, Model[]>>(target: T) {
-        const result = {} as Record<keyof T, string[]>;
-        for (const key in target) {
-            result[key] = target[key].map(model => {
-                return model.id;
-            });
-        }
-        return result;
-    }
-
-    /** 序列化函数 */
-    public serialize(): IModel.Bundle<M> {
-        const childBundleDict = {} as any;
-        for (const key in this.childDict) {
-            const child = this.childDict[key];
-            childBundleDict[key] = child.serialize();
-        }
-        const childBundleList = this.childList.map(child => {
-            return child.serialize(); 
-        });
-
-        const listenedIdDict = {} as any;
-        for (const key in this.$listenedDict) {
-            const listenedList = this.$listenedDict[key];
-            listenedIdDict[key] = listenedList.map(model => {
-                return model.id;
-            });
-        }
-
-        return {
-            inited: true,
-            id: this.id,
-            code: this.code,
-            rule: this.rule,
-            originState: this.$originState,
-            childBundleDict,
-            childBundleList,
-            listenedIdDict: this.serializeIdDict(this.$listenedDict),
-            listenerIdDict: this.serializeIdDict(this.$listenerDict),
-            observedIdDict: this.serializeIdDict(this.$observedDict),
-            observerIdDict: this.serializeIdDict(this.$observerDict),
-            modifiedIdDict: this.serializeIdDict(this.$modifiedDict),
-            modifierIdDict: this.serializeIdDict(this.$modifierDict)
-        };
     }
 }

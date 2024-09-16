@@ -23,7 +23,6 @@ export class RootModel extends Model<RootModelDefine> {
 
     constructor(
         config: IModel.Config<RootModelDefine>,
-        parent: IModel.Parent<RootModelDefine>,
         app: App
     ) {
         super(
@@ -42,15 +41,13 @@ export class RootModel extends Model<RootModelDefine> {
                     { code: ModelCode.Bunny }
                 ]
             },  
-            parent,
             app
         );
     }
 
     public spawnCreature(bunny: IModel.Config<BunnyModelDefine>) {
-        const child = this.app.factoryService.unserialize(bunny, this);
+        const child = this.app.factoryService.unserialize(bunny);
         this.$appendChild(child);
-        child.$initialize();
         return child;
     }
 

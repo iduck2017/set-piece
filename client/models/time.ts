@@ -21,7 +21,6 @@ export class TimerModel extends Model<TimerModelDefine> {
 
     constructor(
         config: IModel.Config<TimerModelDefine>,
-        parent: IModel.Parent<TimerModelDefine>,
         app: App
     ) {
         super(
@@ -34,7 +33,6 @@ export class TimerModel extends Model<TimerModelDefine> {
                 childBundleDict: {},
                 childBundleList: []
             },
-            parent,
             app
         );
         console.log("TimeModel created");

@@ -1,5 +1,5 @@
-import { MetaData } from "../app";
-import { RootModelDefine } from "../models/root";
+import type { MetaData } from "../app";
+import type { RootModelDefine } from "../models/root";
 import { IBase, IReflect } from "../type";
 import { IModel } from "../type/model";
 import { ModelCode } from "../type/registry";

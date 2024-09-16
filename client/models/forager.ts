@@ -27,7 +27,6 @@ export class ForagerModel extends Model<ForagerModelDefine> {
 
     constructor(
         config: IModel.Config<ForagerModelDefine>,
-        parent: IModel.Parent<ForagerModelDefine>,
         app: App
     ) {
         super(
@@ -42,17 +41,13 @@ export class ForagerModel extends Model<ForagerModelDefine> {
                 childBundleList: [],
                 childBundleDict: {}
             }, 
-            parent,
             app
         );
     }
 
-    public $initialize(): void {
-        if (!this.$inited) {
-            const timer = this.root.childDict.time;
-            timer.eventChannelDict.listened.tickDone.bind(this);
-        }
-        super.$initialize();
+    public activeBiz(): void {
+        const timer = this.root.childDict.time;
+        timer.eventChannelDict.listened.tickDone.bind(this);
     }
 
     protected handleTimeUpdateDone(): void {
