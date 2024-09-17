@@ -63,16 +63,26 @@ export abstract class Model<
     }
 
     /** 事件触发器 */
-    protected readonly $listenedDict: IModel.ListenedDict<M>;
-    protected readonly $listenerDict: IModel.ListenerDict<M>;
-    protected readonly $observerDict: IModel.ObserverDict<M>;
-    protected readonly $observedDict: IModel.ObservedDict<M>;
-    protected readonly $modifiedDict: IModel.ModifiedDict<M>;
-    protected readonly $modifierDict: IModel.ModifierDict<M>;
+    public readonly $eventEmitterDict: 
+    // protected readonly $listenedDict: IModel.ListenedDict<M>;
+    // protected readonly $listenerDict: IModel.ListenerDict<M>;
+    // protected readonly $observerDict: IModel.ObserverDict<M>;
+    // protected readonly $observedDict: IModel.ObservedDict<M>;
+    // protected readonly $modifiedDict: IModel.ModifiedDict<M>;
+    // protected readonly $modifierDict: IModel.ModifierDict<M>;
 
     protected abstract readonly $eventHandlerDict: IModel.EventHandlerDict<M>;
     protected readonly $eventEmitterDict: IModel.EventEmitterDict<M>;
     public readonly eventChannelDict: IModel.EventChannelDict<M>;
+
+    public readonly handlerDict = new Proxy({} as any, {
+        get: (target, key) => {
+            if (!target[key]) {
+                target[key] = [ this, key ];
+            }
+            return target[key];
+        }
+    });
 
 
     /** 测试用例 */
@@ -464,10 +474,10 @@ export abstract class Model<
 
     
     private $emitListener<
-        K extends IReflect.Key<IModel.EventDict<M>>
+        K extends IReflect.Key<IModel.EventEmitterDef<M>>
     >(
         key: K,
-        event: IModel.EventDict<M>[K]
+        event: IModel.EventEmitterDef<M>[K]
     ) {
         const listenerList = this.$listenerDict[key];
         listenerList.forEach(model => {
@@ -500,7 +510,7 @@ export abstract class Model<
     }
 
     private $bindListener<
-        K extends IReflect.Key<IModel.EventDict<M>>
+        K extends IReflect.Key<IModel.EventEmitterDef<M>>
     >(
         key: K,
         target: IModel.Listener<Record<K, M>>
@@ -510,7 +520,7 @@ export abstract class Model<
     }
 
     private $unbindListener<
-        K extends IReflect.Key<IModel.EventDict<M>>
+        K extends IReflect.Key<IModel.EventEmitterDef<M>>
     >(
         key: K,
         handler: IModel.Listener<Record<K, M>>                                       

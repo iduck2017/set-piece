@@ -18,10 +18,11 @@ export namespace IModel {
         childDefList: Array<Define>
         childDefDict: Record<IBase.Key, Define>,
         /** 依赖关系定义 */
-        eventDict: IBase.Dict,
-        listenedDefDict: Record<IBase.Key, Define>,
-        modifiedDefDict: Record<IBase.Key, Define>,
-        observedDefDict: Record<IBase.Key, Define>,
+        eventEmitterDef: IBase.Dict,
+        eventHandlerDef: IBase.Dict,
+        // listenedDefDict: Record<IBase.Key, Define>,
+        // modifiedDefDict: Record<IBase.Key, Define>,
+        // observedDefDict: Record<IBase.Key, Define>,
     }
 
     export type PureDefine = {
@@ -34,10 +35,12 @@ export namespace IModel {
         childDefList: []
         childDefDict: {}
         /** 依赖关系定义 */
-        eventDict: {}
-        listenedDefDict: {}
-        modifiedDefDict: {}
-        observedDefDict: {} 
+        eventEmitterDef: {},
+        eventHandlerDef: {},
+        // eventDict: {}
+        // listenedDefDict: {}
+        // modifiedDefDict: {}
+        // observedDefDict: {} 
     }
 
     /** 通用模型定义 */
@@ -60,133 +63,138 @@ export namespace IModel {
     export type ChildDefDict<M extends Define> = M['childDefDict']
 
     /** 依赖关系定义 */
-    export type EventDict<M extends Define> = M['eventDict']
-    export type ListenedDefDict<M extends Define> = M['listenedDefDict']
-    export type ModifiedDefDict<M extends Define> = M['modifiedDefDict']
-    export type ObservedDefDict<M extends Define> = M['observedDefDict']
+    export type EventEmitterDef<M extends Define> = M['eventEmitterDef']
+    export type EventHandlerDef<M extends Define> = M['eventHandlerDef']
+    // export type ListenedDefDict<M extends Define> = M['listenedDefDict']
+    // export type ModifiedDefDict<M extends Define> = M['modifiedDefDict']
+    // export type ObservedDefDict<M extends Define> = M['observedDefDict']
+
+    export type EventEmitterDict<M extends Define> = {
+        [K in IReflect.Key<EventEmitterDef<M>>]: EventEmitterDef<M>[K]
+    }
 
     /**
      * 特殊模型
      * 事件监听器
     */
-    export type Listener<
-        R extends Record<IBase.Key, Define>
-    > = Model<
-        CommonDefine<{
-            listenedDefDict: R
-        }, Define>
-    >
+    // export type Listener<
+    //     R extends Record<IBase.Key, Define>
+    // > = Model<
+    //     CommonDefine<{
+    //         listenedDefDict: R
+    //     }, Define>
+    // >
 
     /** 状态修饰器 */
-    export type Modifier<
-        R extends Record<IBase.Key, Define>
-    > = Model<
-        CommonDefine<{
-            modifiedDefDict: R
-        }, Define>
-    >
+    // export type Modifier<
+    //     R extends Record<IBase.Key, Define>
+    // > = Model<
+    //     CommonDefine<{
+    //         modifiedDefDict: R
+    //     }, Define>
+    // >
     
     /** 状态观察器 */
-    export type Observer<
-        R extends Record<IBase.Key, Define>
-    > = Model<
-        CommonDefine<{
-            observedDefDict: R
-        }, Define>
-    >
+    // export type Observer<
+    //     R extends Record<IBase.Key, Define>
+    // > = Model<
+    //     CommonDefine<{
+    //         observedDefDict: R
+    //     }, Define>
+    // >
 
     /** 依赖标识符集合 */
-    export type ListenerIdDict<M extends Define> = {
-        [K in IReflect.Key<EventDict<M>>]?: string[]
-    }
-    export type ModifierIdDict<M extends Define> = {
-        [K in IReflect.Key<State<M>>]?: string[]
-    }
-    export type ObserverIdDict<M extends Define> = {
-        [K in IReflect.Key<State<M>>]?: string[]
-    }
-    export type ListenedIdDict<M extends Define> = {
-        [K in IReflect.Key<ListenedDefDict<M>>]?: string[]
-    }
-    export type ModifiedIdDict<M extends Define> = {
-        [K in IReflect.Key<ModifiedDefDict<M>>]?: string[]
-    }
-    export type ObservedIdDict<M extends Define> = {
-        [K in IReflect.Key<ObservedDefDict<M>>]?: string[]
-    }
+    // export type ListenerIdDict<M extends Define> = {
+    //     [K in IReflect.Key<EventEmitter<M>>]?: string[]
+    // }
+    // export type ModifierIdDict<M extends Define> = {
+    //     [K in IReflect.Key<State<M>>]?: string[]
+    // }
+    // export type ObserverIdDict<M extends Define> = {
+    //     [K in IReflect.Key<State<M>>]?: string[]
+    // }
+    // export type ListenedIdDict<M extends Define> = {
+    //     [K in IReflect.Key<ListenedDefDict<M>>]?: string[]
+    // }
+    // export type ModifiedIdDict<M extends Define> = {
+    //     [K in IReflect.Key<ModifiedDefDict<M>>]?: string[]
+    // }
+    // export type ObservedIdDict<M extends Define> = {
+    //     [K in IReflect.Key<ObservedDefDict<M>>]?: string[]
+    // }
 
     /** 依赖集合 */
-    export type ListenerDict<M extends Define> = {
-        [K in IReflect.Key<EventDict<M>>]: Listener<Record<K, M>>[]
-    }
-    export type ModifierDict<M extends Define> = {
-        [K in IReflect.Key<State<M>>]: Modifier<Record<K, M>>[]
-    }
-    export type ObserverDict<M extends Define> = {
-        [K in IReflect.Key<State<M>>]: Observer<Record<K, M>>[]
-    }
-    export type ListenedDict<M extends Define> = {
-        [K in IReflect.Key<ListenedDefDict<M>>]: Model<ListenedDefDict<M>[K]>[]
-    }
-    export type ModifiedDict<M extends Define> = {
-        [K in IReflect.Key<ModifiedDefDict<M>>]: Model<ModifiedDefDict<M>[K]>[]
-    }
-    export type ObservedDict<M extends Define> = {
-        [K in IReflect.Key<ObservedDefDict<M>>]: Model<ObservedDefDict<M>[K]>[]
-    }
+    // export type ListenerDict<M extends Define> = {
+    //     [K in IReflect.Key<EventEmitter<M>>]: Listener<Record<K, M>>[]
+    // }
+    // export type ModifierDict<M extends Define> = {
+    //     [K in IReflect.Key<State<M>>]: Modifier<Record<K, M>>[]
+    // }
+    // export type ObserverDict<M extends Define> = {
+    //     [K in IReflect.Key<State<M>>]: Observer<Record<K, M>>[]
+    // }
+    // export type ListenedDict<M extends Define> = {
+    //     [K in IReflect.Key<ListenedDefDict<M>>]: Model<ListenedDefDict<M>[K]>[]
+    // }
+    // export type ModifiedDict<M extends Define> = {
+    //     [K in IReflect.Key<ModifiedDefDict<M>>]: Model<ModifiedDefDict<M>[K]>[]
+    // }
+    // export type ObservedDict<M extends Define> = {
+    //     [K in IReflect.Key<ObservedDefDict<M>>]: Model<ObservedDefDict<M>[K]>[]
+    // }
 
     /** 事件触发器集合 */
-    export type EventEmitterDict<M extends Define> = {
-        listened: {
-            [K in IReflect.Key<EventDict<M>>]: (event: EventDict<M>[K]) => void
-        },
-        modified: {
-            [K in IReflect.Key<State<M>>]: (event: IEvent.StateUpdateBefore<M, K>) => void
-        },
-        observed: {
-            [K in IReflect.Key<State<M>>]: (event: IEvent.StateUpdateDone<M, K>) => void
-        }
-    }
-    /** 事件处理器集合 */
-    export type EventHandlerDict<M extends Define> = {
-        listener: {
-            [K in IReflect.Key<ListenedDefDict<M>>]: (
-                event: EventDict<ListenedDefDict<M>[K]>[K]
-            ) => void
-        },
-        modifier: {
-            [K in IReflect.Key<ModifiedDefDict<M>>]: (
-                event: IEvent.StateUpdateBefore<ModifiedDefDict<M>[K], K>
-            ) => void
-        },
-        observer: {
-            [K in IReflect.Key<ObservedDefDict<M>>]: (
-                event: IEvent.StateUpdateDone<ModifiedDefDict<M>[K], K>
-            ) => void
-        }
-    }
+    // export type EventEmitterDict<M extends Define> = {
+    //     listened: {
+    //         [K in IReflect.Key<EventEmitter<M>>]: (event: EventEmitter<M>[K]) => void
+    //     },
+    //     modified: {
+    //         [K in IReflect.Key<State<M>>]: (event: IEvent.StateUpdateBefore<M, K>) => void
+    //     },
+    //     observed: {
+    //         [K in IReflect.Key<State<M>>]: (event: IEvent.StateUpdateDone<M, K>) => void
+    //     }
+    // }
+    // /** 事件处理器集合 */
+    // export type EventHandlerDict<M extends Define> = {
+    //     listener: {
+    //         [K in IReflect.Key<ListenedDefDict<M>>]: (
+    //             event: EventEmitter<ListenedDefDict<M>[K]>[K]
+    //         ) => void
+    //     },
+    //     modifier: {
+    //         [K in IReflect.Key<ModifiedDefDict<M>>]: (
+    //             event: IEvent.StateUpdateBefore<ModifiedDefDict<M>[K], K>
+    //         ) => void
+    //     },
+    //     observer: {
+    //         [K in IReflect.Key<ObservedDefDict<M>>]: (
+    //             event: IEvent.StateUpdateDone<ModifiedDefDict<M>[K], K>
+    //         ) => void
+    //     }
+    // }
 
-    /** 事件绑定器集合 */
-    export type EventChannelDict<M extends Define> = {
-        listened: {
-            [K in IReflect.Key<EventDict<M>>]: {
-                bind: (model: Listener<Record<K, M>>) => void,
-                unbind: (model: Listener<Record<K, M>>) => void,
-            }
-        },
-        modified: {
-            [K in IReflect.Key<State<M>>]: {
-                bind: (model: Modifier<Record<K, M>>) => void,
-                unbind: (model: Modifier<Record<K, M>>) => void,
-            }
-        },
-        observed: {
-            [K in IReflect.Key<State<M>>]: {
-                bind: (model: Observer<Record<K, M>>) => void,
-                unbind: (model: Observer<Record<K, M>>) => void,
-            }
-        }
-    }
+    // /** 事件绑定器集合 */
+    // export type EventChannelDict<M extends Define> = {
+    //     listened: {
+    //         [K in IReflect.Key<EventEmitter<M>>]: {
+    //             bind: (model: Listener<Record<K, M>>) => void,
+    //             unbind: (model: Listener<Record<K, M>>) => void,
+    //         }
+    //     },
+    //     modified: {
+    //         [K in IReflect.Key<State<M>>]: {
+    //             bind: (model: Modifier<Record<K, M>>) => void,
+    //             unbind: (model: Modifier<Record<K, M>>) => void,
+    //         }
+    //     },
+    //     observed: {
+    //         [K in IReflect.Key<State<M>>]: {
+    //             bind: (model: Observer<Record<K, M>>) => void,
+    //             unbind: (model: Observer<Record<K, M>>) => void,
+    //         }
+    //     }
+    // }
 
     /** 序列化参数 */
     export type Bundle<
