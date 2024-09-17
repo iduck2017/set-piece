@@ -35,7 +35,6 @@ export class TimerModel extends Model<TimerModelDefine> {
             },
             app
         );
-        console.log("TimeModel created");
         this.debuggerDict.updateTime = this.updateTime.bind(this, 1);
     }
     

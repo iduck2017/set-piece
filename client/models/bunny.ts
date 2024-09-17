@@ -65,7 +65,7 @@ export class BunnyModel extends Model<BunnyModelDefine> {
         };
     }
 
-    public activeBiz() {
+    public activate() {
         if (!this.$activated) {
             const timer = this.root.childDict.time;
             timer.eventChannelDict.listened.tickDone.bind(this);
@@ -85,6 +85,7 @@ export class BunnyModel extends Model<BunnyModelDefine> {
 
     /** 年龄增长 */
     private handleTimeUpdateDone() {
+        console.log('handleTimeUpdateDone');
         this.$originState.age += 1;
         if (this.currentState.age >= this.currentState.maxAge) {
             this.$die();

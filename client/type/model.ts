@@ -14,7 +14,7 @@ export namespace IModel {
         rule: IBase.Data
         state: IBase.Data
         /** 从属关系定义 */
-        parent: Model;
+        parent: Model | App;
         childDefList: Array<Define>
         childDefDict: Record<IBase.Key, Define>,
         /** 依赖关系定义 */
@@ -30,7 +30,7 @@ export namespace IModel {
         rule: {},
         state: {}
         /** 从属关系定义 */
-        parent: Model
+        parent: Model | App
         childDefList: []
         childDefDict: {}
         /** 依赖关系定义 */

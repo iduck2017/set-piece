@@ -45,7 +45,7 @@ export class ForagerModel extends Model<ForagerModelDefine> {
         );
     }
 
-    public activeBiz(): void {
+    public activate(): void {
         const timer = this.root.childDict.time;
         timer.eventChannelDict.listened.tickDone.bind(this);
     }

@@ -49,7 +49,7 @@ export class App {
 
     public async initialize() {
         const metadata = await this.$loadMetaData();
-        this.archieveService.init(metadata.archieveDataList);
+        this.archieveService.initialize(metadata.archieveDataList);
         this.perferenceService.initialize(metadata.perferenceData);
         this.renderService.initialize();
         this.$status = AppStatus.UNMOUNTED;
@@ -67,8 +67,9 @@ export class App {
         const config = index === undefined ?
             await this.archieveService.createArchieve() :
             await this.archieveService.loadArchieve(index);
-        this.$root = this.factoryService.unserialize(config, undefined);
-        this.$root.$activeBiz();
+        this.$root = this.factoryService.unserialize(config);
+        this.$root.$bindParent(this);
+        this.$root.$activate();
         this.$status = AppStatus.MOUNTED;
     }
 

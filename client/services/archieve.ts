@@ -24,7 +24,7 @@ export class ArchieveService {
         this.app = app;
     }
 
-    public init(config: ArchieveData[]) {
+    public initialize(config: ArchieveData[]) {
         this.$data = config;
     }
 

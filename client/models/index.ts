@@ -97,6 +97,7 @@ export abstract class Model<
     ) {
         super(app);
         this.$status = ModelStatus.UNINITED;
+        console.log(this.constructor.name, 'inited');
         this.$config = config;
 
         /** 基本信息 */
@@ -144,32 +145,24 @@ export abstract class Model<
 
         this.$eventEmitterDict = {
             listened: Generator.readonlyProxy(
-                <K extends IReflect.Key<IModel.EventDict<M>>>(
-                    target: any, key: K
-                ) => {
+                (target, key) => {
                     return this.$emitListener.bind(this, key);
                 }
             ),
             observed: Generator.readonlyProxy(
-                <K extends IReflect.Key<IModel.State<M>>>(
-                    target: any, key: K
-                ) => {
+                (target, key) => {
                     return this.$emitObserver.bind(this, key);
                 }
             ),
             modified: Generator.readonlyProxy(
-                <K extends IReflect.Key<IModel.State<M>>>(
-                    target: any, key: K
-                ) => {
+                (target, key) => {
                     return this.$emitModifier.bind(this, key);
                 }
             )
         };
         this.eventChannelDict = {
             listened: Generator.readonlyProxy(
-                <K extends IReflect.Key<IModel.EventDict<M>>>(
-                    target: any, key: K
-                ) => {
+                (target, key) => {
                     return {
                         bind: this.$bindListener.bind(this, key),
                         unbind: this.$unbindListener.bind(this, key)
@@ -177,9 +170,7 @@ export abstract class Model<
                 }
             ),
             observed: Generator.readonlyProxy(
-                <K extends IReflect.Key<IModel.State<M>>>(
-                    target: any, key: K
-                ) => {
+                (target, key) => {
                     return {
                         bind: this.$bindObserver.bind(this, key),
                         unbind: this.$unbindObserver.bind(this, key)
@@ -188,7 +179,12 @@ export abstract class Model<
             ),
             modified: Generator.readonlyProxy(
                 <K extends IReflect.Key<IModel.State<M>>>(
-                    target: any, key: K
+                    target: {
+                        [K in IReflect.Key<IModel.State<M>>]: {
+                            bind: any,
+                            unbind: any 
+                        }
+                    }, key: K
                 ) => {
                     return {
                         bind: this.$bindModifier.bind(this, key),
@@ -225,7 +221,7 @@ export abstract class Model<
         });
         for (const key in config.childBundleDict) {
             const chunk = config.childBundleDict[key];
-            this.childDict[key] = app.factoryService.unserialize(chunk);
+            this.$childDict[key] = app.factoryService.unserialize(chunk);
         }
         for (const bundle of config.childBundleList) {
             const model = app.factoryService.unserialize(bundle);
@@ -237,10 +233,12 @@ export abstract class Model<
     }
 
     /** 挂载父节点 */
-    private $bindParent(parent: IModel.Parent<M>) {
+    public $bindParent(parent: IModel.Parent<M>) {
         this.$parent = parent;
+        console.log(this.constructor.name, 'bind');
         /** 如果父节点从属于根节点，则触发根节点挂载 */
         if (
+            this.$parent === this.app ||
             this.$parent?.status === ModelStatus.MOUNTED ||
             this.$parent?.status === ModelStatus.ACTIVATED
         ) {
@@ -250,8 +248,9 @@ export abstract class Model<
     }
 
     /** 挂载根节点 */
-    private $mountRoot() {
+    public $mountRoot() {
         this.$status = ModelStatus.MOUNTING;
+        console.log(this.constructor.name, 'mount');
         /** 注册 */
         this.app.referenceService.addRefer(this);
         /** 初始化依赖关系 */
@@ -333,8 +332,9 @@ export abstract class Model<
     }
 
     /** 初始化 */
-    private $activate() {
+    public $activate() {
         this.$status = ModelStatus.ACTIVATING;
+        console.log(this.constructor.name, 'activated');
         if (!this.$activated) {
             this.activate();
             this.$activated = true;
@@ -355,7 +355,10 @@ export abstract class Model<
     /** 添加子节点 */
     protected $appendChild(target: IReflect.Iterator<IModel.ChildList<M>>) {
         this.$childList.push(target);
-        target.$bindParent(this);
+        target.$bindParent(this); 
+        if (this.status === ModelStatus.ACTIVATED) {
+            target.$activate();
+        }
         this.$setChildren();
     }
 
@@ -388,8 +391,8 @@ export abstract class Model<
             const child: Model = this.childDict[key];
             child.$destroy();
         }
-        if (this.$parent) {
-            (this.$parent as Model).$removeChild(this as any);
+        if (this.$parent instanceof Model) {
+            this.$parent.$removeChild(this as any);
         }
     }
 
@@ -449,13 +452,13 @@ export abstract class Model<
             originState: this.$originState,
             childBundleDict,
             childBundleList,
-            activated: true,
             listenedIdDict: this.serializeIdDict(this.$listenedDict),
             listenerIdDict: this.serializeIdDict(this.$listenerDict),
             observedIdDict: this.serializeIdDict(this.$observedDict),
             observerIdDict: this.serializeIdDict(this.$observerDict),
             modifiedIdDict: this.serializeIdDict(this.$modifiedDict),
-            modifierIdDict: this.serializeIdDict(this.$modifierDict)
+            modifierIdDict: this.serializeIdDict(this.$modifierDict),
+            activated: true
         };
     }
 
@@ -479,7 +482,7 @@ export abstract class Model<
         event: IEvent.StateUpdateDone<M, K>
     ) {
         const observerList = this.$observerDict[key];
-        observerList.forEach(model => {
+        observerList.forEach((model: IModel.Observer<Record<K, M>>) => {
             model.$eventHandlerDict.observer[key].call(model, event);
         });
     }

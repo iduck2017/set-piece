@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { App } from "../app";
+import type { App } from "../app";
 import { ModelComp } from ".";
 import { ArchieveData } from "../services/archieve";
 import { AppStatus } from "../type/status";
