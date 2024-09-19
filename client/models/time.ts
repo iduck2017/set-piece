@@ -1,6 +1,5 @@
 import { Model } from ".";
 import type { App } from "../app";
-import { Generator } from "../configs/generator";
 import { IModel } from "../type/model";
 import { ModelCode } from "../type/registry";
 
@@ -9,15 +8,14 @@ export type TimerModelDefine = IModel.CommonDefine<{
     state: {
         time: number,
     },
-    eventDict: {
+    emitterDefDict: {
         tickBefore: void,
         tickDone: void,
     }
 }>
 
 export class TimerModel extends Model<TimerModelDefine> {
-    protected $eventHandlerDict: IModel.EventHandlerDict<TimerModelDefine> = 
-        Generator.pureHandlerDict();
+    protected $handlerFuncDict: IModel.HandlerFuncDict<TimerModelDefine> = {};
 
     constructor(
         config: IModel.Config<TimerModelDefine>,
@@ -40,8 +38,8 @@ export class TimerModel extends Model<TimerModelDefine> {
     
     /** 更新时间 */
     public updateTime(offsetTime: number) {
-        this.$eventEmitterDict.listened.tickBefore();
+        this.emitterDict.tickBefore.emitEvent();
         this.$originState.time += offsetTime;
-        this.$eventEmitterDict.listened.tickDone();
+        this.emitterDict.tickDone.emitEvent();
     }
 }

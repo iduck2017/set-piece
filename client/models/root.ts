@@ -1,6 +1,5 @@
 import { Model } from ".";
 import type { App } from "../app";
-import { Generator } from "../configs/generator";
 import { IModel } from "../type/model";
 import { ModelCode } from "../type/registry";
 import type { BunnyModelDefine } from "./bunny";
@@ -18,8 +17,7 @@ export type RootModelDefine = IModel.CommonDefine<{
 }>
 
 export class RootModel extends Model<RootModelDefine> {
-    protected $eventHandlerDict: IModel.EventHandlerDict<RootModelDefine> = 
-        Generator.pureHandlerDict();
+    protected $handlerFuncDict: IModel.HandlerFuncDict<RootModelDefine> = {};
 
     constructor(
         config: IModel.Config<RootModelDefine>,
@@ -49,9 +47,5 @@ export class RootModel extends Model<RootModelDefine> {
         const child = this.app.factoryService.unserialize(bunny);
         this.$appendChild(child);
         return child;
-    }
-
-    public destroy(): void {
-        this.$destroy();
     }
 }

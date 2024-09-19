@@ -43,7 +43,7 @@ export class App {
         this.perferenceService = new PreferenceService(this);
         this.archieveService = new ArchieveService(this);
         this.renderService = new RenderService(this);
-        this.$status = AppStatus.UNINITED;
+        this.$status = AppStatus.CREATED;
         window.$app = this;
     }
 
@@ -68,15 +68,15 @@ export class App {
             await this.archieveService.createArchieve() :
             await this.archieveService.loadArchieve(index);
         this.$root = this.factoryService.unserialize(config);
-        this.$root.$bindParent(this);
-        this.$root.$activate();
+        this.$root.$bindParent(this.$root);
+        this.$root.$initialize();
         this.$status = AppStatus.MOUNTED;
     }
 
     public async quitGame() {
         this.$status = AppStatus.UNMOUNTING;
         this.archieveService.saveArchieve();
-        this.$root?.destroy();
+        this.$root?.$unbindParent();
         this.$root = undefined;
         this.$status = AppStatus.UNMOUNTED;
     }

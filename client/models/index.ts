@@ -1,35 +1,17 @@
 import type { App } from "../app";
-import { Generator } from "../configs/generator";
 import { IBase, IReflect } from "../type";
-import { IEvent } from "../type/event";
 import { IModel } from "../type/model";
 import { ModelStatus } from "../type/status";
+import { Emitter, Handler } from "../utils/emitter";
 import { Entity } from "../utils/entity";
 
-/** 数据模型基类 */
+/** 模型基类 */
 export abstract class Model<
     M extends IModel.Define = IModel.Define
 > extends Entity {
-    /** 外部指针 */
-    private $parent?: IModel.Parent<M>;
-    public get parent() {
-        if (!this.$parent) throw new Error();
-        return this.$parent;
-    }
-
-    public get root() {
-        const result = this.app.root;
-        if (!result) {
-            throw new Error();
-        }
-        return result;
-    }
-
     /** 状态机 */
     private $status: ModelStatus;
-    public get status() {
-        return this.$status;
-    }
+    public get status() { return this.$status; }
 
     /** 基本信息 */
     public readonly id: string;
@@ -37,24 +19,30 @@ export abstract class Model<
     public readonly rule: Partial<IModel.Rule<M>>;
 
     private readonly $config: IModel.BaseConfig<M>;
-    protected $activated: boolean;
+    protected $activated?: boolean;
 
-    /** 状态 */
+    /** 数据结构 */
     protected readonly $originState: IModel.State<M>;
     private readonly $currentState: IModel.State<M>;
-    public get currentState() { 
-        return { ...this.$currentState }; 
-    }
+    public get currentState() { return { ...this.$currentState }; }
     
-    /** 从属模型 */
+    /** 从属关系 */
+    private $parent?: IModel.Parent<M>;
+    public get parent() {
+        const parent = this.$parent;
+        if (!parent) throw new Error();
+        return parent;
+    }
+    public get root() {
+        const root = this.app.root;
+        if (!root) throw new Error();
+        return root;
+    }
+
     public readonly $childDict: IModel.ChildDict<M>;
     public readonly $childList: IModel.ChildList<M>;
-    public get childList() {
-        return [ ...this.$childList ];
-    }
-    public get childDict() {
-        return { ...this.$childDict };
-    }
+    public get childList() { return [ ...this.$childList ]; }
+    public get childDict() { return { ...this.$childDict }; }
     public get children(): Model[] {
         return [
             ...this.childList,
@@ -62,28 +50,10 @@ export abstract class Model<
         ];
     }
 
-    /** 事件触发器 */
-    public readonly $eventEmitterDict: 
-    // protected readonly $listenedDict: IModel.ListenedDict<M>;
-    // protected readonly $listenerDict: IModel.ListenerDict<M>;
-    // protected readonly $observerDict: IModel.ObserverDict<M>;
-    // protected readonly $observedDict: IModel.ObservedDict<M>;
-    // protected readonly $modifiedDict: IModel.ModifiedDict<M>;
-    // protected readonly $modifierDict: IModel.ModifierDict<M>;
-
-    protected abstract readonly $eventHandlerDict: IModel.EventHandlerDict<M>;
-    protected readonly $eventEmitterDict: IModel.EventEmitterDict<M>;
-    public readonly eventChannelDict: IModel.EventChannelDict<M>;
-
-    public readonly handlerDict = new Proxy({} as any, {
-        get: (target, key) => {
-            if (!target[key]) {
-                target[key] = [ this, key ];
-            }
-            return target[key];
-        }
-    });
-
+    /** 事件触发器/处理器 */
+    public readonly emitterDict!: IModel.EmitterDict<M>;
+    protected readonly $handlerFuncDict!: IModel.HandlerFuncDict<M>;
+    protected readonly $handlerDict!: IModel.HandlerDict<M>;
 
     /** 测试用例 */
     public debuggerDict: Record<string, IBase.Func>;
@@ -106,105 +76,18 @@ export abstract class Model<
         app: App
     ) {
         super(app);
-        this.$status = ModelStatus.UNINITED;
-        console.log(this.constructor.name, 'inited');
+        this.$status = ModelStatus.CREATED;
+        this.$activated = config.activated;
         this.$config = config;
+
+        console.log('constructor', this.constructor.name);
 
         /** 基本信息 */
         this.id = config.id || app.referenceService.getUniqId();
         this.code = config.code;
         this.rule = config.rule || {};
         
-        this.$activated = config.inited || false;
-        this.$listenedDict = Generator.readonlyProxy(
-            (target, key) => {
-                if (!target[key]) target[key] = [];
-                return target[key];
-            }
-        );
-        this.$listenerDict = Generator.readonlyProxy(
-            (target, key) => {
-                if (!target[key]) target[key] = [];
-                return target[key];
-            }
-        );
-        this.$observerDict = Generator.readonlyProxy(
-            (target, key) => {
-                if (!target[key]) target[key] = [];
-                return target[key];
-            }
-        );
-        this.$observedDict = Generator.readonlyProxy(
-            (target, key) => {
-                if (!target[key]) target[key] = [];
-                return target[key];
-            }
-        );
-        this.$modifiedDict = Generator.readonlyProxy(
-            (target, key) => {
-                if (!target[key]) target[key] = [];
-                return target[key];
-            }
-        );
-        this.$modifierDict = Generator.readonlyProxy(
-            (target, key) => {
-                if (!target[key]) target[key] = [];
-                return target[key];
-            }
-        );
-
-        this.$eventEmitterDict = {
-            listened: Generator.readonlyProxy(
-                (target, key) => {
-                    return this.$emitListener.bind(this, key);
-                }
-            ),
-            observed: Generator.readonlyProxy(
-                (target, key) => {
-                    return this.$emitObserver.bind(this, key);
-                }
-            ),
-            modified: Generator.readonlyProxy(
-                (target, key) => {
-                    return this.$emitModifier.bind(this, key);
-                }
-            )
-        };
-        this.eventChannelDict = {
-            listened: Generator.readonlyProxy(
-                (target, key) => {
-                    return {
-                        bind: this.$bindListener.bind(this, key),
-                        unbind: this.$unbindListener.bind(this, key)
-                    };
-                }
-            ),
-            observed: Generator.readonlyProxy(
-                (target, key) => {
-                    return {
-                        bind: this.$bindObserver.bind(this, key),
-                        unbind: this.$unbindObserver.bind(this, key)
-                    };
-                }
-            ),
-            modified: Generator.readonlyProxy(
-                <K extends IReflect.Key<IModel.State<M>>>(
-                    target: {
-                        [K in IReflect.Key<IModel.State<M>>]: {
-                            bind: any,
-                            unbind: any 
-                        }
-                    }, key: K
-                ) => {
-                    return {
-                        bind: this.$bindModifier.bind(this, key),
-                        unbind: this.$unbindModifier.bind(this, key)
-                    };
-                }
-            )
-        };
-
-        /** 初始化状态 */
+        /** 数据结构 */
         this.$originState = new Proxy(config.originState, {
             set: (origin, key: IReflect.Key<IModel.State<M>>, value) => {
                 origin[key] = value;
@@ -212,18 +95,38 @@ export abstract class Model<
                 return true;
             }
         });
-        this.$currentState = { 
-            ...this.$originState
-        };
+        this.$currentState = { ...this.$originState };
 
-        /** 树形结构 */
+        /** 依赖关系 */
+        this.emitterDict = new Proxy({} as any, {
+            get: (origin, key: string) => {
+                if (!origin[key]) origin[key] = new Emitter(this, key);
+                return origin[key];
+            },
+            set: () => false
+        });
+        this.$handlerDict = new Proxy({} as any, {
+            get: (origin, key: string) => {
+                if (!origin[key]) {
+                    origin[key] = new Handler(
+                        this.$handlerFuncDict[key],
+                        this,
+                        key
+                    );
+                }
+                return origin[key];
+            },
+            set: () => false
+        });
+
+        /** 从属关系 */
         this.$childList = [];
         this.$childDict = new Proxy({} as IModel.ChildDict<M>, {
             set: (origin, key: IReflect.Key<IModel.ChildDefDict<M>>, value: Model) => {
                 origin[key] = value as any;
-                value.$bindParent(this as any);
-                if (this.$status === ModelStatus.ACTIVATED) {
-                    value.$activate();
+                value.$bindParent(this);
+                if (this.$status === ModelStatus.INITED) {
+                    value.$initialize();
                 }
                 this.$setChildren();
                 return true;
@@ -245,12 +148,13 @@ export abstract class Model<
     /** 挂载父节点 */
     public $bindParent(parent: IModel.Parent<M>) {
         this.$parent = parent;
-        console.log(this.constructor.name, 'bind');
+        console.log('bind_parent', this.constructor.name);
         /** 如果父节点从属于根节点，则触发根节点挂载 */
         if (
-            this.$parent === this.app ||
-            this.$parent?.status === ModelStatus.MOUNTED ||
-            this.$parent?.status === ModelStatus.ACTIVATED
+            /** 如果父节点等于自身，则自身为根节点 */
+            this.$parent === this ||
+            this.$parent.status === ModelStatus.MOUNTED ||
+            this.$parent.status === ModelStatus.INITED
         ) {
             this.$mountRoot();
         }
@@ -260,77 +164,35 @@ export abstract class Model<
     /** 挂载根节点 */
     public $mountRoot() {
         this.$status = ModelStatus.MOUNTING;
-        console.log(this.constructor.name, 'mount');
-        /** 注册 */
+        console.log('mount_root', this.constructor.name);
+        /** 注册唯一标识 */
         this.app.referenceService.addRefer(this);
-        /** 初始化依赖关系 */
-        for (const key in this.$config.listenedIdDict) {
-            if (this.$config.listenedIdDict) {
-                const listenedList = this.$config.listenedIdDict[key] || [];
-                listenedList.forEach(id => {
-                    const model = this.app.referenceService.referDict[id];
+        /** 依赖关系遍历 */
+        for (const key in this.$config.emitterBundleDict) {
+            const handlerIdList = this.$config.emitterBundleDict[key];
+            if (handlerIdList) {
+                for (const id of handlerIdList) {
+                    const [ modelId, handlerKey ] = id.split('_');
+                    const model = this.app.referenceService.referDict[modelId];
                     if (model) {
-                        model.$bindListener(key, this);
+                        this.emitterDict[key].bindHandler(model.$handlerDict[handlerKey]);
                     }
-                });
+                }
             }
         }
-        for (const key in this.$config.listenerIdDict) {
-            if (this.$config.listenerIdDict) {
-                const listenerList = this.$config.listenerIdDict[key] || [];
-                listenerList.forEach(id => {
-                    const model: any = this.app.referenceService.referDict[id];
+        for (const key in this.$config.handlerBundleDict) {
+            const emitterIdList = this.$config.handlerBundleDict[key];
+            if (emitterIdList) {
+                for (const id of emitterIdList) {
+                    const [ modelId, emitterKey ] = id.split('_');
+                    const model = this.app.referenceService.referDict[modelId];
                     if (model) {
-                        this.$bindListener(key, model);
+                        model.emitterDict[emitterKey].bindHandler(this.$handlerDict[key]);
                     }
-                });
+                }
             }
         }
-        for (const key in this.$config.observedIdDict) {
-            if (this.$config.observedIdDict) {
-                const observerList = this.$config.observedIdDict[key] || [];
-                observerList.forEach(id => {
-                    const model = this.app.referenceService.referDict[id];
-                    if (model) {
-                        model.$bindObserver(key, this);
-                    }
-                });
-            }
-        }
-        for (const key in this.$config.observerIdDict) {
-            if (this.$config.observerIdDict) {
-                const observerList = this.$config.observerIdDict[key] || [];
-                observerList.forEach(id => {
-                    const model: any = this.app.referenceService.referDict[id];
-                    if (model) {
-                        this.$bindObserver(key, model);
-                    }
-                });
-            }
-        }
-        for (const key in this.$config.modifiedIdDict) {
-            if (this.$config.modifiedIdDict) {
-                const modifierList = this.$config.modifiedIdDict[key] || [];
-                modifierList.forEach(id => {
-                    const model = this.app.referenceService.referDict[id];
-                    if (model) {
-                        model.$bindModifier(key, this);
-                    }
-                });
-            }
-        }
-        for (const key in this.$config.modifierIdDict) {
-            if (this.$config.modifierIdDict) {
-                const modifierList = this.$config.modifierIdDict[key] || [];
-                modifierList.forEach(id => {
-                    const model: any = this.app.referenceService.referDict[id];
-                    if (model) {
-                        this.$bindModifier(key, model);
-                    }
-                });
-            }
-        }
-        /** 遍历子节点 */
+        /** 从属关系遍历 */
         for (const child of this.$childList) {
             child.$mountRoot();
         }
@@ -341,33 +203,64 @@ export abstract class Model<
         this.$status = ModelStatus.MOUNTED;
     }
 
+    public $unmountRoot() {
+        this.$status = ModelStatus.UNMOUNTING;
+        console.log('unmount_root', this.constructor.name);
+        /** 依赖关系遍历 */
+        for (const key in this.emitterDict) {
+            const emitter = this.emitterDict[key];
+            emitter.unmountRoot();
+        }
+        for (const key in this.$handlerDict) {
+            const handler = this.$handlerDict[key];
+            handler.unmountRoot();
+        }
+        /** 从属关系遍历 */
+        for (const child of this.$childList) {
+            child.$unmountRoot();
+        }
+        for (const key in this.$childDict) {
+            const child = this.childDict[key];
+            child.$unmountRoot();
+        }
+        this.app.referenceService.removeRefer(this);
+        this.$status = ModelStatus.UNMOUNTED;
+    }
+
+    public $unbindParent() {
+        if (this.status === ModelStatus.INITED) {
+            this.$unmountRoot();
+        }
+        this.$parent = undefined;
+        this.$status = ModelStatus.UNBINDED;
+    }
+
     /** 初始化 */
-    public $activate() {
-        this.$status = ModelStatus.ACTIVATING;
-        console.log(this.constructor.name, 'activated');
+    public initialize() {}
+    public $initialize() {
+        this.$status = ModelStatus.INITING;
         if (!this.$activated) {
-            this.activate();
+            console.log('initialize', this.constructor.name);
+            this.initialize();
             this.$activated = true;
         }
         /** 遍历 */
         this.$childList.forEach(child => {
-            child.$activate();
+            child.$initialize();
         });
         for (const key in this.$childDict) {
             const child = this.childDict[key];
-            child.$activate();
+            child.$initialize();
         }
-        this.$status = ModelStatus.ACTIVATED;
+        this.$status = ModelStatus.INITED;
     }
-
-    public activate() {}
 
     /** 添加子节点 */
     protected $appendChild(target: IReflect.Iterator<IModel.ChildList<M>>) {
         this.$childList.push(target);
         target.$bindParent(this); 
-        if (this.status === ModelStatus.ACTIVATED) {
-            target.$activate();
+        if (this.status === ModelStatus.INITED) {
+            target.$initialize();
         }
         this.$setChildren();
     }
@@ -392,20 +285,6 @@ export abstract class Model<
         throw new Error();
     }
 
-    public $destroy() {
-        this.app.referenceService.removeRefer(this);
-        this.$childList.forEach(child => {
-            child.$destroy();
-        });
-        for (const key in this.$childDict) {
-            const child: Model = this.childDict[key];
-            child.$destroy();
-        }
-        if (this.$parent instanceof Model) {
-            this.$parent.$removeChild(this as any);
-        }
-    }
-
     /** 更新状态 */
     public updateState<K extends IReflect.Key<IModel.State<M>>>(key: K) {   
         const prev = this.$currentState[key];
@@ -415,25 +294,17 @@ export abstract class Model<
             prev: current,
             next: current
         };
-        this.$emitModifier(key, event);
+        const stateUpdateBefore = this.emitterDict[`${key}UpdateBefore`] as any;
+        const stateUpdateDone = this.emitterDict[`${key}UpdateDone`] as any;
+        stateUpdateBefore.emitEvent(event);
         const next = event.next;
         if (prev !== next) {
             this.$currentState[key] = next;
-            if (this.$status === ModelStatus.ACTIVATED) {
-                this.$emitObserver(key, event);
+            if (this.$status === ModelStatus.INITED) {
+                stateUpdateDone.emitEvent(event);
                 this.$setState();
             }
         }
-    }
-    
-    public serializeIdDict<T extends Record<IBase.Key, Model[]>>(target: T) {
-        const result = {} as Record<keyof T, string[]>;
-        for (const key in target) {
-            result[key] = target[key].map(model => {
-                return model.id;
-            });
-        }
-        return result;
     }
 
     /** 序列化函数 */
@@ -447,12 +318,15 @@ export abstract class Model<
             return child.serialize(); 
         });
 
-        const listenedIdDict = {} as any;
-        for (const key in this.$listenedDict) {
-            const listenedList = this.$listenedDict[key];
-            listenedIdDict[key] = listenedList.map(model => {
-                return model.id;
-            });
+        const emitterIdDict = {} as any;
+        for (const key in this.emitterDict) {
+            const emitter = this.emitterDict[key];
+            emitterIdDict[key] = emitter.makeBundle();
+        }
+        const handlerIdDict = {} as any;
+        for (const key in this.$handlerDict) {
+            const handler = this.$handlerDict[key];
+            handlerIdDict[key] = handler.makeBundle();
         }
 
         return {
@@ -462,125 +336,9 @@ export abstract class Model<
             originState: this.$originState,
             childBundleDict,
             childBundleList,
-            listenedIdDict: this.serializeIdDict(this.$listenedDict),
-            listenerIdDict: this.serializeIdDict(this.$listenerDict),
-            observedIdDict: this.serializeIdDict(this.$observedDict),
-            observerIdDict: this.serializeIdDict(this.$observerDict),
-            modifiedIdDict: this.serializeIdDict(this.$modifiedDict),
-            modifierIdDict: this.serializeIdDict(this.$modifierDict),
+            emitterBundleDict: emitterIdDict,
+            handlerBundleDict: handlerIdDict,
             activated: true
         };
-    }
-
-    
-    private $emitListener<
-        K extends IReflect.Key<IModel.EventEmitterDef<M>>
-    >(
-        key: K,
-        event: IModel.EventEmitterDef<M>[K]
-    ) {
-        const listenerList = this.$listenerDict[key];
-        listenerList.forEach(model => {
-            model.$eventHandlerDict.listener[key].call(model, event);
-        });
-    }
-
-    private $emitObserver<
-        K extends IReflect.Key<IModel.State<M>>
-    >(
-        key: K,
-        event: IEvent.StateUpdateDone<M, K>
-    ) {
-        const observerList = this.$observerDict[key];
-        observerList.forEach((model: IModel.Observer<Record<K, M>>) => {
-            model.$eventHandlerDict.observer[key].call(model, event);
-        });
-    }
-
-    private $emitModifier<
-        K extends IReflect.Key<IModel.State<M>>
-    >(
-        key: K,
-        event: IEvent.StateUpdateBefore<M, K>
-    ) {
-        const modifierList = this.$modifierDict[key];
-        modifierList.forEach(model => {
-            model.$eventHandlerDict.modifier[key].call(model, event);
-        });
-    }
-
-    private $bindListener<
-        K extends IReflect.Key<IModel.EventEmitterDef<M>>
-    >(
-        key: K,
-        target: IModel.Listener<Record<K, M>>
-    ) {
-        target.$listenedDict[key].push(this);
-        this.$listenerDict[key].push(target);
-    }
-
-    private $unbindListener<
-        K extends IReflect.Key<IModel.EventEmitterDef<M>>
-    >(
-        key: K,
-        handler: IModel.Listener<Record<K, M>>                                       
-    ) { 
-        const handlerIndex = handler.$listenedDict[key].indexOf(this);
-        const emitterIndex = this.$listenerDict[key].indexOf(handler);
-        if (handlerIndex < 0 || emitterIndex < 0) {
-            throw new Error();
-        }
-        handler.$listenedDict[key].splice(handlerIndex, 1);
-        this.$listenerDict[key].splice(emitterIndex, 1);
-    }
-
-    private $bindObserver<
-        K extends IReflect.Key<IModel.State<M>>
-    >(
-        key: K,
-        target: IModel.Observer<Record<K, M>>
-    ) {
-        target.$observedDict[key].push(this);
-        this.$observerDict[key].push(target);
-    }
-
-    private $unbindObserver<
-        K extends IReflect.Key<IModel.State<M>>
-    >(
-        key: K,
-        handler: IModel.Observer<Record<K, M>>
-    ) {
-        const handlerIndex = handler.$observedDict[key].indexOf(this);
-        const observerIndex = this.$observerDict[key].indexOf(handler);
-        if (handlerIndex < 0 || observerIndex < 0) {
-            throw new Error();
-        }
-        handler.$observedDict[key].splice(handlerIndex, 1);
-        this.$observerDict[key].splice(observerIndex, 1);
-    }
-
-    private $bindModifier<
-        K extends IReflect.Key<IModel.State<M>>
-    >(
-        key: K,
-        target: IModel.Modifier<Record<K, M>>
-    ) {
-        target.$modifiedDict[key].push(this);
-        this.$modifierDict[key].push(target);
-    }
-
-    private $unbindModifier<
-        K extends IReflect.Key<IModel.State<M>>
-    >(
-        key: K,
-        handler: IModel.Modifier<Record<K, M>>
-    ) {
-        const handlerIndex = handler.$modifiedDict[key].indexOf(this);
-        const modifierIndex = this.$modifierDict[key].indexOf(handler);
-        if (handlerIndex < 0 || modifierIndex < 0) {
-            throw new Error();
-        }
-        handler.$modifiedDict[key].splice(handlerIndex, 1);
-        this.$modifierDict[key].splice(modifierIndex, 1);
     }
 }

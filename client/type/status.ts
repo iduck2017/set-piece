@@ -1,7 +1,7 @@
 
 export enum AppStatus {
     /** 应用未初始化 */
-    UNINITED,
+    CREATED,
     /** 应用初始化完成,节点未挂载 */
     UNMOUNTED,
     /** 应用正在挂载节点 */
@@ -31,22 +31,19 @@ export enum AppStatus {
  */
 export enum ModelStatus {
     /** 节点未初始化 */
-    UNINITED,
+    CREATED,
     /** 节点挂载到父节点 */
     BINDED,
     /** 节点挂载到根节点 */
     MOUNTING,
     MOUNTED,
     /** 节点业务逻辑执行 */
-    ACTIVATING,
-    ACTIVATED,
-    /** 节点业务逻辑取消 */
-    DEACTIVATED,
-    /** 节点卸载自根节点 */
+    INITING,
+    INITED,
+    /** 节点业务逻辑注销 */
+    UNMOUNTING,
     UNMOUNTED,
-    /** 节点卸载自父节点 */
+    /** 节点销毁 */
     UNBINDED,
-    /** 节点销毁完成 */
-    DESTROYED,
 }
     

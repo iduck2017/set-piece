@@ -1,99 +1,104 @@
 import { Model } from "../models";
-import { IBase } from "../type";
 
-export class EventEmitter<
-    E extends IBase.Dict
-> {
-    public readonly model?: Model;
-    public readonly key?: string;
+export class Emitter<E = any> {
+    public readonly model: Model;
+    public readonly key: string;
 
-    public eventHandlerList: EventHandler<E>[] = [];
+    private readonly $handlerList: Handler<E>[] = [];
 
     constructor(
-        model?: Model, 
-        key?: string
+        model: Model, 
+        key: string
     ) {
         this.model = model;
         this.key = key;
     }
 
-    private $addEventHandler(eventHandler: EventHandler<E>) {
-        this.eventHandlerList.push(eventHandler);
+    private $addHandler(eventHandler: Handler<E>) {
+        this.$handlerList.push(eventHandler);
     }
 
-    private $removeEventHandler(eventHandler: EventHandler<E>) {
-        const index = this.eventHandlerList.indexOf(eventHandler);
+    private $removeHandler(eventHandler: Handler<E>) {
+        const index = this.$handlerList.indexOf(eventHandler);
         if (index >= 0) {
-            this.eventHandlerList.splice(index, 1);
+            this.$handlerList.splice(index, 1);
         }
     }
 
-    public bindHandler(handleEvent: (event: E) => void) {
-        const eventHandler = new EventHandler(handleEvent, this.model, this.key);
-        this.$addEventHandler(eventHandler);
-        return eventHandler;
+    public bindHandler(handler: Handler<E>) {
+        handler.$addEmitter(this);
+        this.$addHandler(handler);
     }
 
-    public unbindHandler(eventHandler: EventHandler<E>) {
-        this.$removeEventHandler(eventHandler);
+    public unbindHandler(handler: Handler<E>) {
+        this.$removeHandler(handler);
+        handler.$removeEmitter(this);
     }
 
     public emitEvent(event: E) {
-        for (const eventHandler of this.eventHandlerList) {
+        for (const eventHandler of this.$handlerList) {
             eventHandler.handleEvent(event);
         }
     }
 
-    public serializeChunk() {
-        return this.eventHandlerList.map(item => {
-            if (item.model && item.key) {
-                return {
-                    model: item.model.id,
-                    key: item.key
-                };
+    public makeBundle(): string[] {
+        const bundle: string[] = [];
+        for (const eventEmitter of this.$handlerList) {
+            if (eventEmitter.model && eventEmitter.key) {
+                bundle.push(`${eventEmitter.model.id}_${eventEmitter.key}`);
             }
+        }
+        return bundle;
+    }
+
+    public unmountRoot() {
+        this.$handlerList.forEach(item => {
+            this.unbindHandler(item);
         });
     }
 }
 
-export class EventHandler<
-    E extends IBase.Dict
-> {
-    public readonly model?: Model;
-    public readonly key?: string;
+export class Handler<E = any> {
+    public readonly model: Model;
+    public readonly key: string;
 
-    public readonly eventEmitterList: EventEmitter<E>[] = [];
+    public readonly $emitterList: Emitter<E>[] = [];
     public readonly handleEvent: (event: E) => void;
 
     constructor(
         handleEvent: (event: E) => void,
-        model?: Model,
-        key?: string
+        model: Model,
+        key: string
     ) {
         this.model = model;
         this.key = key;
-        this.handleEvent = handleEvent;
+        this.handleEvent = handleEvent.bind(model);
     }
 
-    public $addEventEmitter(eventEmitter: EventEmitter<E>) {
-        this.eventEmitterList.push(eventEmitter);
+    public $addEmitter(eventEmitter: Emitter<E>) {
+        this.$emitterList.push(eventEmitter);
     }
 
-    public $removeEventEmitter(eventEmitter: EventEmitter<E>) {
-        const index = this.eventEmitterList.indexOf(eventEmitter);
+    public $removeEmitter(eventEmitter: Emitter<E>) {
+        const index = this.$emitterList.indexOf(eventEmitter);
         if (index >= 0) {
-            this.eventEmitterList.splice(index, 1);
+            this.$emitterList.splice(index, 1);
         }
     }
 
-    public serializeChunk() {
-        return this.eventEmitterList.map(item => {
-            if (item.model && item.key) {
-                return {
-                    model: item.model.id,
-                    key: item.key
-                };
+    public makeBundle(): string[] {
+        const bundle: string[] = [];
+        for (const eventEmitter of this.$emitterList) {
+            if (eventEmitter.model && eventEmitter.key) {
+                bundle.push(`${eventEmitter.model.id}_${eventEmitter.key}`);
             }
+        }
+        return bundle;
+    }
+
+    public unmountRoot() {
+        this.$emitterList.forEach(item => {
+            item.unbindHandler(this);
         });
     }
 }

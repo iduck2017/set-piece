@@ -1,5 +1,6 @@
 import { Model } from ".";
 import type { App } from "../app";
+import { IEvent } from "../type/event";
 import { IModel } from "../type/model";
 import { ModelCode } from "../type/registry";
 import { Random } from "../utils/random";
@@ -15,23 +16,16 @@ export type BunnyModelDefine = IModel.CommonDefine<{
     childDefDict: {
         forager: ForagerModelDefine,
     },
-    listenedDefDict: {
-        tickDone: TimerModelDefine
-    },
-    observedDefDict: {
-        time: TimerModelDefine
-    },
+    handlerDefDict: {
+        tickDone: void,
+        timeUpdateDone: IEvent.StateUpdateDone<TimerModelDefine, 'time'>
+    }
 }>
 
 export class BunnyModel extends Model<BunnyModelDefine> {
-    protected $eventHandlerDict: IModel.EventHandlerDict<BunnyModelDefine> = {
-        listener: {
-            tickDone: this.handleTimeUpdateDone
-        },
-        observer: {
-            time: this.handleTimeUpdateDone
-        },
-        modifier: {}
+    protected $handlerFuncDict: IModel.HandlerFuncDict<BunnyModelDefine> = {
+        tickDone: this.handleTimeUpdateDone,
+        timeUpdateDone: this.handleTimeUpdateDone
     };
 
     constructor(
@@ -65,18 +59,17 @@ export class BunnyModel extends Model<BunnyModelDefine> {
         };
     }
 
-    public activate() {
+    public initialize() {
         if (!this.$activated) {
             const timer = this.root.childDict.time;
-            timer.eventChannelDict.listened.tickDone.bind(this);
+            // timer.emitterDict.timeUpdateDone.bindHandler(
+            //     this.$handlerDict.timeUpdateDone
+            // );
+            timer.emitterDict.tickDone.bindHandler(
+                this.$handlerDict.tickDone
+            );
         }
     }
-
-    /** 吃食物 */
-    // @Decorators.usecase()
-    // public eatFood() {
-    //     this.$originState.weight += Random.number(1, 5);
-    // }
 
     /** 繁殖幼崽 */
     public spawnChild() {
@@ -85,7 +78,6 @@ export class BunnyModel extends Model<BunnyModelDefine> {
 
     /** 年龄增长 */
     private handleTimeUpdateDone() {
-        console.log('handleTimeUpdateDone');
         this.$originState.age += 1;
         if (this.currentState.age >= this.currentState.maxAge) {
             this.$die();
@@ -93,6 +85,6 @@ export class BunnyModel extends Model<BunnyModelDefine> {
     }
 
     private $die() {
-        this.$destroy();
+        // this.$destroy();
     }
 }

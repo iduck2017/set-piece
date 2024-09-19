@@ -2,7 +2,6 @@ import { Model } from ".";
 import type { App } from "../app";
 import { IModel } from "../type/model";
 import { ModelCode } from "../type/registry";
-import { TimerModelDefine } from "./time";
 
 export type ForagerModelDefine = IModel.CommonDefine<{
     code: ModelCode.Forager,
@@ -11,18 +10,14 @@ export type ForagerModelDefine = IModel.CommonDefine<{
         maxEnergy: number,
         energyWaste: number,
     },
-    listenedDefDict: {
-        tickDone: TimerModelDefine
+    handlerDefDict: {
+        tickDone: void
     }
 }>
 
 export class ForagerModel extends Model<ForagerModelDefine> {
-    protected $eventHandlerDict: IModel.EventHandlerDict<ForagerModelDefine> = {
-        listener: {
-            tickDone: this.handleTimeUpdateDone
-        },
-        observer: {},
-        modifier: {}
+    protected $handlerFuncDict: IModel.HandlerFuncDict<ForagerModelDefine> = {
+        tickDone: this.handleTimeUpdateDone
     };
 
     constructor(
@@ -45,9 +40,11 @@ export class ForagerModel extends Model<ForagerModelDefine> {
         );
     }
 
-    public activate(): void {
+    public initialize(): void {
         const timer = this.root.childDict.time;
-        timer.eventChannelDict.listened.tickDone.bind(this);
+        timer.emitterDict.tickDone.bindHandler(
+            this.$handlerDict.tickDone
+        );
     }
 
     protected handleTimeUpdateDone(): void {
