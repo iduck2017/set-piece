@@ -18,8 +18,7 @@ export abstract class Model<
     public readonly code: IModel.Code<M>;
     public readonly rule: Partial<IModel.Rule<M>>;
 
-    private readonly $config: IModel.BaseConfig<M>;
-    protected $activated?: boolean;
+    private $activated?: boolean;
 
     /** 数据结构 */
     protected readonly $originState: IModel.State<M>;
@@ -52,11 +51,11 @@ export abstract class Model<
 
     /** 事件触发器/处理器 */
     public readonly emitterDict!: IModel.EmitterDict<M>;
-    protected readonly $handlerFuncDict!: IModel.HandlerFuncDict<M>;
-    protected readonly $handlerDict!: IModel.HandlerDict<M>;
+    public readonly $handleEvent!: IModel.HandlerFuncDict<M>;
+    public readonly $handlerDict!: IModel.HandlerDict<M>;
 
     /** 测试用例 */
-    public debuggerDict: Record<string, IBase.Func>;
+    public debug: Record<string, IBase.Func>;
     public readonly stateSetterList: IBase.Func[] = [];
     public readonly childrenSetterList: IBase.Func[] = [];
 
@@ -71,6 +70,93 @@ export abstract class Model<
         });
     }
 
+    /** 初始化子级节点列表 */
+    private $initChildList(config: IModel.ChildConfigList<M>) {
+        const childList = [] as IModel.ChildList<M>;
+        for (const bundle of config) {
+            const child = this.app.factoryService.unserialize(bundle);
+            childList.push(child);
+            child.$bindParent(this);
+        }
+        return childList;
+    }
+
+    /** 初始化子级节点集合 */
+    private $initChildDict(config: IModel.ChildConfigDict<M>) {
+        const childDict = {} as IModel.ChildDict<M>;
+        for (const key in config) {
+            const bundle = config[key];
+            const child = this.app.factoryService.unserialize(bundle);
+            childDict[key] = child;
+            child.$bindParent(this);
+        }
+        return new Proxy(childDict, {
+            set: (origin, key: IReflect.Key<IModel.ChildDefDict<M>>, value: Model) => {
+                origin[key] = value as any;
+                value.$bindParent(this);
+                if (this.$status === ModelStatus.INITED) {
+                    value.$initialize();
+                }
+                this.$setChildren();
+                return true;
+            }
+        });
+    }
+
+    private $initEmitterDict(config?: IModel.ProducerBundleDict<M>) {
+        const emitterDict = {} as any;
+        for (const key in config) {
+            const bundleList = config[key] || [];
+            const emitter = new Emitter(    
+                bundleList,
+                key,
+                this,
+                this.app
+            );
+            emitterDict[key] = emitter;
+        }
+        return new Proxy(emitterDict, {
+            get: (origin, key: string) => {
+                if (!origin[key]) {
+                    origin[key] = new Emitter([], key, this, this.app);
+                }
+                return origin[key];
+            },
+            set: () => false
+        });
+    }
+
+    private $initHandlerDict(config?: IModel.EventHandlerBundleDict<M>) {
+        const handlerDict = {} as IModel.HandlerDict<M>;
+        if (config) {
+            Object.keys(config).forEach((
+                key: IReflect.Key<IModel.HandlerDict<M>>
+            ) => {
+                const handler = new Handler(
+                    config[key] || [],
+                    key,
+                    this,
+                    this.app
+                );
+                handlerDict[key] = handler;
+            });
+        }
+        return new Proxy(handlerDict, {
+            get: (origin, key: IReflect.Key<IModel.HandlerDict<M>>) => {
+                if (!origin[key]) {
+                    origin[key] = new Handler(
+                        [],
+                        key,
+                        this,
+                        this.app
+                    );
+                }
+                return origin[key];
+            },
+            set: () => false
+        });
+    }
+
     constructor(
         config: IModel.BaseConfig<M>,
         app: App
@@ -78,10 +164,9 @@ export abstract class Model<
         super(app);
         this.$status = ModelStatus.CREATED;
         this.$activated = config.activated;
-        this.$config = config;
 
         console.log('constructor', this.constructor.name);
-
+        
         /** 基本信息 */
         this.id = config.id || app.referenceService.getUniqId();
         this.code = config.code;
@@ -97,52 +182,17 @@ export abstract class Model<
         });
         this.$currentState = { ...this.$originState };
 
-        /** 依赖关系 */
-        this.emitterDict = new Proxy({} as any, {
-            get: (origin, key: string) => {
-                if (!origin[key]) origin[key] = new Emitter(this, key);
-                return origin[key];
-            },
-            set: () => false
-        });
-        this.$handlerDict = new Proxy({} as any, {
-            get: (origin, key: string) => {
-                if (!origin[key]) {
-                    origin[key] = new Handler(
-                        this.$handlerFuncDict[key],
-                        this,
-                        key
-                    );
-                }
-                return origin[key];
-            },
-            set: () => false
-        });
-
-        /** 从属关系 */
-        this.$childList = [];
-        this.$childDict = new Proxy({} as IModel.ChildDict<M>, {
-            set: (origin, key: IReflect.Key<IModel.ChildDefDict<M>>, value: Model) => {
-                origin[key] = value as any;
-                value.$bindParent(this);
-                if (this.$status === ModelStatus.INITED) {
-                    value.$initialize();
-                }
-                this.$setChildren();
-                return true;
-            }
-        });
-        for (const key in config.childBundleDict) {
-            const chunk = config.childBundleDict[key];
-            this.$childDict[key] = app.factoryService.unserialize(chunk);
-        }
-        for (const bundle of config.childBundleList) {
-            const model = app.factoryService.unserialize(bundle);
-            this.$appendChild(model);
-        }
+        /** 
+         * 初始化从属关系
+         * 初始化依赖关系
+         */
+        this.$childList = this.$initChildList(config.childBundleList);
+        this.$childDict = this.$initChildDict(config.childBundleDict);
+        this.emitterDict = this.$initEmitterDict(config.emitterBundleDict);
+        this.$handlerDict = this.$initHandlerDict(config.handlerBundleDict);
 
         /** 调试器 */
-        this.debuggerDict = {};
+        this.debug = {};
     }
 
     /** 挂载父节点 */
@@ -168,29 +218,13 @@ export abstract class Model<
         /** 注册唯一标识 */
         this.app.referenceService.addRefer(this);
         /** 依赖关系遍历 */
-        for (const key in this.$config.emitterBundleDict) {
-            const handlerIdList = this.$config.emitterBundleDict[key];
-            if (handlerIdList) {
-                for (const id of handlerIdList) {
-                    const [ modelId, handlerKey ] = id.split('_');
-                    const model = this.app.referenceService.referDict[modelId];
-                    if (model) {
-                        this.emitterDict[key].bindHandler(model.$handlerDict[handlerKey]);
-                    }
-                }
-            }
+        for (const key in this.emitterDict) {
+            const emitter = this.emitterDict[key];
+            emitter.mountRoot();
         }
-        for (const key in this.$config.handlerBundleDict) {
-            const emitterIdList = this.$config.handlerBundleDict[key];
-            if (emitterIdList) {
-                for (const id of emitterIdList) {
-                    const [ modelId, emitterKey ] = id.split('_');
-                    const model = this.app.referenceService.referDict[modelId];
-                    if (model) {
-                        model.emitterDict[emitterKey].bindHandler(this.$handlerDict[key]);
-                    }
-                }
-            }
+        for (const key in this.$handlerDict) {
+            const handler = this.$handlerDict[key];
+            handler.mountRoot();
         }
         /** 从属关系遍历 */
         for (const child of this.$childList) {
@@ -259,9 +293,7 @@ export abstract class Model<
     protected $appendChild(target: IReflect.Iterator<IModel.ChildList<M>>) {
         this.$childList.push(target);
         target.$bindParent(this); 
-        if (this.status === ModelStatus.INITED) {
-            target.$initialize();
-        }
+        target.$initialize();
         this.$setChildren();
     }
 

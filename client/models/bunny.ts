@@ -23,7 +23,7 @@ export type BunnyModelDefine = IModel.CommonDefine<{
 }>
 
 export class BunnyModel extends Model<BunnyModelDefine> {
-    protected $handlerFuncDict: IModel.HandlerFuncDict<BunnyModelDefine> = {
+    public $handleEvent: IModel.HandlerFuncDict<BunnyModelDefine> = {
         tickDone: this.handleTimeUpdateDone,
         timeUpdateDone: this.handleTimeUpdateDone
     };
@@ -54,21 +54,19 @@ export class BunnyModel extends Model<BunnyModelDefine> {
             }, 
             app
         );
-        this.debuggerDict = {
+        this.debug = {
             spawnChild: this.spawnChild
         };
     }
 
     public initialize() {
-        if (!this.$activated) {
-            const timer = this.root.childDict.time;
-            // timer.emitterDict.timeUpdateDone.bindHandler(
-            //     this.$handlerDict.timeUpdateDone
-            // );
-            timer.emitterDict.tickDone.bindHandler(
-                this.$handlerDict.tickDone
-            );
-        }
+        const timer = this.root.childDict.time;
+        // timer.emitterDict.timeUpdateDone.bindHandler(
+        //     this.$handlerDict.timeUpdateDone
+        // );
+        timer.emitterDict.tickDone.bindHandler(
+            this.$handlerDict.tickDone
+        );
     }
 
     /** 繁殖幼崽 */
