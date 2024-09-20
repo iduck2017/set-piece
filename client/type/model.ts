@@ -40,18 +40,18 @@ export namespace IModel {
     export type Parent<M extends Define> = M['parent']
     export type ChildDefList<M extends Define> = M['childDefList']
     export type ChildDefDict<M extends Define> = M['childDefDict']
-    export type EventEmitterDefDict<M extends Define> = M['emitterDefDict']
-    export type EventHandlerDefDict<M extends Define> = M['handlerDefDict']
+    export type EmitterDefDict<M extends Define> = M['emitterDefDict']
+    export type HandlerDefDict<M extends Define> = M['handlerDefDict']
 
     /** 
      * 事件触发器/处理器定义
      * 事件触发器/处理器序列化参数集合
      */
     export type EventHandlerBundleDict<M extends Define> = {
-        [K in IReflect.Key<EventHandlerDefDict<M>>]?: [string, string][]
+        [K in IReflect.Key<HandlerDefDict<M>>]?: [string, string][]
     }
-    export type ProducerBundleDict<M extends Define> = {
-        [K in IReflect.Key<EventEmitterDefDict<M>>]?: [string, string][]
+    export type EventEmitterBundleDict<M extends Define> = {
+        [K in IReflect.Key<EmitterDefDict<M>>]?: [string, string][]
     } & {
         [K in IReflect.Key<State<M>> as `${K}UpdateBefore`]?: [string, string][]
     } & {
@@ -59,18 +59,18 @@ export namespace IModel {
     }
     /** 事件触发器/处理器集合 */
     export type EmitterDict<M extends Define> = {
-        [K in IReflect.Key<EventEmitterDefDict<M>>]: Emitter<EventEmitterDefDict<M>[K]>
+        [K in IReflect.Key<EmitterDefDict<M>>]: Emitter<EmitterDefDict<M>[K]>
     } & {
         [K in IReflect.Key<State<M>> as `${K}UpdateBefore`]: Emitter<IEvent.StateUpdateBefore<M, K>>
     } & {
         [K in IReflect.Key<State<M>> as `${K}UpdateDone`]: Emitter<IEvent.StateUpdateDone<M, K>>
     }
     export type HandlerDict<M extends Define> = {
-        [K in IReflect.Key<EventHandlerDefDict<M>>]: Handler<EventHandlerDefDict<M>[K]>
+        [K in IReflect.Key<HandlerDefDict<M>>]: Handler<HandlerDefDict<M>[K]>
     }
     /** 事件处理器函数集合 */
     export type HandlerFuncDict<M extends Define> = {
-        [K in IReflect.Key<EventHandlerDefDict<M>>]: (event: EventHandlerDefDict<M>[K]) => void
+        [K in IReflect.Key<HandlerDefDict<M>>]: (event: HandlerDefDict<M>[K]) => void
     }
 
     /** 模型序列化参数 */
@@ -84,7 +84,7 @@ export namespace IModel {
         originState: State<M>
         childBundleList: ChildBundleList<M>,
         childBundleDict: ChildBundleDict<M>,
-        emitterBundleDict: ProducerBundleDict<M>,
+        emitterBundleDict: EventEmitterBundleDict<M>,
         handlerBundleDict: EventHandlerBundleDict<M>,
     }
 
@@ -99,7 +99,7 @@ export namespace IModel {
         originState: State<M>
         childBundleList: ChildConfigList<M>,
         childBundleDict: ChildConfigDict<M>,
-        emitterBundleDict?: ProducerBundleDict<M>,
+        emitterBundleDict?: EventEmitterBundleDict<M>,
         handlerBundleDict?: EventHandlerBundleDict<M>,
     }
     export type Config<
@@ -112,7 +112,7 @@ export namespace IModel {
         originState?: Partial<State<M>>
         childBundleList?: ChildConfigList<M>,
         childBundleDict?: Partial<ChildConfigDict<M>>,
-        emitterBundleDict?: Partial<ProducerBundleDict<M>>,
+        emitterBundleDict?: Partial<EventEmitterBundleDict<M>>,
         handlerBundleDict?: Partial<EventHandlerBundleDict<M>>,
     }
 

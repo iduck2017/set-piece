@@ -103,7 +103,7 @@ export abstract class Model<
         });
     }
 
-    private $initEmitterDict(config?: IModel.ProducerBundleDict<M>) {
+    private $initEmitterDict(config?: IModel.EventEmitterBundleDict<M>) {
         const emitterDict = {} as any;
         for (const key in config) {
             const bundleList = config[key] || [];
