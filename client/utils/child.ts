@@ -18,37 +18,37 @@ export function childListProxy<M extends IModel.Define>(
     }
 
     const hooks: IModel.ModelHookDict = {
-        $bootDriver: () => {
+        bootDriver: () => {
             for (const child of childList) {
                 child.$bootDriver();
             }
         },
-        $unbootDriver: () => {
+        unbootDriver: () => {
             for (const child of childList) {
                 child.$unbootDriver();
             }
         },
-        $mountRoot: () => {
+        mountRoot: () => {
             for (const child of childList) {
                 child.$mountRoot();
             }
         },
-        $unmountRoot: () => {
+        unmountRoot: () => {
             for (const child of childList) {
                 child.$unmountRoot();
             }
         },
-        $unbindParent: () => {
+        unbindParent: () => {
             for (const child of childList) {
                 child.$unbindParent();
             }
         },
-        $bindParent: (parent: Model) => {
+        bindParent: (parent: Model) => {
             for (const child of childList) {
                 child.$bindParent(parent);
             }
         },
-        $makeBundle: () => {
+        makeBundle: () => {
             const bundle = [] as any;
             for (const child of childList) {
                 bundle.push(child.makeBundle());
@@ -105,37 +105,37 @@ export function childDictProxy<M extends IModel.Define>(
     }
 
     const hooks: IModel.ModelHookDict = {
-        $bootDriver: () => {
+        bootDriver: () => {
             for (const key in childDict) {
                 childDict[key].$bootDriver();
             }
         },
-        $unbootDriver: () => {
+        unbootDriver: () => {
             for (const key in childDict) {
                 childDict[key].$unbootDriver();
             }
         },
-        $mountRoot: () => {
+        mountRoot: () => {
             for (const key in childDict) {
                 childDict[key].$mountRoot();
             }
         },
-        $unmountRoot: () => {
+        unmountRoot: () => {
             for (const key in childDict) {
                 childDict[key].$unmountRoot();
             }
         },
-        $unbindParent: () => {
+        unbindParent: () => {
             for (const key in childDict) {
                 childDict[key].$unbindParent();
             }
         },
-        $bindParent: (parent: Model) => {
+        bindParent: (parent: Model) => {
             for (const key in childDict) {
                 childDict[key].$bindParent(parent);
             }
         },
-        $makeBundle: () => {
+        makeBundle: () => {
             const bundle = {} as any;
             for (const key in childDict) {
                 bundle[key] = childDict[key].makeBundle();

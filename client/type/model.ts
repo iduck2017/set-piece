@@ -9,19 +9,19 @@ import { Handler } from "../utils/handler";
 /** 模型 */
 export namespace IModel {
     export type ModelHookDict = {
-        $bootDriver: () => void;
-        $unbootDriver: () => void;
-        $mountRoot: () => void;
-        $unmountRoot: () => void;
-        $unbindParent: () => void;
-        $bindParent: (parent: Model) => void;
-        $makeBundle: () => any;
+        bootDriver: () => void;
+        unbootDriver: () => void;
+        mountRoot: () => void;
+        unmountRoot: () => void;
+        unbindParent: () => void;
+        bindParent: (parent: Model) => void;
+        makeBundle: () => any;
     }
 
     export type EventHookDict = {
-        $mountRoot: () => void;
-        $unmountRoot: () => void;
-        $makeBundle: () => any;
+        mountRoot: () => void;
+        unmountRoot: () => void;
+        makeBundle: () => any;
     }
 
     /** 基础模型定义 */
@@ -82,21 +82,7 @@ export namespace IModel {
     export type StateUpdateDone<M extends Define> = {
         [K in IReflect.Key<State<M>>]: IEvent.StateUpdateDone<M, K>
     }
-    /** 事件触发器/处理器集合 */
-    // export type EventEmitterDict<M extends Define> = {
-    //     [K in IReflect.Key<EmitterDefDict<M>>]: Emitter<EmitterDefDict<M>[K]>
-    // }
-    // export type EventHandlerDict<M extends Define> = {
-    //     [K in IReflect.Key<HandlerDefDict<M>>]: Handler<HandlerDefDict<M>[K]>
-    // }
-    // export type StateUpdaterDict<M extends Define> = {
-    //     [K in IReflect.Key<State<M>>]: Emitter<IEvent.StateUpdateBefore<M, K>>
-    // }
-    // export type StateEmitterDict<M extends Define> = {
-    //     [K in IReflect.Key<State<M>>]: Emitter<IEvent.StateUpdateDone<M, K>>
-    // }
-    /** 事件处理器函数集合 */
-    export type EventHandlerCallerDict<M extends Define> = {
+    export type HandlerCallerDict<M extends Define> = {
         [K in IReflect.Key<HandlerDefDict<M>>]: (event: HandlerDefDict<M>[K]) => void
     }
 

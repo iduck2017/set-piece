@@ -104,27 +104,23 @@ export function emitterDictProxy<M extends IBase.Dict>(
         Object.keys(config).forEach((
             key: IReflect.Key<IModel.EmitterDict<M>>
         ) => {
-            const handler = new Emitter(
-                config[key] || [],
-                key,
-                model
-            );
+            const handler = new Emitter(config[key] || [], key, model);
             emitterDict[key] = handler;
         });
     }
 
     const hooks: IModel.EventHookDict = {
-        $mountRoot: () => {
+        mountRoot: () => {
             for (const key in emitterDict) {
                 emitterDict[key].$mountRoot();
             }
         },
-        $unmountRoot: () => {
+        unmountRoot: () => {
             for (const key in emitterDict) {
                 emitterDict[key].$unmountRoot();
             }
         },
-        $makeBundle: () => {
+        makeBundle: () => {
             const bundle = {} as any;
             for (const key in emitterDict) {
                 bundle[key] = emitterDict[key].$makeBundle();
@@ -136,11 +132,7 @@ export function emitterDictProxy<M extends IBase.Dict>(
     const proxy = new Proxy(emitterDict, {
         get: (origin, key: IReflect.Key<IModel.HandlerDict<M>>) => {
             if (!origin[key]) {
-                origin[key] = new Emitter(
-                    [],
-                    key,
-                    model
-                );
+                origin[key] = new Emitter([], key, model);
             }
             return origin[key];
         },

@@ -51,7 +51,6 @@ export abstract class Model<
 
     public readonly $childDict: IModel.ChildDict<M>;
     public readonly $childList: IModel.ChildList<M>;
-
     public get childList() { return [ ...this.$childList ]; }
     public get childDict() { return { ...this.$childDict }; }
     public get children(): Model[] {
@@ -66,8 +65,7 @@ export abstract class Model<
     public readonly updaterDict: IModel.EmitterDict<IModel.StateUpdateBefore<M>>;
     public readonly watcherDict: IModel.EmitterDict<IModel.StateUpdateDone<M>>;
     public readonly $handlerDict: IModel.HandlerDict<IModel.HandlerDefDict<M>>;
-
-    public abstract readonly $handlerCallerDict: IModel.EventHandlerCallerDict<M>;
+    public abstract readonly $handlerCallerDict: IModel.HandlerCallerDict<M>;
 
     /** 测试用例 */
     public debuggerDict: Record<string, IBase.Func>;
@@ -171,22 +169,22 @@ export abstract class Model<
         this.$status = ModelStatus.MOUNTING;
         console.log('mount_root', this.constructor.name);
         this.app.referenceService.addRefer(this);
-        this.$hooks.childList.$mountRoot();
-        this.$hooks.childDict.$mountRoot();
-        this.$hooks.handlerDict.$mountRoot();
-        this.$hooks.emitterDict.$mountRoot();
-        this.$hooks.updaterDict.$mountRoot();
+        this.$hooks.childList.mountRoot();
+        this.$hooks.childDict.mountRoot();
+        this.$hooks.handlerDict.mountRoot();
+        this.$hooks.emitterDict.mountRoot();
+        this.$hooks.updaterDict.mountRoot();
         this.$status = ModelStatus.MOUNTED;
     }
 
     public $unmountRoot() {
         this.$status = ModelStatus.UNMOUNTING;
         console.log('unmount_root', this.constructor.name);
-        this.$hooks.childList.$unmountRoot();
-        this.$hooks.childDict.$unmountRoot();
-        this.$hooks.handlerDict.$unmountRoot();
-        this.$hooks.emitterDict.$unmountRoot();
-        this.$hooks.updaterDict.$unmountRoot();
+        this.$hooks.childList.unmountRoot();
+        this.$hooks.childDict.unmountRoot();
+        this.$hooks.handlerDict.unmountRoot();
+        this.$hooks.emitterDict.unmountRoot();
+        this.$hooks.updaterDict.unmountRoot();
         this.app.referenceService.removeRefer(this);
         this.$status = ModelStatus.UNMOUNTED;
     }
@@ -209,8 +207,8 @@ export abstract class Model<
             this.$inited = true;
         }
         /** 遍历 */
-        this.$hooks.childList.$bootDriver();
-        this.$hooks.childDict.$bootDriver();
+        this.$hooks.childList.bootDriver();
+        this.$hooks.childDict.bootDriver();
     }
 
     public unbootDriver() {}
@@ -221,8 +219,8 @@ export abstract class Model<
             this.$inited = false;
         }
         /** 遍历 */
-        this.$hooks.childList.$unbootDriver();
-        this.$hooks.childDict.$unbootDriver();
+        this.$hooks.childList.unbootDriver();
+        this.$hooks.childDict.unbootDriver();
     }
 
     /** 更新状态 */
@@ -252,12 +250,12 @@ export abstract class Model<
             code: this.code,
             rule: this.rule,
             originState: this.$originState,
-            childBundleDict: this.$hooks.childDict.$makeBundle(),
-            childBundleList: this.$hooks.childList.$makeBundle(),
-            eventEmitterBundleDict: this.$hooks.emitterDict.$makeBundle(),
-            eventHandlerBundleDict: this.$hooks.handlerDict.$makeBundle(),
-            stateUpdaterBundleDict: this.$hooks.updaterDict.$makeBundle(),
-            stateEmitterBundleDict: this.$hooks.watcherDict.$makeBundle(),
+            childBundleDict: this.$hooks.childDict.makeBundle(),
+            childBundleList: this.$hooks.childList.makeBundle(),
+            eventEmitterBundleDict: this.$hooks.emitterDict.makeBundle(),
+            eventHandlerBundleDict: this.$hooks.handlerDict.makeBundle(),
+            stateUpdaterBundleDict: this.$hooks.updaterDict.makeBundle(),
+            stateEmitterBundleDict: this.$hooks.watcherDict.makeBundle(),
             inited: true
         };
     }

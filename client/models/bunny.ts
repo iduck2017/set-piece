@@ -23,7 +23,7 @@ export type BunnyModelDefine = IModel.CommonDefine<{
 }>
 
 export class BunnyModel extends Model<BunnyModelDefine> {
-    public $handlerCallerDict: IModel.EventHandlerCallerDict<BunnyModelDefine> = {
+    public $handlerCallerDict: IModel.HandlerCallerDict<BunnyModelDefine> = {
         tickDone: this.handleTimeUpdateDone,
         timeUpdateDone: this.handleTimeUpdateDone
     };

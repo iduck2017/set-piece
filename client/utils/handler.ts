@@ -87,27 +87,23 @@ export function handlerDictProxy<M extends IBase.Dict>(
         Object.keys(config).forEach((
             key: IReflect.Key<IModel.HandlerDict<M>>
         ) => {
-            const handler = new Handler(
-                config[key] || [],
-                key,
-                model
-            );
+            const handler = new Handler(config[key] || [], key, model);
             handlerDict[key] = handler;
         });
     }
 
     const hooks: IModel.EventHookDict = {
-        $mountRoot: () => {
+        mountRoot: () => {
             for (const key in handlerDict) {
                 handlerDict[key].$mountRoot();
             }
         },
-        $unmountRoot: () => {
+        unmountRoot: () => {
             for (const key in handlerDict) {
                 handlerDict[key].$unmountRoot();
             }
         },
-        $makeBundle: () => {
+        makeBundle: () => {
             const bundle = {} as any;
             for (const key in handlerDict) {
                 bundle[key] = handlerDict[key].$makeBundle();
@@ -119,11 +115,7 @@ export function handlerDictProxy<M extends IBase.Dict>(
     const proxy = new Proxy(handlerDict, {
         get: (origin, key: IReflect.Key<IModel.HandlerDict<M>>) => {
             if (!origin[key]) {
-                origin[key] = new Handler(
-                    [],
-                    key,
-                    model
-                );
+                origin[key] = new Handler([], key, model);
             }
             return origin[key];
         },
