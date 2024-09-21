@@ -72,11 +72,13 @@ export function childListProxy<M extends IModel.Define>(
         },
         deleteProperty: (target, key: any) => {
             const value = target[key];
+            console.log('delete_proxy', target, key, value.status);
             if (value.status === ModelStatus.MOUNTED) {
                 value.$unbootModel();
             }
             value.$unbindParent();
             delete target[key];
+            target.length --;
             model.$setChildren();
             return true;
         }

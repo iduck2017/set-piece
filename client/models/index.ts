@@ -76,8 +76,10 @@ export abstract class Model<
         });
     }
     private $setState() {
+        const result = this.currentState;
+        console.log('set_state', result);
         this.stateSetterList.forEach(setter => {
-            setter(this.currentState);
+            setter(result);
         });
     }
 
@@ -260,6 +262,7 @@ export abstract class Model<
         if (this.status === ModelStatus.MOUNTED) {
             this.$unmountRoot();
         }
+        console.log('unbind_parent', this.constructor.name);
         this.$parent = undefined;
         this.$status = ModelStatus.UNBINDED;
     }
@@ -268,7 +271,7 @@ export abstract class Model<
     public bootModel() {}
     public $bootModel() {
         if (!this.$inited) {
-            console.log('initialize', this.constructor.name);
+            console.log('boot_model', this.constructor.name);
             this.bootModel();
             this.$inited = true;
         }
@@ -279,8 +282,8 @@ export abstract class Model<
 
     public unbootModel() {}
     public $unbootModel() {
-        if (!this.$inited) {
-            console.log('initialize', this.constructor.name);
+        if (this.$inited) {
+            console.log('unboot_model', this.constructor.name);
             this.unbootModel();
             this.$inited = false;
         }
