@@ -16,6 +16,8 @@ export class ReferenceService {
 
     private $referDict: Record<string, Model> = {};
     public get referDict() { return { ...this.$referDict }; }
+
+    
     public addRefer(target: Model) { this.$referDict[target.id] = target; }
     public removeRefer(target: Model) { delete this.$referDict[target.id]; }
 

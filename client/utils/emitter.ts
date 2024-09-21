@@ -6,26 +6,17 @@ import type { Handler } from "./handler";
 
 /** 事件触发器 */
 export class Emitter<E = any> {
-    private readonly $app: App;
+    private readonly $id: [string, string];
+    public get id() { return this.$id; }
 
-    public readonly model: Model;
-    public readonly emitterKey: string;
-
-    /** 待生成事件处理器队列 */
-    private readonly $handlerBundleList: [string, string][];
     /** 事件处理器队列 */
     private readonly $handlerList: Handler<E>[];
 
     constructor( 
-        handlerBundleList: [string, string][],
-        emitterKey: string,
-        model: Model
+        id: [string, string]
     ) {
-        this.$app = model.app;
-        this.model = model;
-        this.emitterKey = emitterKey;
+        this.$id = id;
         this.$handlerList = [];
-        this.$handlerBundleList = handlerBundleList;
     }
 
     /** 添加事件处理器 */
@@ -74,73 +65,66 @@ export class Emitter<E = any> {
         return bundle;
     }
 
-    /** 挂载到根节点，构建依赖关系 */
-    public $mountRoot() {
-        this.$handlerBundleList.forEach(([ modelId, handlerKey ]) => {
-            const model = this.$app.referenceService.referDict[modelId];
-            if (model) {
-                this.bindHandler(model.$handlerDict[handlerKey]);
-            }
-        });
-    }
-
     /** 从根节点卸载，解除依赖关系  */
-    public $unmountRoot() {
+    public unbindHandlerList() {
         this.$handlerList.forEach(item => {
             this.unbindHandler(item);
         });
     }
 }
 
-export function emitterDictProxy<M extends IBase.Dict>(
-    config: IModel.EmitterBundleDict<M> | undefined,
-    model: Model
-): {
-    proxy: IModel.EmitterDict<M>,
-    hooks: IModel.EventHookDict
-} {
-    const emitterDict = {} as IModel.EmitterDict<M>;
-    if (config) {
-        Object.keys(config).forEach((
-            key: IReflect.Key<IModel.EmitterDict<M>>
-        ) => {
-            const handler = new Emitter(config[key] || [], key, model);
-            emitterDict[key] = handler;
+
+export class EmitterDictProxy<E extends IBase.Dict> {
+    public readonly emitterDict: IModel.EmitterDict<E>;
+    private readonly $emitterBundleDict?: IModel.EmitterBundleDict<E>;
+
+    public readonly app: App;
+
+    constructor(
+        config: IModel.EmitterBundleDict<E> | undefined,
+        model: Model
+    ) {
+        this.app = model.app;
+        this.$emitterBundleDict = config;
+        const emitterDict = {} as IModel.EmitterDict<E>;
+        this.emitterDict= new Proxy(emitterDict, {
+            get: (origin, key: IReflect.Key<IModel.HandlerDict<E>>) => {
+                if (!origin[key]) {
+                    origin[key] = new Emitter([ model.id, key ]);
+                }
+                return origin[key];
+            },
+            set: () => false
         });
     }
 
-    const hooks: IModel.EventHookDict = {
-        mountRoot: () => {
-            for (const key in emitterDict) {
-                emitterDict[key].$mountRoot();
+    mountRoot() {
+        for (const key in this.$emitterBundleDict) {
+            const emitter = this.emitterDict[key];
+            const handlerBundleList = this.$emitterBundleDict[key];
+            if (handlerBundleList) {
+                handlerBundleList.forEach((bundle) => {
+                    const [ modelId, handlerKey ] = bundle;
+                    const model = this.app.referenceService.referDict[modelId];
+                    if (model) {
+                        emitter.bindHandler(model.$handlerDict[handlerKey]);
+                    }
+                });
             }
-        },
-        unmountRoot: () => {
-            for (const key in emitterDict) {
-                emitterDict[key].$unmountRoot();
-            }
-        },
-        makeBundle: () => {
-            const bundle = {} as any;
-            for (const key in emitterDict) {
-                bundle[key] = emitterDict[key].$makeBundle();
-            }
-            return bundle;
         }
-    };
-    
-    const proxy = new Proxy(emitterDict, {
-        get: (origin, key: IReflect.Key<IModel.HandlerDict<M>>) => {
-            if (!origin[key]) {
-                origin[key] = new Emitter([], key, model);
-            }
-            return origin[key];
-        },
-        set: () => false
-    });
+    }
 
-    return {
-        proxy,
-        hooks
-    };
+    unmountRoot() {
+        for (const key in this.emitterDict) {
+            this.emitterDict[key].unbindHandlerList();
+        }
+    }
+
+    makeBundle() {
+        const bundle = {} as any;
+        for (const key in this.emitterDict) {
+            bundle[key] = this.emitterDict[key].$makeBundle();
+        }
+        return bundle;
+    }
 }

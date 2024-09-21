@@ -57,12 +57,7 @@ export class Handler<E = any> {
     public $makeBundle(): [string, string][] {
         const bundle: [string, string][] = [];
         for (const emitter of this.$emitterList) {
-            if (emitter.model && emitter.emitterKey) {
-                bundle.push([
-                    emitter.model.id,
-                    emitter.emitterKey
-                ]);
-            }
+            bundle.push(emitter.id);
         }
         return bundle;
     }

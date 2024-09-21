@@ -3,7 +3,7 @@ import { IBase, IReflect } from "../type";
 import { IModel } from "../type/model";
 import { ModelStatus } from "../type/status";
 import { childDictProxy, childListProxy } from "../utils/child";
-import { emitterDictProxy } from "../utils/emitter";
+import { EmitterDictProxy } from "../utils/emitter";
 import { Entity } from "../utils/entity";
 import { handlerDictProxy } from "../utils/handler";
 
@@ -44,9 +44,6 @@ export abstract class Model<
         childList: IModel.ModelHookDict;
         childDict: IModel.ModelHookDict;
         handlerDict: IModel.EventHookDict;
-        emitterDict: IModel.EventHookDict;
-        updaterDict: IModel.EventHookDict;
-        watcherDict: IModel.EventHookDict;
     };
 
     public readonly $childDict: IModel.ChildDict<M>;
@@ -61,9 +58,14 @@ export abstract class Model<
     }
 
     /** 事件触发器/处理器 */
+    public readonly $emitterDictProxy: EmitterDictProxy<IModel.EmitterDefDict<M>>;
+    public readonly $updaterDictProxy: EmitterDictProxy<IModel.StateUpdateBefore<M>>;
+    public readonly $watcherDictProxy: EmitterDictProxy<IModel.StateUpdateDone<M>>;
+
     public readonly emitterDict: IModel.EmitterDict<IModel.EmitterDefDict<M>>;
     public readonly updaterDict: IModel.EmitterDict<IModel.StateUpdateBefore<M>>;
     public readonly watcherDict: IModel.EmitterDict<IModel.StateUpdateDone<M>>;
+
     public readonly $handlerDict: IModel.HandlerDict<IModel.HandlerDefDict<M>>;
     public abstract readonly $handlerCallerDict: IModel.HandlerCallerDict<M>;
 
@@ -123,26 +125,23 @@ export abstract class Model<
         const handlerDict = handlerDictProxy(config.eventHandlerBundleDict, this);
         this.$handlerDict = handlerDict.proxy;
 
-        const emitterDict = emitterDictProxy(config.eventEmitterBundleDict, this);
-        this.emitterDict = emitterDict.proxy;
-
-        const updaterDict = emitterDictProxy<
-            IModel.StateUpdateBefore<M>
-        >(config.stateUpdaterBundleDict, this);
-        this.updaterDict = updaterDict.proxy;
-
-        const watcherDict = emitterDictProxy<
-            IModel.StateUpdateDone<M>
-        >(config.stateEmitterBundleDict, this);
-        this.watcherDict = watcherDict.proxy;
+        this.$emitterDictProxy  = new EmitterDictProxy(config.eventEmitterBundleDict, this);
+        this.$updaterDictProxy  = new EmitterDictProxy<IModel.StateUpdateBefore<M>>(
+            config.stateUpdaterBundleDict, 
+            this
+        );
+        this.$watcherDictProxy  = new EmitterDictProxy<IModel.StateUpdateDone<M>>(
+            config.stateEmitterBundleDict, 
+            this
+        );
+        this.emitterDict = this.$emitterDictProxy.emitterDict;
+        this.updaterDict = this.$updaterDictProxy.emitterDict;
+        this.watcherDict = this.$watcherDictProxy.emitterDict;
 
         this.$hooks = {
             childDict: childDict.hooks,
             childList: childList.hooks,
-            handlerDict: handlerDict.hooks,
-            emitterDict: emitterDict.hooks,
-            updaterDict: updaterDict.hooks,
-            watcherDict: watcherDict.hooks
+            handlerDict: handlerDict.hooks
         };
 
         /** 调试器 */
@@ -172,8 +171,9 @@ export abstract class Model<
         this.$hooks.childList.mountRoot();
         this.$hooks.childDict.mountRoot();
         this.$hooks.handlerDict.mountRoot();
-        this.$hooks.emitterDict.mountRoot();
-        this.$hooks.updaterDict.mountRoot();
+        this.$emitterDictProxy.mountRoot();
+        this.$updaterDictProxy.mountRoot();
+        this.$watcherDictProxy.mountRoot();
         this.$status = ModelStatus.MOUNTED;
     }
 
@@ -183,8 +183,9 @@ export abstract class Model<
         this.$hooks.childList.unmountRoot();
         this.$hooks.childDict.unmountRoot();
         this.$hooks.handlerDict.unmountRoot();
-        this.$hooks.emitterDict.unmountRoot();
-        this.$hooks.updaterDict.unmountRoot();
+        this.$emitterDictProxy.unmountRoot();
+        this.$updaterDictProxy.unmountRoot();
+        this.$watcherDictProxy.unmountRoot();
         this.app.referenceService.removeRefer(this);
         this.$status = ModelStatus.UNMOUNTED;
     }
@@ -237,7 +238,7 @@ export abstract class Model<
         if (prev !== next) {
             this.$currentState[key] = next;
             if (this.$status === ModelStatus.MOUNTED) {
-                this.watcherDict[key].emitEvent(event);
+                this.updaterDict[key].emitEvent(event);
                 this.$setState();
             }
         }
@@ -252,10 +253,10 @@ export abstract class Model<
             originState: this.$originState,
             childBundleDict: this.$hooks.childDict.makeBundle(),
             childBundleList: this.$hooks.childList.makeBundle(),
-            eventEmitterBundleDict: this.$hooks.emitterDict.makeBundle(),
+            eventEmitterBundleDict: this.$emitterDictProxy.makeBundle(),
             eventHandlerBundleDict: this.$hooks.handlerDict.makeBundle(),
-            stateUpdaterBundleDict: this.$hooks.updaterDict.makeBundle(),
-            stateEmitterBundleDict: this.$hooks.watcherDict.makeBundle(),
+            stateUpdaterBundleDict: this.$updaterDictProxy.makeBundle(),
+            stateEmitterBundleDict: this.$watcherDictProxy.makeBundle(),
             inited: true
         };
     }
