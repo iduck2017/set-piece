@@ -60,7 +60,7 @@ export class BunnyModel extends Model<BunnyModelDefine> {
         };
     }
 
-    public bootModel() {
+    public bootDriver() {
         const timer = this.root.childDict.time;
         timer.eventEmitterDict.tickDone.bindHandler(
             this.$handlerDict.tickDone

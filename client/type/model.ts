@@ -9,8 +9,8 @@ import { Handler } from "../utils/handler";
 /** 模型 */
 export namespace IModel {
     export type HookDict = {
-        $bootModel: () => void;
-        $unbootModel: () => void;
+        $bootDriver: () => void;
+        $unbootDriver: () => void;
         $mountRoot: () => void;
         $unmountRoot: () => void;
         $unbindParent: () => void;

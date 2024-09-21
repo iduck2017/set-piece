@@ -18,14 +18,14 @@ export function childListProxy<M extends IModel.Define>(
     }
 
     const hooks: IModel.HookDict = {
-        $bootModel: () => {
+        $bootDriver: () => {
             for (const child of childList) {
-                child.$bootModel();
+                child.$bootDriver();
             }
         },
-        $unbootModel: () => {
+        $unbootDriver: () => {
             for (const child of childList) {
-                child.$unbootModel();
+                child.$unbootDriver();
             }
         },
         $mountRoot: () => {
@@ -64,7 +64,7 @@ export function childListProxy<M extends IModel.Define>(
                 const child: Model = value;
                 child.$bindParent(model);
                 if (child.status === ModelStatus.MOUNTED) {
-                    child.$bootModel();
+                    child.$bootDriver();
                 }
                 model.$setChildren();
             }
@@ -74,7 +74,7 @@ export function childListProxy<M extends IModel.Define>(
             const value = target[key];
             console.log('delete_proxy', target, key, value.status);
             if (value.status === ModelStatus.MOUNTED) {
-                value.$unbootModel();
+                value.$unbootDriver();
             }
             value.$unbindParent();
             delete target[key];
@@ -105,14 +105,14 @@ export function childDictProxy<M extends IModel.Define>(
     }
 
     const hooks: IModel.HookDict = {
-        $bootModel: () => {
+        $bootDriver: () => {
             for (const key in childDict) {
-                childDict[key].$bootModel();
+                childDict[key].$bootDriver();
             }
         },
-        $unbootModel: () => {
+        $unbootDriver: () => {
             for (const key in childDict) {
-                childDict[key].$unbootModel();
+                childDict[key].$unbootDriver();
             }
         },
         $mountRoot: () => {
@@ -153,7 +153,7 @@ export function childDictProxy<M extends IModel.Define>(
             target[key as IReflect.Key<IModel.ChildDict<M>>] = value as any;   
             value.$bindParent(model);
             if (value.status === ModelStatus.MOUNTED) {
-                value.$bootModel();
+                value.$bootDriver();
             }
             model.$setChildren();
             return true;
@@ -161,7 +161,7 @@ export function childDictProxy<M extends IModel.Define>(
         deleteProperty: (target, key: any) => {
             const value = target[key];
             if (value.status === ModelStatus.MOUNTED) {
-                value.$unbootModel();
+                value.$unbootDriver();
             }
             value.$unbindParent();
             delete target[key];

@@ -268,28 +268,28 @@ export abstract class Model<
     }
 
     /** 初始化 */
-    public bootModel() {}
-    public $bootModel() {
+    public bootDriver() {}
+    public $bootDriver() {
         if (!this.$inited) {
             console.log('boot_model', this.constructor.name);
-            this.bootModel();
+            this.bootDriver();
             this.$inited = true;
         }
         /** 遍历 */
-        this.$hooks.childList.$bootModel();
-        this.$hooks.childDict.$bootModel();
+        this.$hooks.childList.$bootDriver();
+        this.$hooks.childDict.$bootDriver();
     }
 
-    public unbootModel() {}
-    public $unbootModel() {
+    public unbootDriver() {}
+    public $unbootDriver() {
         if (this.$inited) {
             console.log('unboot_model', this.constructor.name);
-            this.unbootModel();
+            this.unbootDriver();
             this.$inited = false;
         }
         /** 遍历 */
-        this.$hooks.childList.$unbootModel();
-        this.$hooks.childDict.$unbootModel();
+        this.$hooks.childList.$unbootDriver();
+        this.$hooks.childDict.$unbootDriver();
     }
 
     /** 更新状态 */

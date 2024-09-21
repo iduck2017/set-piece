@@ -40,7 +40,7 @@ export class ForagerModel extends Model<ForagerModelDefine> {
         );
     }
 
-    public bootModel(): void {
+    public bootDriver(): void {
         const timer = this.root.childDict.time;
         timer.eventEmitterDict.tickDone.bindHandler(
             this.$handlerDict.tickDone

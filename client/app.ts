@@ -69,7 +69,7 @@ export class App {
             await this.archieveService.loadArchieve(index);
         this.$root = this.factoryService.unserialize(config);
         this.$root.$bindParent(this.$root);
-        this.$root.$bootModel();
+        this.$root.$bootDriver();
         this.$status = AppStatus.MOUNTED;
     }
 
