@@ -37,9 +37,6 @@ export enum ModelStatus {
     /** 节点挂载到根节点 */
     MOUNTING,
     MOUNTED,
-    /** 节点业务逻辑执行 */
-    INITING,
-    INITED,
     /** 节点业务逻辑注销 */
     UNMOUNTING,
     UNMOUNTED,

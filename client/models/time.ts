@@ -15,7 +15,7 @@ export type TimerModelDefine = IModel.CommonDefine<{
 }>
 
 export class TimerModel extends Model<TimerModelDefine> {
-    public $handleEvent: IModel.EventHandlerCallerDict<TimerModelDefine> = {};
+    public $handlerCallerDict: IModel.EventHandlerCallerDict<TimerModelDefine> = {};
 
     constructor(
         config: IModel.Config<TimerModelDefine>,
@@ -33,7 +33,7 @@ export class TimerModel extends Model<TimerModelDefine> {
             },
             app
         );
-        this.debug.updateTime = this.updateTime.bind(this, 1);
+        this.debuggerDict.updateTime = this.updateTime.bind(this, 1);
     }
     
     /** 更新时间 */

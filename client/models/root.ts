@@ -2,7 +2,7 @@ import { Model } from ".";
 import type { App } from "../app";
 import { IModel } from "../type/model";
 import { ModelCode } from "../type/registry";
-import type { BunnyModelDefine } from "./bunny";
+import type { BunnyModel, BunnyModelDefine } from "./bunny";
 import { TimerModelDefine } from "./time";
 
 export type RootModelDefine = IModel.CommonDefine<{
@@ -17,7 +17,7 @@ export type RootModelDefine = IModel.CommonDefine<{
 }>
 
 export class RootModel extends Model<RootModelDefine> {
-    public $handleEvent: IModel.EventHandlerCallerDict<RootModelDefine> = {};
+    public $handlerCallerDict: IModel.EventHandlerCallerDict<RootModelDefine> = {};
 
     constructor(
         config: IModel.Config<RootModelDefine>,
@@ -43,9 +43,13 @@ export class RootModel extends Model<RootModelDefine> {
         );
     }
 
-    public spawnCreature(bunny: IModel.Config<BunnyModelDefine>) {
-        const child = this.app.factoryService.unserialize(bunny);
-        this.$appendChild(child);
+    public spawnCreature(child: BunnyModel) {
+        this.$childList.push(child);
         return child;
+    }
+
+    public removeCreature(child: BunnyModel) {
+        const index = this.$childList.indexOf(child);
+        delete this.$childList[index];
     }
 }

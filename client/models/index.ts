@@ -2,8 +2,10 @@ import type { App } from "../app";
 import { IBase, IReflect } from "../type";
 import { IModel } from "../type/model";
 import { ModelStatus } from "../type/status";
-import { Emitter, Handler } from "../utils/emitter";
+import { childListProxy } from "../utils/child";
+import { Emitter } from "../utils/emitter";
 import { Entity } from "../utils/entity";
+import { Handler } from "../utils/handler";
 
 /** 模型基类 */
 export abstract class Model<
@@ -18,7 +20,7 @@ export abstract class Model<
     public readonly code: IModel.Code<M>;
     public readonly rule: Partial<IModel.Rule<M>>;
 
-    private $activated?: boolean;
+    private $inited?: boolean;
 
     /** 数据结构 */
     protected readonly $originState: IModel.State<M>;
@@ -39,10 +41,11 @@ export abstract class Model<
     }
 
     public readonly $childDict: IModel.ChildDict<M>;
-    public readonly $childList: IModel.ChildList<M>;
+    public readonly $childList: IModel.ChildList<M> & IModel.HookDict;
     public get childList() { return [ ...this.$childList ]; }
     public get childDict() { return { ...this.$childDict }; }
     public get children(): Model[] {
+        console.log('xxx');
         return [
             ...this.childList,
             ...Object.values(this.childDict)
@@ -54,15 +57,15 @@ export abstract class Model<
     public readonly stateUpdaterDict: IModel.StateUpdaterDict<M>;
     public readonly stateEmitterDict: IModel.StateEmitterDict<M>;
 
-    public readonly $eventHandlerDict: IModel.EventHandlerDict<M>;
-    public abstract readonly $handleEvent: IModel.EventHandlerCallerDict<M>;
+    public readonly $handlerDict: IModel.EventHandlerDict<M>;
+    public abstract readonly $handlerCallerDict: IModel.EventHandlerCallerDict<M>;
 
     /** 测试用例 */
-    public debug: Record<string, IBase.Func>;
+    public debuggerDict: Record<string, IBase.Func>;
     public readonly stateSetterList: IBase.Func[] = [];
     public readonly childrenSetterList: IBase.Func[] = [];
 
-    private $setChildren() {
+    public $setChildren() {
         this.childrenSetterList.forEach(setter => {
             setter(this.children);
         });
@@ -74,15 +77,15 @@ export abstract class Model<
     }
 
     /** 初始化子级节点列表 */
-    private $initChildList(config: IModel.ChildConfigList<M>) {
-        const childList = [] as IModel.ChildList<M>;
-        for (const bundle of config) {
-            const child = this.app.factoryService.unserialize(bundle);
-            childList.push(child);
-            child.$bindParent(this);
-        }
-        return childList;
-    }
+    // private $initChildList(config: IModel.ChildConfigList<M>) {
+    //     const childList = [] as IModel.ChildList<M>;
+    //     for (const bundle of config) {
+    //         const child = this.app.factoryService.unserialize(bundle);
+    //         childList.push(child);
+    //         child.$bindParent(this);
+    //     }
+    //     return ChildListProxy.getInstance(childList, this);
+    // }
 
     /** 初始化子级节点集合 */
     private $initChildDict(config: IModel.ChildConfigDict<M>) {
@@ -97,10 +100,19 @@ export abstract class Model<
             set: (origin, key: IReflect.Key<IModel.ChildDefDict<M>>, value: Model) => {
                 origin[key] = value as any;
                 value.$bindParent(this);
-                if (this.$status === ModelStatus.INITED) {
-                    value.$initialize();
+                if (value.status === ModelStatus.MOUNTED) {
+                    value.$bootModel();
                 }
                 this.$setChildren();
+                return true;
+            },
+            deleteProperty(origin, key: IReflect.Key<IModel.ChildDefDict<M>>) {
+                const value = origin[key];
+                if (value.status === ModelStatus.MOUNTED) {
+                    value.unbootModel();
+                }
+                value.$unbindParent();
+                delete origin[key];
                 return true;
             }
         });
@@ -166,7 +178,7 @@ export abstract class Model<
     ) {
         super(app);
         this.$status = ModelStatus.CREATED;
-        this.$activated = config.activated;
+        this.$inited = config.inited;
 
         console.log('constructor', this.constructor.name);
         
@@ -189,32 +201,31 @@ export abstract class Model<
          * 初始化从属关系
          * 初始化依赖关系
          */
-        this.$childList = this.$initChildList(config.childBundleList);
+        this.$childList = childListProxy(config.childBundleList, this, this.app);
         this.$childDict = this.$initChildDict(config.childBundleDict);
         this.eventEmitterDict = this.$initEmitterDict(config.eventEmitterBundleDict);
         this.stateUpdaterDict = this.$initEmitterDict(config.stateUpdaterBundleDict);
         this.stateEmitterDict = this.$initEmitterDict(config.stateEmitterBundleDict);
 
-        this.$eventHandlerDict = this.$initHandlerDict(config.eventHandlerBundleDict);
+        this.$handlerDict = this.$initHandlerDict(config.eventHandlerBundleDict);
 
         /** 调试器 */
-        this.debug = {};
+        this.debuggerDict = {};
     }
 
     /** 挂载父节点 */
     public $bindParent(parent: IModel.Parent<M>) {
         this.$parent = parent;
         console.log('bind_parent', this.constructor.name);
+        this.$status = ModelStatus.BINDED;
         /** 如果父节点从属于根节点，则触发根节点挂载 */
         if (
             /** 如果父节点等于自身，则自身为根节点 */
             this.$parent === this ||
-            this.$parent.status === ModelStatus.MOUNTED ||
-            this.$parent.status === ModelStatus.INITED
+            this.$parent.status === ModelStatus.MOUNTED 
         ) {
             this.$mountRoot();
         }
-        this.$status = ModelStatus.BINDED;
     }
 
     /** 挂载根节点 */
@@ -236,14 +247,12 @@ export abstract class Model<
             const emitter = this.stateEmitterDict[key];
             emitter.mountRoot();
         }
-        for (const key in this.$eventHandlerDict) {
-            const handler = this.$eventHandlerDict[key];
+        for (const key in this.$handlerDict) {
+            const handler = this.$handlerDict[key];
             handler.mountRoot();
         }
         /** 从属关系遍历 */
-        for (const child of this.$childList) {
-            child.$mountRoot();
-        }
+        this.$childList.$mountRoot();
         for (const key in this.$childDict) {
             const child = this.childDict[key];
             child.$mountRoot();
@@ -263,8 +272,8 @@ export abstract class Model<
             const emitter = this.stateUpdaterDict[key];
             emitter.unmountRoot();
         }
-        for (const key in this.$eventHandlerDict) {
-            const handler = this.$eventHandlerDict[key];
+        for (const key in this.$handlerDict) {
+            const handler = this.$handlerDict[key];
             handler.unmountRoot();
         }
         for (const key in this.stateEmitterDict) {
@@ -272,9 +281,7 @@ export abstract class Model<
             emitter.unmountRoot();
         }
         /** 从属关系遍历 */
-        for (const child of this.$childList) {
-            child.$unmountRoot();
-        }
+        this.$childList.$unmountRoot();
         for (const key in this.$childDict) {
             const child = this.childDict[key];
             child.$unmountRoot();
@@ -284,7 +291,7 @@ export abstract class Model<
     }
 
     public $unbindParent() {
-        if (this.status === ModelStatus.INITED) {
+        if (this.status === ModelStatus.MOUNTED) {
             this.$unmountRoot();
         }
         this.$parent = undefined;
@@ -292,51 +299,34 @@ export abstract class Model<
     }
 
     /** 初始化 */
-    public initialize() {}
-    public $initialize() {
-        this.$status = ModelStatus.INITING;
-        if (!this.$activated) {
+    public bootModel() {}
+    public $bootModel() {
+        if (!this.$inited) {
             console.log('initialize', this.constructor.name);
-            this.initialize();
-            this.$activated = true;
+            this.bootModel();
+            this.$inited = true;
         }
         /** 遍历 */
-        this.$childList.forEach(child => {
-            child.$initialize();
-        });
+        this.$childList.$bootModel();
         for (const key in this.$childDict) {
             const child = this.childDict[key];
-            child.$initialize();
+            child.$bootModel();
         }
-        this.$status = ModelStatus.INITED;
     }
 
-    /** 添加子节点 */
-    protected $appendChild(target: IReflect.Iterator<IModel.ChildList<M>>) {
-        this.$childList.push(target);
-        target.$bindParent(this); 
-        target.$initialize();
-        this.$setChildren();
-    }
-
-    /** 移除子节点 */
-    protected $removeChild(target: 
-        IReflect.Iterator<IModel.ChildList<M>> | 
-        IReflect.Value<IModel.ChildDict<M>>) {
-        const index = this.$childList.indexOf(target);
-        if (index >= 0) {
-            this.$childList.splice(index, 1); 
-            this.$setChildren();
-            return;
+    public unbootModel() {}
+    public $unbootModel() {
+        if (!this.$inited) {
+            console.log('initialize', this.constructor.name);
+            this.unbootModel();
+            this.$inited = false;
         }
+        /** 遍历 */
+        this.$childList.$unbootModel();
         for (const key in this.$childDict) {
-            if (this.$childDict[key] === target) {
-                delete this.$childDict[key];
-                this.$setChildren();
-                return;
-            }
+            const child = this.childDict[key];
+            child.$unbootModel();
         }
-        throw new Error();
     }
 
     /** 更新状态 */
@@ -352,7 +342,7 @@ export abstract class Model<
         const next = event.next;
         if (prev !== next) {
             this.$currentState[key] = next;
-            if (this.$status === ModelStatus.INITED) {
+            if (this.$status === ModelStatus.MOUNTED) {
                 this.stateEmitterDict[key].emitEvent(event);
                 this.$setState();
             }
@@ -376,8 +366,8 @@ export abstract class Model<
             eventEmitterBundleDict[key] = emitter.makeBundle();
         }
         const eventHandlerBundleDict = {} as any;
-        for (const key in this.$eventHandlerDict) {
-            const handler = this.$eventHandlerDict[key];
+        for (const key in this.$handlerDict) {
+            const handler = this.$handlerDict[key];
             eventHandlerBundleDict[key] = handler.makeBundle();
         }
         const stateUpdaterBundleDict = {} as any;
@@ -402,7 +392,7 @@ export abstract class Model<
             eventHandlerBundleDict,
             stateUpdaterBundleDict,
             stateEmitterBundleDict,
-            activated: true
+            inited: true
         };
     }
 }

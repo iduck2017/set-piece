@@ -23,7 +23,7 @@ export type BunnyModelDefine = IModel.CommonDefine<{
 }>
 
 export class BunnyModel extends Model<BunnyModelDefine> {
-    public $handleEvent: IModel.EventHandlerCallerDict<BunnyModelDefine> = {
+    public $handlerCallerDict: IModel.EventHandlerCallerDict<BunnyModelDefine> = {
         tickDone: this.handleTimeUpdateDone,
         timeUpdateDone: this.handleTimeUpdateDone
     };
@@ -54,32 +54,36 @@ export class BunnyModel extends Model<BunnyModelDefine> {
             }, 
             app
         );
-        this.debug = {
-            spawnChild: this.spawnChild
+        this.debuggerDict = {
+            spawnChild: this.spawnChild,
+            suicide: this.die
         };
     }
 
-    public initialize() {
+    public bootModel() {
         const timer = this.root.childDict.time;
         timer.eventEmitterDict.tickDone.bindHandler(
-            this.$eventHandlerDict.tickDone
+            this.$handlerDict.tickDone
         );
     }
 
     /** 繁殖幼崽 */
     public spawnChild() {
-        this.root.spawnCreature({ code: ModelCode.Bunny });
+        const bunny = this.app.factoryService.unserialize<
+            BunnyModelDefine
+        >({ code: ModelCode.Bunny });
+        this.root.spawnCreature(bunny);
     }
 
     /** 年龄增长 */
     private handleTimeUpdateDone() {
         this.$originState.age += 1;
         if (this.currentState.age >= this.currentState.maxAge) {
-            this.$die();
+            this.die();
         }
     }
 
-    private $die() {
-        // this.$destroy();
+    public die() {
+        this.root.removeCreature(this);
     }
 }

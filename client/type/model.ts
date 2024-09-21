@@ -3,10 +3,20 @@ import type { Model } from "../models";
 import type { IEvent } from "./event";
 import { IBase, IReflect } from ".";
 import type { ModelCode, ModelReg } from "./registry";
-import { Emitter, Handler } from "../utils/emitter";
+import { Emitter } from "../utils/emitter";
+import { Handler } from "../utils/handler";
 
 /** 模型 */
 export namespace IModel {
+    export type HookDict = {
+        $bootModel: () => void;
+        $unbootModel: () => void;
+        $mountRoot: () => void;
+        $unmountRoot: () => void;
+        $unbindParent: () => void;
+        $bindParent: (parent: Model) => void;
+    }
+
     /** 基础模型定义 */
     export type Define = {
         code: ModelCode
@@ -71,12 +81,35 @@ export namespace IModel {
         [K in IReflect.Key<HandlerDefDict<M>>]: (event: HandlerDefDict<M>[K]) => void
     }
 
-    /** 模型序列化参数 */
+  
+    /** 从属模型集合/列表 */
+    export type ChildDict<M extends Define> = {
+        [K in keyof ChildDefDict<M>]: InstanceType<ModelReg[Code<ChildDefDict<M>[K]>]>
+    }
+    export type ChildList<M extends Define> =
+        Array<InstanceType<ModelReg[Code<IReflect.Iterator<ChildDefList<M>>>]>>
+
+    /** 从属模型序列化参数集合/列表 */
+    export type ChildBundleDict<M extends Define> = {
+        [K in keyof ChildDefDict<M>]: IModel.Bundle<ChildDefDict<M>[K]>
+    }
+    export type ChildBundleList<M extends Define> = 
+        Array<IModel.Bundle<IReflect.Iterator<ChildDefList<M>>>>
+
+    /** 从属模型初始化参数集合/列表 */
+    export type ChildConfigDict<M extends Define> = {
+        [K in keyof ChildDefDict<M>]: IModel.Config<ChildDefDict<M>[K]>
+    }
+    export type ChildConfigList<M extends Define> = 
+        Array<IModel.Config<IReflect.Iterator<ChildDefList<M>>>>
+
+
+          /** 模型序列化参数 */
     export type Bundle<
         M extends Define = Define
     > = {
         id: string
-        activated: true
+        inited: true
         code: Code<M>
         rule: Partial<Rule<M>>
         originState: State<M>
@@ -93,7 +126,7 @@ export namespace IModel {
         M extends Define = Define
     > = {
         id?: string
-        activated?: boolean
+        inited?: boolean
         code: Code<M>
         rule?: Partial<Rule<M>>
         originState: State<M>
@@ -108,7 +141,7 @@ export namespace IModel {
         M extends Define = Define
     > = {
         id?: string
-        activated?: boolean
+        inited?: boolean
         code: Code<M>
         rule?: Partial<Rule<M>>
         originState?: Partial<State<M>>
@@ -120,26 +153,5 @@ export namespace IModel {
         stateEmitterBundleDict?: Partial<EmitterBundleDict<State<M>>>,
     }
 
-    /** 从属模型集合/列表 */
-    export type ChildDict<M extends Define> = {
-        [K in keyof ChildDefDict<M>]: InstanceType<ModelReg[Code<ChildDefDict<M>[K]>]>
-    }
-    export type ChildList<M extends Define> =
-        Array<InstanceType<ModelReg[Code<IReflect.Iterator<ChildDefList<M>>>]>>
-    
-
-    /** 从属模型序列化参数集合/列表 */
-    export type ChildBundleDict<M extends Define> = {
-        [K in keyof ChildDefDict<M>]: IModel.Bundle<ChildDefDict<M>[K]>
-    }
-    export type ChildBundleList<M extends Define> = 
-        Array<IModel.Bundle<IReflect.Iterator<ChildDefList<M>>>>
-
-    /** 从属模型初始化参数集合/列表 */
-    export type ChildConfigDict<M extends Define> = {
-        [K in keyof ChildDefDict<M>]: IModel.Config<ChildDefDict<M>[K]>
-    }
-    export type ChildConfigList<M extends Define> = 
-        Array<IModel.Config<IReflect.Iterator<ChildDefList<M>>>>
 }
 
