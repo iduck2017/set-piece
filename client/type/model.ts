@@ -52,23 +52,25 @@ export namespace IModel {
     }
     export type EventEmitterBundleDict<M extends Define> = {
         [K in IReflect.Key<EmitterDefDict<M>>]?: [string, string][]
-    } & {
-        [K in IReflect.Key<State<M>> as `${K}UpdateDone`]?: [string, string][]
     }
     export type StateUpdaterBundleDict<M extends Define> = {
+        [K in IReflect.Key<State<M>>]: [string, string][]
+    }
+    export type StateEmitterBundleDict<M extends Define> = {
         [K in IReflect.Key<State<M>>]: [string, string][]
     }
     /** 事件触发器/处理器集合 */
     export type EventEmitterDict<M extends Define> = {
         [K in IReflect.Key<EmitterDefDict<M>>]: Emitter<EmitterDefDict<M>[K]>
-    } & {
-        [K in IReflect.Key<State<M>> as `${K}UpdateDone`]: Emitter<IEvent.StateUpdateDone<M, K>>
     }
     export type EventHandlerDict<M extends Define> = {
         [K in IReflect.Key<HandlerDefDict<M>>]: Handler<HandlerDefDict<M>[K]>
     }
     export type StateUpdaterDict<M extends Define> = {
         [K in IReflect.Key<State<M>>]: Emitter<IEvent.StateUpdateBefore<M, K>>
+    }
+    export type StateEmitterDict<M extends Define> = {
+        [K in IReflect.Key<State<M>>]: Emitter<IEvent.StateUpdateDone<M, K>>
     }
     /** 事件处理器函数集合 */
     export type HandlerFuncDict<M extends Define> = {
@@ -89,6 +91,7 @@ export namespace IModel {
         eventEmitterBundleDict: EventEmitterBundleDict<M>,
         eventHandlerBundleDict: EventHandlerBundleDict<M>,
         stateUpdaterBundleDict: StateUpdaterBundleDict<M>,
+        stateEmitterBundleDict: StateEmitterBundleDict<M>,
     }
 
     /** 模型初始化参数 */
@@ -102,9 +105,10 @@ export namespace IModel {
         originState: State<M>
         childBundleList: ChildConfigList<M>,
         childBundleDict: ChildConfigDict<M>,
-        eventEmitterBundleDict?: EventEmitterBundleDict<M>,
-        eventHandlerBundleDict?: EventHandlerBundleDict<M>,
-        stateUpdaterBundleDict?: StateUpdaterBundleDict<M>,
+        eventEmitterBundleDict?: Partial<EventEmitterBundleDict<M>>,
+        eventHandlerBundleDict?: Partial<EventHandlerBundleDict<M>>,
+        stateUpdaterBundleDict?: Partial<StateUpdaterBundleDict<M>>,
+        stateEmitterBundleDict?: Partial<StateEmitterBundleDict<M>>,
     }
     export type Config<
         M extends Define = Define
@@ -119,6 +123,7 @@ export namespace IModel {
         eventEmitterBundleDict?: Partial<EventEmitterBundleDict<M>>,
         eventHandlerBundleDict?: Partial<EventHandlerBundleDict<M>>,
         stateUpdaterBundleDict?: Partial<StateUpdaterBundleDict<M>>,
+        stateEmitterBundleDict?: Partial<StateEmitterBundleDict<M>>,
     }
 
     /** 从属模型集合/列表 */

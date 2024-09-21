@@ -52,6 +52,8 @@ export abstract class Model<
     /** 事件触发器/处理器 */
     public readonly eventEmitterDict: IModel.EventEmitterDict<M>;
     public readonly stateUpdaterDict: IModel.StateUpdaterDict<M>;
+    public readonly stateEmitterDict: IModel.StateEmitterDict<M>;
+
     public readonly $eventHandlerDict: IModel.EventHandlerDict<M>;
     public abstract readonly $handleEvent: IModel.HandlerFuncDict<M>;
 
@@ -191,6 +193,7 @@ export abstract class Model<
         this.$childDict = this.$initChildDict(config.childBundleDict);
         this.eventEmitterDict = this.$initEmitterDict(config.eventEmitterBundleDict);
         this.stateUpdaterDict = this.$initEmitterDict(config.stateUpdaterBundleDict);
+        this.stateEmitterDict = this.$initEmitterDict(config.stateEmitterBundleDict);
 
         this.$eventHandlerDict = this.$initHandlerDict(config.eventHandlerBundleDict);
 
@@ -229,6 +232,10 @@ export abstract class Model<
             const emitter = this.stateUpdaterDict[key];
             emitter.mountRoot();
         }
+        for (const key in this.stateEmitterDict) {
+            const emitter = this.stateEmitterDict[key];
+            emitter.mountRoot();
+        }
         for (const key in this.$eventHandlerDict) {
             const handler = this.$eventHandlerDict[key];
             handler.mountRoot();
@@ -259,6 +266,10 @@ export abstract class Model<
         for (const key in this.$eventHandlerDict) {
             const handler = this.$eventHandlerDict[key];
             handler.unmountRoot();
+        }
+        for (const key in this.stateEmitterDict) {
+            const emitter = this.stateEmitterDict[key];
+            emitter.unmountRoot();
         }
         /** 从属关系遍历 */
         for (const child of this.$childList) {
@@ -337,13 +348,12 @@ export abstract class Model<
             prev: current,
             next: current
         };
-        const stateUpdateDone = this.eventEmitterDict[`${key}UpdateDone`] as any;
         this.stateUpdaterDict[key].emitEvent(event);
         const next = event.next;
         if (prev !== next) {
             this.$currentState[key] = next;
             if (this.$status === ModelStatus.INITED) {
-                stateUpdateDone.emitEvent(event);
+                this.stateEmitterDict[key].emitEvent(event);
                 this.$setState();
             }
         }
@@ -375,6 +385,11 @@ export abstract class Model<
             const emitter = this.stateUpdaterDict[key];
             stateUpdaterBundleDict[key] = emitter.makeBundle();
         }
+        const stateEmitterBundleDict = {} as any;
+        for (const key in this.stateEmitterDict) {
+            const emitter = this.stateEmitterDict[key];
+            stateEmitterBundleDict[key] = emitter.makeBundle();
+        }
 
         return {
             id: this.id,
@@ -386,6 +401,7 @@ export abstract class Model<
             eventEmitterBundleDict,
             eventHandlerBundleDict,
             stateUpdaterBundleDict,
+            stateEmitterBundleDict,
             activated: true
         };
     }
