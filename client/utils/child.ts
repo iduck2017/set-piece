@@ -10,14 +10,14 @@ export function childListProxy<M extends IModel.Define>(
     app: App
 ): {
     proxy: IModel.ChildList<M>,
-    hooks: IModel.HookDict
+    hooks: IModel.ModelHookDict
 } {
     const childList: IModel.ChildList<M> = [];
     for (const childConfig of config) {
         childList.push(app.factoryService.unserialize(childConfig));
     }
 
-    const hooks: IModel.HookDict = {
+    const hooks: IModel.ModelHookDict = {
         $bootDriver: () => {
             for (const child of childList) {
                 child.$bootDriver();
@@ -97,14 +97,14 @@ export function childDictProxy<M extends IModel.Define>(
     app: App
 ): {
     proxy: IModel.ChildDict<M>,
-    hooks: IModel.HookDict
+    hooks: IModel.ModelHookDict
 } {
     const childDict = {} as IModel.ChildDict<M>;
     for (const key in config) {
         childDict[key] = app.factoryService.unserialize(config[key]);
     }
 
-    const hooks: IModel.HookDict = {
+    const hooks: IModel.ModelHookDict = {
         $bootDriver: () => {
             for (const key in childDict) {
                 childDict[key].$bootDriver();

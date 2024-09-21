@@ -8,13 +8,19 @@ import { Handler } from "../utils/handler";
 
 /** 模型 */
 export namespace IModel {
-    export type HookDict = {
+    export type ModelHookDict = {
         $bootDriver: () => void;
         $unbootDriver: () => void;
         $mountRoot: () => void;
         $unmountRoot: () => void;
         $unbindParent: () => void;
         $bindParent: (parent: Model) => void;
+        $makeBundle: () => any;
+    }
+
+    export type EventHookDict = {
+        $mountRoot: () => void;
+        $unmountRoot: () => void;
         $makeBundle: () => any;
     }
 
@@ -64,19 +70,31 @@ export namespace IModel {
     export type HandlerBundleDict<M extends IBase.Dict> = {
         [K in IReflect.Key<M>]?: [string, string][]
     }
+    export type EmitterDict<E extends IBase.Dict> = {
+        [K in IReflect.Key<E>]: Emitter<E[K]>
+    }
+    export type HandlerDict<H extends IBase.Dict> = {
+        [K in IReflect.Key<H>]: Handler<H[K]>
+    }
+    export type StateUpdateBefore<M extends Define> = {
+        [K in IReflect.Key<State<M>>]: IEvent.StateUpdateBefore<M, K>
+    }
+    export type StateUpdateDone<M extends Define> = {
+        [K in IReflect.Key<State<M>>]: IEvent.StateUpdateDone<M, K>
+    }
     /** 事件触发器/处理器集合 */
-    export type EventEmitterDict<M extends Define> = {
-        [K in IReflect.Key<EmitterDefDict<M>>]: Emitter<EmitterDefDict<M>[K]>
-    }
-    export type EventHandlerDict<M extends Define> = {
-        [K in IReflect.Key<HandlerDefDict<M>>]: Handler<HandlerDefDict<M>[K]>
-    }
-    export type StateUpdaterDict<M extends Define> = {
-        [K in IReflect.Key<State<M>>]: Emitter<IEvent.StateUpdateBefore<M, K>>
-    }
-    export type StateEmitterDict<M extends Define> = {
-        [K in IReflect.Key<State<M>>]: Emitter<IEvent.StateUpdateDone<M, K>>
-    }
+    // export type EventEmitterDict<M extends Define> = {
+    //     [K in IReflect.Key<EmitterDefDict<M>>]: Emitter<EmitterDefDict<M>[K]>
+    // }
+    // export type EventHandlerDict<M extends Define> = {
+    //     [K in IReflect.Key<HandlerDefDict<M>>]: Handler<HandlerDefDict<M>[K]>
+    // }
+    // export type StateUpdaterDict<M extends Define> = {
+    //     [K in IReflect.Key<State<M>>]: Emitter<IEvent.StateUpdateBefore<M, K>>
+    // }
+    // export type StateEmitterDict<M extends Define> = {
+    //     [K in IReflect.Key<State<M>>]: Emitter<IEvent.StateUpdateDone<M, K>>
+    // }
     /** 事件处理器函数集合 */
     export type EventHandlerCallerDict<M extends Define> = {
         [K in IReflect.Key<HandlerDefDict<M>>]: (event: HandlerDefDict<M>[K]) => void

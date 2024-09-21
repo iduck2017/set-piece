@@ -90,3 +90,88 @@ export class Emitter<E = any> {
         });
     }
 }
+
+// export function emitterProxy<M extends IBase.Dict>(
+//     config: IModel.EmitterBundleDict<M>,
+//     model: M,
+//     app: App
+// ): {
+//     proxy: any,
+//     hooks: IModel.ModelHookDict
+// } {
+//     const childDict = {} as IModel.ChildDict<M>;
+//     for (const key in config) {
+//         childDict[key] = app.factoryService.unserialize(config[key]);
+//     }
+
+//     const hooks: IModel.ModelHookDict = {
+//         $bootDriver: () => {
+//             for (const key in childDict) {
+//                 childDict[key].$bootDriver();
+//             }
+//         },
+//         $unbootDriver: () => {
+//             for (const key in childDict) {
+//                 childDict[key].$unbootDriver();
+//             }
+//         },
+//         $mountRoot: () => {
+//             for (const key in childDict) {
+//                 childDict[key].$mountRoot();
+//             }
+//         },
+//         $unmountRoot: () => {
+//             for (const key in childDict) {
+//                 childDict[key].$unmountRoot();
+//             }
+//         },
+//         $unbindParent: () => {
+//             for (const key in childDict) {
+//                 childDict[key].$unbindParent();
+//             }
+//         },
+//         $bindParent: (parent: Model) => {
+//             for (const key in childDict) {
+//                 childDict[key].$bindParent(parent);
+//             }
+//         },
+//         $makeBundle: () => {
+//             const bundle = {} as any;
+//             for (const key in childDict) {
+//                 bundle[key] = childDict[key].makeBundle();
+//             }
+//             return bundle;
+//         }
+//     };
+
+//     const proxy = new Proxy(childDict, {
+//         set: (
+//             target, 
+//             key: any, 
+//             value: Model
+//         ) => {
+//             target[key as IReflect.Key<IModel.ChildDict<M>>] = value as any;   
+//             value.$bindParent(model);
+//             if (value.status === ModelStatus.MOUNTED) {
+//                 value.$bootDriver();
+//             }
+//             model.$setChildren();
+//             return true;
+//         },
+//         deleteProperty: (target, key: any) => {
+//             const value = target[key];
+//             if (value.status === ModelStatus.MOUNTED) {
+//                 value.$unbootDriver();
+//             }
+//             value.$unbindParent();
+//             delete target[key];
+//             model.$setChildren();
+//             return true;
+//         }
+//     });
+
+//     return {
+//         proxy,
+//         hooks
+//     };
+// }
