@@ -2,7 +2,7 @@ import type { App } from "../app";
 import { IBase, IReflect } from "../type";
 import { IModel } from "../type/model";
 import { ModelStatus } from "../type/status";
-import { childListProxy } from "../utils/child";
+import { childDictProxy, childListProxy } from "../utils/child";
 import { Emitter } from "../utils/emitter";
 import { Entity } from "../utils/entity";
 import { Handler } from "../utils/handler";
@@ -40,12 +40,17 @@ export abstract class Model<
         return root;
     }
 
+    private readonly $hooks: {
+        childList: IModel.HookDict;
+        childDict: IModel.HookDict;
+    };
+
     public readonly $childDict: IModel.ChildDict<M>;
-    public readonly $childList: IModel.ChildList<M> & IModel.HookDict;
+    public readonly $childList: IModel.ChildList<M>;
+
     public get childList() { return [ ...this.$childList ]; }
     public get childDict() { return { ...this.$childDict }; }
     public get children(): Model[] {
-        console.log('xxx');
         return [
             ...this.childList,
             ...Object.values(this.childDict)
@@ -73,48 +78,6 @@ export abstract class Model<
     private $setState() {
         this.stateSetterList.forEach(setter => {
             setter(this.currentState);
-        });
-    }
-
-    /** 初始化子级节点列表 */
-    // private $initChildList(config: IModel.ChildConfigList<M>) {
-    //     const childList = [] as IModel.ChildList<M>;
-    //     for (const bundle of config) {
-    //         const child = this.app.factoryService.unserialize(bundle);
-    //         childList.push(child);
-    //         child.$bindParent(this);
-    //     }
-    //     return ChildListProxy.getInstance(childList, this);
-    // }
-
-    /** 初始化子级节点集合 */
-    private $initChildDict(config: IModel.ChildConfigDict<M>) {
-        const childDict = {} as IModel.ChildDict<M>;
-        for (const key in config) {
-            const bundle = config[key];
-            const child = this.app.factoryService.unserialize(bundle);
-            childDict[key] = child;
-            child.$bindParent(this);
-        }
-        return new Proxy(childDict, {
-            set: (origin, key: IReflect.Key<IModel.ChildDefDict<M>>, value: Model) => {
-                origin[key] = value as any;
-                value.$bindParent(this);
-                if (value.status === ModelStatus.MOUNTED) {
-                    value.$bootModel();
-                }
-                this.$setChildren();
-                return true;
-            },
-            deleteProperty(origin, key: IReflect.Key<IModel.ChildDefDict<M>>) {
-                const value = origin[key];
-                if (value.status === ModelStatus.MOUNTED) {
-                    value.unbootModel();
-                }
-                value.$unbindParent();
-                delete origin[key];
-                return true;
-            }
         });
     }
 
@@ -201,8 +164,17 @@ export abstract class Model<
          * 初始化从属关系
          * 初始化依赖关系
          */
-        this.$childList = childListProxy(config.childBundleList, this, this.app);
-        this.$childDict = this.$initChildDict(config.childBundleDict);
+        const childList = childListProxy(config.childBundleList, this, this.app);
+        this.$childList = childList.proxy;
+
+        const childDict = childDictProxy(config.childBundleDict, this, this.app);
+        this.$childDict = childDict.proxy;
+
+        this.$hooks = {
+            childDict: childDict.hooks,
+            childList: childList.hooks
+        };
+
         this.eventEmitterDict = this.$initEmitterDict(config.eventEmitterBundleDict);
         this.stateUpdaterDict = this.$initEmitterDict(config.stateUpdaterBundleDict);
         this.stateEmitterDict = this.$initEmitterDict(config.stateEmitterBundleDict);
@@ -252,11 +224,8 @@ export abstract class Model<
             handler.mountRoot();
         }
         /** 从属关系遍历 */
-        this.$childList.$mountRoot();
-        for (const key in this.$childDict) {
-            const child = this.childDict[key];
-            child.$mountRoot();
-        }
+        this.$hooks.childList.$mountRoot();
+        this.$hooks.childDict.$mountRoot();
         this.$status = ModelStatus.MOUNTED;
     }
 
@@ -281,11 +250,8 @@ export abstract class Model<
             emitter.unmountRoot();
         }
         /** 从属关系遍历 */
-        this.$childList.$unmountRoot();
-        for (const key in this.$childDict) {
-            const child = this.childDict[key];
-            child.$unmountRoot();
-        }
+        this.$hooks.childList.$unmountRoot();
+        this.$hooks.childDict.$unmountRoot();
         this.app.referenceService.removeRefer(this);
         this.$status = ModelStatus.UNMOUNTED;
     }
@@ -307,11 +273,8 @@ export abstract class Model<
             this.$inited = true;
         }
         /** 遍历 */
-        this.$childList.$bootModel();
-        for (const key in this.$childDict) {
-            const child = this.childDict[key];
-            child.$bootModel();
-        }
+        this.$hooks.childList.$bootModel();
+        this.$hooks.childDict.$bootModel();
     }
 
     public unbootModel() {}
@@ -322,11 +285,8 @@ export abstract class Model<
             this.$inited = false;
         }
         /** 遍历 */
-        this.$childList.$unbootModel();
-        for (const key in this.$childDict) {
-            const child = this.childDict[key];
-            child.$unbootModel();
-        }
+        this.$hooks.childList.$unbootModel();
+        this.$hooks.childDict.$unbootModel();
     }
 
     /** 更新状态 */
@@ -350,16 +310,7 @@ export abstract class Model<
     }
 
     /** 序列化函数 */
-    public serialize(): IModel.Bundle<M> {
-        const childBundleDict = {} as any;
-        for (const key in this.childDict) {
-            const child = this.childDict[key];
-            childBundleDict[key] = child.serialize();
-        }
-        const childBundleList = this.childList.map(child => {
-            return child.serialize(); 
-        });
-
+    public makeBundle(): IModel.Bundle<M> {
         const eventEmitterBundleDict = {} as any;
         for (const key in this.eventEmitterDict) {
             const emitter = this.eventEmitterDict[key];
@@ -386,8 +337,8 @@ export abstract class Model<
             code: this.code,
             rule: this.rule,
             originState: this.$originState,
-            childBundleDict,
-            childBundleList,
+            childBundleDict: this.$hooks.childDict.$makeBundle(),
+            childBundleList: this.$hooks.childList.$makeBundle(),
             eventEmitterBundleDict,
             eventHandlerBundleDict,
             stateUpdaterBundleDict,

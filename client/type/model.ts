@@ -15,6 +15,7 @@ export namespace IModel {
         $unmountRoot: () => void;
         $unbindParent: () => void;
         $bindParent: (parent: Model) => void;
+        $makeBundle: () => any;
     }
 
     /** 基础模型定义 */

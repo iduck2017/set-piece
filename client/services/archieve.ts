@@ -73,7 +73,7 @@ export class ArchieveService {
         }
         const slot = this.$data[index];
         const path = `${ARCHIEVE_SAVE_PATH}_${slot.id}`;
-        const record = rootModel.serialize();
+        const record = rootModel.makeBundle();
         this.$data[index] = {
             ...slot,
             progress: rootModel.currentState.progress
