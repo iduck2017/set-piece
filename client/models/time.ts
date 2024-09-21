@@ -15,7 +15,7 @@ export type TimerModelDefine = IModel.CommonDefine<{
 }>
 
 export class TimerModel extends Model<TimerModelDefine> {
-    public $handleEvent: IModel.HandlerFuncDict<TimerModelDefine> = {};
+    public $handleEvent: IModel.EventHandlerCallerDict<TimerModelDefine> = {};
 
     constructor(
         config: IModel.Config<TimerModelDefine>,

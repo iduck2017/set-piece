@@ -1,6 +1,5 @@
 import type { App } from "../app";
-import { Model } from "../models";
-import { IModel } from "../type/model";
+import type { Model } from "../models";
 
 /** 事件触发器 */
 export class Emitter<E = any> {

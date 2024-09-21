@@ -16,7 +16,7 @@ export type ForagerModelDefine = IModel.CommonDefine<{
 }>
 
 export class ForagerModel extends Model<ForagerModelDefine> {
-    public $handleEvent: IModel.HandlerFuncDict<ForagerModelDefine> = {
+    public $handleEvent: IModel.EventHandlerCallerDict<ForagerModelDefine> = {
         tickDone: this.handleTimeUpdateDone
     };
 

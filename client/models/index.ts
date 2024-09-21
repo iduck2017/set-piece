@@ -55,7 +55,7 @@ export abstract class Model<
     public readonly stateEmitterDict: IModel.StateEmitterDict<M>;
 
     public readonly $eventHandlerDict: IModel.EventHandlerDict<M>;
-    public abstract readonly $handleEvent: IModel.HandlerFuncDict<M>;
+    public abstract readonly $handleEvent: IModel.EventHandlerCallerDict<M>;
 
     /** 测试用例 */
     public debug: Record<string, IBase.Func>;
@@ -106,7 +106,7 @@ export abstract class Model<
         });
     }
 
-    private $initEmitterDict(config?: Record<string, [string, string][] | undefined>) {
+    private $initEmitterDict(config?: IModel.EmitterBundleDict<IBase.Dict>) {
         const emitterDict = {} as any;
         for (const key in config) {
             const bundleList = config[key] || [];
@@ -129,7 +129,7 @@ export abstract class Model<
         });
     }
 
-    private $initHandlerDict(config?: IModel.EventHandlerBundleDict<M>) {
+    private $initHandlerDict(config?: IModel.HandlerBundleDict<IModel.HandlerDefDict<M>>) {
         const handlerDict = {} as IModel.EventHandlerDict<M>;
         if (config) {
             Object.keys(config).forEach((

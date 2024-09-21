@@ -17,7 +17,7 @@ export type RootModelDefine = IModel.CommonDefine<{
 }>
 
 export class RootModel extends Model<RootModelDefine> {
-    public $handleEvent: IModel.HandlerFuncDict<RootModelDefine> = {};
+    public $handleEvent: IModel.EventHandlerCallerDict<RootModelDefine> = {};
 
     constructor(
         config: IModel.Config<RootModelDefine>,
