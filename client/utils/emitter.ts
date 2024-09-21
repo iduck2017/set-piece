@@ -1,5 +1,7 @@
 import type { App } from "../app";
 import type { Model } from "../models";
+import { IBase, IReflect } from "../type";
+import type { IModel } from "../type/model";
 import type { Handler } from "./handler";
 
 /** 事件触发器 */
@@ -17,10 +19,9 @@ export class Emitter<E = any> {
     constructor( 
         handlerBundleList: [string, string][],
         emitterKey: string,
-        model: Model,
-        app: App
+        model: Model
     ) {
-        this.$app = app;
+        this.$app = model.app;
         this.model = model;
         this.emitterKey = emitterKey;
         this.$handlerList = [];
@@ -60,7 +61,7 @@ export class Emitter<E = any> {
     }
 
     /** 构建序列化参数 */
-    public makeBundle(): [string, string][] {
+    public $makeBundle(): [string, string][] {
         const bundle: [string, string][] = [];
         for (const handler of this.$handlerList) {
             if (handler.model && handler.handlerKey) {
@@ -74,7 +75,7 @@ export class Emitter<E = any> {
     }
 
     /** 挂载到根节点，构建依赖关系 */
-    public mountRoot() {
+    public $mountRoot() {
         this.$handlerBundleList.forEach(([ modelId, handlerKey ]) => {
             const model = this.$app.referenceService.referDict[modelId];
             if (model) {
@@ -84,94 +85,70 @@ export class Emitter<E = any> {
     }
 
     /** 从根节点卸载，解除依赖关系  */
-    public unmountRoot() {
+    public $unmountRoot() {
         this.$handlerList.forEach(item => {
             this.unbindHandler(item);
         });
     }
 }
 
-// export function emitterProxy<M extends IBase.Dict>(
-//     config: IModel.EmitterBundleDict<M>,
-//     model: M,
-//     app: App
-// ): {
-//     proxy: any,
-//     hooks: IModel.ModelHookDict
-// } {
-//     const childDict = {} as IModel.ChildDict<M>;
-//     for (const key in config) {
-//         childDict[key] = app.factoryService.unserialize(config[key]);
-//     }
+export function emitterDictProxy<M extends IBase.Dict>(
+    config: IModel.EmitterBundleDict<M> | undefined,
+    model: Model
+): {
+    proxy: IModel.EmitterDict<M>,
+    hooks: IModel.EventHookDict
+} {
+    const emitterDict = {} as IModel.EmitterDict<M>;
+    if (config) {
+        Object.keys(config).forEach((
+            key: IReflect.Key<IModel.EmitterDict<M>>
+        ) => {
+            const handler = new Emitter(
+                config[key] || [],
+                key,
+                model
+            );
+            emitterDict[key] = handler;
+        });
+    }
 
-//     const hooks: IModel.ModelHookDict = {
-//         $bootDriver: () => {
-//             for (const key in childDict) {
-//                 childDict[key].$bootDriver();
-//             }
-//         },
-//         $unbootDriver: () => {
-//             for (const key in childDict) {
-//                 childDict[key].$unbootDriver();
-//             }
-//         },
-//         $mountRoot: () => {
-//             for (const key in childDict) {
-//                 childDict[key].$mountRoot();
-//             }
-//         },
-//         $unmountRoot: () => {
-//             for (const key in childDict) {
-//                 childDict[key].$unmountRoot();
-//             }
-//         },
-//         $unbindParent: () => {
-//             for (const key in childDict) {
-//                 childDict[key].$unbindParent();
-//             }
-//         },
-//         $bindParent: (parent: Model) => {
-//             for (const key in childDict) {
-//                 childDict[key].$bindParent(parent);
-//             }
-//         },
-//         $makeBundle: () => {
-//             const bundle = {} as any;
-//             for (const key in childDict) {
-//                 bundle[key] = childDict[key].makeBundle();
-//             }
-//             return bundle;
-//         }
-//     };
+    const hooks: IModel.EventHookDict = {
+        $mountRoot: () => {
+            for (const key in emitterDict) {
+                emitterDict[key].$mountRoot();
+            }
+        },
+        $unmountRoot: () => {
+            for (const key in emitterDict) {
+                emitterDict[key].$unmountRoot();
+            }
+        },
+        $makeBundle: () => {
+            const bundle = {} as any;
+            for (const key in emitterDict) {
+                bundle[key] = emitterDict[key].$makeBundle();
+            }
+            return bundle;
+        }
+    };
+    
+    const proxy = new Proxy(emitterDict, {
+        get: (origin, key: IReflect.Key<IModel.HandlerDict<M>>) => {
+            if (!origin[key]) {
+                origin[key] = new Emitter(
+                    [],
+                    key,
+                    model
+                );
+            }
+            return origin[key];
+        },
+        set: () => false
+    });
 
-//     const proxy = new Proxy(childDict, {
-//         set: (
-//             target, 
-//             key: any, 
-//             value: Model
-//         ) => {
-//             target[key as IReflect.Key<IModel.ChildDict<M>>] = value as any;   
-//             value.$bindParent(model);
-//             if (value.status === ModelStatus.MOUNTED) {
-//                 value.$bootDriver();
-//             }
-//             model.$setChildren();
-//             return true;
-//         },
-//         deleteProperty: (target, key: any) => {
-//             const value = target[key];
-//             if (value.status === ModelStatus.MOUNTED) {
-//                 value.$unbootDriver();
-//             }
-//             value.$unbindParent();
-//             delete target[key];
-//             model.$setChildren();
-//             return true;
-//         }
-//     });
-
-//     return {
-//         proxy,
-//         hooks
-//     };
-// }
+    return {
+        proxy,
+        hooks
+    };
+}

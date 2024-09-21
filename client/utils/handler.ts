@@ -48,7 +48,7 @@ export class Handler<E = any> {
         this.$emitterBundleList.forEach(([ modelId, emitterKey ]) => {
             const model = this.$app.referenceService.referDict[modelId];
             if (model) {
-                model.eventEmitterDict[emitterKey].bindHandler(this);
+                model.emitterDict[emitterKey].bindHandler(this);
             }
         });
     }

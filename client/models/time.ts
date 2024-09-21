@@ -38,8 +38,8 @@ export class TimerModel extends Model<TimerModelDefine> {
     
     /** 更新时间 */
     public updateTime(offsetTime: number) {
-        this.eventEmitterDict.tickBefore.emitEvent();
+        this.emitterDict.tickBefore.emitEvent();
         this.$originState.time += offsetTime;
-        this.eventEmitterDict.tickDone.emitEvent();
+        this.emitterDict.tickDone.emitEvent();
     }
 }

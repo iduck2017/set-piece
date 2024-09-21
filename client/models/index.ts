@@ -3,7 +3,7 @@ import { IBase, IReflect } from "../type";
 import { IModel } from "../type/model";
 import { ModelStatus } from "../type/status";
 import { childDictProxy, childListProxy } from "../utils/child";
-import { Emitter } from "../utils/emitter";
+import { emitterDictProxy } from "../utils/emitter";
 import { Entity } from "../utils/entity";
 import { handlerDictProxy } from "../utils/handler";
 
@@ -44,6 +44,9 @@ export abstract class Model<
         childList: IModel.ModelHookDict;
         childDict: IModel.ModelHookDict;
         handlerDict: IModel.EventHookDict;
+        emitterDict: IModel.EventHookDict;
+        updaterDict: IModel.EventHookDict;
+        watcherDict: IModel.EventHookDict;
     };
 
     public readonly $childDict: IModel.ChildDict<M>;
@@ -59,9 +62,9 @@ export abstract class Model<
     }
 
     /** 事件触发器/处理器 */
-    public readonly eventEmitterDict: IModel.EmitterDict<IModel.EmitterDefDict<M>>;
-    public readonly stateUpdaterDict: IModel.EmitterDict<IModel.StateUpdateBefore<M>>;
-    public readonly stateEmitterDict: IModel.EmitterDict<IModel.StateUpdateDone<M>>;
+    public readonly emitterDict: IModel.EmitterDict<IModel.EmitterDefDict<M>>;
+    public readonly updaterDict: IModel.EmitterDict<IModel.StateUpdateBefore<M>>;
+    public readonly watcherDict: IModel.EmitterDict<IModel.StateUpdateDone<M>>;
     public readonly $handlerDict: IModel.HandlerDict<IModel.HandlerDefDict<M>>;
 
     public abstract readonly $handlerCallerDict: IModel.EventHandlerCallerDict<M>;
@@ -81,29 +84,6 @@ export abstract class Model<
         console.log('set_state', result);
         this.stateSetterList.forEach(setter => {
             setter(result);
-        });
-    }
-
-    private $initEmitterDict(config?: IModel.EmitterBundleDict<IBase.Dict>) {
-        const emitterDict = {} as any;
-        for (const key in config) {
-            const bundleList = config[key] || [];
-            const emitter = new Emitter(    
-                bundleList,
-                key,
-                this,
-                this.app
-            );
-            emitterDict[key] = emitter;
-        }
-        return new Proxy(emitterDict, {
-            get: (origin, key: string) => {
-                if (!origin[key]) {
-                    origin[key] = new Emitter([], key, this, this.app);
-                }
-                return origin[key];
-            },
-            set: () => false
         });
     }
 
@@ -145,15 +125,27 @@ export abstract class Model<
         const handlerDict = handlerDictProxy(config.eventHandlerBundleDict, this);
         this.$handlerDict = handlerDict.proxy;
 
+        const emitterDict = emitterDictProxy(config.eventEmitterBundleDict, this);
+        this.emitterDict = emitterDict.proxy;
+
+        const updaterDict = emitterDictProxy<
+            IModel.StateUpdateBefore<M>
+        >(config.stateUpdaterBundleDict, this);
+        this.updaterDict = updaterDict.proxy;
+
+        const watcherDict = emitterDictProxy<
+            IModel.StateUpdateDone<M>
+        >(config.stateEmitterBundleDict, this);
+        this.watcherDict = watcherDict.proxy;
+
         this.$hooks = {
             childDict: childDict.hooks,
             childList: childList.hooks,
-            handlerDict: handlerDict.hooks
+            handlerDict: handlerDict.hooks,
+            emitterDict: emitterDict.hooks,
+            updaterDict: updaterDict.hooks,
+            watcherDict: watcherDict.hooks
         };
-
-        this.eventEmitterDict = this.$initEmitterDict(config.eventEmitterBundleDict);
-        this.stateUpdaterDict = this.$initEmitterDict(config.stateUpdaterBundleDict);
-        this.stateEmitterDict = this.$initEmitterDict(config.stateEmitterBundleDict);
 
         /** 调试器 */
         this.debuggerDict = {};
@@ -178,48 +170,23 @@ export abstract class Model<
     public $mountRoot() {
         this.$status = ModelStatus.MOUNTING;
         console.log('mount_root', this.constructor.name);
-        /** 注册唯一标识 */
         this.app.referenceService.addRefer(this);
-        /** 依赖关系遍历 */
-        for (const key in this.eventEmitterDict) {
-            const emitter = this.eventEmitterDict[key];
-            emitter.mountRoot();
-        }
-        for (const key in this.stateUpdaterDict) {
-            const emitter = this.stateUpdaterDict[key];
-            emitter.mountRoot();
-        }
-        for (const key in this.stateEmitterDict) {
-            const emitter = this.stateEmitterDict[key];
-            emitter.mountRoot();
-        }
-        /** 从属关系遍历 */
         this.$hooks.childList.$mountRoot();
         this.$hooks.childDict.$mountRoot();
         this.$hooks.handlerDict.$mountRoot();
+        this.$hooks.emitterDict.$mountRoot();
+        this.$hooks.updaterDict.$mountRoot();
         this.$status = ModelStatus.MOUNTED;
     }
 
     public $unmountRoot() {
         this.$status = ModelStatus.UNMOUNTING;
         console.log('unmount_root', this.constructor.name);
-        /** 依赖关系遍历 */
-        for (const key in this.eventEmitterDict) {
-            const emitter = this.eventEmitterDict[key];
-            emitter.unmountRoot();
-        }
-        for (const key in this.stateUpdaterDict) {
-            const emitter = this.stateUpdaterDict[key];
-            emitter.unmountRoot();
-        }
-        for (const key in this.stateEmitterDict) {
-            const emitter = this.stateEmitterDict[key];
-            emitter.unmountRoot();
-        }
-        /** 从属关系遍历 */
         this.$hooks.childList.$unmountRoot();
         this.$hooks.childDict.$unmountRoot();
         this.$hooks.handlerDict.$unmountRoot();
+        this.$hooks.emitterDict.$unmountRoot();
+        this.$hooks.updaterDict.$unmountRoot();
         this.app.referenceService.removeRefer(this);
         this.$status = ModelStatus.UNMOUNTED;
     }
@@ -267,12 +234,12 @@ export abstract class Model<
             prev: current,
             next: current
         };
-        this.stateUpdaterDict[key].emitEvent(event);
+        this.updaterDict[key].emitEvent(event);
         const next = event.next;
         if (prev !== next) {
             this.$currentState[key] = next;
             if (this.$status === ModelStatus.MOUNTED) {
-                this.stateEmitterDict[key].emitEvent(event);
+                this.watcherDict[key].emitEvent(event);
                 this.$setState();
             }
         }
@@ -280,22 +247,6 @@ export abstract class Model<
 
     /** 序列化函数 */
     public makeBundle(): IModel.Bundle<M> {
-        const eventEmitterBundleDict = {} as any;
-        for (const key in this.eventEmitterDict) {
-            const emitter = this.eventEmitterDict[key];
-            eventEmitterBundleDict[key] = emitter.makeBundle();
-        }
-        const stateUpdaterBundleDict = {} as any;
-        for (const key in this.stateUpdaterDict) {
-            const emitter = this.stateUpdaterDict[key];
-            stateUpdaterBundleDict[key] = emitter.makeBundle();
-        }
-        const stateEmitterBundleDict = {} as any;
-        for (const key in this.stateEmitterDict) {
-            const emitter = this.stateEmitterDict[key];
-            stateEmitterBundleDict[key] = emitter.makeBundle();
-        }
-
         return {
             id: this.id,
             code: this.code,
@@ -303,10 +254,10 @@ export abstract class Model<
             originState: this.$originState,
             childBundleDict: this.$hooks.childDict.$makeBundle(),
             childBundleList: this.$hooks.childList.$makeBundle(),
-            eventEmitterBundleDict,
+            eventEmitterBundleDict: this.$hooks.emitterDict.$makeBundle(),
             eventHandlerBundleDict: this.$hooks.handlerDict.$makeBundle(),
-            stateUpdaterBundleDict,
-            stateEmitterBundleDict,
+            stateUpdaterBundleDict: this.$hooks.updaterDict.$makeBundle(),
+            stateEmitterBundleDict: this.$hooks.watcherDict.$makeBundle(),
             inited: true
         };
     }
