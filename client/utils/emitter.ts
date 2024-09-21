@@ -78,7 +78,7 @@ export class Emitter<E = any> {
         this.$handlerBundleList.forEach(([ modelId, handlerKey ]) => {
             const model = this.$app.referenceService.referDict[modelId];
             if (model) {
-                this.bindHandler(model.$handlerDict[handlerKey]);
+                this.bindHandler(model.$eventHandlerDict[handlerKey]);
             }
         });
     }
@@ -136,7 +136,7 @@ export class Handler<E = any> {
         this.$emitterBundleList.forEach(([ modelId, emitterKey ]) => {
             const model = this.$app.referenceService.referDict[modelId];
             if (model) {
-                model.emitterDict[emitterKey].bindHandler(this);
+                model.eventEmitterDict[emitterKey].bindHandler(this);
             }
         });
     }

@@ -50,9 +50,10 @@ export abstract class Model<
     }
 
     /** 事件触发器/处理器 */
-    public readonly emitterDict!: IModel.EmitterDict<M>;
-    public readonly $handleEvent!: IModel.HandlerFuncDict<M>;
-    public readonly $handlerDict!: IModel.HandlerDict<M>;
+    public readonly eventEmitterDict: IModel.EventEmitterDict<M>;
+    public readonly stateUpdaterDict: IModel.StateUpdaterDict<M>;
+    public readonly $eventHandlerDict: IModel.EventHandlerDict<M>;
+    public abstract readonly $handleEvent: IModel.HandlerFuncDict<M>;
 
     /** 测试用例 */
     public debug: Record<string, IBase.Func>;
@@ -103,7 +104,7 @@ export abstract class Model<
         });
     }
 
-    private $initEmitterDict(config?: IModel.EventEmitterBundleDict<M>) {
+    private $initEmitterDict(config?: Record<string, [string, string][] | undefined>) {
         const emitterDict = {} as any;
         for (const key in config) {
             const bundleList = config[key] || [];
@@ -127,10 +128,10 @@ export abstract class Model<
     }
 
     private $initHandlerDict(config?: IModel.EventHandlerBundleDict<M>) {
-        const handlerDict = {} as IModel.HandlerDict<M>;
+        const handlerDict = {} as IModel.EventHandlerDict<M>;
         if (config) {
             Object.keys(config).forEach((
-                key: IReflect.Key<IModel.HandlerDict<M>>
+                key: IReflect.Key<IModel.EventHandlerDict<M>>
             ) => {
                 const handler = new Handler(
                     config[key] || [],
@@ -142,7 +143,7 @@ export abstract class Model<
             });
         }
         return new Proxy(handlerDict, {
-            get: (origin, key: IReflect.Key<IModel.HandlerDict<M>>) => {
+            get: (origin, key: IReflect.Key<IModel.EventHandlerDict<M>>) => {
                 if (!origin[key]) {
                     origin[key] = new Handler(
                         [],
@@ -188,8 +189,10 @@ export abstract class Model<
          */
         this.$childList = this.$initChildList(config.childBundleList);
         this.$childDict = this.$initChildDict(config.childBundleDict);
-        this.emitterDict = this.$initEmitterDict(config.emitterBundleDict);
-        this.$handlerDict = this.$initHandlerDict(config.handlerBundleDict);
+        this.eventEmitterDict = this.$initEmitterDict(config.eventEmitterBundleDict);
+        this.stateUpdaterDict = this.$initEmitterDict(config.stateUpdaterBundleDict);
+
+        this.$eventHandlerDict = this.$initHandlerDict(config.eventHandlerBundleDict);
 
         /** 调试器 */
         this.debug = {};
@@ -218,12 +221,16 @@ export abstract class Model<
         /** 注册唯一标识 */
         this.app.referenceService.addRefer(this);
         /** 依赖关系遍历 */
-        for (const key in this.emitterDict) {
-            const emitter = this.emitterDict[key];
+        for (const key in this.eventEmitterDict) {
+            const emitter = this.eventEmitterDict[key];
             emitter.mountRoot();
         }
-        for (const key in this.$handlerDict) {
-            const handler = this.$handlerDict[key];
+        for (const key in this.stateUpdaterDict) {
+            const emitter = this.stateUpdaterDict[key];
+            emitter.mountRoot();
+        }
+        for (const key in this.$eventHandlerDict) {
+            const handler = this.$eventHandlerDict[key];
             handler.mountRoot();
         }
         /** 从属关系遍历 */
@@ -241,12 +248,16 @@ export abstract class Model<
         this.$status = ModelStatus.UNMOUNTING;
         console.log('unmount_root', this.constructor.name);
         /** 依赖关系遍历 */
-        for (const key in this.emitterDict) {
-            const emitter = this.emitterDict[key];
+        for (const key in this.eventEmitterDict) {
+            const emitter = this.eventEmitterDict[key];
             emitter.unmountRoot();
         }
-        for (const key in this.$handlerDict) {
-            const handler = this.$handlerDict[key];
+        for (const key in this.stateUpdaterDict) {
+            const emitter = this.stateUpdaterDict[key];
+            emitter.unmountRoot();
+        }
+        for (const key in this.$eventHandlerDict) {
+            const handler = this.$eventHandlerDict[key];
             handler.unmountRoot();
         }
         /** 从属关系遍历 */
@@ -326,9 +337,8 @@ export abstract class Model<
             prev: current,
             next: current
         };
-        const stateUpdateBefore = this.emitterDict[`${key}UpdateBefore`] as any;
-        const stateUpdateDone = this.emitterDict[`${key}UpdateDone`] as any;
-        stateUpdateBefore.emitEvent(event);
+        const stateUpdateDone = this.eventEmitterDict[`${key}UpdateDone`] as any;
+        this.stateUpdaterDict[key].emitEvent(event);
         const next = event.next;
         if (prev !== next) {
             this.$currentState[key] = next;
@@ -350,15 +360,20 @@ export abstract class Model<
             return child.serialize(); 
         });
 
-        const emitterIdDict = {} as any;
-        for (const key in this.emitterDict) {
-            const emitter = this.emitterDict[key];
-            emitterIdDict[key] = emitter.makeBundle();
+        const eventEmitterBundleDict = {} as any;
+        for (const key in this.eventEmitterDict) {
+            const emitter = this.eventEmitterDict[key];
+            eventEmitterBundleDict[key] = emitter.makeBundle();
         }
-        const handlerIdDict = {} as any;
-        for (const key in this.$handlerDict) {
-            const handler = this.$handlerDict[key];
-            handlerIdDict[key] = handler.makeBundle();
+        const eventHandlerBundleDict = {} as any;
+        for (const key in this.$eventHandlerDict) {
+            const handler = this.$eventHandlerDict[key];
+            eventHandlerBundleDict[key] = handler.makeBundle();
+        }
+        const stateUpdaterBundleDict = {} as any;
+        for (const key in this.stateUpdaterDict) {
+            const emitter = this.stateUpdaterDict[key];
+            stateUpdaterBundleDict[key] = emitter.makeBundle();
         }
 
         return {
@@ -368,8 +383,9 @@ export abstract class Model<
             originState: this.$originState,
             childBundleDict,
             childBundleList,
-            emitterBundleDict: emitterIdDict,
-            handlerBundleDict: handlerIdDict,
+            eventEmitterBundleDict,
+            eventHandlerBundleDict,
+            stateUpdaterBundleDict,
             activated: true
         };
     }

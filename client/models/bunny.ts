@@ -64,8 +64,8 @@ export class BunnyModel extends Model<BunnyModelDefine> {
         // timer.emitterDict.timeUpdateDone.bindHandler(
         //     this.$handlerDict.timeUpdateDone
         // );
-        timer.emitterDict.tickDone.bindHandler(
-            this.$handlerDict.tickDone
+        timer.eventEmitterDict.tickDone.bindHandler(
+            this.$eventHandlerDict.tickDone
         );
     }
 

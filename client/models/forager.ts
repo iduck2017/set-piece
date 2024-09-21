@@ -42,8 +42,8 @@ export class ForagerModel extends Model<ForagerModelDefine> {
 
     public initialize(): void {
         const timer = this.root.childDict.time;
-        timer.emitterDict.tickDone.bindHandler(
-            this.$handlerDict.tickDone
+        timer.eventEmitterDict.tickDone.bindHandler(
+            this.$eventHandlerDict.tickDone
         );
     }
 
