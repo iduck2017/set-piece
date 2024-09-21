@@ -65,10 +65,10 @@ export namespace IModel {
      * 事件触发器/处理器序列化参数集合
      */
     export type EmitterBundleDict<M extends IBase.Dict> = {
-        [K in IReflect.Key<M>]?: [string, string][]
+        [K in IReflect.Key<M>]?: string[]
     }
     export type HandlerBundleDict<M extends IBase.Dict> = {
-        [K in IReflect.Key<M>]?: [string, string][]
+        [K in IReflect.Key<M>]?: string[]
     }
     export type EmitterDict<E extends IBase.Dict> = {
         [K in IReflect.Key<E>]: Emitter<E[K]>

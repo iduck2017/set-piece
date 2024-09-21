@@ -1,32 +1,23 @@
-import type { App } from "../app";
-import type { Model } from "../models";
 import { IBase, IReflect } from "../type";
 import type { IModel } from "../type/model";
 import type { Emitter } from "./emitter";
 
 /** 事件处理器 */
 export class Handler<E = any> {
-    private readonly $app: App;
-
-    public readonly model: Model;
-    public readonly handlerKey: string;
-
-    private readonly $emitterBundleList: [string, string][];
+    public readonly id: string;
+    private readonly $emitterIdList: string[];
     private readonly $emitterList: Emitter<E>[];
 
-    public handleEvent(event: E) {  
-        this.model.$handlerCallerDict[this.handlerKey].call(this.model, event);
+    public handleEvent(event: E) {
+        
     }
 
     constructor(
-        emitterBundleList: [string, string][],
-        handlerKey: string,
-        model: Model
+        config?: string[]
     ) {
-        this.$app = model.app;
-        this.model = model;
-        this.handlerKey = handlerKey;
-        this.$emitterBundleList = emitterBundleList;
+        const [ id, ...emitterIdList ] = config || [];
+        this.id = id || window.$app.referenceService.getUniqId();
+        this.$emitterIdList = emitterIdList;
         this.$emitterList = [];
     }
 
@@ -43,19 +34,20 @@ export class Handler<E = any> {
         }
     }
 
-    /** 挂载到根节点，构建依赖关系 */
-    public $mountRoot() {
-        this.$emitterBundleList.forEach(([ modelId, emitterKey ]) => {
-            const model = this.$app.referenceService.referDict[modelId];
-            if (model) {
-                model.emitterDict[emitterKey].bindHandler(this);
+    /** 初始化事件处理器队列 */
+    public mountRoot() {
+        window.$app.referenceService.handlerDict[this.id] = this;
+        for (const emitterId of this.$emitterIdList) {
+            const emitter = window.$app.referenceService.emitterDict[emitterId];
+            if (emitter) {
+                emitter.bindHandler(this);
             }
-        });
+        }
     }
 
     /** 构建序列化参数 */
-    public $makeBundle(): [string, string][] {
-        const bundle: [string, string][] = [];
+    public makeBundle(): string[] {
+        const bundle: string[] = [];
         for (const emitter of this.$emitterList) {
             bundle.push(emitter.id);
         }
@@ -63,62 +55,57 @@ export class Handler<E = any> {
     }
 
     /** 从根节点卸载，解除依赖关系  */
-    public $unmountRoot() {
+    public unmountRoot() {
         this.$emitterList.forEach(item => {
             item.unbindHandler(this);
         });
+        delete window.$app.referenceService.handlerDict[this.id];
     }
 }
 
-export function handlerDictProxy<M extends IBase.Dict>(
-    config: IModel.HandlerBundleDict<M> | undefined,
-    model: Model
-): {
-    proxy: IModel.HandlerDict<M>,
-    hooks: IModel.EventHookDict
-} {
-    const handlerDict = {} as IModel.HandlerDict<M>;
-    if (config) {
-        Object.keys(config).forEach((
-            key: IReflect.Key<IModel.HandlerDict<M>>
-        ) => {
-            const handler = new Handler(config[key] || [], key, model);
-            handlerDict[key] = handler;
+export class HandlerDictProxy<E extends IBase.Dict> {
+    public readonly handlerDict: IModel.HandlerDict<E>;
+    private readonly $handlerBundleDict?: IModel.HandlerBundleDict<E>;
+
+    constructor(
+        config?: IModel.HandlerBundleDict<E>
+    ) {
+        this.$handlerBundleDict = config;
+        const handlerDict = {} as IModel.HandlerDict<E>;
+        for (const key in config) {
+            handlerDict[
+                key as IReflect.Key<IModel.HandlerDict<E>>
+            ] = new Handler(config[key]);
+        }
+        this.handlerDict= new Proxy(handlerDict, {
+            get: (origin, key: IReflect.Key<IModel.HandlerDict<E>>) => {
+                if (!origin[key]) {
+                    origin[key] = new Handler();
+                }
+                return origin[key];
+            },
+            set: () => false
         });
     }
 
-    const hooks: IModel.EventHookDict = {
-        mountRoot: () => {
-            for (const key in handlerDict) {
-                handlerDict[key].$mountRoot();
-            }
-        },
-        unmountRoot: () => {
-            for (const key in handlerDict) {
-                handlerDict[key].$unmountRoot();
-            }
-        },
-        makeBundle: () => {
-            const bundle = {} as any;
-            for (const key in handlerDict) {
-                bundle[key] = handlerDict[key].$makeBundle();
-            }
-            return bundle;
+    public mountRoot() {
+        for (const key in this.$handlerBundleDict) {
+            const emitter = this.handlerDict[key];
+            emitter.mountRoot();
         }
-    };
-    
-    const proxy = new Proxy(handlerDict, {
-        get: (origin, key: IReflect.Key<IModel.HandlerDict<M>>) => {
-            if (!origin[key]) {
-                origin[key] = new Handler([], key, model);
-            }
-            return origin[key];
-        },
-        set: () => false
-    });
+    }
 
-    return {
-        proxy,
-        hooks
-    };
+    public unmountRoot() {
+        for (const key in this.handlerDict) {
+            this.handlerDict[key].unmountRoot();
+        }
+    }
+
+    public makeBundle() {
+        const bundle = {} as any;
+        for (const key in this.handlerDict) {
+            bundle[key] = this.handlerDict[key].makeBundle();
+        }
+        return bundle;
+    }
 }

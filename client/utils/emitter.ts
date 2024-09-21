@@ -1,22 +1,31 @@
-import type { App } from "../app";
-import type { Model } from "../models";
 import { IBase, IReflect } from "../type";
 import type { IModel } from "../type/model";
 import type { Handler } from "./handler";
 
 /** 事件触发器 */
 export class Emitter<E = any> {
-    private readonly $id: [string, string];
-    public get id() { return this.$id; }
+    public readonly id: string;
 
     /** 事件处理器队列 */
+    private readonly $handlerIdList: string[];
     private readonly $handlerList: Handler<E>[];
 
-    constructor( 
-        id: [string, string]
-    ) {
-        this.$id = id;
+    constructor(config?: string[]) {
+        const [ id, ...handlerIdList ] = config || [];
+        this.id = id || window.$app.referenceService.getUniqId();
+        this.$handlerIdList = handlerIdList;
         this.$handlerList = [];
+    }
+
+    /** 初始化事件处理器队列 */
+    public mountRoot() {
+        window.$app.referenceService.emitterDict[this.id] = this;
+        for (const handlerId of this.$handlerIdList) {
+            const handler = window.$app.referenceService.handlerDict[handlerId];
+            if (handler) {
+                this.bindHandler(handler);
+            }
+        }
     }
 
     /** 添加事件处理器 */
@@ -52,24 +61,20 @@ export class Emitter<E = any> {
     }
 
     /** 构建序列化参数 */
-    public $makeBundle(): [string, string][] {
-        const bundle: [string, string][] = [];
+    public makeBundle(): string[] {
+        const bundle: string[] = [];
         for (const handler of this.$handlerList) {
-            if (handler.model && handler.handlerKey) {
-                bundle.push([
-                    handler.model.id,
-                    handler.handlerKey
-                ]);
-            }
+            bundle.push(handler.id);
         }
         return bundle;
     }
 
     /** 从根节点卸载，解除依赖关系  */
-    public unbindHandlerList() {
+    public unmountRoot() {
         this.$handlerList.forEach(item => {
             this.unbindHandler(item);
         });
+        delete window.$app.referenceService.emitterDict[this.id];
     }
 }
 
@@ -78,19 +83,18 @@ export class EmitterDictProxy<E extends IBase.Dict> {
     public readonly emitterDict: IModel.EmitterDict<E>;
     private readonly $emitterBundleDict?: IModel.EmitterBundleDict<E>;
 
-    public readonly app: App;
-
-    constructor(
-        config: IModel.EmitterBundleDict<E> | undefined,
-        model: Model
-    ) {
-        this.app = model.app;
+    constructor(config?: IModel.EmitterBundleDict<E>) {
         this.$emitterBundleDict = config;
         const emitterDict = {} as IModel.EmitterDict<E>;
+        for (const key in config) {
+            emitterDict[
+                key as IReflect.Key<IModel.EmitterDict<E>>
+            ] = new Emitter(config[key]);
+        }
         this.emitterDict= new Proxy(emitterDict, {
             get: (origin, key: IReflect.Key<IModel.HandlerDict<E>>) => {
                 if (!origin[key]) {
-                    origin[key] = new Emitter([ model.id, key ]);
+                    origin[key] = new Emitter();
                 }
                 return origin[key];
             },
@@ -98,32 +102,23 @@ export class EmitterDictProxy<E extends IBase.Dict> {
         });
     }
 
-    mountRoot() {
+    public mountRoot() {
         for (const key in this.$emitterBundleDict) {
             const emitter = this.emitterDict[key];
-            const handlerBundleList = this.$emitterBundleDict[key];
-            if (handlerBundleList) {
-                handlerBundleList.forEach((bundle) => {
-                    const [ modelId, handlerKey ] = bundle;
-                    const model = this.app.referenceService.referDict[modelId];
-                    if (model) {
-                        emitter.bindHandler(model.$handlerDict[handlerKey]);
-                    }
-                });
-            }
+            emitter.mountRoot();
         }
     }
 
-    unmountRoot() {
+    public unmountRoot() {
         for (const key in this.emitterDict) {
-            this.emitterDict[key].unbindHandlerList();
+            this.emitterDict[key].unmountRoot();
         }
     }
 
-    makeBundle() {
+    public makeBundle() {
         const bundle = {} as any;
         for (const key in this.emitterDict) {
-            bundle[key] = this.emitterDict[key].$makeBundle();
+            bundle[key] = this.emitterDict[key].makeBundle();
         }
         return bundle;
     }
