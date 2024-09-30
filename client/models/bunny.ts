@@ -69,7 +69,7 @@ export class BunnyModel extends Model<BunnyModelDefine> {
 
     /** 繁殖幼崽 */
     public spawnChild() {
-        const bunny = this.app.factoryService.unserialize<
+        const bunny = this.app.factory.unserialize<
             BunnyModelDefine
         >({ code: ModelCode.Bunny });
         this.root.spawnCreature(bunny);

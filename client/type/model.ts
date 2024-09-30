@@ -4,27 +4,29 @@ import type { IEvent } from "./event";
 import { IBase, IReflect } from ".";
 import type { ModelCode, ModelReg } from "./registry";
 import { Emitter } from "../utils/emitter";
-import { Handler } from "../utils/handler";
+import type { Handler } from "../utils/handler";
 
-/** 模型 */
+export enum EmitterType {
+    StateUpdateBefore,
+    StateUpdateDone,
+}
+
 export namespace IModel {
-    export type ModelHookDict = {
-        bootDriver: () => void;
-        unbootDriver: () => void;
-        mountRoot: () => void;
-        unmountRoot: () => void;
-        unbindParent: () => void;
-        bindParent: (parent: Model) => void;
-        makeBundle: () => any;
+    export type EmitterBundleDict<M extends IModel.Define> = {
+        [K in IReflect.Key<EmitterDefDict<M>>]?: Array<{
+            modelId: string;
+            handlerKey: string;
+        }>
+    }
+    export type HandlerBundleDict<M extends IModel.Define> = {
+        [K in IReflect.Key<HandlerDefDict<M>>]?: Array<{
+            modelId: string;
+            emitterType?: EmitterType;
+            emitterKey: string;
+        }>
     }
 
-    export type EventHookDict = {
-        mountRoot: () => void;
-        unmountRoot: () => void;
-        makeBundle: () => any;
-    }
-
-    /** 基础模型定义 */
+    // 基础模型定义
     export type Define = {
         code: ModelCode
         rule: IBase.Data
@@ -35,7 +37,11 @@ export namespace IModel {
         emitterDefDict: IBase.Dict,
         handlerDefDict: IBase.Dict,
     }
-    export type PureDefine = {
+
+    // 通用模型定义
+    export type CommonDefine<
+        M extends Partial<IModel.Define>
+    > = M & Omit<{
         code: never,
         rule: {},
         state: {}
@@ -44,13 +50,9 @@ export namespace IModel {
         childDefDict: {}
         emitterDefDict: {},
         handlerDefDict: {},
-    }
-
-    /** 通用模型定义 */
-    export type CommonDefine<M extends Partial<Define>> = 
-        M & Omit<PureDefine, keyof M>
-
-    /** 模型定义反射 */
+    }, keyof M>
+ 
+    // 模型定义反射
     export type Code<M extends Define> = M['code']
     export type Rule<M extends Define> = M['rule']
     export type State<M extends Define> = M['state']
@@ -60,16 +62,6 @@ export namespace IModel {
     export type EmitterDefDict<M extends Define> = M['emitterDefDict']
     export type HandlerDefDict<M extends Define> = M['handlerDefDict']
 
-    /** 
-     * 事件触发器/处理器定义
-     * 事件触发器/处理器序列化参数集合
-     */
-    export type EmitterBundleDict<M extends IBase.Dict> = {
-        [K in IReflect.Key<M>]?: string[]
-    }
-    export type HandlerBundleDict<M extends IBase.Dict> = {
-        [K in IReflect.Key<M>]?: string[]
-    }
     export type EmitterDict<E extends IBase.Dict> = {
         [K in IReflect.Key<E>]: Emitter<E[K]>
     }
@@ -82,8 +74,8 @@ export namespace IModel {
     export type StateUpdateDone<M extends Define> = {
         [K in IReflect.Key<State<M>>]: IEvent.StateUpdateDone<M, K>
     }
-    export type HandlerCallerDict<M extends Define> = {
-        [K in IReflect.Key<HandlerDefDict<M>>]: (event: HandlerDefDict<M>[K]) => void
+    export type HandlerCallerDict<M extends IBase.Dict> = {
+        [K in IReflect.Key<M>]: (event: M[K]) => void
     }
 
   

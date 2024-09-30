@@ -9,11 +9,11 @@ export function AppComp(props: {
 }) {
     const { app } = props;
     const [ status, setStatus ] = useState<AppStatus>(app.status);
-    const [ archieves, setArchieves ] = useState<ArchieveData[]>(app.archieveService.data);
+    const [ archieves, setArchieves ] = useState<ArchieveData[]>(app.archieve.data);
   
     const createArchieve = async () => {
-        await app.archieveService.createArchieve();
-        setArchieves([ ...app.archieveService.data ]);
+        await app.archieve.createArchieve();
+        setArchieves([ ...app.archieve.data ]);
     };
 
     const startGame = async (index: number) => {
@@ -22,7 +22,7 @@ export function AppComp(props: {
     };
 
     const saveArchieve = () => {
-        app.archieveService.saveArchieve();
+        app.archieve.saveArchieve();
     };
 
     const quitGame = async () => {

@@ -21,11 +21,11 @@ export class App {
     public readonly minorVersion: number;
     public readonly patchVersion: number;
 
-    public readonly factoryService: FactoryService;
-    public readonly referenceService: ReferenceService;
-    public readonly perferenceService: PreferenceService;
-    public readonly archieveService: ArchieveService;
-    public readonly renderService: RenderService;
+    public readonly factory: FactoryService;
+    public readonly reference: ReferenceService;
+    public readonly perference: PreferenceService;
+    public readonly archieve: ArchieveService;
+    public readonly render: RenderService;
 
     private $root?: RootModel;
     private $status: AppStatus;
@@ -38,20 +38,20 @@ export class App {
         this.minorVersion = 1;
         this.patchVersion = 0;
 
-        this.factoryService = new FactoryService(this);
-        this.referenceService = new ReferenceService(this);
-        this.perferenceService = new PreferenceService(this);
-        this.archieveService = new ArchieveService(this);
-        this.renderService = new RenderService(this);
+        this.factory = new FactoryService(this);
+        this.reference = new ReferenceService(this);
+        this.perference = new PreferenceService(this);
+        this.archieve = new ArchieveService(this);
+        this.render = new RenderService(this);
         this.$status = AppStatus.CREATED;
         window.$app = this;
     }
 
     public async initialize() {
         const metadata = await this.$loadMetaData();
-        this.archieveService.initialize(metadata.archieveDataList);
-        this.perferenceService.initialize(metadata.perferenceData);
-        this.renderService.initialize();
+        this.archieve.initialize(metadata.archieveDataList);
+        this.perference.initialize(metadata.perferenceData);
+        this.render.initialize();
         this.$status = AppStatus.UNMOUNTED;
     }
 
@@ -65,9 +65,9 @@ export class App {
     public async startGame(index?: number) {
         this.$status = AppStatus.MOUNTING;
         const config = index === undefined ?
-            await this.archieveService.createArchieve() :
-            await this.archieveService.loadArchieve(index);
-        this.$root = this.factoryService.unserialize(config);
+            await this.archieve.createArchieve() :
+            await this.archieve.loadArchieve(index);
+        this.$root = this.factory.unserialize(config);
         this.$root.$bindParent(this.$root);
         this.$root.$bootDriver();
         this.$status = AppStatus.MOUNTED;
@@ -75,7 +75,7 @@ export class App {
 
     public async quitGame() {
         this.$status = AppStatus.UNMOUNTING;
-        this.archieveService.saveArchieve();
+        this.archieve.saveArchieve();
         this.$root?.$unbindParent();
         this.$root = undefined;
         this.$status = AppStatus.UNMOUNTED;
@@ -86,8 +86,8 @@ export class App {
             majorVersion: this.majorVersion,
             minorVersion: this.minorVersion,
             patchVersion: this.patchVersion,
-            perferenceData: this.perferenceService.settingsData,
-            archieveDataList: this.archieveService.data
+            perferenceData: this.perference.settingsData,
+            archieveDataList: this.archieve.data
         };
         await localStorage.setItem(META_SAVE_PATH, JSON.stringify(save));
     } 

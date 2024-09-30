@@ -30,7 +30,7 @@ export class ReferenceService {
         this.modelDict = {};
     }
 
-    public getUniqId(): string {
+    public register(): string {
         let now = Date.now();
         const ticket = this.$ticket;
         this.$ticket += 1;

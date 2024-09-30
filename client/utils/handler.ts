@@ -1,83 +1,93 @@
 import { IBase, IReflect } from "../type";
-import type { IModel } from "../type/model";
+import { IModel } from "../type/model";
 import type { Emitter } from "./emitter";
 
-/** 事件处理器 */
+// 事件处理器
 export class Handler<E = any> {
     public readonly id: string;
-    private readonly $emitterIdList: string[];
+
+    // 事件触发器列表
     private readonly $emitterList: Emitter<E>[];
-
-    public handleEvent(event: E) {
-        
-    }
-
+    private readonly $emitterIdList: string[];
+    
     constructor(
         config?: string[]
     ) {
-        const [ id, ...emitterIdList ] = config || [];
-        this.id = id || window.$app.referenceService.getUniqId();
-        this.$emitterIdList = emitterIdList;
+        const [ id, ...emitterIds ] = config || [];
+        this.id = id || window.$app.reference.register();
         this.$emitterList = [];
+        this.$emitterIdList = emitterIds;
     }
 
-    /** 添加事件处理器 */
-    public $addEmitter(eventEmitter: Emitter<E>) {
-        this.$emitterList.push(eventEmitter);
+    // 处理事件
+    public handleEvent(event: E) {
+        console.log(event);
+        throw new Error("Method not implemented.");
     }
 
-    /** 移除事件处理器 */
-    public $removeEmitter(eventEmitter: Emitter<E>) {
-        const index = this.$emitterList.indexOf(eventEmitter);
+    // 添加事件触发器
+    public $appendEmitter(target: Emitter<E>) {
+        this.$emitterList.push(target);
+    }
+
+    // 移除事件触发器
+    public $removeEmitter(target: Emitter<E>) {
+        const index = this.$emitterList.indexOf(target);
         if (index >= 0) {
             this.$emitterList.splice(index, 1);
         }
     }
 
-    /** 初始化事件处理器队列 */
+    // 挂载到根节点
     public mountRoot() {
-        window.$app.referenceService.handlerDict[this.id] = this;
-        for (const emitterId of this.$emitterIdList) {
-            const emitter = window.$app.referenceService.emitterDict[emitterId];
+        window.$app.reference.handlerDict[this.id] = this;
+        for (const id of this.$emitterIdList) {
+            const emitter = window.$app.reference.emitterDict[id];
             if (emitter) {
                 emitter.bindHandler(this);
             }
         }
     }
 
-    /** 构建序列化参数 */
+    // 从根节点卸载
+    public unmountRoot() {
+        this.$emitterList.forEach(item => {
+            item.unbindHandler(this);
+        });
+        delete window.$app.reference.handlerDict[this.id];
+    }
+
+    // 创建序列化对象
     public makeBundle(): string[] {
-        const bundle: string[] = [];
+        const bundle: string[] = [ this.id ];
         for (const emitter of this.$emitterList) {
             bundle.push(emitter.id);
         }
         return bundle;
     }
-
-    /** 从根节点卸载，解除依赖关系  */
-    public unmountRoot() {
-        this.$emitterList.forEach(item => {
-            item.unbindHandler(this);
-        });
-        delete window.$app.referenceService.handlerDict[this.id];
-    }
 }
 
-export class HandlerDictProxy<E extends IBase.Dict> {
-    public readonly handlerDict: IModel.HandlerDict<E>;
-    private readonly $handlerBundleDict?: IModel.HandlerBundleDict<E>;
+
+// 事件处理器代理
+export class HandlerProxy<E extends IBase.Dict> {
+    // 事件处理器字典
+    public readonly dict: IModel.HandlerDict<E>;
 
     constructor(
         config?: IModel.HandlerBundleDict<E>
     ) {
-        this.$handlerBundleDict = config;
-        const handlerDict = {} as IModel.HandlerDict<E>;
-        for (const key in config) {
-            handlerDict[
-                key as IReflect.Key<IModel.HandlerDict<E>>
-            ] = new Handler(config[key]);
+        const origin = {} as IModel.HandlerDict<E>;
+        if (config) {
+            Object.keys(config).forEach((
+                key: IReflect.Key<IModel.HandlerDict<E>>
+            ) => {
+                const handlerConfig = config[key];
+                const handler = new Handler(handlerConfig);
+                origin[key] = handler;
+            });
         }
-        this.handlerDict= new Proxy(handlerDict, {
+
+        this.dict= new Proxy(origin, {
             get: (origin, key: IReflect.Key<IModel.HandlerDict<E>>) => {
                 if (!origin[key]) {
                     origin[key] = new Handler();
@@ -88,24 +98,41 @@ export class HandlerDictProxy<E extends IBase.Dict> {
         });
     }
 
+    // 初始化特性
+    public activateFeat(
+        callerDict: IModel.HandlerCallerDict<E>
+    ) {
+        for (const key in callerDict) {
+            const handler = this.dict[key];
+            if (handler) {
+                handler.handleEvent = callerDict[key];
+            }
+        }
+    }
+
+    // 挂载到根节点
     public mountRoot() {
-        for (const key in this.$handlerBundleDict) {
-            const emitter = this.handlerDict[key];
+        for (const key in this.dict) {
+            const emitter = this.dict[key];
             emitter.mountRoot();
         }
     }
 
+    // 从根节点卸载
     public unmountRoot() {
-        for (const key in this.handlerDict) {
-            this.handlerDict[key].unmountRoot();
+        for (const key in this.dict) {
+            this.dict[key].unmountRoot();
         }
     }
 
+    // 创建序列化对象
     public makeBundle() {
-        const bundle = {} as any;
-        for (const key in this.handlerDict) {
-            bundle[key] = this.handlerDict[key].makeBundle();
-        }
+        const bundle = {} as IModel.HandlerBundleDict<E>;
+        Object.keys(this.dict).forEach((
+            key: IReflect.Key<E>
+        ) => {
+            bundle[key] = this.dict[key].makeBundle();
+        });
         return bundle;
     }
 }

@@ -29,8 +29,8 @@ export class ArchieveService {
     }
 
     public async createArchieve() {
-        this.app.referenceService.reset();
-        const id = this.app.referenceService.getUniqId();
+        this.app.reference.reset();
+        const id = this.app.reference.register();
         this.$data.push({
             id,
             name: 'hello',
