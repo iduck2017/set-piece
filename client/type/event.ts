@@ -3,24 +3,22 @@ import { ReactIntf } from "./react";
 import { ModelTmpl } from "./model-tmpl";
 import { Model } from "../models";
 
-// 事件类型
-export namespace EventType {
-    export type StateUpdateBefore<
-        M extends ModelTmpl, T
-    > = {
-        target: Model<M>,
-        prev: T,
-        next: T,
-        canncel?: boolean
-    }
+
+export type StateUpdateBefore<
+    M extends ModelTmpl, T
+> = {
+    target: Model<M>,
+    prev: T,
+    next: T,
+    canncel?: boolean
+}
     
-    export type StateUpdateDone<
-        M extends ModelTmpl, T
-    > = {
-        target: Model<M>,
-        next: T,
-        prev: T,
-    }
+export type StateUpdateDone<
+    M extends ModelTmpl, T
+> = {
+    target: Model<M>,
+    next: T,
+    prev: T,
 }
 
 // 事件触发器
@@ -47,12 +45,12 @@ export type EventDict<M extends ModelTmpl> = Override<{
 }, {
     stateUpdateBefore: {
         [K in KeyOf<ModelTmpl.Info<M>>]: EventIntf<
-            EventType.StateUpdateBefore<M, ModelTmpl.Info<M>[K]>
+            StateUpdateBefore<M, ModelTmpl.Info<M>[K]>
         >;
     }
     stateUpdateDone: {
         [K in KeyOf<ModelTmpl.Info<M>>]: EventIntf<
-            EventType.StateUpdateDone<M, ModelTmpl.Info<M>[K]>
+            StateUpdateDone<M, ModelTmpl.Info<M>[K]>
         >;
     },
 }>
@@ -63,12 +61,12 @@ export type SafeEventDict<M extends ModelTmpl> = Override<{
 }, {
     stateUpdateBefore: {
         [K in KeyOf<ModelTmpl.Info<M>>]: SafeEvent<
-            EventType.StateUpdateBefore<M, ModelTmpl.Info<M>[K]>
+            StateUpdateBefore<M, ModelTmpl.Info<M>[K]>
         >;
     }
     stateUpdateDone: {
         [K in KeyOf<ModelTmpl.Info<M>>]: SafeEvent<
-            EventType.StateUpdateDone<M, ModelTmpl.Info<M>[K]>
+            StateUpdateDone<M, ModelTmpl.Info<M>[K]>
         >;
     },
 }>

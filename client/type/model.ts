@@ -23,8 +23,6 @@ export type ModelConfig<M extends ModelTmpl> =
 
 // 模型层节点定义
 export namespace ModelType {
-
-
     // 模基类初始化参数
     export type BaseConfig<
         M extends ModelTmpl
