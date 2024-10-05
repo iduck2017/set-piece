@@ -5,23 +5,23 @@ import "./index.css";
 import { ModelType } from "../type/model";
 import { ISignal } from "../type/signal";
 import { IEffect } from "../type/effect";
-import { ModelDef } from "../type/model-def";
+import { ModelTmpl } from "../type/model-def";
 
-export type ModelProps<M extends ModelDef> = {
+export type ModelProps<M extends ModelTmpl> = {
     model: PureModel<M>,
     app: App
 }
 
-export type ModelState<M extends ModelDef> = {
+export type ModelState<M extends ModelTmpl> = {
     childList: ModelType.List<M>,
     childDict: ModelType.Dict<M>,
     signalDict: ISignal.Dict<M>,
     effectDict: IEffect.Dict<M>,
-    info: ModelDef.Info<M>
+    info: ModelTmpl.Info<M>
 }
 
 export function ModelComp<
-    M extends ModelDef
+    M extends ModelTmpl
 >(props: ModelProps<M>) {
     const { model, app } = props;
     const [ state, setState ] = useState<{
@@ -29,7 +29,7 @@ export function ModelComp<
         childDict: ModelType.Dict<M>,
         signalDict: ISignal.Dict<M>,
         effectDict: IEffect.Dict<M>,
-        info: ModelDef.Info<M>
+        info: ModelTmpl.Info<M>
     }>(model.getState());
 
     useEffect(() => {

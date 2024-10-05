@@ -2,26 +2,26 @@ import { Model } from ".";
 import { App } from "../app";
 import { ModelCode } from "../services/factory";
 import { ModelType } from "../type/model";
-import { IModelDef } from "../type/model-def";
-import { BunnyModelDef } from "./bunny";
-import { TimerModelDef } from "./timer";
+import { IModelTmpl } from "../type/model-def";
+import { BunnyModelTmpl } from "./bunny";
+import { TimerModelTmpl } from "./timer";
 
-export type RootModelDef = IModelDef<{
+export type RootModelTmpl = IModelTmpl<{
     code: ModelCode.Root,
     labileInfo: {
         progress: number,
     },
     childDict: {
-        timer: TimerModelDef,
+        timer: TimerModelTmpl,
     },
-    childList: BunnyModelDef[],
+    childList: BunnyModelTmpl[],
     parent: App,
 }>
 
-export class RootModel extends Model<RootModelDef> {
+export class RootModel extends Model<RootModelTmpl> {
     protected _effectDict = {};
 
-    constructor(config: ModelType.Config<RootModelDef>) {
+    constructor(config: ModelType.Config<RootModelTmpl>) {
         const childList = config.childList || [];
         if (childList.length === 0) {
             childList.push({
@@ -43,7 +43,7 @@ export class RootModel extends Model<RootModelDef> {
         });
     }
 
-    public spawnCreature(config: ModelType.PureConfig<BunnyModelDef>) {
+    public spawnCreature(config: ModelType.PureConfig<BunnyModelTmpl>) {
         const child = this._unserialize(config);
         this._childList.push(child);
         return child;

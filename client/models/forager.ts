@@ -1,9 +1,9 @@
 // import { Model } from ".";
 // import type { App } from "../app";
-// import { ModelDef } from "../type/model-def";
+// import { ModelTmpl } from "../type/model-def";
 // import { ModelCode } from "../type/registry";
 
-// export type ForagerModelDefine = IModel.CommonDefine<{
+// export type ForagerModelTmpline = IModel.CommonDefine<{
 //     code: ModelCode.Forager,
 //     state: {
 //         energy: number,
@@ -15,13 +15,13 @@
 //     }
 // }>
 
-// export class ForagerModel extends Model<ForagerModelDefine> {
-//     public _handlerCallerDict: IModel.HandlerCallerDict<ForagerModelDefine> = {
+// export class ForagerModel extends Model<ForagerModelTmpline> {
+//     public _handlerCallerDict: IModel.HandlerCallerDict<ForagerModelTmpline> = {
 //         tickDone: this.handleTimeUpdateDone
 //     };
 
 //     constructor(
-//         config: IModel.Config<ForagerModelDefine>,
+//         config: IModel.Config<ForagerModelTmpline>,
 //         app: App
 //     ) {
 //         super(

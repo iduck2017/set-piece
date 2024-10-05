@@ -1,7 +1,7 @@
 import { KeyOf, Override } from ".";
 import { IEffect } from "./effect";
 import { StateUpdateBefore, StateUpdateDone } from "./event";
-import { ModelDef } from "./model-def";
+import { ModelTmpl } from "./model-def";
 
 // 事件触发器
 export type ISignal<E = any> = 
@@ -23,32 +23,32 @@ export namespace ISignal {
     }>
 
     // 事件触发器字典
-    export type Dict<M extends ModelDef> = Override<{
-        [K in KeyOf<ModelDef.SignalDict<M>>]:
-            ISignal<ModelDef.SignalDict<M>[K]>;
+    export type Dict<M extends ModelTmpl> = Override<{
+        [K in KeyOf<ModelTmpl.SignalDict<M>>]:
+            ISignal<ModelTmpl.SignalDict<M>[K]>;
     }, {
         stateUpdateBefore: {
-            [K in KeyOf<ModelDef.Info<M>>]:
-                ISignal<StateUpdateBefore<M, ModelDef.Info<M>[K]>>;
+            [K in KeyOf<ModelTmpl.Info<M>>]:
+                ISignal<StateUpdateBefore<M, ModelTmpl.Info<M>[K]>>;
         }
         stateUpdateDone: {
-            [K in KeyOf<ModelDef.Info<M>>]:
-                ISignal<StateUpdateDone<M, ModelDef.Info<M>[K]>>;
+            [K in KeyOf<ModelTmpl.Info<M>>]:
+                ISignal<StateUpdateDone<M, ModelTmpl.Info<M>[K]>>;
         },
     }>
 
     // 受封装的事件触发器字典
-    export type WrapDict<M extends ModelDef> = Override<{
-        [K in KeyOf<ModelDef.SignalDict<M>>]:
-            ISignal.Wrap<ModelDef.SignalDict<M>[K]>;
+    export type WrapDict<M extends ModelTmpl> = Override<{
+        [K in KeyOf<ModelTmpl.SignalDict<M>>]:
+            ISignal.Wrap<ModelTmpl.SignalDict<M>[K]>;
     }, {
         stateUpdateBefore: {
-            [K in KeyOf<ModelDef.Info<M>>]:
-                ISignal.Wrap<StateUpdateBefore<M, ModelDef.Info<M>[K]>>;
+            [K in KeyOf<ModelTmpl.Info<M>>]:
+                ISignal.Wrap<StateUpdateBefore<M, ModelTmpl.Info<M>[K]>>;
         }
         stateUpdateDone: {
-            [K in KeyOf<ModelDef.Info<M>>]:
-                ISignal.Wrap<StateUpdateDone<M, ModelDef.Info<M>[K]>>;
+            [K in KeyOf<ModelTmpl.Info<M>>]:
+                ISignal.Wrap<StateUpdateDone<M, ModelTmpl.Info<M>[K]>>;
         },
     }>
 }

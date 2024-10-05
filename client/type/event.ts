@@ -1,8 +1,8 @@
 import { PureModel } from "../models";
-import { ModelDef } from "./model-def";
+import { ModelTmpl } from "./model-def";
 
 export type StateUpdateBefore<
-    M extends ModelDef, T
+    M extends ModelTmpl, T
 > = {
     target: PureModel<M>,
     prev: T,
@@ -10,7 +10,7 @@ export type StateUpdateBefore<
     canncel?: boolean
 }
 export type StateUpdateDone<
-    M extends ModelDef, T
+    M extends ModelTmpl, T
 > = {
     target: PureModel<M>,
     next: T,

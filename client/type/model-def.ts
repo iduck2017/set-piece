@@ -4,33 +4,33 @@ import type { PureModel } from "../models";
 import { ModelCode } from "../services/factory";
 
 // 模型层节点定义
-export type ModelDef = {
+export type ModelTmpl = {
     code: ModelCode
     stableInfo: Base.Data
     labileInfo: Base.Data
-    childList: Array<ModelDef>
-    childDict: Record<Base.Key, ModelDef>,
+    childList: Array<ModelTmpl>
+    childDict: Record<Base.Key, ModelTmpl>,
     parent: PureModel | App;
     signalDict: Base.Dict,
     effectDict: Base.Dict,
 }
 
-export namespace ModelDef {
+export namespace ModelTmpl {
     // 基础参数反射
-    export type Code<M extends ModelDef> = M['code']
-    export type StableInfo<M extends ModelDef> = M['stableInfo']
-    export type LabileInfo<M extends ModelDef> = M['labileInfo']
-    export type ChildDict<M extends ModelDef> = M['childDict']
-    export type ChildList<M extends ModelDef> = M['childList']
-    export type SignalDict<M extends ModelDef> = M['signalDict']
-    export type EffectDict<M extends ModelDef> = M['effectDict']
-    export type Parent<M extends ModelDef> = M['parent']
-    export type Info<M extends ModelDef> = M['labileInfo'] & M['stableInfo']
+    export type Code<M extends ModelTmpl> = M['code']
+    export type StableInfo<M extends ModelTmpl> = M['stableInfo']
+    export type LabileInfo<M extends ModelTmpl> = M['labileInfo']
+    export type ChildDict<M extends ModelTmpl> = M['childDict']
+    export type ChildList<M extends ModelTmpl> = M['childList']
+    export type SignalDict<M extends ModelTmpl> = M['signalDict']
+    export type EffectDict<M extends ModelTmpl> = M['effectDict']
+    export type Parent<M extends ModelTmpl> = M['parent']
+    export type Info<M extends ModelTmpl> = M['labileInfo'] & M['stableInfo']
 }
 
 // 自定义模型层节点定义
-export type IModelDef<
-    M extends Partial<ModelDef>
+export type IModelTmpl<
+    M extends Partial<ModelTmpl>
 > = Readonly<Override<{
     // 空模型层节点定义
     code: never,
@@ -45,12 +45,12 @@ export type IModelDef<
 
 
 // export type IModelBundle<
-//     M extends ModelDef
+//     M extends ModelTmpl
 // > = {
 //     id: string
 //     inited: true
-//     code: ModelDef.Code<M>
-//     rule: Partial<ModelDef.Info<M>>
+//     code: ModelTmpl.Code<M>
+//     rule: Partial<ModelTmpl.Info<M>>
 //     originState: State<M>
 //     childBundleList: ChildBundleList<M>,
 //     childBundleDict: ChildBundleDict<M>,

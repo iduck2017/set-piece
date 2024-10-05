@@ -1,10 +1,10 @@
 import { Model } from ".";
 import { ModelCode } from "../services/factory";
 import { ModelType } from "../type/model";
-import { IModelDef } from "../type/model-def";
+import { IModelTmpl } from "../type/model-def";
 import { Random } from "../utils/random";
 
-export type BunnyModelDef = IModelDef<{
+export type BunnyModelTmpl = IModelTmpl<{
     code: ModelCode.Bunny,
     labileInfo: {
         curAge: number,
@@ -15,12 +15,12 @@ export type BunnyModelDef = IModelDef<{
     }
 }>
 
-export class BunnyModel extends Model<BunnyModelDef> {
+export class BunnyModel extends Model<BunnyModelTmpl> {
     protected _effectDict = this._initEffectDict({
         timeUpdateDone: this.handleTimeUpdateDone
     });
 
-    constructor(config: ModelType.Config<BunnyModelDef>) {
+    constructor(config: ModelType.Config<BunnyModelTmpl>) {
         super({
             ...config,
             childDict: {},

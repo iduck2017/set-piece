@@ -1,6 +1,6 @@
 import type { App } from "../app";
 import type { PureModel } from "../models";
-import { ModelDef } from "../type/model-def";
+import { ModelTmpl } from "../type/model-def";
 import { singleton } from "../utils/singleton";
 
 export const MIN_TICKET = 100000;
@@ -44,7 +44,7 @@ export class ReferenceService {
         this.modelDict[model.id] = model;
     }
 
-    public unregisterModel<M extends ModelDef>(model: PureModel<M>) {
+    public unregisterModel<M extends ModelTmpl>(model: PureModel<M>) {
         delete this.modelDict[model.id];
     }
 

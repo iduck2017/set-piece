@@ -1,5 +1,5 @@
 import type { MetaData } from "../app";
-import type { RootModelDef } from "../models/root";
+import type { RootModelTmpl } from "../models/root";
 import { ModelCode } from "../services/factory";
 import { ModelType } from "../type/model";
 import { MAJOR_VERSION, MINOR_VERSION, PATCH_VERSION } from "./context";
@@ -18,7 +18,7 @@ export namespace Generator {
         };
     }
 
-    export function rootModelConfig(): ModelType.PureConfig<RootModelDef> {
+    export function rootModelConfig(): ModelType.PureConfig<RootModelTmpl> {
         return {
             code: ModelCode.Root
         };

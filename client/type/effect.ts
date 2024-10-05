@@ -1,5 +1,5 @@
 import { KeyOf } from ".";
-import { ModelDef } from "./model-def";
+import { ModelTmpl } from "./model-def";
 import { ISignal } from "./signal";
 
 // 事件处理器
@@ -21,14 +21,14 @@ export namespace IEffect {
     }>
 
     // 事件处理器字典
-    export type Dict<M extends ModelDef> = {
-        [K in KeyOf<ModelDef.EffectDict<M>>]: 
-            IEffect<ModelDef.EffectDict<M>[K]>
+    export type Dict<M extends ModelTmpl> = {
+        [K in KeyOf<ModelTmpl.EffectDict<M>>]: 
+            IEffect<ModelTmpl.EffectDict<M>[K]>
     }
 
     // 封装的事件处理器字典
-    export type WrapDict<M extends ModelDef> = {
-        [K in KeyOf<ModelDef.EffectDict<M>>]: 
-            IEffect.Wrap<ModelDef.EffectDict<M>[K]>
+    export type WrapDict<M extends ModelTmpl> = {
+        [K in KeyOf<ModelTmpl.EffectDict<M>>]: 
+            IEffect.Wrap<ModelTmpl.EffectDict<M>[K]>
     }
 }

@@ -1,6 +1,6 @@
 import { App } from "../app";
 import { KeyOf, Optional } from "../type";
-import { ModelDef } from "../type/model-def";
+import { ModelTmpl } from "../type/model-def";
 import { IEffect } from "../type/effect";
 import { ISignal } from "../type/signal";
 import { ModelType } from "../type/model";
@@ -10,22 +10,22 @@ import { ModelState } from "../debug";
 
 // 模型层节点
 export abstract class PureModel<
-    M extends ModelDef = ModelDef
+    M extends ModelTmpl = ModelTmpl
 > {
     // 外部指针
     public readonly app: App;
-    public readonly parent: ModelDef.Parent<M>;
+    public readonly parent: ModelTmpl.Parent<M>;
     
     // 唯一标识符
     public readonly id: string;
     public readonly code: ModelCode;
 
     // 数据结构
-    private readonly _presetInfo?: Partial<ModelDef.StableInfo<M>>;
-    protected readonly _stableInfo: ModelDef.StableInfo<M>;
-    protected readonly _labileInfo: ModelDef.LabileInfo<M>;
-    private readonly _info: ModelDef.Info<M>;
-    public readonly info: ModelDef.Info<M>;
+    private readonly _presetInfo?: Partial<ModelTmpl.StableInfo<M>>;
+    protected readonly _stableInfo: ModelTmpl.StableInfo<M>;
+    protected readonly _labileInfo: ModelTmpl.LabileInfo<M>;
+    private readonly _info: ModelTmpl.Info<M>;
+    public readonly info: ModelTmpl.Info<M>;
 
     // 事件依赖关系
     public readonly signalDict: ISignal.WrapDict<M>;
@@ -72,8 +72,8 @@ export abstract class PureModel<
     };
 
     protected readonly _initEffectDict = (config: {
-        [K in KeyOf<ModelDef.EffectDict<M>>]: (
-            event: ModelDef.EffectDict<M>[K]
+        [K in KeyOf<ModelTmpl.EffectDict<M>>]: (
+            event: ModelTmpl.EffectDict<M>[K]
         ) => void;
     }): IEffect.Dict<M> => {
         // 事件处理器
@@ -259,7 +259,7 @@ export abstract class PureModel<
         this._stableInfo = config.stableInfo;
         this._labileInfo = new Proxy(
             config.labileInfo, {
-                set: (target, key: KeyOf<ModelDef.LabileInfo<M>>, value) => {
+                set: (target, key: KeyOf<ModelTmpl.LabileInfo<M>>, value) => {
                     target[key] = value;
                     this._updateInfo(key);
                     return true;
@@ -370,7 +370,7 @@ export abstract class PureModel<
 
     // 更新状态
     private readonly _updateInfo = (
-        key: KeyOf<ModelDef.StableInfo<M> & ModelDef.LabileInfo<M>>
+        key: KeyOf<ModelTmpl.StableInfo<M> & ModelTmpl.LabileInfo<M>>
     ) => {
         const originInfo = {
             ...this._stableInfo,
@@ -393,7 +393,7 @@ export abstract class PureModel<
     };
 
     // 生成反序列化节点
-    protected readonly _unserialize = <C extends ModelDef>(
+    protected readonly _unserialize = <C extends ModelTmpl>(
         config: ModelType.PureConfig<C>
     ): PureModel<C> => {
         return this.app.factoryService.unserialize({
@@ -465,7 +465,7 @@ export abstract class PureModel<
 }
 
 export abstract class Model<
-    M extends ModelDef = ModelDef
+    M extends ModelTmpl = ModelTmpl
 > extends PureModel<M> {
     public readonly childDict: ModelType.Dict<M>;
     public readonly childList: ModelType.List<M>;
