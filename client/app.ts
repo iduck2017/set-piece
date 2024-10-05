@@ -6,8 +6,20 @@ import { PerferenceData, PreferenceService } from "./services/perference";
 import { RootModel } from "./models/root";
 import { RenderService } from "./services/render";
 import { META_SAVE_PATH } from "./configs/context";
-import { AppStatus } from "./type/status";
 
+export enum AppStatus {
+    /** 应用未初始化 */
+    CREATED,
+    /** 应用初始化完成,节点未挂载 */
+    UNMOUNTED,
+    /** 应用正在挂载节点 */
+    MOUNTING,
+    /** 应用已挂载节点 */
+    MOUNTED,
+    /** 应用正在卸载节点 */
+    UNMOUNTING,
+}
+   
 export type MetaData = {
     majorVersion: number
     minorVersion: number
@@ -21,64 +33,61 @@ export class App {
     public readonly minorVersion: number;
     public readonly patchVersion: number;
 
-    public readonly factory: FactoryService;
-    public readonly reference: ReferenceService;
-    public readonly perference: PreferenceService;
-    public readonly archieve: ArchieveService;
-    public readonly render: RenderService;
+    public readonly factoryService: FactoryService;
+    public readonly referenceService: ReferenceService;
+    public readonly perferenceService: PreferenceService;
+    public readonly archieveService: ArchieveService;
+    public readonly renderService: RenderService;
 
-    private $root?: RootModel;
-    private $status: AppStatus;
+    private _root?: RootModel;
+    private _status: AppStatus;
     
-    public get status() { return this.$status; }
-    public get root() { return this.$root; }
+    public get status() { return this._status; }
+    public get root() { return this._root; }
 
     constructor() {
+        window._app = this;
+        
         this.majorVersion = 0;
         this.minorVersion = 1;
         this.patchVersion = 0;
 
-        this.factory = new FactoryService(this);
-        this.reference = new ReferenceService(this);
-        this.perference = new PreferenceService(this);
-        this.archieve = new ArchieveService(this);
-        this.render = new RenderService(this);
-        this.$status = AppStatus.CREATED;
-        window.$app = this;
+        this.factoryService = new FactoryService(this);
+        this.referenceService = new ReferenceService(this);
+        this.perferenceService = new PreferenceService(this);
+        this.archieveService = new ArchieveService(this);
+        this.renderService = new RenderService(this);
+
+        this._status = AppStatus.CREATED;
     }
 
     public async initialize() {
-        const metadata = await this.$loadMetaData();
-        this.archieve.initialize(metadata.archieveDataList);
-        this.perference.initialize(metadata.perferenceData);
-        this.render.initialize();
-        this.$status = AppStatus.UNMOUNTED;
-    }
-
-    private async $loadMetaData(): Promise<MetaData> {
-        const raw = await localStorage.getItem(META_SAVE_PATH);
-        if (!raw) return Generator.appMetaData();
-        const result = JSON.parse(raw) as MetaData;
-        return result;
+        const metadata = await this._loadMetaData();
+        this.archieveService.initialize(metadata.archieveDataList);
+        this.perferenceService.initialize(metadata.perferenceData);
+        this.renderService.initialize();
+        this._status = AppStatus.UNMOUNTED;
     }
 
     public async startGame(index?: number) {
-        this.$status = AppStatus.MOUNTING;
+        this._status = AppStatus.MOUNTING;
         const config = index === undefined ?
-            await this.archieve.createArchieve() :
-            await this.archieve.loadArchieve(index);
-        this.$root = this.factory.unserialize(config);
-        this.$root.$bindParent(this.$root);
-        this.$root.$bootDriver();
-        this.$status = AppStatus.MOUNTED;
+            await this.archieveService.createArchieve() :
+            await this.archieveService.loadArchieve(index);
+        this._root = this.factoryService.unserialize({
+            ...config,
+            parent: this,
+            app: this  
+        });
+        this._status = AppStatus.MOUNTED;
     }
 
     public async quitGame() {
-        this.$status = AppStatus.UNMOUNTING;
-        this.archieve.saveArchieve();
-        this.$root?.$unbindParent();
-        this.$root = undefined;
-        this.$status = AppStatus.UNMOUNTED;
+        this._status = AppStatus.UNMOUNTING;
+        this.archieveService.saveArchieve();
+        this.referenceService.reset();
+        this._root = undefined;
+        this._status = AppStatus.UNMOUNTED;
     }
 
     public async saveMetaData() {
@@ -86,9 +95,16 @@ export class App {
             majorVersion: this.majorVersion,
             minorVersion: this.minorVersion,
             patchVersion: this.patchVersion,
-            perferenceData: this.perference.settingsData,
-            archieveDataList: this.archieve.data
+            perferenceData: this.perferenceService.data,
+            archieveDataList: this.archieveService.data
         };
         await localStorage.setItem(META_SAVE_PATH, JSON.stringify(save));
     } 
+    
+    private async _loadMetaData(): Promise<MetaData> {
+        const raw = await localStorage.getItem(META_SAVE_PATH);
+        if (!raw) return Generator.appMetaData();
+        const result = JSON.parse(raw) as MetaData;
+        return result;
+    }
 }

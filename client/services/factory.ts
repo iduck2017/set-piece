@@ -1,29 +1,45 @@
 import type { App } from "../app";
-import { BunnyModel } from "../models/bunny";
-import { ForagerModel } from "../models/forager";
 import { RootModel } from "../models/root";
 import { TimerModel } from "../models/time";
+import { Base } from "../type";
 import { IModel } from "../type/model";
-import { ModelReg } from "../type/registry";
+import { ModelDef } from "../type/model-def";
+import { singleton } from "../utils/singleton";
 
+/** 模型注册表 */
+export enum ModelCode {
+    Root = 'root',
+    Timer = 'timer'
+}
+
+/** 数据到模型 */
+export type ModelRegistry = {
+    root: typeof RootModel,
+    timer: typeof TimerModel
+};
+
+@singleton
 export class FactoryService {
     public readonly app: App;
 
+    private _productDict: ModelRegistry;
+
     constructor(app: App) {
         this.app = app;
+
+        this._productDict = {
+            root: RootModel,
+            timer: TimerModel
+        }; 
     }
 
-    private static $productDict: ModelReg = {
-        bunny: BunnyModel,
-        root: RootModel,
-        time: TimerModel,
-        forager: ForagerModel
-    }; 
 
-    public unserialize<M extends IModel.Define>(
-        config: IModel.Config<M>
-    ): InstanceType<ModelReg[IModel.Code<M>]> {
-        const Constructor = FactoryService.$productDict[config.code] as any;
-        return new Constructor(config, this.app);
-    }
+    // 生成反序列化节点
+    public readonly unserialize = <C extends ModelDef>(
+        config: IModel.Config<C>
+    ): IModel.Instance<C> => {
+        const Type: Base.Class = this._productDict[config.code];
+        return new Type(config);
+    };
+
 }

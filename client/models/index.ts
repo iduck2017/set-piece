@@ -1,493 +1,499 @@
-import type { App } from "../app";
-import { IBase, IReflect } from "../type";
-import { ModelCode } from "../type/registry";
-import { ModelStatus } from "../type/status";
-import { childDictProxy, childListProxy } from "../utils/child";
-import { EmitterProxy } from "../utils/emitter";
-import { Entity } from "../utils/entity";
-import { HandlerDictProxy } from "../utils/handler";
+import { App } from "../app";
+import { Base, KeyOf, Optional } from "../type";
+import { ModelDef } from "../type/model-def";
+import { IEffect } from "../type/effect";
+import { ISignal } from "../type/signal";
+import { IModel } from "../type/model";
+import { initAutomicProxy, initReadonlyProxy } from "../utils/proxy";
+import { ModelCode } from "../services/factory";
 
-export type IModel = {
-    code: ModelCode
-    rule: IBase.Data
-    state: IBase.Data
-    parent: Model;
-    childList: Array<IModel>
-    childDict: Record<IBase.Key, IModel>,
-    emitterEventDict: IBase.Dict,
-    handlerEventDict: IBase.Dict,
-}
-
-export namespace IModel {
-    export type Code<M extends IModel> = M['code']
-    export type Rule<M extends IModel> = M['rule']
-    export type State<M extends IModel> = M['state']
-    export type Parent<M extends IModel> = M['parent']
-    export type ChildDict<M extends IModel> = M['childDict']
-    export type ChildList<M extends IModel> = M['childList']
-    export type EmitterEventDict<M extends IModel> = M['emitterEventDict']
-    export type HandlerEventDict<M extends IModel> = M['handlerEventDict']
-}
-
-export type IModelConfig<
-    M extends IModel
-> = {
-    id?: string
-    inited?: boolean
-    code: IModel.Code<M>
-    rule?: Partial<IModel.Rule<M>>
-    originState: IModel.State<M>
-    childBundleList: ChildConfigList<M>,
-    childBundleDict: ChildConfigDict<M>,
-    eventEmitterBundleDict?: Partial<EmitterBundleDict<EmitterDefDict<M>>>,
-    eventHandlerBundleDict?: Partial<HandlerBundleDict<HandlerDefDict<M>>>,
-    stateUpdaterBundleDict?: Partial<EmitterBundleDict<State<M>>>,
-    stateEmitterBundleDict?: Partial<EmitterBundleDict<State<M>>>,
-}
-
-enum EmitterType {
-    StateUpdateBefore = 'state_update_before',
-    StateUpdateDone = 'state_update_done',
-}
-
-interface Emitter<E> {
-    id: string;
-    key: string;
-    type?: EmitterType;
-    handlerList: Handler<E>[]
-    callHandler: (event: E) => void,
-    bindHandler: (handler: Handler<E>) => void,
-    unbindHandler: (handler: Handler<E>) => void,
-}
-
-interface Handler<H> {
-    id: string;
-    key: string;
-    emitterList: Emitter<H>[]
-    handleEvent: (event: H) => void,
-}
-
+// 模型层节点
 export abstract class Model<
-    M extends IModel = IModel
+    M extends ModelDef = ModelDef
 > {
+    // 外部指针
+    public readonly app: App;
+    public readonly parent: ModelDef.Parent<M>;
+    
+    // 唯一标识符
     public readonly id: string;
-    public readonly rule: Partial<IModel.Rule<M>>;
+    public readonly code: ModelCode;
 
+    // 数据结构
+    private readonly _presetInfo?: Partial<ModelDef.StableInfo<M>>;
+    protected readonly _stableInfo: ModelDef.StableInfo<M>;
+    protected readonly _labileInfo: ModelDef.LabileInfo<M>;
     
-    private $initHandlerDict(config?: {
-        [K in IReflect.Key<IModel.HandlerEventDict<M>>]: Array<{
-            id: string,
-            key: string,
-            type?: EmitterType
-        }>
-    }) {
-        const origin = {} as {
-            [K in IReflect.Key<IModel.HandlerEventDict<M>>]:
-                Handler<IModel.HandlerEventDict<M>[K]>
-        };
-        if (config) {
-            const keys = Object.keys(config);
-            for (const key of keys) {
-                const handler = this.$initHandler(key);
-                for (const subConfig of config[key]) {
-                    const { id, key } = subConfig;
-                    const model = window.$app.reference.modelDict[id];
-                    if (model) {
-                        model.$emitterDict[key].bindHandler(handler);
-                    }
-                }
+    private readonly _info: ModelDef.StableInfo<M> & ModelDef.LabileInfo<M>;
+    public readonly info: ModelDef.StableInfo<M> & ModelDef.LabileInfo<M>;
+
+    // 事件依赖关系
+    protected readonly _effectDict: IEffect.Dict<M>;
+    protected readonly _signalDict: ISignal.Dict<M>;
+
+    public readonly effectDict: IEffect.WrapDict<M>;
+    public readonly signalDict: ISignal.WrapDict<M>;
+
+    // 节点从属关系
+    private readonly _childDict: IModel.Dict<M>;
+    private readonly _childList: IModel.List<M>;
+
+    public readonly childDict: IModel.Dict<M>;
+    public readonly childList: IModel.List<M>;
+    
+    // 初始化状态
+    private _isInited?: boolean;
+
+    // 接口函数字典
+    public debuggerDict: Record<string, Base.Function>;
+    protected abstract readonly _handlerDict: IEffect.HandlerDict<M>
+
+    constructor(config: IModel.BaseConfig<M>) {
+        // 事件触发器
+        class Signal<E> implements ISignal<E> {
+            public readonly modelId: string;
+            public readonly eventKey: string;
+            public readonly stateKey?: string;
+            public readonly effectList: IEffect<E>[] = [];
+            public readonly signalWrap: ISignal.Wrap<E>;
+
+            public readonly model: Model;
+            public readonly app: App;
+
+            constructor(config: {
+                infoList?: IEffect.Info[],
+                model: Model,
+                eventKey: string,
+                stateKey?: string
+            }) {
+                this.model = config.model;
+                this.app = this.model.app; 
+                this.modelId = config.model.id;
+                this.eventKey = config.eventKey;
+                this.stateKey = config.stateKey;
+                this.signalWrap = {
+                    modelId: this.modelId,
+                    eventKey: this.eventKey,
+                    stateKey: this.stateKey,
+                    bindEffect: this.bindEffect.bind(this),
+                    unbindEffect: this.unbindEffect.bind(this)
+                };
+                config.infoList?.forEach(effectInfo => {
+                    const effect = this._findEffect(effectInfo);
+                    if (!effect) return;
+                    this.effectList.push(effect);
+                    effect.signalList.push(this);
+                });
             }
-        }
-        return new Proxy(origin, {
-            get: (
-                target, 
-                key: IReflect.Key<IModel.HandlerEventDict<M>>
+
+            // 查询事件处理器
+            private readonly _findEffect = (
+                effectInfo: IEffect.Info
+            ): Optional<IEffect> => {
+                const { modelId, eventKey } = effectInfo;
+                const model = this.app.referenceService.findModel(modelId);
+                if (!model) return;
+                return model._effectDict[eventKey];
+            };
+
+            // 绑定事件接收器
+            public readonly bindEffect = (
+                effectInfo: IEffect.Info
             ) => {
-                if (!target[key]) {
-                    target[key] = this.$initHandler(key);
+                const effect = this._findEffect(effectInfo);
+                if (!effect) throw new Error();
+                this.effectList.push(effect);
+                effect.signalList.push(this);
+                if (
+                    this.eventKey === 'stateUpdateBefore' && 
+                    this.stateKey
+                ) {
+                    this.model._updateState(this.stateKey);
                 }
-                return target[key];
+            };
+
+            // 解绑事件接收器
+            public readonly unbindEffect = (
+                effectInfo: IEffect.Info
+            ) => {
+                const effect = this._findEffect(effectInfo);
+                if (!effect) throw new Error();
+                const effectIndex = this.effectList.indexOf(effect);
+                const signalIndex = effect.signalList.indexOf(this);
+                if (effectIndex < 0) throw new Error();
+                if (signalIndex < 0) throw new Error();
+                this.effectList.splice(effectIndex, 1);
+                effect.signalList.splice(signalIndex, 1);
+            };
+
+            // 触发事件
+            public readonly emitEvent = (event: E) => {
+                for (const effect of this.effectList) {
+                    const { modelId, eventKey } = effect;
+                    const model = this.app.referenceService.findModel(modelId);
+                    if (!model) throw new Error();
+                    model._handlerDict[eventKey].call(model, event);
+                }
+            };
+
+            // 序列化事件触发器
+            public readonly unserialize = (): IEffect.Info[] => {
+                return this.effectList.map(effect => ({
+                    modelId: effect.modelId,
+                    eventKey: effect.eventKey
+                }));
+            };
+
+            public readonly destroy = () => {
+                for (const effect of this.effectList) {
+                    this.unbindEffect(effect);
+                }
+            };
+        }
+
+        // 事件处理器
+        class Effect<E> implements IEffect<E>{
+            public readonly modelId: string;
+            public readonly eventKey: string;
+            public readonly signalList: ISignal<E>[] = [];
+            public readonly effectWrap: IEffect.Wrap<E>;
+
+            public readonly app: App;
+            public readonly model: Model;
+
+            constructor(config: {
+                infoList?: ISignal.Info[],
+                model: Model,
+                eventKey: string
+            }) {
+                this.model = config.model;
+                this.modelId = config.model.id;
+                this.app = this.model.app;
+                this.eventKey = config.eventKey;
+                this.effectWrap = {
+                    modelId: this.modelId,
+                    eventKey: this.eventKey,
+                    bindSignal: this.bindSignal.bind(this),
+                    unbindSignal: this.unbindSignal.bind(this)
+                };
+                config.infoList?.forEach(signalInfo => {
+                    const signal = this._findSignal(signalInfo);
+                    if (!signal) return;
+                    this.signalList.push(signal);
+                    signal.effectList.push(this);
+                });
+            }
+
+            // 查询事件触发器
+            private readonly _findSignal = (
+                signalInfo: ISignal.Info
+            ): Optional<ISignal> => {
+                const { modelId, eventKey, stateKey } = signalInfo;
+                const model = this.app.referenceService.findModel(modelId);
+                if (!model) return;
+                if (
+                    eventKey ==='stateUpdateBefore' ||
+                    eventKey ==='stateUpdateDone'
+                ) {
+                    if (!stateKey) throw new Error();
+                    return model._signalDict[eventKey][stateKey];
+                }
+                return model._signalDict[eventKey];
+            };
+
+        
+            // 绑定事件触发器
+            public readonly bindSignal = (
+                signalInfo: ISignal.Info
+            ) => {
+                const signal = this._findSignal(signalInfo);
+                if (!signal) throw new Error();
+                signal.bindEffect(this);
+            };
+
+            // 解绑事件触发器
+            public readonly unbindSignal = (
+                signalInfo: ISignal.Info
+            ) => {
+                const signal = this._findSignal(signalInfo);
+                if (!signal) throw new Error();
+                signal.unbindEffect(this);
+            };
+
+            // 序列化事件处理器
+            public readonly unserialize = (): ISignal.Info[] => {
+                return this.signalList.map(signal => ({
+                    modelId: signal.modelId,
+                    eventKey: signal.eventKey,
+                    stateKey: signal.stateKey
+                }));
+            };
+
+            public readonly destroy = () => {
+                for (const signal of this.signalList) {
+                    this.unbindSignal(signal);
+                }
+            };
+        }
+
+        // 初始化外部指针
+        this.app = config.app;
+        this.parent = config.parent;
+
+        // 初始化唯一标识符
+        this.id = config.id || this.app.referenceService.ticket;
+        this.code = config.code;    
+
+        // 初始化数据结构
+        this._presetInfo = config.presetInfo;
+        this._stableInfo = config.stableInfo;
+        this._labileInfo = new Proxy(
+            config.labileInfo, {
+                set: (target, key: KeyOf<ModelDef.LabileInfo<M>>, value) => {
+                    target[key] = value;
+                    this._updateState(key);
+                    return true;
+                }
+            }
+        );
+
+        this._info = {
+            ...this._stableInfo,
+            ...this._labileInfo
+        };
+        this.info = initReadonlyProxy(this._info);
+
+
+        // 初始化事件依赖关系
+        this._effectDict = initAutomicProxy(
+            key => new Effect({
+                infoList: config.effectDict?.[key],
+                model: this,
+                eventKey: key
+            })
+        );
+        this._signalDict = initAutomicProxy<any>(
+            key => new Signal({
+                infoList: config.signalDict?.[key],
+                model: this,
+                eventKey: key
+            }),
+            {
+                stateUpdateBefore: initAutomicProxy(
+                    key => new Signal({
+                        model: this,
+                        eventKey: 'stateUpdateBefore',
+                        stateKey: key,
+                        infoList: config.signalDict?.stateUpdateBefore?.[key]
+                    })
+                ),
+                stateUpdateDone: initAutomicProxy(
+                    key => new Signal({
+                        model: this,
+                        eventKey: 'stateUpdateDone',
+                        stateKey: key,
+                        infoList: config.signalDict?.stateUpdateDone?.[key]
+                    })
+                )
+            }
+        );
+
+        this.effectDict = initAutomicProxy(
+            key => this._effectDict[key].effectWrap
+        );
+        this.signalDict = initAutomicProxy<any>(
+            key => this._signalDict[key].signalWrap,
+            {
+                stateUpdateBefore: initAutomicProxy(key => (
+                    this._signalDict.stateUpdateBefore[key].signalWrap
+                )),
+                stateUpdateDone: initAutomicProxy(key => (
+                    this._signalDict.stateUpdateDone[key].signalWrap
+                ))
+            }
+        );
+
+        // 初始化节点从属关系
+        const childDict = {} as any;
+        Object.keys(config.childDict).forEach((
+            key: KeyOf<IModel.Dict<M>>
+        ) => {
+            childDict[key] = this._unserialize(config.childDict[key]);
+        });
+        this._childDict = new Proxy(childDict, {
+            set: <K extends KeyOf<IModel.Dict<M>>>(
+                target: IModel.Dict<M>, 
+                key: K, 
+                value: IModel.Dict<M>[K]
+            ) => {
+                target[key] = value;
+                value._initialize();
+                return true;
             },
-            set: () => false
-        });
-    }
-
-
-    private $bindHandler<
-        K extends IReflect.Key<IModel.EmitterEventDict<M>>
-    >(
-        emitter: Emitter<IModel.EmitterEventDict<M>[K]>, 
-        handler: Handler<IModel.EmitterEventDict<M>[K]>
-    ) {
-        emitter.handlerList.push(handler);
-        handler.emitterList.push(emitter);
-    }
-
-    private $unbindHandler<
-        K extends IReflect.Key<IModel.EmitterEventDict<M>>
-    >(
-        emitter: Emitter<IModel.EmitterEventDict<M>[K]>, 
-        handler: Handler<IModel.EmitterEventDict<M>[K]>
-    ) {
-        const handlerIdx = emitter.handlerList.indexOf(handler);
-        const emitterIdx = handler.emitterList.indexOf(emitter);
-        if (handlerIdx >= 0) emitter.handlerList.splice(handlerIdx, 1);
-        if (emitterIdx >= 0) handler.emitterList.splice(emitterIdx, 1);
-    }
-
-    private $callHandler<
-        K extends IReflect.Key<IModel.EmitterEventDict<M>>
-    >(
-        emitter: Emitter<IModel.EmitterEventDict<M>[K]>,
-        event: IModel.EmitterEventDict<M>[K]
-    ) {
-        emitter.handlerList.forEach(handler => {
-            handler.handleEvent(event);
-        });
-    }
-
-    protected abstract readonly handlerIntf: {
-        [K in IReflect.Key<IModel.HandlerEventDict<M>>]: 
-            (event: IModel.HandlerEventDict<M>[K]) => void
-    }
-
-    private readonly $emitterDict: {
-        [K in IReflect.Key<IModel.EmitterEventDict<M>>]: 
-            Emitter<IModel.EmitterEventDict<M>[K]>
-    };
-    private readonly $handlerDict: {
-        [K in IReflect.Key<IModel.HandlerEventDict<M>>]: 
-            Handler<IModel.HandlerEventDict<M>[K]>
-    };
-
-    constructor(config: IModelConfig<M>) {
-        this.id = config.id || window.$app.reference.register();
-        this.rule = config.rule || {};
-
-        this.$handlerDict = this.$initHandlerDict(
-            config.eventHandlerBundleDict
-        );
-        this.$emitterDict = this.$createEmitterDict(
-            config.eventEmitterBundleDict
-        );
-    }
-
-
-    
-
-    // 创建事件处理器
-    private $initHandler<
-        K extends IReflect.Key<IModel.HandlerEventDict<M>>
-    >(key: K): Handler<IModel.HandlerEventDict<M>[K]> {
-        const handler = {} as Handler<IModel.HandlerEventDict<M>[K]>;
-        Object.assign(handler,  {
-            id: this.id,
-            key,
-            emitterList: [],
-            handleEvent: (event: IModel.HandlerEventDict<M>[K]) => {
-                this.handlerIntf[key].call(this, event);
+            deleteProperty: (target, key: KeyOf<IModel.Dict<M>>) => {
+                const value = target[key];
+                value._destroy();
+                delete target[key];
+                return true;
             }
         });
-        return handler;
+
+        const childList = (config.childList || []).map(config => (
+            this._unserialize(config)
+        ));
+        this._childList = new Proxy(childList, {
+            set: (target, key: KeyOf<IModel.List<M>>, value) => {
+                target[key] = value;
+                if (typeof key !== 'symbol' && !isNaN(Number(key))) {
+                    const model: Model = value;
+                    model._initialize();
+                }
+                return true;
+            },
+            deleteProperty: (target, key: KeyOf<IModel.List<M>>) => {
+                const value = target[key];
+                if (value instanceof Model) {
+                    const model: Model = value;
+                    model._destroy();
+                }
+                delete target[key];
+                target.length --;
+                return true;
+            }
+        });
+
+        this.childDict = initReadonlyProxy(this._childDict);
+        this.childList = initReadonlyProxy(this._childList);
+
+        // 初始化调试器
+        this.debuggerDict = {};
+
+        // 初始化根节点业务逻辑
+        this._isInited = config.isInited;
+        if (this.parent instanceof App) {
+            this._initialize();
+        }
     }
 
-    
-    // 创建事件触发器
-    private $createEmitter<
-        K extends IReflect.Key<IModel.EmitterEventDict<M>>
-    >(key: K): Emitter<IModel.EmitterEventDict<M>[K]> {
-        const emitter = {} as Emitter<IModel.EmitterEventDict<M>[K]>;
-        Object.assign(emitter,  {
-            id: this.id,
-            key,
-            handlerList: [],
-            callHandler: this.$callHandler.bind(this, emitter),
-            bindHandler: this.$bindHandler.bind(this, emitter),
-            unbindHandler: this.$unbindHandler.bind(this, emitter)
-        });
-        return emitter;
-    }
-    
-    // 创建事件触发器字典
-    private $createEmitterDict(config?: {
-        [K in IReflect.Key<IModel.EmitterEventDict<M>>]: Array<{
-            id: string,
-            key: string,
-        }>
-    }) {
-        const origin = {} as {
-            [K in IReflect.Key<IModel.EmitterEventDict<M>>]:
-                Emitter<IModel.EmitterEventDict<M>[K]>
+    // 更新状态
+    private readonly _updateState = (
+        key: KeyOf<ModelDef.StableInfo<M> & ModelDef.LabileInfo<M>>
+    ) => {
+        const originInfo = {
+            ...this._stableInfo,
+            ...this._labileInfo
         };
-        if (config) {
-            const keys = Object.keys(config);
-            for (const key of keys) {
-                const emitter = this.$createEmitter(key);
-                for (const subConfig of config[key]) {
-                    const { id, key } = subConfig;
-                    const model = window.$app.reference.modelDict[id];
-                    if (model) {
-                        emitter.bindHandler(model.$handlerDict[key]);
-                    }
+        const prev = this._info[key];
+        const current = originInfo[key];
+        const event = {
+            target: this,
+            prev: current,
+            next: current
+        };
+        this._signalDict.stateUpdateBefore[key].emitEvent(event);
+        const next = event.next;
+        if (prev !== next) {
+            this._info[key] = next;
+            this._signalDict.stateUpdateDone[key].emitEvent(event);
+        }
+    };
+
+    // 生成反序列化节点
+    protected readonly _unserialize = <C extends ModelDef>(
+        config: IModel.RawConfig<C>
+    ): IModel.Instance<C> => {
+        return this.app.factoryService.unserialize({
+            ...config,
+            parent: this,
+            app: this.app
+        });
+    };
+
+    // 序列化模型层节点
+    public readonly serialize = (): IModel.Bundle<M> => {
+
+        // 序列化事件触发器/处理器字典
+        // 序列化从属节点字典/列表
+        const signalDict = {} as any;
+        const effectDict = {} as any;
+        const childDict = {} as any;
+        const childList = [] as any;
+        
+        for (const key in this._effectDict) {
+            const effect = this._effectDict[key];
+            effectDict[key] = effect.unserialize();
+        }
+        for (const key in this._childDict) {
+            const child = this._childDict[key];
+            childDict[key] = child.serialize();
+        }
+        for (const child of this._childList) {
+            childList.push(child.serialize());
+        }
+        for (const key in this._signalDict) {
+            if (
+                key === 'stateUpdateBefore' ||
+                key === 'stateUpdateDone'
+            ) {
+                signalDict[key] = {};
+                for (const stateKey in this._signalDict[key]) {
+                    const signal = this._signalDict[key][stateKey];
+                    signalDict[key][stateKey] = signal.unserialize();
                 }
+            } else {
+                const signal = this._signalDict[key];
+                signalDict[key] = signal.unserialize();
             }
         }
-        return new Proxy(origin, {
-            get: (target, key: IReflect.Key<IModel.EmitterEventDict<M>>) => {
-                if (!target[key]) {
-                    target[key] = this.$createEmitter(key);
-                }
-                return target[key];
-            },
-            set: () => false
-        });
-    }
 
+        // 返回节点序列化结果
+        return {
+            id: this.id,
+            code: this.code,
+            presetInfo: this._presetInfo,
+            labileInfo: this._labileInfo,
+            childDict,
+            childList,
+            signalDict,
+            effectDict,
+            isInited: true
+        };
+    };
+
+    // 执行初始化函数
+    public readonly initialize = () => {};
+    private readonly _initialize = () => {
+        if (!this._isInited) {
+            this.initialize();
+            this._isInited = true;
+        }
+        for (const child of this._childList) {
+            child._initialize();
+        }
+        for (const key in this._childDict) {
+            const child = this._childDict[key];
+            child._initialize();
+        }
+    };
+
+    // 执行析构函数
+    public readonly destroy = () => {};
+    private readonly _destroy = () => {
+        for (const child of this._childList) {
+            child._destroy();
+        }
+        for (const key in this._childDict) {
+            const child = this._childDict[key];
+            child._destroy();
+        }
+        for (const key in this._effectDict) {
+            const effect = this._effectDict[key];
+            effect.destroy();
+        }
+        for (const key in this._signalDict) {
+            const signal = this._signalDict[key];
+            signal.destroy();
+        }
+        this._destroy();
+    };
 }
-
-/** 模型基类 */
-// export abstract class Model<
-//     M extends IModel.Define = IModel.Define
-// > extends Entity {
-//     /** 状态机 */
-//     private $status: ModelStatus;
-//     public get status() { return this.$status; }
-
-//     /** 基本信息 */
-//     public readonly id: string;
-//     public readonly code: IModel.Code<M>;
-//     public readonly rule: Partial<IModel.Rule<M>>;
-
-//     private $inited?: boolean;
-
-//     /** 数据结构 */
-//     protected readonly $originState: IModel.State<M>;
-//     private readonly $currentState: IModel.State<M>;
-//     public get currentState() { return { ...this.$currentState }; }
-    
-//     /** 从属关系 */
-//     private $parent?: IModel.Parent<M>;
-//     public get parent() {
-//         const parent = this.$parent;
-//         if (!parent) throw new Error();
-//         return parent;
-//     }
-//     public get root() {
-//         const root = this.app.root;
-//         if (!root) throw new Error();
-//         return root;
-//     }
-
-//     private readonly $hooks: {
-//         childList: IModel.ModelHookDict;
-//         childDict: IModel.ModelHookDict;
-//     };
-
-//     public readonly $childDict: IModel.ChildDict<M>;
-//     public readonly $childList: IModel.ChildList<M>;
-//     public get childList() { return [ ...this.$childList ]; }
-//     public get childDict() { return { ...this.$childDict }; }
-//     public get children(): Model[] {
-//         return [
-//             ...this.childList,
-//             ...Object.values(this.childDict)
-//         ];
-//     }
-
-//     /** 事件触发器/处理器 */
-
-//     public readonly emitterDict: IModel.EmitterDict<IModel.EmitterDefDict<M>>;
-//     public readonly updaterDict: IModel.EmitterDict<IModel.StateUpdateBefore<M>>;
-//     public readonly watcherDict: IModel.EmitterDict<IModel.StateUpdateDone<M>>;
-
-//     public readonly $handlerDict: IModel.HandlerDict<IModel.HandlerDefDict<M>>;
-//     public abstract readonly $handlerCallerDict: IModel.HandlerCallerDict<M>;
-
-//     /** 测试用例 */
-//     public debuggerDict: Record<string, IBase.Func>;
-//     public readonly stateSetterList: IBase.Func[] = [];
-//     public readonly childrenSetterList: IBase.Func[] = [];
-
-//     public $setChildren() {
-//         this.childrenSetterList.forEach(setter => {
-//             setter(this.children);
-//         });
-//     }
-//     private $setState() {
-//         const result = this.currentState;
-//         console.log('set_state', result);
-//         this.stateSetterList.forEach(setter => {
-//             setter(result);
-//         });
-//     }
-
-//     constructor(
-//         config: IModel.BaseConfig<M>,
-//         app: App
-//     ) {
-//         super(app);
-//         this.$status = ModelStatus.CREATED;
-//         this.$inited = config.inited;
-
-//         console.log('constructor', this.constructor.name);
-        
-//         /** 基本信息 */
-//         this.id = config.id || app.reference.register();
-//         this.code = config.code;
-//         this.rule = config.rule || {};
-        
-//         /** 数据结构 */
-//         this.$originState = new Proxy(config.originState, {
-//             set: (origin, key: IReflect.Key<IModel.State<M>>, value) => {
-//                 origin[key] = value;
-//                 this.updateState(key);
-//                 return true;
-//             }
-//         });
-//         this.$currentState = { ...this.$originState };
-
-//         /** 
-//          * 初始化从属关系
-//          * 初始化依赖关系
-//          */
-//         const childList = childListProxy(config.childBundleList, this, this.app);
-//         this.$childList = childList.proxy;
-//         const childDict = childDictProxy(config.childBundleDict, this, this.app);
-//         this.$childDict = childDict.proxy;
-
-//         this.$emitterDictProxy  = new EmitterProxy(config.eventEmitterBundleDict);
-//         this.$handlerDictProxy  = new HandlerDictProxy(config.eventHandlerBundleDict);
-//         this.$updaterDictProxy  = new EmitterProxy<IModel.StateUpdateBefore<M>>(
-//             config.stateUpdaterBundleDict 
-//         );
-//         this.$watcherDictProxy  = new EmitterProxy<IModel.StateUpdateDone<M>>(
-//             config.stateEmitterBundleDict 
-//         );
-
-//         this.emitterDict = this.$emitterDictProxy.emitterDict;
-//         this.updaterDict = this.$updaterDictProxy.emitterDict;
-//         this.watcherDict = this.$watcherDictProxy.emitterDict;
-//         this.$handlerDict = this.$handlerDictProxy.handlerDict;
-
-//         this.$hooks = {
-//             childDict: childDict.hooks,
-//             childList: childList.hooks
-//         };
-
-//         /** 调试器 */
-//         this.debuggerDict = {};
-//     }
-
-//     /** 挂载父节点 */
-//     public $bindParent(parent: IModel.Parent<M>) {
-//         this.$parent = parent;
-//         console.log('bind_parent', this.constructor.name);
-//         this.$status = ModelStatus.BINDED;
-//         /** 如果父节点从属于根节点，则触发根节点挂载 */
-//         if (
-//             /** 如果父节点等于自身，则自身为根节点 */
-//             this.$parent === this ||
-//             this.$parent.status === ModelStatus.MOUNTED 
-//         ) {
-//             this.$mountRoot();
-//         }
-//     }
-
-//     /** 挂载根节点 */
-//     public $mountRoot() {
-//         this.$status = ModelStatus.MOUNTING;
-//         console.log('mount_root', this.constructor.name);
-//         this.app.reference.modelDict[this.id] = this;
-//         this.$hooks.childList.mountRoot();
-//         this.$hooks.childDict.mountRoot();
-//         this.$emitterDictProxy.mountRoot();
-//         this.$updaterDictProxy.mountRoot();
-//         this.$watcherDictProxy.mountRoot();
-//         this.$handlerDictProxy.mountRoot();
-//         this.$status = ModelStatus.MOUNTED;
-//     }
-
-//     public $unmountRoot() {
-//         this.$status = ModelStatus.UNMOUNTING;
-//         console.log('unmount_root', this.constructor.name);
-//         this.$hooks.childList.unmountRoot();
-//         this.$hooks.childDict.unmountRoot();
-//         this.$emitterDictProxy.unmountRoot();
-//         this.$updaterDictProxy.unmountRoot();
-//         this.$watcherDictProxy.unmountRoot();
-//         this.$handlerDictProxy.unmountRoot();
-//         delete this.app.reference.modelDict[this.id];
-//         this.$status = ModelStatus.UNMOUNTED;
-//     }
-
-//     public $unbindParent() {
-//         if (this.status === ModelStatus.MOUNTED) {
-//             this.$unmountRoot();
-//         }
-//         console.log('unbind_parent', this.constructor.name);
-//         this.$parent = undefined;
-//         this.$status = ModelStatus.UNBINDED;
-//     }
-
-//     /** 初始化 */
-//     public bootDriver() {}
-//     public $bootDriver() {
-//         if (!this.$inited) {
-//             console.log('boot_model', this.constructor.name);
-//             this.bootDriver();
-//             this.$inited = true;
-//         }
-//         /** 遍历 */
-//         this.$hooks.childList.bootDriver();
-//         this.$hooks.childDict.bootDriver();
-//     }
-
-//     public unbootDriver() {}
-//     public $unbootDriver() {
-//         if (this.$inited) {
-//             console.log('unboot_model', this.constructor.name);
-//             this.unbootDriver();
-//             this.$inited = false;
-//         }
-//         /** 遍历 */
-//         this.$hooks.childList.unbootDriver();
-//         this.$hooks.childDict.unbootDriver();
-//     }
-
-//     /** 更新状态 */
-//     public updateState<K extends IReflect.Key<IModel.State<M>>>(key: K) {   
-//         const prev = this.$currentState[key];
-//         const current = this.$originState[key];
-//         const event = {
-//             target: this,
-//             prev: current,
-//             next: current
-//         };
-//         this.updaterDict[key].emitEvent(event);
-//         const next = event.next;
-//         if (prev !== next) {
-//             this.$currentState[key] = next;
-//             if (this.$status === ModelStatus.MOUNTED) {
-//                 this.updaterDict[key].emitEvent(event);
-//                 this.$setState();
-//             }
-//         }
-//     }
-
-//     /** 序列化函数 */
-//     public makeBundle(): IModel.Bundle<M> {
-//         return {
-//             id: this.id,
-//             code: this.code,
-//             rule: this.rule,
-//             originState: this.$originState,
-//             childBundleDict: this.$hooks.childDict.makeBundle(),
-//             childBundleList: this.$hooks.childList.makeBundle(),
-//             eventEmitterBundleDict: this.$emitterDictProxy.makeBundle(),
-//             eventHandlerBundleDict: this.$handlerDictProxy.makeBundle(),
-//             stateUpdaterBundleDict: this.$updaterDictProxy.makeBundle(),
-//             stateEmitterBundleDict: this.$watcherDictProxy.makeBundle(),
-//             inited: true
-//         };
-//     }
-// }

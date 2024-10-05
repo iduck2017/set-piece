@@ -1,14 +1,14 @@
-import { IBase } from "../type";
+import { Base } from "../type";
 
-const $ref = new Set<IBase.Class>();
+const _singletonDict = new Set<Base.Class>();
 
-export function singleton(IConstructor: IBase.Class) {
+export function singleton(IConstructor: Base.Class) {
     return class extends IConstructor {
-        constructor(...config: any[]) {
-            if ($ref.has(IConstructor)) {
+        constructor(...config: any) {
+            if (_singletonDict.has(IConstructor)) {
                 throw new Error();
             }
-            $ref.add(IConstructor);
+            _singletonDict.add(IConstructor);
             super(...config);
         }
     } as any;

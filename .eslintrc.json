@@ -25,7 +25,7 @@
 	"rules": {
 		"max-len": ["warn", 100],
 
-		"indent": ["error", 4],
+		"indent": ["error", 4, { "SwitchCase": 1 }],
 		"semi": ["error", "always"],
 		"curly": ["error", "multi-line"],
       

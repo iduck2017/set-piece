@@ -10,19 +10,19 @@ export type PerferenceData = {
 export class PreferenceService {
     public readonly app: App;
 
-    private $settingsData!: PerferenceData;
-    public get settingsData() { return { ...this.$settingsData }; } 
+    private _data!: PerferenceData;
+    public get data() { return { ...this._data }; } 
 
     constructor(app: App) {
         this.app = app;
     }
 
     public initialize(data: PerferenceData) {
-        this.$settingsData = data;
+        this._data = data;
     }
 
     public async updateSettings(data: PerferenceData) {
-        this.$settingsData = data;
+        this._data = data;
         await this.app.saveMetaData();
         return;
     }

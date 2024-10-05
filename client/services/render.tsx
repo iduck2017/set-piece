@@ -4,7 +4,7 @@ import { AppComp } from '../debug/app';
 import type { App } from '../app';
 
 export class RenderService {
-    private $root?: Root;
+    private _root?: Root;
     public readonly app: App;
 
     constructor(app: App) {
@@ -12,9 +12,9 @@ export class RenderService {
     }
 
     public initialize() {
-        this.$root = createRoot(
+        this._root = createRoot(
             document.getElementById('root')!
         );
-        this.$root.render(<AppComp app={this.app} />);
+        this._root.render(<AppComp app={this.app} />);
     }
 }

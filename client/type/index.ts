@@ -1,14 +1,21 @@
-export namespace IBase {
+// 基本类型
+export namespace Base {
     export type Key = string | number | symbol
-    export type Value = string | number | boolean | Value[]
-    export type Data = Record<Key, Value>
+    export type Value = string | number | boolean
     export type Dict = Record<Key, any>
-    export type Func = (...args: any[]) => any 
-    export type Class = new (...args: any[]) => any
+    export type Data = Record<Key, Value>
+    export type VoidData = Record<never, never>
+    export type VoidList = Array<never>
+    export type Function = (params: any) => any
+    export type Class = new (...args: any) => any
 }
 
-export namespace IReflect {
-    export type Iterator<L extends any[]> = L[number]
-    export type Value<M extends IBase.Dict> = M[keyof M]
-    export type Key<M extends IBase.Dict> = keyof M & string
-}
+export type ValueOf<M extends Base.Dict> = M extends Array<any> ? M[number] : M[keyof M];
+export type KeyOf<M extends Base.Dict> = keyof M & string;
+export type Optional<T> = T | undefined;
+
+// 重写部分参数
+export type Override<
+    A extends Base.Dict, 
+    B extends Base.Dict
+> = Omit<A, KeyOf<B>> & B

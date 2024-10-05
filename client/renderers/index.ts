@@ -5,7 +5,7 @@ import { Entity } from "../utils/entity";
 export abstract class Renderer<
     E extends IBase.Dict,
 > extends Entity {
-    protected abstract readonly $rendererCallerDict: {
+    protected abstract readonly _rendererCallerDict: {
         [K in keyof E]: (event: E[K]) => void;
     }
 

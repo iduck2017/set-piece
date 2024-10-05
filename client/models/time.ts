@@ -1,45 +1,44 @@
 import { Model } from ".";
-import type { App } from "../app";
+import { ModelCode } from "../services/factory";
 import { IModel } from "../type/model";
-import { ModelCode } from "../type/registry";
+import { IModelDef } from "../type/model-def";
 
-export type TimerModelDefine = IModel.CommonDefine<{
-    code: ModelCode.Time,
-    state: {
+export type TimerModelDef = IModelDef<{
+    code: ModelCode.Timer,
+    labileInfo: {
         time: number,
     },
-    emitterDefDict: {
-        tickBefore: void,
-        tickDone: void,
+    signalDict: {
+        timeUpdateBefore: void,
+        timeUpdateDone: void,
     }
 }>
 
-export class TimerModel extends Model<TimerModelDefine> {
-    public $handlerCallerDict: IModel.HandlerCallerDict<TimerModelDefine> = {};
+export class TimerModel extends Model<TimerModelDef> {
+    protected _handlerDict = {};
 
-    constructor(
-        config: IModel.Config<TimerModelDefine>,
-        app: App
-    ) {
-        super(
-            {
-                ...config,
-                originState: {
-                    time: 0,
-                    ...config.originState
-                },
-                childBundleDict: {},
-                childBundleList: []
-            },
-            app
-        );
-        this.debuggerDict.updateTime = this.updateTime.bind(this, 1);
+    constructor(config: IModel.Config<TimerModelDef>) {
+        super({
+            ...config,
+            childDict: {},
+            stableInfo: {},
+            labileInfo: {
+                time: config.labileInfo?.time || 0
+            }
+        });
+        this.debuggerDict = {
+            updateTime: this.updateTime.bind(this)
+        };
     }
     
     /** 更新时间 */
-    public updateTime(offsetTime: number) {
-        this.emitterDict.tickBefore.emitEvent();
-        this.$originState.time += offsetTime;
-        this.emitterDict.tickDone.emitEvent();
-    }
+    public readonly updateTime = (offsetTime?: number) => {
+        if (!offsetTime || offsetTime < 0) {
+            offsetTime = 1;
+        }
+
+        this._signalDict.timeUpdateBefore.emitEvent();
+        this._labileInfo.time += offsetTime;
+        this._signalDict.timeUpdateDone.emitEvent();
+    };
 }
