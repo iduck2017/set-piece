@@ -1,5 +1,5 @@
 import type { App } from "../app";
-import { PureModel } from "../models";
+import { Model } from "../models";
 import { BunnyModel } from "../models/bunny";
 import { RootModel } from "../models/root";
 import { TimerModel } from "../models/timer";
@@ -42,7 +42,7 @@ export class FactoryService {
     // 生成反序列化节点
     public readonly unserialize = <C extends ModelTmpl>(
         config: ModelType.Config<C>
-    ): PureModel<C> => {
+    ): Model<C> => {
         const Type: Base.Class = this._productDict[config.code];
         return new Type(config);
     };

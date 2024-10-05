@@ -5,21 +5,21 @@ import { ModelTmpl } from "./model-def";
 
 // 事件触发器
 export type ISignal<E = any> = 
-    ISignal.Wrap<E> &
+    ISignal.Safe<E> &
     Readonly<{
         effectList: IEffect<E>[];
-        signalWrap: ISignal.Wrap<E>;
+        signalWrap: ISignal.Safe<E>;
         emitEvent: (event: E) => void;
         destroy: () => void;
     }>
 
 export namespace ISignal {
-    export type Wrap<E> = Readonly<{
+    export type Safe<E> = Readonly<{
         modelId: string;
         eventKey: string;
         stateKey?: string;
-        bindEffect: (effect: IEffect<E>) => void;
-        unbindEffect: (effect: IEffect<E>) => void;
+        bindEffect: (effect: IEffect.Safe<E>) => void;
+        unbindEffect: (effect: IEffect.Safe<E>) => void;
     }>
 
     // 事件触发器字典
@@ -38,17 +38,17 @@ export namespace ISignal {
     }>
 
     // 受封装的事件触发器字典
-    export type WrapDict<M extends ModelTmpl> = Override<{
+    export type SafeDict<M extends ModelTmpl> = Override<{
         [K in KeyOf<ModelTmpl.SignalDict<M>>]:
-            ISignal.Wrap<ModelTmpl.SignalDict<M>[K]>;
+            ISignal.Safe<ModelTmpl.SignalDict<M>[K]>;
     }, {
         stateUpdateBefore: {
             [K in KeyOf<ModelTmpl.Info<M>>]:
-                ISignal.Wrap<StateUpdateBefore<M, ModelTmpl.Info<M>[K]>>;
+                ISignal.Safe<StateUpdateBefore<M, ModelTmpl.Info<M>[K]>>;
         }
         stateUpdateDone: {
             [K in KeyOf<ModelTmpl.Info<M>>]:
-                ISignal.Wrap<StateUpdateDone<M, ModelTmpl.Info<M>[K]>>;
+                ISignal.Safe<StateUpdateDone<M, ModelTmpl.Info<M>[K]>>;
         },
     }>
 }

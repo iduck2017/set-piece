@@ -12,9 +12,9 @@ export class RenderService {
     }
 
     public initialize() {
-        this._root = createRoot(
-            document.getElementById('root')!
-        );
+        const element = document.getElementById('root');
+        if (!element) throw new Error();
+        this._root = createRoot(element);
         this._root.render(<AppComp app={this.app} />);
     }
 }

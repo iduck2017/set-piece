@@ -1,10 +1,10 @@
-import { Model } from ".";
+import { SpecModel } from ".";
 import { ModelCode } from "../services/factory";
 import { ModelType } from "../type/model";
-import { IModelTmpl } from "../type/model-def";
+import { SpecModelTmpl } from "../type/model-def";
 import { Random } from "../utils/random";
 
-export type BunnyModelTmpl = IModelTmpl<{
+export type BunnyModelTmpl = SpecModelTmpl<{
     code: ModelCode.Bunny,
     labileInfo: {
         curAge: number,
@@ -15,7 +15,7 @@ export type BunnyModelTmpl = IModelTmpl<{
     }
 }>
 
-export class BunnyModel extends Model<BunnyModelTmpl> {
+export class BunnyModel extends SpecModel<BunnyModelTmpl> {
     protected _effectDict = this._initEffectDict({
         timeUpdateDone: this.handleTimeUpdateDone
     });
@@ -37,7 +37,7 @@ export class BunnyModel extends Model<BunnyModelTmpl> {
 
     public readonly initialize = () => {
         this.app.root.childDict.timer.signalDict.timeUpdateDone.bindEffect(
-            this._effectDict.timeUpdateDone
+            this.effectDict.timeUpdateDone
         );
     };
 

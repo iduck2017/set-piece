@@ -1,9 +1,9 @@
-import { Model } from ".";
+import { SpecModel } from ".";
 import { ModelCode } from "../services/factory";
 import { ModelType } from "../type/model";
-import { IModelTmpl } from "../type/model-def";
+import { SpecModelTmpl } from "../type/model-def";
 
-export type TimerModelTmpl = IModelTmpl<{
+export type TimerModelTmpl = SpecModelTmpl<{
     code: ModelCode.Timer,
     labileInfo: {
         time: number,
@@ -14,7 +14,7 @@ export type TimerModelTmpl = IModelTmpl<{
     }
 }>
 
-export class TimerModel extends Model<TimerModelTmpl> {
+export class TimerModel extends SpecModel<TimerModelTmpl> {
     protected _effectDict = {};
 
     constructor(config: ModelType.Config<TimerModelTmpl>) {

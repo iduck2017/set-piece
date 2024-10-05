@@ -4,20 +4,20 @@ import { ISignal } from "./signal";
 
 // 事件处理器
 export type IEffect<E = any> = 
-    IEffect.Wrap<E> &
+    IEffect.Safe<E> &
     Readonly<{
         signalList: ISignal[];
-        effectWrap: IEffect.Wrap<any>;
+        effectWrap: IEffect.Safe<any>;
         destroy: () => void;
     }>
 
 export namespace IEffect {
-    export type Wrap<E> = Readonly<{
+    export type Safe<E> = Readonly<{
         modelId: string;
         eventKey: string;
         handleEvent: (event: E) => void;
-        bindSignal: (signal: ISignal.Wrap<E>) => void;
-        unbindSignal: (signal: ISignal.Wrap<E>) => void;
+        bindSignal: (signal: ISignal.Safe<E>) => void;
+        unbindSignal: (signal: ISignal.Safe<E>) => void;
     }>
 
     // 事件处理器字典
@@ -27,8 +27,8 @@ export namespace IEffect {
     }
 
     // 封装的事件处理器字典
-    export type WrapDict<M extends ModelTmpl> = {
+    export type SafeDict<M extends ModelTmpl> = {
         [K in KeyOf<ModelTmpl.EffectDict<M>>]: 
-            IEffect.Wrap<ModelTmpl.EffectDict<M>[K]>
+            IEffect.Safe<ModelTmpl.EffectDict<M>[K]>
     }
 }

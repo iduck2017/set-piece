@@ -2,9 +2,9 @@ import { Base, KeyOf } from "../type";
 
 export function initAutomicProxy<T extends Base.Dict>(
     get: (key: KeyOf<T>) => T[KeyOf<T>],
-    origin = {}
-): T {
-    return new Proxy(origin as T, {
+    origin?: Partial<T>
+): any {
+    return new Proxy(origin || {} as T, {
         get: (origin, key: KeyOf<T>) => {
             if (!origin[key]) {
                 origin[key] = get(key);
@@ -18,7 +18,7 @@ export function initAutomicProxy<T extends Base.Dict>(
 
 export function initReadonlyProxy<T extends Base.Dict>(
     origin: T
-): T {
+): any {
     return new Proxy(origin, {
         set: () => false,
         deleteProperty: () => false

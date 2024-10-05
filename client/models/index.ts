@@ -9,7 +9,7 @@ import { ModelCode } from "../services/factory";
 import { ModelState } from "../debug";
 
 // 模型层节点
-export abstract class PureModel<
+export abstract class Model<
     M extends ModelTmpl = ModelTmpl
 > {
     // 外部指针
@@ -28,7 +28,6 @@ export abstract class PureModel<
     public readonly info: ModelTmpl.Info<M>;
 
     // 事件依赖关系
-    public readonly signalDict: ISignal.WrapDict<M>;
     protected readonly _signalDict: ISignal.Dict<M>;
     protected abstract readonly _effectDict: IEffect.Dict<M>;
 
@@ -81,15 +80,15 @@ export abstract class PureModel<
             public readonly modelId: string;
             public readonly eventKey: string;
             public readonly signalList: ISignal<E>[] = [];
-            public readonly effectWrap: IEffect.Wrap<E>;
+            public readonly effectWrap: IEffect.Safe<E>;
 
             public readonly app: App;
-            public readonly model: PureModel<M>;
+            public readonly model: Model<M>;
 
             public readonly handleEvent: (event: E) => void;
 
             constructor(config: {
-                model: PureModel<M>,
+                model: Model<M>,
                 eventKey: string
                 handleEvent: (event: E) => void;
             }) {
@@ -109,7 +108,7 @@ export abstract class PureModel<
 
             // 查询事件触发器
             private readonly _findSignal = (
-                signalWrap: ISignal.Wrap<E>
+                signalWrap: ISignal.Safe<E>
             ): Optional<ISignal> => {
                 const { modelId, eventKey, stateKey } = signalWrap;
                 const model = this.app.referenceService.findModel(modelId);
@@ -127,7 +126,7 @@ export abstract class PureModel<
         
             // 绑定事件触发器
             public readonly bindSignal = (
-                signalWrap: ISignal.Wrap<E>
+                signalWrap: ISignal.Safe<E>
             ) => {
                 const signal = this._findSignal(signalWrap);
                 if (!signal) throw new Error();
@@ -136,7 +135,7 @@ export abstract class PureModel<
 
             // 解绑事件触发器
             public readonly unbindSignal = (
-                signalWrap: ISignal.Wrap<E>
+                signalWrap: ISignal.Safe<E>
             ) => {
                 const signal = this._findSignal(signalWrap);
                 if (!signal) throw new Error();
@@ -167,13 +166,13 @@ export abstract class PureModel<
             public readonly eventKey: string;
             public readonly stateKey?: string;
             public readonly effectList: IEffect<E>[] = [];
-            public readonly signalWrap: ISignal.Wrap<E>;
+            public readonly signalWrap: ISignal.Safe<E>;
 
-            public readonly model: PureModel<M>;
+            public readonly model: Model<M>;
             public readonly app: App;
 
             constructor(config: {
-                model: PureModel<M>,
+                model: Model<M>,
                 eventKey: string,
                 stateKey?: string
             }) {
@@ -193,7 +192,7 @@ export abstract class PureModel<
 
             // 查询事件处理器
             private readonly _findEffect = (
-                effectWrap: IEffect.Wrap<E>
+                effectWrap: IEffect.Safe<E>
             ): Optional<IEffect> => {
                 const { modelId, eventKey } = effectWrap;
                 const model = this.app.referenceService.findModel(modelId);
@@ -203,7 +202,7 @@ export abstract class PureModel<
 
             // 绑定事件接收器
             public readonly bindEffect = (
-                effectWrap: IEffect.Wrap<E>
+                effectWrap: IEffect.Safe<E>
             ) => {
                 const effect = this._findEffect(effectWrap);
                 if (!effect) throw new Error();
@@ -218,7 +217,7 @@ export abstract class PureModel<
 
             // 解绑事件接收器
             public readonly unbindEffect = (
-                effectWrap: IEffect.Wrap<E>
+                effectWrap: IEffect.Safe<E>
             ) => {
                 const effect = this._findEffect(effectWrap);
                 if (!effect) throw new Error();
@@ -275,10 +274,12 @@ export abstract class PureModel<
 
 
         // 初始化事件依赖关系
-        this._signalDict = initAutomicProxy<any>(key => new Signal({
-            model: this,
-            eventKey: key
-        }),
+        this._signalDict = initAutomicProxy(key => (
+            new Signal({
+                model: this,
+                eventKey: key
+            })
+        ),
         {
             stateUpdateBefore: initAutomicProxy(key => new Signal({
                 model: this,
@@ -291,17 +292,6 @@ export abstract class PureModel<
                 stateKey: key
             }))
         });
-        this.signalDict = initAutomicProxy<any>(
-            key => this._signalDict[key].signalWrap,
-            {
-                stateUpdateBefore: initAutomicProxy(key => (
-                    this._signalDict.stateUpdateBefore[key].signalWrap
-                )),
-                stateUpdateDone: initAutomicProxy(key => (
-                    this._signalDict.stateUpdateDone[key].signalWrap
-                ))
-            }
-        );
 
         // 初始化节点从属关系
         const childDict = {} as ModelType.Dict<M>;
@@ -337,7 +327,7 @@ export abstract class PureModel<
             set: (target, key: KeyOf<ModelType.List<M>>, value) => {
                 target[key] = value;
                 if (typeof key !== 'symbol' && !isNaN(Number(key))) {
-                    const model: PureModel = value;
+                    const model: Model = value;
                     model._initialize();
                     this._setState();
                 }
@@ -345,8 +335,8 @@ export abstract class PureModel<
             },
             deleteProperty: (target, key: KeyOf<ModelType.List<M>>) => {
                 const value = target[key];
-                if (value instanceof PureModel) {
-                    const model: PureModel = value;
+                if (value instanceof Model) {
+                    const model: Model = value;
                     model._destroy();
                     this._setState();
                 }
@@ -395,7 +385,7 @@ export abstract class PureModel<
     // 生成反序列化节点
     protected readonly _unserialize = <C extends ModelTmpl>(
         config: ModelType.PureConfig<C>
-    ): PureModel<C> => {
+    ): Model<C> => {
         return this.app.factoryService.unserialize({
             ...config,
             parent: this,
@@ -464,15 +454,31 @@ export abstract class PureModel<
 
 }
 
-export abstract class Model<
+export abstract class SpecModel<
     M extends ModelTmpl = ModelTmpl
-> extends PureModel<M> {
-    public readonly childDict: ModelType.Dict<M>;
-    public readonly childList: ModelType.List<M>;
+> extends Model<M> {
+    public readonly childDict: ModelType.SpecDict<M>;
+    public readonly childList: ModelType.SpecList<M>;
+    public readonly signalDict: ISignal.SafeDict<M>;
+    protected readonly effectDict: IEffect.SafeDict<M>;
 
     constructor(config: ModelType.BaseConfig<M>) {
         super(config);
-        this.childDict = initReadonlyProxy<any>(this._childDict);
-        this.childList = initReadonlyProxy<any>(this._childList);
+        this.childDict = initReadonlyProxy(this._childDict);
+        this.childList = initReadonlyProxy(this._childList);
+        this.signalDict = initAutomicProxy(
+            key => this._signalDict[key].signalWrap,
+            {
+                stateUpdateBefore: initAutomicProxy(key => (
+                    this._signalDict.stateUpdateBefore[key].signalWrap
+                )),
+                stateUpdateDone: initAutomicProxy(key => (
+                    this._signalDict.stateUpdateDone[key].signalWrap
+                ))
+            }
+        );
+        this.effectDict = initAutomicProxy(
+            key => this._effectDict[key].effectWrap
+        );
     }
 }

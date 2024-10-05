@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import type { App } from "../app";
-import type { PureModel } from "../models";
+import type { Model } from "../models";
 import "./index.css";
 import { ModelType } from "../type/model";
 import { ISignal } from "../type/signal";
@@ -8,7 +8,7 @@ import { IEffect } from "../type/effect";
 import { ModelTmpl } from "../type/model-def";
 
 export type ModelProps<M extends ModelTmpl> = {
-    model: PureModel<M>,
+    model: Model<M>,
     app: App
 }
 

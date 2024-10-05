@@ -1,12 +1,12 @@
-import { Model } from ".";
+import { SpecModel } from ".";
 import { App } from "../app";
 import { ModelCode } from "../services/factory";
 import { ModelType } from "../type/model";
-import { IModelTmpl } from "../type/model-def";
+import { SpecModelTmpl } from "../type/model-def";
 import { BunnyModelTmpl } from "./bunny";
 import { TimerModelTmpl } from "./timer";
 
-export type RootModelTmpl = IModelTmpl<{
+export type RootModelTmpl = SpecModelTmpl<{
     code: ModelCode.Root,
     labileInfo: {
         progress: number,
@@ -18,7 +18,7 @@ export type RootModelTmpl = IModelTmpl<{
     parent: App,
 }>
 
-export class RootModel extends Model<RootModelTmpl> {
+export class RootModel extends SpecModel<RootModelTmpl> {
     protected _effectDict = {};
 
     constructor(config: ModelType.Config<RootModelTmpl>) {

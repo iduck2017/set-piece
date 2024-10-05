@@ -1,6 +1,6 @@
 import { KeyOf, ValueOf } from ".";
 import type { App } from "../app";
-import { PureModel } from "../models";
+import { Model } from "../models";
 import { ModelRegistry } from "../services/factory";
 import { ModelTmpl } from "./model-def";
 
@@ -53,23 +53,25 @@ export namespace ModelType {
         childDict: ModelType.BundleDict<M>,
     }
 
+    
+    export type Spec<M extends ModelTmpl> = 
+        InstanceType<ModelRegistry[ModelTmpl.Code<M>]>
+
     // 子节点字典/列表
     export type Dict<M extends ModelTmpl> = {
         [K in KeyOf<ModelTmpl.ChildDict<M>>]: 
-            PureModel<ModelTmpl.ChildDict<M>[K]>
+            Model<ModelTmpl.ChildDict<M>[K]>
     }
-    export type List<M extends ModelTmpl> = Array<
-        PureModel<ValueOf<ModelTmpl.ChildList<M>>>
-    >
-
-    export type Spec<M extends ModelTmpl> = 
-        InstanceType<ModelRegistry[ModelTmpl.Code<M>]>
     export type SpecDict<M extends ModelTmpl> = {
         [K in KeyOf<ModelTmpl.ChildDict<M>>]: 
-            ModelType.Spec<ModelTmpl.ChildDict<M>[K]> | undefined
+            ModelType.Spec<ModelTmpl.ChildDict<M>[K]>
     }
+
+    export type List<M extends ModelTmpl> = Array<
+        Model<ValueOf<ModelTmpl.ChildList<M>>>
+    >
     export type SpecList<M extends ModelTmpl> = Array<
-        ModelType.Spec<ValueOf<ModelTmpl.ChildList<M>>> | undefined
+        ModelType.Spec<ValueOf<ModelTmpl.ChildList<M>>>
     >
 
     // 子节点反序列化参数
