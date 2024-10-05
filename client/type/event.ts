@@ -1,5 +1,5 @@
 import { KeyOf, Override } from ".";
-import { ReactIntf, SafeReact } from "./react";
+import { ReactIntf } from "./react";
 import { ModelTmpl } from "./model-tmpl";
 import { Model } from "../models";
 
@@ -33,12 +33,12 @@ export type EventIntf<E = any> =
         destroy: () => void;
     }>
 
+const EVENT_SYMBOL = Symbol('eventSymbol');
 export type SafeEvent<E = any> = Readonly<{
     modelId: string;
     eventKey: string;
     stateKey?: string;
-    bindReact: (react: SafeReact<E>) => void;
-    unbindReact: (react: SafeReact<E>) => void;
+    [EVENT_SYMBOL]?: E;
 }>
 
 export type EventDict<M extends ModelTmpl> = Override<{

@@ -35,8 +35,9 @@ export class BunnyModel extends SpecModel<BunnyModelTmpl> {
     }
 
     public readonly initialize = () => {
-        this.app.root.childDict.timer.eventDict.timeUpdateDone.bindReact(
-            this.reactDict.timeUpdateDone
+        const timer = this.app.root.childDict.timer;
+        this._reactDict.timeUpdateDone.bindEvent(
+            timer.eventDict.timeUpdateDone
         );
     };
 

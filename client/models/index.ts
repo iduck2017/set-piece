@@ -1,7 +1,7 @@
 import { App } from "../app";
 import { KeyOf, Optional } from "../type";
 import { ModelTmpl } from "../type/model-tmpl";
-import { ReactDict, ReactIntf, SafeReact, SafeReactDict } from "../type/react";
+import { ReactDict, ReactIntf } from "../type/react";
 import { EventDict, EventIntf, SafeEvent, SafeEventDict } from "../type/event";
 import { ModelType, PureModelConfig } from "../type/model";
 import { initAutomicProxy, initReadonlyProxy } from "../utils/proxy";
@@ -77,8 +77,7 @@ export abstract class Model<
         class React<E> implements ReactIntf<E>{
             public readonly modelId: string;
             public readonly eventKey: string;
-            public readonly eventList: EventIntf<E>[] = [];
-            public readonly safeReact: SafeReact<E>;
+            private readonly _eventList: EventIntf<E>[] = [];
 
             public readonly app: App;
             public readonly model: Model<M>;
@@ -95,19 +94,15 @@ export abstract class Model<
                 this.app = this.model.app;
                 this.eventKey = config.eventKey;
                 this.handleEvent = config.handleEvent.bind(this.model);
-                this.safeReact = {
-                    modelId: this.modelId,
-                    eventKey: this.eventKey,
-                    handleEvent: this.handleEvent,
-                    bindEvent: this.bindEvent.bind(this),
-                    unbindEvent: this.unbindEvent.bind(this)
-                };
             }
 
             // 查询事件触发器
             private readonly _findEvent = (
                 safeEvent: SafeEvent<E>
-            ): Optional<EventIntf> => {
+            ): Optional<{
+                model: Model;
+                event: EventIntf;
+            }> => {
                 const { modelId, eventKey, stateKey } = safeEvent;
                 const model = this.app.referenceService.findModel(modelId);
                 if (!model) return;
@@ -116,33 +111,58 @@ export abstract class Model<
                     eventKey ==='stateUpdateDone'
                 ) {
                     if (!stateKey) throw new Error();
-                    return model._eventDict[eventKey][stateKey];
+                    return {
+                        event: model._eventDict[eventKey][stateKey],
+                        model
+                    };
                 }
-                return model._eventDict[eventKey];
+                return {
+                    event: model._eventDict[eventKey],
+                    model
+                };
             };
 
-        
-            // 绑定事件触发器
+            // 绑定事件接收器
             public readonly bindEvent = (
                 safeEvent: SafeEvent<E>
             ) => {
-                const event = this._findEvent(safeEvent);
-                if (!event) throw new Error();
-                event.bindReact(this);
+                const { event, model } = this._findEvent(safeEvent) || {};
+                if (!event || !model) throw new Error();
+                
+                this._eventList.push(event);
+                event.reactList.push(this);
+                
+                if (event.eventKey === 'stateUpdateBefore') {
+                    if (!event.stateKey) throw new Error();
+                    model._updateInfo(event.stateKey);
+                }
+                this.model._setState();
+                model._setState();
             };
 
-            // 解绑事件触发器
+            // 解绑事件接收器
             public readonly unbindEvent = (
                 safeEvent: SafeEvent<E>
             ) => {
-                const event = this._findEvent(safeEvent);
-                if (!event) throw new Error();
-                event.unbindReact(this);
+                const { event, model } = this._findEvent(safeEvent) || {};
+                if (!event || !model) throw new Error();
+                const eventIndex = this._eventList.indexOf(event);
+                const reactIndex = event.reactList.indexOf(this);
+                if (reactIndex < 0 || eventIndex < 0) throw new Error();
+                
+                event.reactList.splice(reactIndex, 1);
+                this._eventList.splice(eventIndex, 1);
+                
+                if (event.eventKey === 'stateUpdateBefore') {
+                    if (!event.stateKey) throw new Error();
+                    model._updateInfo(event.stateKey);
+                }
+                this.model._setState();
+                model._setState();
             };
-            
 
             public readonly destroy = () => {
-                for (const event of this.eventList) {
+                for (const event of this._eventList) {
                     this.unbindEvent(event);
                 }
             };
@@ -182,51 +202,9 @@ export abstract class Model<
                 this.safeEvent = {
                     modelId: this.modelId,
                     eventKey: this.eventKey,
-                    stateKey: this.stateKey,
-                    bindReact: this.bindReact.bind(this),
-                    unbindReact: this.unbindReact.bind(this)
+                    stateKey: this.stateKey
                 };
             }
-
-            // 查询事件处理器
-            private readonly _findReact = (
-                safeReact: SafeReact<E>
-            ): Optional<ReactIntf> => {
-                const { modelId, eventKey } = safeReact;
-                const model = this.app.referenceService.findModel(modelId);
-                if (!model) return;
-                return model._reactDict[eventKey];
-            };
-
-            // 绑定事件接收器
-            public readonly bindReact = (
-                safeReact: SafeReact<E>
-            ) => {
-                const react = this._findReact(safeReact);
-                if (!react) throw new Error();
-                this.reactList.push(react);
-                react.eventList.push(this);
-                if (this.eventKey === 'stateUpdateBefore') {
-                    if (!this.stateKey) throw new Error();
-                    this.model._updateInfo(this.stateKey);
-                }
-                this.model._setState();
-            };
-
-            // 解绑事件接收器
-            public readonly unbindReact = (
-                safeReact: SafeReact<E>
-            ) => {
-                const react = this._findReact(safeReact);
-                if (!react) throw new Error();
-                const reactIndex = this.reactList.indexOf(react);
-                const eventIndex = react.eventList.indexOf(this);
-                if (reactIndex < 0) throw new Error();
-                if (eventIndex < 0) throw new Error();
-                this.reactList.splice(reactIndex, 1);
-                react.eventList.splice(eventIndex, 1);
-                this.model._setState();
-            };
 
             // 触发事件
             public readonly emitEvent = (event: E) => {
@@ -237,7 +215,7 @@ export abstract class Model<
 
             public readonly destroy = () => {
                 for (const react of this.reactList) {
-                    this.unbindReact(react);
+                    react.unbindEvent(this.safeEvent);
                 }
             };
         }
@@ -448,7 +426,6 @@ export abstract class SpecModel<
     public readonly childDict: ModelType.SpecChildDict<M>;
     public readonly childList: ModelType.SpecChildList<M>;
     public readonly eventDict: SafeEventDict<M>;
-    protected readonly reactDict: SafeReactDict<M>;
 
     constructor(config: ModelType.BaseConfig<M>) {
         super(config);
@@ -464,9 +441,6 @@ export abstract class SpecModel<
                     this._eventDict.stateUpdateDone[key].safeEvent
                 ))
             }
-        );
-        this.reactDict = initAutomicProxy(
-            key => this._reactDict[key].safeReact
         );
     }
 }
