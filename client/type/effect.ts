@@ -16,6 +16,7 @@ export namespace IEffect {
     export type Wrap<E> = 
         IEffect.Info &
         Readonly<{
+            event?: E
             bindSignal: (signal: ISignal.Wrap<E>) => void;
             unbindSignal: (signal: ISignal.Wrap<E>) => void;
         }>

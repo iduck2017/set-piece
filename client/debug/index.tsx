@@ -8,7 +8,7 @@ import { IEffect } from "../type/effect";
 import { ModelDef } from "../type/model-def";
 
 export type ModelProps<M extends ModelDef> = {
-    target: Model<M>,
+    model: Model<M>,
     app: App
 }
 
@@ -23,19 +23,19 @@ export type ModelState<M extends ModelDef> = {
 export function ModelComp<
     M extends ModelDef
 >(props: ModelProps<M>) {
-    const { target, app } = props;
+    const { model, app } = props;
     const [ state, setState ] = useState<{
         childList: IModel.List<M>,
         childDict: IModel.Dict<M>,
         signalDict: ISignal.Dict<M>,
         effectDict: IEffect.Dict<M>,
         info: ModelDef.Info<M>
-    }>(props.target.getState());
+    }>(model.getState());
 
     useEffect(() => {
-        setState(props.target.getState());
-        return props.target.useState(setState);
-    }, [ props.target ]);
+        setState(model.getState());
+        return model.useState(setState);
+    }, [ model ]);
 
     const {
         childDict,
@@ -46,22 +46,24 @@ export function ModelComp<
     return (
         <div
             className="model" 
-            id={target.id}
+            id={model.id}
         >
             <div className="data">
-                <div className="title">{target.constructor.name}</div>
+                <div className="title">{model.constructor.name}</div>
                 {Object.keys(info).map(key => (
                     <div className="row" key={key}>
                         <div className="key">{key}</div>
                         <div className="value">{info[key]}</div>
                     </div>
                 ))}
-                {Object.keys(target.testcaseDict).map(key => (
+                {Object.keys(model.testcaseDict).map(key => (
                     <div className="row" key={key}>
                         <div className="key">{key}</div>
                         <div 
                             className="function"
-                            onClick={target.testcaseDict[key].bind(target)}
+                            onClick={() => {
+                                model.testcaseDict[key].call(model);
+                            }}
                         >
                             function
                         </div>
@@ -72,14 +74,14 @@ export function ModelComp<
                 {childList.map((item) => (
                     <ModelComp 
                         key={item.id}
-                        target={item as any}
+                        model={item as any}
                         app={app}
                     />
                 ))}
                 {Object.values(childDict).map((item) => (
                     <ModelComp 
                         key={item.id}
-                        target={item as any}
+                        model={item as any}
                         app={app}
                     />
                 ))}

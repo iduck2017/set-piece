@@ -1,5 +1,5 @@
 import { App } from "../app";
-import { Base, KeyOf, Optional } from "../type";
+import { KeyOf, Optional } from "../type";
 import { ModelDef } from "../type/model-def";
 import { IEffect } from "../type/effect";
 import { ISignal } from "../type/signal";
@@ -42,8 +42,8 @@ export abstract class Model<
     }
 
     // 节点从属关系
-    private readonly _childDict: IModel.Dict<M>;
-    private readonly _childList: IModel.List<M>;
+    protected readonly _childDict: IModel.Dict<M>;
+    protected readonly _childList: IModel.List<M>;
 
     public readonly childDict: IModel.Dict<M>;
     public readonly childList: IModel.List<M>;
@@ -52,7 +52,7 @@ export abstract class Model<
     private _isInited?: boolean;
 
     // 调试器相关
-    public testcaseDict: Record<string, Base.Function>;
+    public testcaseDict: Record<string, () => any>;
     public readonly setterList: Array<(data: ModelState<M>) => void>;
 
     public readonly getState = () => {
@@ -116,12 +116,6 @@ export abstract class Model<
                     bindEffect: this.bindEffect.bind(this),
                     unbindEffect: this.unbindEffect.bind(this)
                 };
-                config.infoList?.forEach(effectInfo => {
-                    const effect = this._findEffect(effectInfo);
-                    if (!effect) return;
-                    this.effectList.push(effect);
-                    effect.signalList.push(this);
-                });
             }
 
             // 查询事件处理器
@@ -144,7 +138,7 @@ export abstract class Model<
                 effect.signalList.push(this);
                 if (this.eventKey === 'stateUpdateBefore') {
                     if (!this.stateKey) throw new Error();
-                    this.model._updateState(this.stateKey);
+                    this.model._updateInfo(this.stateKey);
                 }
                 this.model._setState();
             };
@@ -214,12 +208,6 @@ export abstract class Model<
                     bindSignal: this.bindSignal.bind(this),
                     unbindSignal: this.unbindSignal.bind(this)
                 };
-                config.infoList?.forEach(signalInfo => {
-                    const signal = this._findSignal(signalInfo);
-                    if (!signal) return;
-                    this.signalList.push(signal);
-                    signal.effectList.push(this);
-                });
             }
 
             // 查询事件触发器
@@ -289,7 +277,7 @@ export abstract class Model<
             config.labileInfo, {
                 set: (target, key: KeyOf<ModelDef.LabileInfo<M>>, value) => {
                     target[key] = value;
-                    this._updateState(key);
+                    this._updateInfo(key);
                     return true;
                 }
             }
@@ -421,7 +409,7 @@ export abstract class Model<
     }
 
     // 更新状态
-    private readonly _updateState = (
+    private readonly _updateInfo = (
         key: KeyOf<ModelDef.StableInfo<M> & ModelDef.LabileInfo<M>>
     ) => {
         const originInfo = {
@@ -510,6 +498,7 @@ export abstract class Model<
     public readonly initialize = () => {};
     private readonly _initialize = () => {
         if (!this._isInited) {
+            console.log('model initialize', this.constructor.name);
             this.initialize();
             this._isInited = true;
         }
@@ -540,6 +529,7 @@ export abstract class Model<
             const signal = this._signalDict[key];
             signal.destroy();
         }
+        this.app.referenceService.unregisterModel(this);
         this._destroy();
     };
 

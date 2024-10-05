@@ -27,16 +27,12 @@ export class TimerModel extends Model<TimerModelDef> {
             }
         });
         this.testcaseDict = {
-            updateTime: this.updateTime.bind(this)
+            updateTime: this.updateTime.bind(this, 1)
         };
     }
     
     /** 更新时间 */
-    public readonly updateTime = (offsetTime?: number) => {
-        if (!offsetTime || offsetTime < 0) {
-            offsetTime = 1;
-        }
-
+    public readonly updateTime = (offsetTime: number) => {
         this._signalDict.timeUpdateBefore.emitEvent();
         this._labileInfo.time += offsetTime;
         this._signalDict.timeUpdateDone.emitEvent();

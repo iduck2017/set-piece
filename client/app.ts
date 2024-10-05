@@ -43,7 +43,10 @@ export class App {
     private _status: AppStatus;
     
     public get status() { return this._status; }
-    public get root() { return this._root; }
+    public get root(): RootModel { 
+        if (!this._root) throw new Error();
+        return this._root;
+    }
 
     constructor() {
         window._app = this;

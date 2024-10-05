@@ -54,7 +54,7 @@ export function AppComp(props: {
                 quit
             </button>
             <ModelComp
-                target={app.root}
+                model={app.root}
                 app={app}
             />
         </div>;

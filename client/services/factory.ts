@@ -1,6 +1,7 @@
 import type { App } from "../app";
+import { BunnyModel } from "../models/bunny";
 import { RootModel } from "../models/root";
-import { TimerModel } from "../models/time";
+import { TimerModel } from "../models/timer";
 import { Base } from "../type";
 import { IModel } from "../type/model";
 import { ModelDef } from "../type/model-def";
@@ -9,13 +10,15 @@ import { singleton } from "../utils/singleton";
 /** 模型注册表 */
 export enum ModelCode {
     Root = 'root',
-    Timer = 'timer'
+    Timer = 'timer',
+    Bunny = 'bunny',
 }
 
 /** 数据到模型 */
 export type ModelRegistry = {
     root: typeof RootModel,
-    timer: typeof TimerModel
+    timer: typeof TimerModel,
+    bunny: typeof BunnyModel,
 };
 
 @singleton
@@ -29,7 +32,8 @@ export class FactoryService {
 
         this._productDict = {
             root: RootModel,
-            timer: TimerModel
+            timer: TimerModel,
+            bunny: BunnyModel
         }; 
     }
 
