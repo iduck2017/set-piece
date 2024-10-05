@@ -1,6 +1,6 @@
 import { Model } from ".";
 import { ModelCode } from "../services/factory";
-import { IModel } from "../type/model";
+import { ModelType } from "../type/model";
 import { IModelDef } from "../type/model-def";
 
 export type TimerModelDef = IModelDef<{
@@ -15,9 +15,9 @@ export type TimerModelDef = IModelDef<{
 }>
 
 export class TimerModel extends Model<TimerModelDef> {
-    protected _handlerDict = {};
+    protected _effectDict = {};
 
-    constructor(config: IModel.Config<TimerModelDef>) {
+    constructor(config: ModelType.Config<TimerModelDef>) {
         super({
             ...config,
             childDict: {},
@@ -27,12 +27,12 @@ export class TimerModel extends Model<TimerModelDef> {
             }
         });
         this.testcaseDict = {
-            updateTime: this.updateTime.bind(this, 1)
+            updateTime: this._updateTime.bind(this, 1)
         };
     }
     
     /** 更新时间 */
-    public readonly updateTime = (offsetTime: number) => {
+    private readonly _updateTime = (offsetTime: number) => {
         this._signalDict.timeUpdateBefore.emitEvent();
         this._labileInfo.time += offsetTime;
         this._signalDict.timeUpdateDone.emitEvent();

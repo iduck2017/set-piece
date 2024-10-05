@@ -6,20 +6,8 @@ import { PerferenceData, PreferenceService } from "./services/perference";
 import { RootModel } from "./models/root";
 import { RenderService } from "./services/render";
 import { META_SAVE_PATH } from "./configs/context";
+import { AppStatus } from "./type/status";
 
-export enum AppStatus {
-    /** 应用未初始化 */
-    CREATED,
-    /** 应用初始化完成,节点未挂载 */
-    UNMOUNTED,
-    /** 应用正在挂载节点 */
-    MOUNTING,
-    /** 应用已挂载节点 */
-    MOUNTED,
-    /** 应用正在卸载节点 */
-    UNMOUNTING,
-}
-   
 export type MetaData = {
     majorVersion: number
     minorVersion: number
@@ -77,10 +65,10 @@ export class App {
         const config = index === undefined ?
             await this.archieveService.createArchieve() :
             await this.archieveService.loadArchieve(index);
-        this._root = this.factoryService.unserialize({
+        this._root = new RootModel({
             ...config,
-            parent: this,
-            app: this  
+            app: this,
+            parent: this
         });
         this._status = AppStatus.MOUNTED;
     }

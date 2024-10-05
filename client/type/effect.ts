@@ -8,22 +8,16 @@ export type IEffect<E = any> =
     Readonly<{
         signalList: ISignal[];
         effectWrap: IEffect.Wrap<any>;
-        unserialize: () => ISignal.Info[];
         destroy: () => void;
     }>
 
 export namespace IEffect {
-    export type Wrap<E> = 
-        IEffect.Info &
-        Readonly<{
-            event?: E
-            bindSignal: (signal: ISignal.Wrap<E>) => void;
-            unbindSignal: (signal: ISignal.Wrap<E>) => void;
-        }>
-
-    export type Info = Readonly<{
+    export type Wrap<E> = Readonly<{
         modelId: string;
         eventKey: string;
+        handleEvent: (event: E) => void;
+        bindSignal: (signal: ISignal.Wrap<E>) => void;
+        unbindSignal: (signal: ISignal.Wrap<E>) => void;
     }>
 
     // 事件处理器字典
@@ -36,10 +30,5 @@ export namespace IEffect {
     export type WrapDict<M extends ModelDef> = {
         [K in KeyOf<ModelDef.EffectDict<M>>]: 
             IEffect.Wrap<ModelDef.EffectDict<M>[K]>
-    }
-    
-    // 初始化参数字典
-    export type ConfigDict<M extends ModelDef> = {
-        [K in KeyOf<ModelDef.EffectDict<M>>]?: ISignal.Info[]
     }
 }

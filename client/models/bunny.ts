@@ -1,10 +1,8 @@
 import { Model } from ".";
 import { ModelCode } from "../services/factory";
-import { StateUpdateDone } from "../type/event";
-import { IModel } from "../type/model";
+import { ModelType } from "../type/model";
 import { IModelDef } from "../type/model-def";
 import { Random } from "../utils/random";
-import { TimerModelDef } from "./timer";
 
 export type BunnyModelDef = IModelDef<{
     code: ModelCode.Bunny,
@@ -13,16 +11,16 @@ export type BunnyModelDef = IModelDef<{
         maxAge: number,
     },
     effectDict: {
-        timeUpdateDone: symbol
+        timeUpdateDone: void
     }
 }>
 
 export class BunnyModel extends Model<BunnyModelDef> {
-    protected _handlerDict = {
+    protected _effectDict = this._initEffectDict({
         timeUpdateDone: this.handleTimeUpdateDone
-    };
+    });
 
-    constructor(config: IModel.Config<BunnyModelDef>) {
+    constructor(config: ModelType.Config<BunnyModelDef>) {
         super({
             ...config,
             childDict: {},
@@ -38,7 +36,9 @@ export class BunnyModel extends Model<BunnyModelDef> {
     }
 
     public readonly initialize = () => {
-       
+        this.app.root.childDict.timer.signalDict.timeUpdateDone.bindEffect(
+            this._effectDict.timeUpdateDone
+        );
     };
 
     // public bootDriver() {
@@ -59,8 +59,4 @@ export class BunnyModel extends Model<BunnyModelDef> {
     private handleTimeUpdateDone() {
         this._labileInfo.curAge += 1;
     }
-
-    // public die() {
-    //     this.root.removeCreature(this);
-    // }
 }

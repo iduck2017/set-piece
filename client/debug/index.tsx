@@ -1,20 +1,20 @@
 import React, { useEffect, useState } from "react";
 import type { App } from "../app";
-import type { Model } from "../models";
+import type { PureModel } from "../models";
 import "./index.css";
-import { IModel } from "../type/model";
+import { ModelType } from "../type/model";
 import { ISignal } from "../type/signal";
 import { IEffect } from "../type/effect";
 import { ModelDef } from "../type/model-def";
 
 export type ModelProps<M extends ModelDef> = {
-    model: Model<M>,
+    model: PureModel<M>,
     app: App
 }
 
 export type ModelState<M extends ModelDef> = {
-    childList: IModel.List<M>,
-    childDict: IModel.Dict<M>,
+    childList: ModelType.List<M>,
+    childDict: ModelType.Dict<M>,
     signalDict: ISignal.Dict<M>,
     effectDict: IEffect.Dict<M>,
     info: ModelDef.Info<M>
@@ -25,8 +25,8 @@ export function ModelComp<
 >(props: ModelProps<M>) {
     const { model, app } = props;
     const [ state, setState ] = useState<{
-        childList: IModel.List<M>,
-        childDict: IModel.Dict<M>,
+        childList: ModelType.List<M>,
+        childDict: ModelType.Dict<M>,
         signalDict: ISignal.Dict<M>,
         effectDict: IEffect.Dict<M>,
         info: ModelDef.Info<M>

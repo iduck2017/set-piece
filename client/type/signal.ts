@@ -10,24 +10,16 @@ export type ISignal<E = any> =
         effectList: IEffect<E>[];
         signalWrap: ISignal.Wrap<E>;
         emitEvent: (event: E) => void;
-        bindEffect: (effect: IEffect.Wrap<E>) => void;
-        unbindEffect: (effect: IEffect.Wrap<E>) => void;
-        unserialize: () => IEffect.Info[];
         destroy: () => void;
     }>
 
 export namespace ISignal {
-    export type Wrap<E> = 
-        ISignal.Info &
-        Readonly<{
-            bindEffect: (effect: IEffect.Wrap<E>) => void;
-            unbindEffect: (effect: IEffect.Wrap<E>) => void;
-        }>
-
-    export type Info = Readonly<{
+    export type Wrap<E> = Readonly<{
         modelId: string;
         eventKey: string;
         stateKey?: string;
+        bindEffect: (effect: IEffect<E>) => void;
+        unbindEffect: (effect: IEffect<E>) => void;
     }>
 
     // 事件触发器字典
@@ -59,13 +51,4 @@ export namespace ISignal {
                 ISignal.Wrap<StateUpdateDone<M, ModelDef.Info<M>[K]>>;
         },
     }>
-
-    // 初始化参数字典
-    export type ConfigDict<M extends ModelDef> = Override<{
-        [K in KeyOf<ModelDef.SignalDict<M>>]?: IEffect.Info[];
-    }, {
-        stateUpdateBefore?: { [K in KeyOf<ModelDef.Info<M>>]?: IEffect.Info[]; }
-        stateUpdateDone?: { [K in KeyOf<ModelDef.Info<M>>]?: IEffect.Info[]; }
-    }>
-
 }

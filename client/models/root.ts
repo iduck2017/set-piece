@@ -1,7 +1,7 @@
 import { Model } from ".";
 import { App } from "../app";
 import { ModelCode } from "../services/factory";
-import { IModel } from "../type/model";
+import { ModelType } from "../type/model";
 import { IModelDef } from "../type/model-def";
 import { BunnyModelDef } from "./bunny";
 import { TimerModelDef } from "./timer";
@@ -19,9 +19,9 @@ export type RootModelDef = IModelDef<{
 }>
 
 export class RootModel extends Model<RootModelDef> {
-    protected _handlerDict = {};
+    protected _effectDict = {};
 
-    constructor(config: IModel.Config<RootModelDef>) {
+    constructor(config: ModelType.Config<RootModelDef>) {
         const childList = config.childList || [];
         if (childList.length === 0) {
             childList.push({
@@ -43,46 +43,9 @@ export class RootModel extends Model<RootModelDef> {
         });
     }
 
-    public spawnCreature(config: IModel.RawConfig<BunnyModelDef>) {
+    public spawnCreature(config: ModelType.PureConfig<BunnyModelDef>) {
         const child = this._unserialize(config);
         this._childList.push(child);
         return child;
     }
 }
-
-// export class RootModel extends Model<RootModelDef> {
-
-//     constructor(
-//         config: IModel.Config<RootModelDef>,
-//         app: App
-//     ) {
-//         super(
-//             {
-//                 ...config,
-//                 originState: {
-//                     progress: 0,
-//                     ...config.originState
-//                 },
-//                 childBundleDict: {
-//                     time: config.childBundleDict?.time || {
-//                         code: ModelCode.Time
-//                     }
-//                 },
-//                 childBundleList: config.childBundleList || [
-//                     { code: ModelCode.Bunny }
-//                 ]
-//             },  
-//             app
-//         );
-//     }
-
-//     public spawnCreature(child: BunnyModel) {
-//         this._childList.push(child);
-//         return child;
-//     }
-
-//     public removeCreature(child: BunnyModel) {
-//         const index = this._childList.indexOf(child);
-//         delete this._childList[index];
-//     }
-// }

@@ -1,9 +1,10 @@
 import type { App } from "../app";
+import { PureModel } from "../models";
 import { BunnyModel } from "../models/bunny";
 import { RootModel } from "../models/root";
 import { TimerModel } from "../models/timer";
 import { Base } from "../type";
-import { IModel } from "../type/model";
+import { ModelType } from "../type/model";
 import { ModelDef } from "../type/model-def";
 import { singleton } from "../utils/singleton";
 
@@ -21,6 +22,7 @@ export type ModelRegistry = {
     bunny: typeof BunnyModel,
 };
 
+
 @singleton
 export class FactoryService {
     public readonly app: App;
@@ -37,13 +39,11 @@ export class FactoryService {
         }; 
     }
 
-
     // 生成反序列化节点
     public readonly unserialize = <C extends ModelDef>(
-        config: IModel.Config<C>
-    ): IModel.Instance<C> => {
+        config: ModelType.Config<C>
+    ): PureModel<C> => {
         const Type: Base.Class = this._productDict[config.code];
         return new Type(config);
     };
-
 }

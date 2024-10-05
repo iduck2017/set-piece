@@ -1,19 +1,19 @@
 import { Base, Override } from ".";
 import type { App } from "../app";
-import type { Model } from "../models";
+import type { PureModel } from "../models";
 import { ModelCode } from "../services/factory";
 
 // 模型层节点定义
-export type ModelDef = Readonly<{
+export type ModelDef = {
     code: ModelCode
     stableInfo: Base.Data
     labileInfo: Base.Data
     childList: Array<ModelDef>
     childDict: Record<Base.Key, ModelDef>,
-    parent: Model | App;
+    parent: PureModel | App;
     signalDict: Base.Dict,
     effectDict: Base.Dict,
-}>
+}
 
 export namespace ModelDef {
     // 基础参数反射
@@ -40,7 +40,7 @@ export type IModelDef<
     childDict: Base.VoidData
     signalDict: Base.VoidData,
     effectDict: Base.VoidData,
-    parent: Model
+    parent: PureModel
 }, M>>
 
 

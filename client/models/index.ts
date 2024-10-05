@@ -3,13 +3,13 @@ import { KeyOf, Optional } from "../type";
 import { ModelDef } from "../type/model-def";
 import { IEffect } from "../type/effect";
 import { ISignal } from "../type/signal";
-import { IModel } from "../type/model";
+import { ModelType } from "../type/model";
 import { initAutomicProxy, initReadonlyProxy } from "../utils/proxy";
 import { ModelCode } from "../services/factory";
 import { ModelState } from "../debug";
 
 // 模型层节点
-export abstract class Model<
+export abstract class PureModel<
     M extends ModelDef = ModelDef
 > {
     // 外部指针
@@ -24,41 +24,26 @@ export abstract class Model<
     private readonly _presetInfo?: Partial<ModelDef.StableInfo<M>>;
     protected readonly _stableInfo: ModelDef.StableInfo<M>;
     protected readonly _labileInfo: ModelDef.LabileInfo<M>;
-    
     private readonly _info: ModelDef.Info<M>;
     public readonly info: ModelDef.Info<M>;
 
     // 事件依赖关系
-    protected readonly _effectDict: IEffect.Dict<M>;
-    protected readonly _signalDict: ISignal.Dict<M>;
-
-    public readonly effectDict: IEffect.WrapDict<M>;
     public readonly signalDict: ISignal.WrapDict<M>;
-
-    protected abstract readonly _handlerDict: {
-        [K in KeyOf<ModelDef.EffectDict<M>>]: (
-            event: ModelDef.EffectDict<M>[K]
-        ) => void;
-    }
+    protected readonly _signalDict: ISignal.Dict<M>;
+    protected abstract readonly _effectDict: IEffect.Dict<M>;
 
     // 节点从属关系
-    protected readonly _childDict: IModel.Dict<M>;
-    protected readonly _childList: IModel.List<M>;
-
-    public readonly childDict: IModel.Dict<M>;
-    public readonly childList: IModel.List<M>;
-    
-    // 初始化状态
-    private _isInited?: boolean;
+    protected readonly _childDict: ModelType.Dict<M>;
+    protected readonly _childList: ModelType.List<M>;
 
     // 调试器相关
-    public testcaseDict: Record<string, () => any>;
+    public testcaseDict: Record<string, () => void>;
     public readonly setterList: Array<(data: ModelState<M>) => void>;
 
     public readonly getState = () => {
         return {
-            childDict: this.childDict,
-            childList: this.childList,
+            childDict: this._childDict,
+            childList: this._childList,
             signalDict: this._signalDict,
             effectDict: this._effectDict,
             info: this.info
@@ -77,8 +62,8 @@ export abstract class Model<
     private readonly _setState = () => {
         for (const useModel of this.setterList) {
             useModel({
-                childDict: this.childDict,
-                childList: this.childList,
+                childDict: this._childDict,
+                childList: this._childList,
                 signalDict: this._signalDict,
                 effectDict: this._effectDict,
                 info: this.info
@@ -86,7 +71,96 @@ export abstract class Model<
         }
     };
 
-    constructor(config: IModel.BaseConfig<M>) {
+    protected readonly _initEffectDict = (config: {
+        [K in KeyOf<ModelDef.EffectDict<M>>]: (
+            event: ModelDef.EffectDict<M>[K]
+        ) => void;
+    }): IEffect.Dict<M> => {
+        // 事件处理器
+        class Effect<E> implements IEffect<E>{
+            public readonly modelId: string;
+            public readonly eventKey: string;
+            public readonly signalList: ISignal<E>[] = [];
+            public readonly effectWrap: IEffect.Wrap<E>;
+
+            public readonly app: App;
+            public readonly model: PureModel<M>;
+
+            public readonly handleEvent: (event: E) => void;
+
+            constructor(config: {
+                model: PureModel<M>,
+                eventKey: string
+                handleEvent: (event: E) => void;
+            }) {
+                this.model = config.model;
+                this.modelId = config.model.id;
+                this.app = this.model.app;
+                this.eventKey = config.eventKey;
+                this.handleEvent = config.handleEvent.bind(this.model);
+                this.effectWrap = {
+                    modelId: this.modelId,
+                    eventKey: this.eventKey,
+                    handleEvent: this.handleEvent,
+                    bindSignal: this.bindSignal.bind(this),
+                    unbindSignal: this.unbindSignal.bind(this)
+                };
+            }
+
+            // 查询事件触发器
+            private readonly _findSignal = (
+                signalWrap: ISignal.Wrap<E>
+            ): Optional<ISignal> => {
+                const { modelId, eventKey, stateKey } = signalWrap;
+                const model = this.app.referenceService.findModel(modelId);
+                if (!model) return;
+                if (
+                    eventKey ==='stateUpdateBefore' ||
+                    eventKey ==='stateUpdateDone'
+                ) {
+                    if (!stateKey) throw new Error();
+                    return model._signalDict[eventKey][stateKey];
+                }
+                return model._signalDict[eventKey];
+            };
+
+        
+            // 绑定事件触发器
+            public readonly bindSignal = (
+                signalWrap: ISignal.Wrap<E>
+            ) => {
+                const signal = this._findSignal(signalWrap);
+                if (!signal) throw new Error();
+                signal.bindEffect(this);
+            };
+
+            // 解绑事件触发器
+            public readonly unbindSignal = (
+                signalWrap: ISignal.Wrap<E>
+            ) => {
+                const signal = this._findSignal(signalWrap);
+                if (!signal) throw new Error();
+                signal.unbindEffect(this);
+            };
+            
+
+            public readonly destroy = () => {
+                for (const signal of this.signalList) {
+                    this.unbindSignal(signal);
+                }
+            };
+        }
+        
+        return initAutomicProxy(key => (
+            new Effect({
+                model: this,
+                eventKey: key,
+                handleEvent: config[key]
+            })
+        ));
+    };
+
+    constructor(config: ModelType.BaseConfig<M>) {
         // 事件触发器
         class Signal<E> implements ISignal<E> {
             public readonly modelId: string;
@@ -95,12 +169,11 @@ export abstract class Model<
             public readonly effectList: IEffect<E>[] = [];
             public readonly signalWrap: ISignal.Wrap<E>;
 
-            public readonly model: Model<M>;
+            public readonly model: PureModel<M>;
             public readonly app: App;
 
             constructor(config: {
-                infoList?: IEffect.Info[],
-                model: Model<M>,
+                model: PureModel<M>,
                 eventKey: string,
                 stateKey?: string
             }) {
@@ -120,9 +193,9 @@ export abstract class Model<
 
             // 查询事件处理器
             private readonly _findEffect = (
-                effectInfo: IEffect.Info
+                effectWrap: IEffect.Wrap<E>
             ): Optional<IEffect> => {
-                const { modelId, eventKey } = effectInfo;
+                const { modelId, eventKey } = effectWrap;
                 const model = this.app.referenceService.findModel(modelId);
                 if (!model) return;
                 return model._effectDict[eventKey];
@@ -130,9 +203,9 @@ export abstract class Model<
 
             // 绑定事件接收器
             public readonly bindEffect = (
-                effectInfo: IEffect.Info
+                effectWrap: IEffect.Wrap<E>
             ) => {
-                const effect = this._findEffect(effectInfo);
+                const effect = this._findEffect(effectWrap);
                 if (!effect) throw new Error();
                 this.effectList.push(effect);
                 effect.signalList.push(this);
@@ -145,9 +218,9 @@ export abstract class Model<
 
             // 解绑事件接收器
             public readonly unbindEffect = (
-                effectInfo: IEffect.Info
+                effectWrap: IEffect.Wrap<E>
             ) => {
-                const effect = this._findEffect(effectInfo);
+                const effect = this._findEffect(effectWrap);
                 if (!effect) throw new Error();
                 const effectIndex = this.effectList.indexOf(effect);
                 const signalIndex = effect.signalList.indexOf(this);
@@ -161,103 +234,13 @@ export abstract class Model<
             // 触发事件
             public readonly emitEvent = (event: E) => {
                 for (const effect of this.effectList) {
-                    const { modelId, eventKey } = effect;
-                    const model = this.app.referenceService.findModel(modelId);
-                    if (!model) throw new Error();
-                    model._handlerDict[eventKey].call(model, event);
+                    effect.handleEvent(event);
                 }
-            };
-
-            // 序列化事件触发器
-            public readonly unserialize = (): IEffect.Info[] => {
-                return this.effectList.map(effect => ({
-                    modelId: effect.modelId,
-                    eventKey: effect.eventKey
-                }));
             };
 
             public readonly destroy = () => {
                 for (const effect of this.effectList) {
                     this.unbindEffect(effect);
-                }
-            };
-        }
-
-        // 事件处理器
-        class Effect<E> implements IEffect<E>{
-            public readonly modelId: string;
-            public readonly eventKey: string;
-            public readonly signalList: ISignal<E>[] = [];
-            public readonly effectWrap: IEffect.Wrap<E>;
-
-            public readonly app: App;
-            public readonly model: Model<M>;
-
-            constructor(config: {
-                infoList?: ISignal.Info[],
-                model: Model<M>,
-                eventKey: string
-            }) {
-                this.model = config.model;
-                this.modelId = config.model.id;
-                this.app = this.model.app;
-                this.eventKey = config.eventKey;
-                this.effectWrap = {
-                    modelId: this.modelId,
-                    eventKey: this.eventKey,
-                    bindSignal: this.bindSignal.bind(this),
-                    unbindSignal: this.unbindSignal.bind(this)
-                };
-            }
-
-            // 查询事件触发器
-            private readonly _findSignal = (
-                signalInfo: ISignal.Info
-            ): Optional<ISignal> => {
-                const { modelId, eventKey, stateKey } = signalInfo;
-                const model = this.app.referenceService.findModel(modelId);
-                if (!model) return;
-                if (
-                    eventKey ==='stateUpdateBefore' ||
-                    eventKey ==='stateUpdateDone'
-                ) {
-                    if (!stateKey) throw new Error();
-                    return model._signalDict[eventKey][stateKey];
-                }
-                return model._signalDict[eventKey];
-            };
-
-        
-            // 绑定事件触发器
-            public readonly bindSignal = (
-                signalInfo: ISignal.Info
-            ) => {
-                const signal = this._findSignal(signalInfo);
-                if (!signal) throw new Error();
-                signal.bindEffect(this);
-            };
-
-            // 解绑事件触发器
-            public readonly unbindSignal = (
-                signalInfo: ISignal.Info
-            ) => {
-                const signal = this._findSignal(signalInfo);
-                if (!signal) throw new Error();
-                signal.unbindEffect(this);
-            };
-
-            // 序列化事件处理器
-            public readonly unserialize = (): ISignal.Info[] => {
-                return this.signalList.map(signal => ({
-                    modelId: signal.modelId,
-                    eventKey: signal.eventKey,
-                    stateKey: signal.stateKey
-                }));
-            };
-
-            public readonly destroy = () => {
-                for (const signal of this.signalList) {
-                    this.unbindSignal(signal);
                 }
             };
         }
@@ -269,6 +252,7 @@ export abstract class Model<
         // 初始化唯一标识符
         this.id = config.id || this.app.referenceService.ticket;
         this.code = config.code;    
+        this.app.referenceService.registerModel(this);
 
         // 初始化数据结构
         this._presetInfo = config.presetInfo;
@@ -291,42 +275,22 @@ export abstract class Model<
 
 
         // 初始化事件依赖关系
-        this._effectDict = initAutomicProxy(
-            key => new Effect({
-                infoList: config.effectDict?.[key],
+        this._signalDict = initAutomicProxy<any>(key => new Signal({
+            model: this,
+            eventKey: key
+        }),
+        {
+            stateUpdateBefore: initAutomicProxy(key => new Signal({
                 model: this,
-                eventKey: key
-            })
-        );
-        this._signalDict = initAutomicProxy<any>(
-            key => new Signal({
-                infoList: config.signalDict?.[key],
+                eventKey: 'stateUpdateBefore',
+                stateKey: key
+            })),
+            stateUpdateDone: initAutomicProxy(key => new Signal({
                 model: this,
-                eventKey: key
-            }),
-            {
-                stateUpdateBefore: initAutomicProxy(
-                    key => new Signal({
-                        model: this,
-                        eventKey: 'stateUpdateBefore',
-                        stateKey: key,
-                        infoList: config.signalDict?.stateUpdateBefore?.[key]
-                    })
-                ),
-                stateUpdateDone: initAutomicProxy(
-                    key => new Signal({
-                        model: this,
-                        eventKey: 'stateUpdateDone',
-                        stateKey: key,
-                        infoList: config.signalDict?.stateUpdateDone?.[key]
-                    })
-                )
-            }
-        );
-
-        this.effectDict = initAutomicProxy(
-            key => this._effectDict[key].effectWrap
-        );
+                eventKey: 'stateUpdateDone',
+                stateKey: key
+            }))
+        });
         this.signalDict = initAutomicProxy<any>(
             key => this._signalDict[key].signalWrap,
             {
@@ -340,24 +304,24 @@ export abstract class Model<
         );
 
         // 初始化节点从属关系
-        const childDict = {} as any;
+        const childDict = {} as ModelType.Dict<M>;
         Object.keys(config.childDict).forEach((
-            key: KeyOf<IModel.Dict<M>>
+            key: KeyOf<ModelType.Dict<M>>
         ) => {
             childDict[key] = this._unserialize(config.childDict[key]);
         });
         this._childDict = new Proxy(childDict, {
-            set: <K extends KeyOf<IModel.Dict<M>>>(
-                target: IModel.Dict<M>, 
+            set: <K extends KeyOf<ModelType.Dict<M>>>(
+                target: ModelType.Dict<M>, 
                 key: K, 
-                value: IModel.Dict<M>[K]
+                value: ModelType.Dict<M>[K]
             ) => {
                 target[key] = value;
                 value._initialize();
                 this._setState();
                 return true;
             },
-            deleteProperty: (target, key: KeyOf<IModel.Dict<M>>) => {
+            deleteProperty: (target, key: KeyOf<ModelType.Dict<M>>) => {
                 const value = target[key];
                 value._destroy();
                 delete target[key];
@@ -370,19 +334,19 @@ export abstract class Model<
             this._unserialize(config)
         ));
         this._childList = new Proxy(childList, {
-            set: (target, key: KeyOf<IModel.List<M>>, value) => {
+            set: (target, key: KeyOf<ModelType.List<M>>, value) => {
                 target[key] = value;
                 if (typeof key !== 'symbol' && !isNaN(Number(key))) {
-                    const model: Model = value;
+                    const model: PureModel = value;
                     model._initialize();
                     this._setState();
                 }
                 return true;
             },
-            deleteProperty: (target, key: KeyOf<IModel.List<M>>) => {
+            deleteProperty: (target, key: KeyOf<ModelType.List<M>>) => {
                 const value = target[key];
-                if (value instanceof Model) {
-                    const model: Model = value;
+                if (value instanceof PureModel) {
+                    const model: PureModel = value;
                     model._destroy();
                     this._setState();
                 }
@@ -392,15 +356,11 @@ export abstract class Model<
             }
         });
 
-        this.childDict = initReadonlyProxy(this._childDict);
-        this.childList = initReadonlyProxy(this._childList);
-
         // 初始化调试器
         this.testcaseDict = {};
         this.setterList = [];
 
         // 初始化根节点业务逻辑
-        this._isInited = config.isInited;
         if (this.parent instanceof App) {
             setTimeout(() => {
                 this._initialize();
@@ -434,51 +394,27 @@ export abstract class Model<
 
     // 生成反序列化节点
     protected readonly _unserialize = <C extends ModelDef>(
-        config: IModel.RawConfig<C>
-    ): IModel.Instance<C> => {
+        config: ModelType.PureConfig<C>
+    ): PureModel<C> => {
         return this.app.factoryService.unserialize({
             ...config,
-            parent: this as any,
+            parent: this,
             app: this.app
         });
     };
 
     // 序列化模型层节点
-    public readonly serialize = (): IModel.Bundle<M> => {
-
+    public readonly serialize = (): ModelType.Bundle<M> => {
         // 序列化事件触发器/处理器字典
         // 序列化从属节点字典/列表
-        const signalDict = {} as any;
-        const effectDict = {} as any;
-        const childDict = {} as any;
-        const childList = [] as any;
-        
-        for (const key in this._effectDict) {
-            const effect = this._effectDict[key];
-            effectDict[key] = effect.unserialize();
-        }
-        for (const key in this._childDict) {
+        const childList = this._childList.map(child => child.serialize());
+        const childDict = {} as ModelType.BundleDict<M>;
+        Object.keys(this._childDict).forEach((
+            key: KeyOf<ModelType.Dict<M>>
+        ) => {
             const child = this._childDict[key];
             childDict[key] = child.serialize();
-        }
-        for (const child of this._childList) {
-            childList.push(child.serialize());
-        }
-        for (const key in this._signalDict) {
-            if (
-                key === 'stateUpdateBefore' ||
-                key === 'stateUpdateDone'
-            ) {
-                signalDict[key] = {};
-                for (const stateKey in this._signalDict[key]) {
-                    const signal = this._signalDict[key][stateKey];
-                    signalDict[key][stateKey] = signal.unserialize();
-                }
-            } else {
-                const signal = this._signalDict[key];
-                signalDict[key] = signal.unserialize();
-            }
-        }
+        });
 
         // 返回节点序列化结果
         return {
@@ -487,21 +423,14 @@ export abstract class Model<
             presetInfo: this._presetInfo,
             labileInfo: this._labileInfo,
             childDict,
-            childList,
-            signalDict,
-            effectDict,
-            isInited: true
+            childList
         };
     };
 
     // 执行初始化函数
     public readonly initialize = () => {};
     private readonly _initialize = () => {
-        if (!this._isInited) {
-            console.log('model initialize', this.constructor.name);
-            this.initialize();
-            this._isInited = true;
-        }
+        this.initialize();
         for (const child of this._childList) {
             child._initialize();
         }
@@ -533,4 +462,17 @@ export abstract class Model<
         this._destroy();
     };
 
+}
+
+export abstract class Model<
+    M extends ModelDef = ModelDef
+> extends PureModel<M> {
+    public readonly childDict: ModelType.Dict<M>;
+    public readonly childList: ModelType.List<M>;
+
+    constructor(config: ModelType.BaseConfig<M>) {
+        super(config);
+        this.childDict = initReadonlyProxy<any>(this._childDict);
+        this.childList = initReadonlyProxy<any>(this._childList);
+    }
 }
