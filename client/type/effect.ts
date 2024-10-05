@@ -41,11 +41,4 @@ export namespace IEffect {
     export type ConfigDict<M extends ModelDef> = {
         [K in KeyOf<ModelDef.EffectDict<M>>]?: ISignal.Info[]
     }
-
-    // 事件处理函数字典
-    export type HandlerDict<M extends ModelDef> = {
-        [K in KeyOf<ModelDef.EffectDict<M>>]: (
-            event: ModelDef.EffectDict<M>[K]
-        ) => void;
-    }
 }

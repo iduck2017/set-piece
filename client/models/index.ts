@@ -6,6 +6,7 @@ import { ISignal } from "../type/signal";
 import { IModel } from "../type/model";
 import { initAutomicProxy, initReadonlyProxy } from "../utils/proxy";
 import { ModelCode } from "../services/factory";
+import { ModelState } from "../debug";
 
 // 模型层节点
 export abstract class Model<
@@ -24,8 +25,8 @@ export abstract class Model<
     protected readonly _stableInfo: ModelDef.StableInfo<M>;
     protected readonly _labileInfo: ModelDef.LabileInfo<M>;
     
-    private readonly _info: ModelDef.StableInfo<M> & ModelDef.LabileInfo<M>;
-    public readonly info: ModelDef.StableInfo<M> & ModelDef.LabileInfo<M>;
+    private readonly _info: ModelDef.Info<M>;
+    public readonly info: ModelDef.Info<M>;
 
     // 事件依赖关系
     protected readonly _effectDict: IEffect.Dict<M>;
@@ -33,6 +34,12 @@ export abstract class Model<
 
     public readonly effectDict: IEffect.WrapDict<M>;
     public readonly signalDict: ISignal.WrapDict<M>;
+
+    protected abstract readonly _handlerDict: {
+        [K in KeyOf<ModelDef.EffectDict<M>>]: (
+            event: ModelDef.EffectDict<M>[K]
+        ) => void;
+    }
 
     // 节点从属关系
     private readonly _childDict: IModel.Dict<M>;
@@ -44,9 +51,40 @@ export abstract class Model<
     // 初始化状态
     private _isInited?: boolean;
 
-    // 接口函数字典
-    public debuggerDict: Record<string, Base.Function>;
-    protected abstract readonly _handlerDict: IEffect.HandlerDict<M>
+    // 调试器相关
+    public testcaseDict: Record<string, Base.Function>;
+    public readonly setterList: Array<(data: ModelState<M>) => void>;
+
+    public readonly getState = () => {
+        return {
+            childDict: this.childDict,
+            childList: this.childList,
+            signalDict: this._signalDict,
+            effectDict: this._effectDict,
+            info: this.info
+        };
+    };
+
+    public readonly useState = (setter: (data: ModelState<M>) => void) => {
+        this.setterList.push(setter);
+        return () => {
+            const index = this.setterList.indexOf(setter);
+            if (index < 0) throw new Error();
+            this.setterList.splice(index, 1);
+        };
+    };
+
+    private readonly _setState = () => {
+        for (const useModel of this.setterList) {
+            useModel({
+                childDict: this.childDict,
+                childList: this.childList,
+                signalDict: this._signalDict,
+                effectDict: this._effectDict,
+                info: this.info
+            });
+        }
+    };
 
     constructor(config: IModel.BaseConfig<M>) {
         // 事件触发器
@@ -57,12 +95,12 @@ export abstract class Model<
             public readonly effectList: IEffect<E>[] = [];
             public readonly signalWrap: ISignal.Wrap<E>;
 
-            public readonly model: Model;
+            public readonly model: Model<M>;
             public readonly app: App;
 
             constructor(config: {
                 infoList?: IEffect.Info[],
-                model: Model,
+                model: Model<M>,
                 eventKey: string,
                 stateKey?: string
             }) {
@@ -104,12 +142,11 @@ export abstract class Model<
                 if (!effect) throw new Error();
                 this.effectList.push(effect);
                 effect.signalList.push(this);
-                if (
-                    this.eventKey === 'stateUpdateBefore' && 
-                    this.stateKey
-                ) {
+                if (this.eventKey === 'stateUpdateBefore') {
+                    if (!this.stateKey) throw new Error();
                     this.model._updateState(this.stateKey);
                 }
+                this.model._setState();
             };
 
             // 解绑事件接收器
@@ -124,6 +161,7 @@ export abstract class Model<
                 if (signalIndex < 0) throw new Error();
                 this.effectList.splice(effectIndex, 1);
                 effect.signalList.splice(signalIndex, 1);
+                this.model._setState();
             };
 
             // 触发事件
@@ -159,11 +197,11 @@ export abstract class Model<
             public readonly effectWrap: IEffect.Wrap<E>;
 
             public readonly app: App;
-            public readonly model: Model;
+            public readonly model: Model<M>;
 
             constructor(config: {
                 infoList?: ISignal.Info[],
-                model: Model,
+                model: Model<M>,
                 eventKey: string
             }) {
                 this.model = config.model;
@@ -328,12 +366,14 @@ export abstract class Model<
             ) => {
                 target[key] = value;
                 value._initialize();
+                this._setState();
                 return true;
             },
             deleteProperty: (target, key: KeyOf<IModel.Dict<M>>) => {
                 const value = target[key];
                 value._destroy();
                 delete target[key];
+                this._setState();
                 return true;
             }
         });
@@ -347,6 +387,7 @@ export abstract class Model<
                 if (typeof key !== 'symbol' && !isNaN(Number(key))) {
                     const model: Model = value;
                     model._initialize();
+                    this._setState();
                 }
                 return true;
             },
@@ -355,6 +396,7 @@ export abstract class Model<
                 if (value instanceof Model) {
                     const model: Model = value;
                     model._destroy();
+                    this._setState();
                 }
                 delete target[key];
                 target.length --;
@@ -366,12 +408,15 @@ export abstract class Model<
         this.childList = initReadonlyProxy(this._childList);
 
         // 初始化调试器
-        this.debuggerDict = {};
+        this.testcaseDict = {};
+        this.setterList = [];
 
         // 初始化根节点业务逻辑
         this._isInited = config.isInited;
         if (this.parent instanceof App) {
-            this._initialize();
+            setTimeout(() => {
+                this._initialize();
+            });
         }
     }
 
@@ -395,6 +440,7 @@ export abstract class Model<
         if (prev !== next) {
             this._info[key] = next;
             this._signalDict.stateUpdateDone[key].emitEvent(event);
+            this._setState();
         }
     };
 
@@ -404,7 +450,7 @@ export abstract class Model<
     ): IModel.Instance<C> => {
         return this.app.factoryService.unserialize({
             ...config,
-            parent: this,
+            parent: this as any,
             app: this.app
         });
     };
@@ -496,4 +542,5 @@ export abstract class Model<
         }
         this._destroy();
     };
+
 }

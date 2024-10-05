@@ -1,17 +1,47 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import type { App } from "../app";
-import { useModel } from "./use-model";
 import type { Model } from "../models";
 import "./index.css";
+import { IModel } from "../type/model";
+import { ISignal } from "../type/signal";
+import { IEffect } from "../type/effect";
+import { ModelDef } from "../type/model-def";
 
-export type ModelCompProps = {
-    target: Model,
+export type ModelProps<M extends ModelDef> = {
+    target: Model<M>,
     app: App
 }
 
-export function ModelComp(props: ModelCompProps) {
+export type ModelState<M extends ModelDef> = {
+    childList: IModel.List<M>,
+    childDict: IModel.Dict<M>,
+    signalDict: ISignal.Dict<M>,
+    effectDict: IEffect.Dict<M>,
+    info: ModelDef.Info<M>
+}
+
+export function ModelComp<
+    M extends ModelDef
+>(props: ModelProps<M>) {
     const { target, app } = props;
-    const { children, state } = useModel(props);
+    const [ state, setState ] = useState<{
+        childList: IModel.List<M>,
+        childDict: IModel.Dict<M>,
+        signalDict: ISignal.Dict<M>,
+        effectDict: IEffect.Dict<M>,
+        info: ModelDef.Info<M>
+    }>(props.target.getState());
+
+    useEffect(() => {
+        setState(props.target.getState());
+        return props.target.useState(setState);
+    }, [ props.target ]);
+
+    const {
+        childDict,
+        childList,
+        info
+    } = state;
 
     return (
         <div
@@ -20,18 +50,18 @@ export function ModelComp(props: ModelCompProps) {
         >
             <div className="data">
                 <div className="title">{target.constructor.name}</div>
-                {Object.keys(state).map(key => (
+                {Object.keys(info).map(key => (
                     <div className="row" key={key}>
                         <div className="key">{key}</div>
-                        <div className="value">{target.currentState[key]}</div>
+                        <div className="value">{info[key]}</div>
                     </div>
                 ))}
-                {Object.keys(target.debuggerDict).map(key => (
+                {Object.keys(target.testcaseDict).map(key => (
                     <div className="row" key={key}>
                         <div className="key">{key}</div>
                         <div 
                             className="function"
-                            onClick={target.debuggerDict[key].bind(target)}
+                            onClick={target.testcaseDict[key].bind(target)}
                         >
                             function
                         </div>
@@ -39,10 +69,17 @@ export function ModelComp(props: ModelCompProps) {
                 ))}
             </div>
             <div className="children">
-                {children.map(item => (
+                {childList.map((item) => (
                     <ModelComp 
                         key={item.id}
-                        target={item}
+                        target={item as any}
+                        app={app}
+                    />
+                ))}
+                {Object.values(childDict).map((item) => (
+                    <ModelComp 
+                        key={item.id}
+                        target={item as any}
                         app={app}
                     />
                 ))}

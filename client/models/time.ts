@@ -26,7 +26,7 @@ export class TimerModel extends Model<TimerModelDef> {
                 time: config.labileInfo?.time || 0
             }
         });
-        this.debuggerDict = {
+        this.testcaseDict = {
             updateTime: this.updateTime.bind(this)
         };
     }
