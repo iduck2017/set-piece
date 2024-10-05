@@ -3,8 +3,8 @@ import type { App } from "../app";
 import type { Model } from "../models";
 import "./index.css";
 import { ModelType } from "../type/model";
-import { ISignal } from "../type/signal";
-import { IEffect } from "../type/effect";
+import { EventDict } from "../type/event";
+import { ReactDict } from "../type/react";
 import { ModelTmpl } from "../type/model-tmpl";
 
 export type ModelProps<M extends ModelTmpl> = {
@@ -13,10 +13,10 @@ export type ModelProps<M extends ModelTmpl> = {
 }
 
 export type ModelState<M extends ModelTmpl> = {
-    childList: ModelType.List<M>,
-    childDict: ModelType.Dict<M>,
-    eventDict: ISignal.Dict<M>,
-    reactDict: IEffect.Dict<M>,
+    childList: ModelType.ChildList<M>,
+    childDict: ModelType.ChildDict<M>,
+    eventDict: EventDict<M>,
+    reactDict: ReactDict<M>,
     info: ModelTmpl.Info<M>
 }
 
@@ -24,13 +24,7 @@ export function ModelComp<
     M extends ModelTmpl
 >(props: ModelProps<M>) {
     const { model, app } = props;
-    const [ state, setState ] = useState<{
-        childList: ModelType.List<M>,
-        childDict: ModelType.Dict<M>,
-        eventDict: ISignal.Dict<M>,
-        reactDict: IEffect.Dict<M>,
-        info: ModelTmpl.Info<M>
-    }>(model.getState());
+    const [ state, setState ] = useState<ModelState<M>>(model.getState());
 
     useEffect(() => {
         setState(model.getState());

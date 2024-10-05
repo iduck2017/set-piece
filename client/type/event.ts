@@ -1,55 +1,74 @@
-import { Model } from "../models";
+import { KeyOf, Override } from ".";
+import { ReactIntf, SafeReact } from "./react";
 import { ModelTmpl } from "./model-tmpl";
+import { Model } from "../models";
 
-export type StateUpdateBefore<
-    M extends ModelTmpl, T
-> = {
-    target: Model<M>,
-    prev: T,
-    next: T,
-    canncel?: boolean
+// 事件类型
+export namespace EventType {
+    export type StateUpdateBefore<
+        M extends ModelTmpl, T
+    > = {
+        target: Model<M>,
+        prev: T,
+        next: T,
+        canncel?: boolean
+    }
+    
+    export type StateUpdateDone<
+        M extends ModelTmpl, T
+    > = {
+        target: Model<M>,
+        next: T,
+        prev: T,
+    }
 }
-export type StateUpdateDone<
-    M extends ModelTmpl, T
-> = {
-    target: Model<M>,
-    next: T,
-    prev: T,
-}
 
+// 事件触发器
+export type EventIntf<E = any> = 
+    SafeEvent<E> &
+    Readonly<{
+        reactList: ReactIntf<E>[];
+        safeEvent: SafeEvent<E>;
+        emitEvent: (event: E) => void;
+        destroy: () => void;
+    }>
 
-// import type { Model } from "../models";
-// import { IModel } from "./model";
+export type SafeEvent<E = any> = Readonly<{
+    modelId: string;
+    eventKey: string;
+    stateKey?: string;
+    bindReact: (react: SafeReact<E>) => void;
+    unbindReact: (react: SafeReact<E>) => void;
+}>
 
-// export namespace IEvent { 
-//     export type StateUpdateBefore<
-//         M extends IModel.Define,
-//         K extends keyof IModel.State<M> = keyof IModel.State<M>
-//     > = {
-//         // target: InstanceType<ModelReg[M[ModelKey.Code]]>,
-//         target: Model<M>,
-//         next: IModel.State<M>[K],
-//         prev: IModel.State<M>[K]
-//     }
+export type EventDict<M extends ModelTmpl> = Override<{
+    [K in KeyOf<ModelTmpl.EventDict<M>>]:
+        EventIntf<ModelTmpl.EventDict<M>[K]>;
+}, {
+    stateUpdateBefore: {
+        [K in KeyOf<ModelTmpl.Info<M>>]: EventIntf<
+            EventType.StateUpdateBefore<M, ModelTmpl.Info<M>[K]>
+        >;
+    }
+    stateUpdateDone: {
+        [K in KeyOf<ModelTmpl.Info<M>>]: EventIntf<
+            EventType.StateUpdateDone<M, ModelTmpl.Info<M>[K]>
+        >;
+    },
+}>
 
-//     export type StateUpdateDone<
-//         M extends IModel.Define,
-//         K extends keyof IModel.State<M> = keyof IModel.State<M>
-//     > = {
-//         // target: InstanceType<ModelReg[M[ModelKey.Code]]>
-//         target: Model<M>,
-//         next: IModel.State<M>[K],
-//         prev: IModel.State<M>[K]
-//     }
-
-//     export type ChildUpdateDone<
-//         M extends IModel.Define,
-//     > = {
-//         // target: InstanceType<ModelReg[M[ModelKey.Code]]>
-//         target: Model<M>,
-//         list: IModel.ChildList<M>
-//         dict: IModel.ChildDict<M>
-//         children: Model[],
-//         child: Model,
-//     }
-// }
+export type SafeEventDict<M extends ModelTmpl> = Override<{
+    [K in KeyOf<ModelTmpl.EventDict<M>>]:
+        SafeEvent<ModelTmpl.EventDict<M>[K]>;
+}, {
+    stateUpdateBefore: {
+        [K in KeyOf<ModelTmpl.Info<M>>]: SafeEvent<
+            EventType.StateUpdateBefore<M, ModelTmpl.Info<M>[K]>
+        >;
+    }
+    stateUpdateDone: {
+        [K in KeyOf<ModelTmpl.Info<M>>]: SafeEvent<
+            EventType.StateUpdateDone<M, ModelTmpl.Info<M>[K]>
+        >;
+    },
+}>
