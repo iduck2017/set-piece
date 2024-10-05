@@ -2,7 +2,7 @@ import type { App } from "../app";
 import { ARCHIEVE_SAVE_PATH } from "../configs/context";
 import { Generator } from "../configs/generator";
 import { RootModelTmpl } from "../models/root";
-import { ModelType } from "../type/model";
+import { PureModelConfig } from "../type/model";
 import { initReadonlyProxy } from "../utils/proxy";
 import { singleton } from "../utils/singleton";
 
@@ -37,7 +37,7 @@ export class ArchieveService {
 
     // 创建新的档案
     public readonly createArchieve = async (
-    ): Promise<ModelType.PureConfig<RootModelTmpl>> => {
+    ): Promise<PureModelConfig<RootModelTmpl>> => {
         this.app.referenceService.reset();
         const id = this.app.referenceService.ticket;
         this._data.push({
@@ -54,7 +54,7 @@ export class ArchieveService {
     // 加载档案
     public async loadArchieve(
         index: number
-    ): Promise<ModelType.PureConfig<RootModelTmpl>> {
+    ): Promise<PureModelConfig<RootModelTmpl>> {
         this._index = index;
         const archieve = this._data[index];
         const path = `${ARCHIEVE_SAVE_PATH}_${archieve.id}`;

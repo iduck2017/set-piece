@@ -4,7 +4,7 @@ import { BunnyModel } from "../models/bunny";
 import { RootModel } from "../models/root";
 import { TimerModel } from "../models/timer";
 import { Base } from "../type";
-import { ModelType } from "../type/model";
+import { ModelConfig } from "../type/model";
 import { ModelTmpl } from "../type/model-tmpl";
 import { singleton } from "../utils/singleton";
 
@@ -41,7 +41,7 @@ export class FactoryService {
 
     // 生成反序列化节点
     public readonly unserialize = <C extends ModelTmpl>(
-        config: ModelType.Config<C>
+        config: ModelConfig<C>
     ): Model<C> => {
         const Type: Base.Class = this._productDict[config.code];
         return new Type(config);

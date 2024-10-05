@@ -3,7 +3,7 @@ import { KeyOf, Optional } from "../type";
 import { ModelTmpl } from "../type/model-tmpl";
 import { ReactDict, ReactIntf, SafeReact, SafeReactDict } from "../type/react";
 import { EventDict, EventIntf, SafeEvent, SafeEventDict } from "../type/event";
-import { ModelType } from "../type/model";
+import { ModelType, PureModelConfig } from "../type/model";
 import { initAutomicProxy, initReadonlyProxy } from "../utils/proxy";
 import { ModelCode } from "../services/factory";
 import { ModelState } from "../debug";
@@ -266,7 +266,7 @@ export abstract class Model<
 
 
         // 初始化事件依赖关系
-        this._eventDict = initAutomicProxy(key => (
+        this._eventDict = initAutomicProxy<any>(key => (
             new Event({
                 model: this,
                 eventKey: key
@@ -372,7 +372,7 @@ export abstract class Model<
 
     // 生成反序列化节点
     protected readonly _unserialize = <C extends ModelTmpl>(
-        config: ModelType.PureConfig<C>
+        config: PureModelConfig<C>
     ): Model<C> => {
         return this.app.factoryService.unserialize({
             ...config,
@@ -452,9 +452,9 @@ export abstract class SpecModel<
 
     constructor(config: ModelType.BaseConfig<M>) {
         super(config);
-        this.childDict = initReadonlyProxy(this._childDict);
-        this.childList = initReadonlyProxy(this._childList);
-        this.eventDict = initAutomicProxy(
+        this.childDict = initReadonlyProxy<any>(this._childDict);
+        this.childList = initReadonlyProxy<any>(this._childList);
+        this.eventDict = initAutomicProxy<any>(
             key => this._eventDict[key].safeEvent,
             {
                 stateUpdateBefore: initAutomicProxy(key => (

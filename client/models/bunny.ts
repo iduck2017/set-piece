@@ -1,6 +1,6 @@
 import { SpecModel } from ".";
 import { ModelCode } from "../services/factory";
-import { ModelType } from "../type/model";
+import { ModelConfig } from "../type/model";
 import { SpecModelTmpl } from "../type/model-tmpl";
 import { Random } from "../utils/random";
 
@@ -20,7 +20,7 @@ export class BunnyModel extends SpecModel<BunnyModelTmpl> {
         timeUpdateDone: this.handleTimeUpdateDone
     });
 
-    constructor(config: ModelType.Config<BunnyModelTmpl>) {
+    constructor(config: ModelConfig<BunnyModelTmpl>) {
         super({
             ...config,
             childDict: {},

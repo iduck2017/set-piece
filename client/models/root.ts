@@ -1,7 +1,7 @@
 import { SpecModel } from ".";
 import { App } from "../app";
 import { ModelCode } from "../services/factory";
-import { ModelType } from "../type/model";
+import { ModelConfig, PureModelConfig } from "../type/model";
 import { SpecModelTmpl } from "../type/model-tmpl";
 import { BunnyModelTmpl } from "./bunny";
 import { TimerModelTmpl } from "./timer";
@@ -21,7 +21,7 @@ export type RootModelTmpl = SpecModelTmpl<{
 export class RootModel extends SpecModel<RootModelTmpl> {
     protected _reactDict = {};
 
-    constructor(config: ModelType.Config<RootModelTmpl>) {
+    constructor(config: ModelConfig<RootModelTmpl>) {
         const childList = config.childList || [];
         if (childList.length === 0) {
             childList.push({
@@ -42,7 +42,7 @@ export class RootModel extends SpecModel<RootModelTmpl> {
         });
     }
 
-    public spawnCreature(config: ModelType.PureConfig<BunnyModelTmpl>) {
+    public spawnCreature(config: PureModelConfig<BunnyModelTmpl>) {
         const child = this._unserialize(config);
         this._childList.push(child);
         return child;

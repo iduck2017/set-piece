@@ -4,26 +4,26 @@ import { Model } from "../models";
 import { ModelRegistry } from "../services/factory";
 import { ModelTmpl } from "./model-tmpl";
 
-// 模型层节点定义
-export namespace ModelType {
-    // 反序列化参数
-    export type PureConfig<
-        M extends ModelTmpl
-    > = Readonly<{
-        id?: string
-        code: ModelTmpl.Code<M>
-        info?: Partial<ModelTmpl.Info<M>>
-        childList?: ModelType.ChildConfigList<M>,
-        childDict?: Partial<ModelType.ChildConfigDict<M>>,
-    }>
+export type PureModelConfig<
+    M extends ModelTmpl
+> = Readonly<{
+    id?: string
+    code: ModelTmpl.Code<M>
+    info?: Partial<ModelTmpl.Info<M>>
+    childList?: ModelType.ChildConfigList<M>,
+    childDict?: Partial<ModelType.ChildConfigDict<M>>,
+}>
 
-    // 自定义初始化参数
-    export type Config<
-        M extends ModelTmpl
-    > = Readonly<{
+export type ModelConfig<M extends ModelTmpl> =  
+    PureModelConfig<M> &
+    Readonly<{
         app: App,
         parent: ModelTmpl.Parent<M>
-    }> & PureConfig<M>
+    }>
+
+// 模型层节点定义
+export namespace ModelType {
+
 
     // 模基类初始化参数
     export type BaseConfig<
@@ -82,10 +82,10 @@ export namespace ModelType {
     // 子节点序列化参数
     export type ChildConfigDict<M extends ModelTmpl> = {
         [K in KeyOf<ModelTmpl.ChildDict<M>>]: 
-            ModelType.PureConfig<ModelTmpl.ChildDict<M>[K]>
+            PureModelConfig<ModelTmpl.ChildDict<M>[K]>
     }
     export type ChildConfigList<M extends ModelTmpl> = Array<
-        ModelType.PureConfig<ValueOf<ModelTmpl.ChildList<M>>>
+        PureModelConfig<ValueOf<ModelTmpl.ChildList<M>>>
     >
     
 }
