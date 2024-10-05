@@ -19,7 +19,7 @@ export type RootModelTmpl = SpecModelTmpl<{
 }>
 
 export class RootModel extends SpecModel<RootModelTmpl> {
-    protected _effectDict = {};
+    protected _reactDict = {};
 
     constructor(config: ModelType.Config<RootModelTmpl>) {
         const childList = config.childList || [];

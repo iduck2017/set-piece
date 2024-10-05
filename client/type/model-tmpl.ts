@@ -11,7 +11,7 @@ export type ModelTmpl = {
     childList: Array<ModelTmpl>
     childDict: Record<Base.Key, ModelTmpl>,
     eventDict: Base.Dict,
-    effectDict: Base.Dict,
+    reactDict: Base.Dict,
 }
 
 export namespace ModelTmpl {
@@ -22,7 +22,7 @@ export namespace ModelTmpl {
     export type ChildDict<M extends ModelTmpl> = M['childDict']
     export type ChildList<M extends ModelTmpl> = M['childList']
     export type EventDict<M extends ModelTmpl> = M['eventDict']
-    export type EffectDict<M extends ModelTmpl> = M['effectDict']
+    export type ReactDict<M extends ModelTmpl> = M['reactDict']
 }
 
 // 自定义模型层节点定义
@@ -36,5 +36,5 @@ export type SpecModelTmpl<
     childList: Base.VoidList,
     childDict: Base.VoidData
     eventDict: Base.VoidData,
-    effectDict: Base.VoidData,
+    reactDict: Base.VoidData,
 }, M>>

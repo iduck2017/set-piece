@@ -15,7 +15,7 @@ export type TimerModelTmpl = SpecModelTmpl<{
 }>
 
 export class TimerModel extends SpecModel<TimerModelTmpl> {
-    protected _effectDict = {};
+    protected _reactDict = {};
 
     constructor(config: ModelType.Config<TimerModelTmpl>) {
         super({

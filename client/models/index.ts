@@ -27,7 +27,7 @@ export abstract class Model<
 
     // 事件依赖关系
     protected readonly _eventDict: ISignal.Dict<M>;
-    protected abstract readonly _effectDict: IEffect.Dict<M>;
+    protected abstract readonly _reactDict: IEffect.Dict<M>;
 
     // 节点从属关系
     protected readonly _childDict: ModelType.Dict<M>;
@@ -42,7 +42,7 @@ export abstract class Model<
             childDict: this._childDict,
             childList: this._childList,
             eventDict: this._eventDict,
-            effectDict: this._effectDict,
+            reactDict: this._reactDict,
             info: this.actualInfo
         };
     };
@@ -62,15 +62,15 @@ export abstract class Model<
                 childDict: this._childDict,
                 childList: this._childList,
                 eventDict: this._eventDict,
-                effectDict: this._effectDict,
+                reactDict: this._reactDict,
                 info: this.actualInfo
             });
         }
     };
 
-    protected readonly _initEffectDict = (config: {
-        [K in KeyOf<ModelTmpl.EffectDict<M>>]: (
-            event: ModelTmpl.EffectDict<M>[K]
+    protected readonly _initReactDict = (config: {
+        [K in KeyOf<ModelTmpl.ReactDict<M>>]: (
+            event: ModelTmpl.ReactDict<M>[K]
         ) => void;
     }): IEffect.Dict<M> => {
         // 事件处理器
@@ -195,7 +195,7 @@ export abstract class Model<
                 const { modelId, eventKey } = effectWrap;
                 const model = this.app.referenceService.findModel(modelId);
                 if (!model) return;
-                return model._effectDict[eventKey];
+                return model._reactDict[eventKey];
             };
 
             // 绑定事件接收器
@@ -428,8 +428,8 @@ export abstract class Model<
             const child = this._childDict[key];
             child._destroy();
         }
-        for (const key in this._effectDict) {
-            const effect = this._effectDict[key];
+        for (const key in this._reactDict) {
+            const effect = this._reactDict[key];
             effect.destroy();
         }
         for (const key in this._eventDict) {
@@ -448,7 +448,7 @@ export abstract class SpecModel<
     public readonly childDict: ModelType.SpecDict<M>;
     public readonly childList: ModelType.SpecList<M>;
     public readonly eventDict: ISignal.SafeDict<M>;
-    protected readonly effectDict: IEffect.SafeDict<M>;
+    protected readonly reactDict: IEffect.SafeDict<M>;
 
     constructor(config: ModelType.BaseConfig<M>) {
         super(config);
@@ -465,8 +465,8 @@ export abstract class SpecModel<
                 ))
             }
         );
-        this.effectDict = initAutomicProxy(
-            key => this._effectDict[key].effectWrap
+        this.reactDict = initAutomicProxy(
+            key => this._reactDict[key].effectWrap
         );
     }
 }

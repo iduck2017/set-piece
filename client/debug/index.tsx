@@ -16,7 +16,7 @@ export type ModelState<M extends ModelTmpl> = {
     childList: ModelType.List<M>,
     childDict: ModelType.Dict<M>,
     eventDict: ISignal.Dict<M>,
-    effectDict: IEffect.Dict<M>,
+    reactDict: IEffect.Dict<M>,
     info: ModelTmpl.Info<M>
 }
 
@@ -28,7 +28,7 @@ export function ModelComp<
         childList: ModelType.List<M>,
         childDict: ModelType.Dict<M>,
         eventDict: ISignal.Dict<M>,
-        effectDict: IEffect.Dict<M>,
+        reactDict: IEffect.Dict<M>,
         info: ModelTmpl.Info<M>
     }>(model.getState());
 

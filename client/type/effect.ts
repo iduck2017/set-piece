@@ -22,13 +22,13 @@ export namespace IEffect {
 
     // 事件处理器字典
     export type Dict<M extends ModelTmpl> = {
-        [K in KeyOf<ModelTmpl.EffectDict<M>>]: 
-            IEffect<ModelTmpl.EffectDict<M>[K]>
+        [K in KeyOf<ModelTmpl.ReactDict<M>>]: 
+            IEffect<ModelTmpl.ReactDict<M>[K]>
     }
 
     // 封装的事件处理器字典
     export type SafeDict<M extends ModelTmpl> = {
-        [K in KeyOf<ModelTmpl.EffectDict<M>>]: 
-            IEffect.Safe<ModelTmpl.EffectDict<M>[K]>
+        [K in KeyOf<ModelTmpl.ReactDict<M>>]: 
+            IEffect.Safe<ModelTmpl.ReactDict<M>[K]>
     }
 }

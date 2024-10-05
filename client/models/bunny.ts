@@ -10,13 +10,13 @@ export type BunnyModelTmpl = SpecModelTmpl<{
         curAge: number,
         maxAge: number,
     },
-    effectDict: {
+    reactDict: {
         timeUpdateDone: void
     }
 }>
 
 export class BunnyModel extends SpecModel<BunnyModelTmpl> {
-    protected _effectDict = this._initEffectDict({
+    protected _reactDict = this._initReactDict({
         timeUpdateDone: this.handleTimeUpdateDone
     });
 
@@ -36,7 +36,7 @@ export class BunnyModel extends SpecModel<BunnyModelTmpl> {
 
     public readonly initialize = () => {
         this.app.root.childDict.timer.eventDict.timeUpdateDone.bindEffect(
-            this.effectDict.timeUpdateDone
+            this.reactDict.timeUpdateDone
         );
     };
 
