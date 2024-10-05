@@ -2,7 +2,7 @@ import { KeyOf, ValueOf } from ".";
 import type { App } from "../app";
 import { Model } from "../models";
 import { ModelRegistry } from "../services/factory";
-import { ModelTmpl } from "./model-def";
+import { ModelTmpl } from "./model-tmpl";
 
 // 模型层节点定义
 export namespace ModelType {
@@ -10,10 +10,9 @@ export namespace ModelType {
     export type PureConfig<
         M extends ModelTmpl
     > = Readonly<{
-        code: ModelTmpl.Code<M>
         id?: string
-        presetInfo?: Partial<ModelTmpl.StableInfo<M>>
-        labileInfo?: Partial<ModelTmpl.LabileInfo<M>>
+        code: ModelTmpl.Code<M>
+        info?: Partial<ModelTmpl.Info<M>>
         childList?: ModelType.ConfigList<M>,
         childDict?: Partial<ModelType.ConfigDict<M>>,
     }>
@@ -30,12 +29,10 @@ export namespace ModelType {
     export type BaseConfig<
         M extends ModelTmpl
     > = {
+        id?: string,
         app: App,
         code: ModelTmpl.Code<M>,
-        id?: string,
-        presetInfo?: Partial<ModelTmpl.StableInfo<M>>
-        stableInfo: ModelTmpl.StableInfo<M>,
-        labileInfo: ModelTmpl.LabileInfo<M>,
+        info: ModelTmpl.Info<M>,
         parent: ModelTmpl.Parent<M>,
         childList?: ModelType.ConfigList<M>,
         childDict: ModelType.ConfigDict<M>,
@@ -45,10 +42,9 @@ export namespace ModelType {
     export type Bundle<
         M extends ModelTmpl
     > = {
-        code: ModelTmpl.Code<M>,
         id: string;
-        presetInfo?: Partial<ModelTmpl.StableInfo<M>>
-        labileInfo: ModelTmpl.LabileInfo<M>,
+        code: ModelTmpl.Code<M>,
+        info: ModelTmpl.Info<M>,
         childList: ModelType.BundleList<M>,   
         childDict: ModelType.BundleDict<M>,
     }

@@ -1,6 +1,6 @@
 import type { App } from "../app";
 import type { Model } from "../models";
-import { ModelTmpl } from "../type/model-def";
+import { ModelTmpl } from "../type/model-tmpl";
 import { singleton } from "../utils/singleton";
 
 export const MIN_TICKET = 100000;

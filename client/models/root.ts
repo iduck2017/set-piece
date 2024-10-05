@@ -2,13 +2,13 @@ import { SpecModel } from ".";
 import { App } from "../app";
 import { ModelCode } from "../services/factory";
 import { ModelType } from "../type/model";
-import { SpecModelTmpl } from "../type/model-def";
+import { SpecModelTmpl } from "../type/model-tmpl";
 import { BunnyModelTmpl } from "./bunny";
 import { TimerModelTmpl } from "./timer";
 
 export type RootModelTmpl = SpecModelTmpl<{
     code: ModelCode.Root,
-    labileInfo: {
+    info: {
         progress: number,
     },
     childDict: {
@@ -30,9 +30,8 @@ export class RootModel extends SpecModel<RootModelTmpl> {
         }
         super({
             ...config,
-            stableInfo: {},
-            labileInfo: {
-                progress: config.labileInfo?.progress || 0
+            info: {
+                progress: config.info?.progress || 0
             },
             childDict: {
                 timer: config.childDict?.timer || {

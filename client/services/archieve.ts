@@ -90,7 +90,7 @@ export class ArchieveService {
         // 更新档案信息
         this._data[index] = {
             ...slot,
-            progress: rootModel.info.progress
+            progress: rootModel.actualInfo.progress
         };
         await localStorage.setItem(path, JSON.stringify(record));
         await this.app.saveMetaData();

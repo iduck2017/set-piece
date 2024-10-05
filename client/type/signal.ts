@@ -1,7 +1,7 @@
 import { KeyOf, Override } from ".";
 import { IEffect } from "./effect";
 import { StateUpdateBefore, StateUpdateDone } from "./event";
-import { ModelTmpl } from "./model-def";
+import { ModelTmpl } from "./model-tmpl";
 
 // 事件触发器
 export type ISignal<E = any> = 
@@ -24,8 +24,8 @@ export namespace ISignal {
 
     // 事件触发器字典
     export type Dict<M extends ModelTmpl> = Override<{
-        [K in KeyOf<ModelTmpl.SignalDict<M>>]:
-            ISignal<ModelTmpl.SignalDict<M>[K]>;
+        [K in KeyOf<ModelTmpl.EventDict<M>>]:
+            ISignal<ModelTmpl.EventDict<M>[K]>;
     }, {
         stateUpdateBefore: {
             [K in KeyOf<ModelTmpl.Info<M>>]:
@@ -39,8 +39,8 @@ export namespace ISignal {
 
     // 受封装的事件触发器字典
     export type SafeDict<M extends ModelTmpl> = Override<{
-        [K in KeyOf<ModelTmpl.SignalDict<M>>]:
-            ISignal.Safe<ModelTmpl.SignalDict<M>[K]>;
+        [K in KeyOf<ModelTmpl.EventDict<M>>]:
+            ISignal.Safe<ModelTmpl.EventDict<M>[K]>;
     }, {
         stateUpdateBefore: {
             [K in KeyOf<ModelTmpl.Info<M>>]:

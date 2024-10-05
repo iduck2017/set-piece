@@ -5,7 +5,7 @@ import { RootModel } from "../models/root";
 import { TimerModel } from "../models/timer";
 import { Base } from "../type";
 import { ModelType } from "../type/model";
-import { ModelTmpl } from "../type/model-def";
+import { ModelTmpl } from "../type/model-tmpl";
 import { singleton } from "../utils/singleton";
 
 /** 模型注册表 */

@@ -1,12 +1,12 @@
 import { SpecModel } from ".";
 import { ModelCode } from "../services/factory";
 import { ModelType } from "../type/model";
-import { SpecModelTmpl } from "../type/model-def";
+import { SpecModelTmpl } from "../type/model-tmpl";
 import { Random } from "../utils/random";
 
 export type BunnyModelTmpl = SpecModelTmpl<{
     code: ModelCode.Bunny,
-    labileInfo: {
+    info: {
         curAge: number,
         maxAge: number,
     },
@@ -24,11 +24,10 @@ export class BunnyModel extends SpecModel<BunnyModelTmpl> {
         super({
             ...config,
             childDict: {},
-            labileInfo: {
-                curAge: config.labileInfo?.curAge || 0,
-                maxAge: config.labileInfo?.maxAge ||  Random.number(-25, 25) + 100
-            },
-            stableInfo: {}
+            info: {
+                curAge: config.info?.curAge || 0,
+                maxAge: config.info?.maxAge ||  Random.number(-25, 25) + 100
+            }
         });
         this.testcaseDict = {
             spawnChild: this.spawnChild
@@ -36,7 +35,7 @@ export class BunnyModel extends SpecModel<BunnyModelTmpl> {
     }
 
     public readonly initialize = () => {
-        this.app.root.childDict.timer.signalDict.timeUpdateDone.bindEffect(
+        this.app.root.childDict.timer.eventDict.timeUpdateDone.bindEffect(
             this.effectDict.timeUpdateDone
         );
     };
@@ -57,6 +56,6 @@ export class BunnyModel extends SpecModel<BunnyModelTmpl> {
 
     /** 年龄增长 */
     private handleTimeUpdateDone() {
-        this._labileInfo.curAge += 1;
+        this._originInfo.curAge += 1;
     }
 }

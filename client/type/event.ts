@@ -1,5 +1,5 @@
 import { Model } from "../models";
-import { ModelTmpl } from "./model-def";
+import { ModelTmpl } from "./model-tmpl";
 
 export type StateUpdateBefore<
     M extends ModelTmpl, T

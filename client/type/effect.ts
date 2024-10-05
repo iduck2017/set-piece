@@ -1,5 +1,5 @@
 import { KeyOf } from ".";
-import { ModelTmpl } from "./model-def";
+import { ModelTmpl } from "./model-tmpl";
 import { ISignal } from "./signal";
 
 // 事件处理器

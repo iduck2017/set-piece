@@ -5,7 +5,7 @@ import "./index.css";
 import { ModelType } from "../type/model";
 import { ISignal } from "../type/signal";
 import { IEffect } from "../type/effect";
-import { ModelTmpl } from "../type/model-def";
+import { ModelTmpl } from "../type/model-tmpl";
 
 export type ModelProps<M extends ModelTmpl> = {
     model: Model<M>,
@@ -15,7 +15,7 @@ export type ModelProps<M extends ModelTmpl> = {
 export type ModelState<M extends ModelTmpl> = {
     childList: ModelType.List<M>,
     childDict: ModelType.Dict<M>,
-    signalDict: ISignal.Dict<M>,
+    eventDict: ISignal.Dict<M>,
     effectDict: IEffect.Dict<M>,
     info: ModelTmpl.Info<M>
 }
@@ -27,7 +27,7 @@ export function ModelComp<
     const [ state, setState ] = useState<{
         childList: ModelType.List<M>,
         childDict: ModelType.Dict<M>,
-        signalDict: ISignal.Dict<M>,
+        eventDict: ISignal.Dict<M>,
         effectDict: IEffect.Dict<M>,
         info: ModelTmpl.Info<M>
     }>(model.getState());
