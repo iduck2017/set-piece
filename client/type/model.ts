@@ -1,8 +1,8 @@
 import { KeyOf, ValueOf } from ".";
 import type { App } from "../app";
 import type { Model } from "../models";
-import { ModelRegistry } from "../services/factory";
 import { ModelDef } from "./model-def";
+import { ModelReg } from "./model-reg";
 
 export type PureModelConfig<
     M extends ModelDef
@@ -49,7 +49,7 @@ export namespace ModelType {
 
     
     export type Spec<M extends ModelDef> = 
-        InstanceType<ModelRegistry[ModelDef.Code<M>]>
+        InstanceType<ModelReg[ModelDef.Code<M>]>
 
     // 子节点字典/列表
     export type ChildDict<M extends ModelDef> = {

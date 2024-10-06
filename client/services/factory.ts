@@ -6,28 +6,15 @@ import { TimerModel } from "../models/timer";
 import { Base } from "../type";
 import type { ModelConfig } from "../type/model";
 import { ModelDef } from "../type/model-def";
+import { ModelReg } from "../type/model-reg";
 import { singleton } from "../utils/singleton";
-
-/** 模型注册表 */
-export enum ModelCode {
-    Root = 'root',
-    Timer = 'timer',
-    Bunny = 'bunny',
-}
-
-/** 数据到模型 */
-export type ModelRegistry = {
-    root: typeof RootModel,
-    timer: typeof TimerModel,
-    bunny: typeof BunnyModel,
-};
 
 
 @singleton
 export class FactoryService {
     public readonly app: App;
 
-    private _productDict: ModelRegistry;
+    private _productDict: ModelReg;
 
     constructor(app: App) {
         this.app = app;

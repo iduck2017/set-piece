@@ -1,8 +1,8 @@
 import { SpecModel } from ".";
-import { App } from "../app";
-import { ModelCode } from "../services/factory";
+import type { App } from "../app";
 import { ModelConfig, PureModelConfig } from "../type/model";
 import { SpecModelDef } from "../type/model-def";
+import { ModelCode } from "../type/model-reg";
 import { BunnyModelDef } from "./bunny";
 import { TimerModelDef } from "./timer";
 

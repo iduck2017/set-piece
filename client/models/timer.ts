@@ -1,7 +1,7 @@
 import { SpecModel } from ".";
-import { ModelCode } from "../services/factory";
 import { ModelConfig } from "../type/model";
 import { SpecModelDef } from "../type/model-def";
+import { ModelCode } from "../type/model-reg";
 
 export type TimerModelDef = SpecModelDef<{
     code: ModelCode.Timer,

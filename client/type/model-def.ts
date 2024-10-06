@@ -1,7 +1,7 @@
 import { Base, Override } from ".";
 import type { App } from "../app";
 import type { Model } from "../models";
-import type { ModelCode } from "../services/factory";
+import { ModelCode } from "./model-reg";
 
 // 模型层节点定义
 export type ModelDef = {

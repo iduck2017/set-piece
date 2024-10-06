@@ -1,7 +1,6 @@
 import { KeyOf } from "../type";
 import { ModelDef } from "../type/model-def";
 import { initAutomicProxy, initReadonlyProxy } from "../utils/proxy";
-import { ModelCode } from "../services/factory";
 import { ModelState } from "../debug";
 import { 
     Event,
@@ -16,6 +15,7 @@ import {
 } from "../type/event";
 import { ModelType, PureModelConfig } from "../type/model";
 import type { App } from "../app";
+import { ModelCode } from "../type/model-reg";
 
 
 // 模型层节点
