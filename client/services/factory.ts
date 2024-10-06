@@ -1,11 +1,11 @@
 import type { App } from "../app";
-import { Model } from "../models";
+import type { Model } from "../models";
 import { BunnyModel } from "../models/bunny";
 import { RootModel } from "../models/root";
 import { TimerModel } from "../models/timer";
 import { Base } from "../type";
-import { ModelConfig } from "../type/model";
-import { ModelTmpl } from "../type/model-tmpl";
+import type { ModelConfig } from "../type/model";
+import { ModelDef } from "../type/model-def";
 import { singleton } from "../utils/singleton";
 
 /** 模型注册表 */
@@ -40,7 +40,7 @@ export class FactoryService {
     }
 
     // 生成反序列化节点
-    public readonly unserialize = <C extends ModelTmpl>(
+    public readonly unserialize = <C extends ModelDef>(
         config: ModelConfig<C>
     ): Model<C> => {
         const Type: Base.Class = this._productDict[config.code];

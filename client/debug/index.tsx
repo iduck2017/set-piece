@@ -3,28 +3,29 @@ import type { App } from "../app";
 import type { Model } from "../models";
 import "./index.css";
 import { ModelType } from "../type/model";
-import { EventDict } from "../type/event";
-import { ReactDict } from "../type/react";
-import { ModelTmpl } from "../type/model-tmpl";
+import { EventDict, ModifyEventDict, ReactDict, UpdateEventDict } from "../type/event";
+import { ModelDef } from "../type/model-def";
 
-export type ModelProps<M extends ModelTmpl> = {
+export type ModelProps<M extends ModelDef> = {
     model: Model<M>,
     app: App
 }
 
-export type ModelState<M extends ModelTmpl> = {
+export type ModelState<M extends ModelDef> = {
     childList: ModelType.ChildList<M>,
     childDict: ModelType.ChildDict<M>,
     eventDict: EventDict<M>,
+    updateEventDict: UpdateEventDict<M>,
+    modifyEventDict: ModifyEventDict<M>,
     reactDict: ReactDict<M>,
-    info: ModelTmpl.Info<M>
+    info: ModelDef.Info<M>
 }
 
 export function ModelComp<
-    M extends ModelTmpl
+    M extends ModelDef
 >(props: ModelProps<M>) {
     const { model, app } = props;
-    const [ state, setState ] = useState<ModelState<M>>(model.getState());
+    const [ state, setState ] = useState<ModelState<M>>(model.getState);
 
     useEffect(() => {
         setState(model.getState());

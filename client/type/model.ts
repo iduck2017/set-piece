@@ -1,89 +1,89 @@
 import { KeyOf, ValueOf } from ".";
 import type { App } from "../app";
-import { Model } from "../models";
+import type { Model } from "../models";
 import { ModelRegistry } from "../services/factory";
-import { ModelTmpl } from "./model-tmpl";
+import { ModelDef } from "./model-def";
 
 export type PureModelConfig<
-    M extends ModelTmpl
+    M extends ModelDef
 > = Readonly<{
     id?: string
-    code: ModelTmpl.Code<M>
-    info?: Partial<ModelTmpl.Info<M>>
+    code: ModelDef.Code<M>
+    info?: Partial<ModelDef.Info<M>>
     childList?: ModelType.ChildConfigList<M>,
     childDict?: Partial<ModelType.ChildConfigDict<M>>,
 }>
 
-export type ModelConfig<M extends ModelTmpl> =  
+export type ModelConfig<M extends ModelDef> =  
     PureModelConfig<M> &
     Readonly<{
         app: App,
-        parent: ModelTmpl.Parent<M>
+        parent: ModelDef.Parent<M>
     }>
 
 // 模型层节点定义
 export namespace ModelType {
     // 模基类初始化参数
     export type BaseConfig<
-        M extends ModelTmpl
+        M extends ModelDef
     > = {
         id?: string,
         app: App,
-        code: ModelTmpl.Code<M>,
-        info: ModelTmpl.Info<M>,
-        parent: ModelTmpl.Parent<M>,
+        code: ModelDef.Code<M>,
+        info: ModelDef.Info<M>,
+        parent: ModelDef.Parent<M>,
         childList?: ModelType.ChildConfigList<M>,
         childDict: ModelType.ChildConfigDict<M>,
     }
 
     // 序列化参数
     export type Bundle<
-        M extends ModelTmpl
+        M extends ModelDef
     > = {
         id: string;
-        code: ModelTmpl.Code<M>,
-        info: ModelTmpl.Info<M>,
+        code: ModelDef.Code<M>,
+        info: ModelDef.Info<M>,
         childList: ModelType.ChildBundleList<M>,   
         childDict: ModelType.ChildBundleDict<M>,
     }
 
     
-    export type Spec<M extends ModelTmpl> = 
-        InstanceType<ModelRegistry[ModelTmpl.Code<M>]>
+    export type Spec<M extends ModelDef> = 
+        InstanceType<ModelRegistry[ModelDef.Code<M>]>
 
     // 子节点字典/列表
-    export type ChildDict<M extends ModelTmpl> = {
-        [K in KeyOf<ModelTmpl.ChildDict<M>>]: 
-            Model<ModelTmpl.ChildDict<M>[K]>
+    export type ChildDict<M extends ModelDef> = {
+        [K in KeyOf<ModelDef.ChildDict<M>>]: 
+            Model<ModelDef.ChildDict<M>[K]>
     }
-    export type SpecChildDict<M extends ModelTmpl> = {
-        [K in KeyOf<ModelTmpl.ChildDict<M>>]: 
-            ModelType.Spec<ModelTmpl.ChildDict<M>[K]>
+    export type SpecChildDict<M extends ModelDef> = {
+        [K in KeyOf<ModelDef.ChildDict<M>>]: 
+            ModelType.Spec<ModelDef.ChildDict<M>[K]>
     }
 
-    export type ChildList<M extends ModelTmpl> = Array<
-        Model<ValueOf<ModelTmpl.ChildList<M>>>
+    export type ChildList<M extends ModelDef> = Array<
+        Model<ValueOf<ModelDef.ChildList<M>>>
     >
-    export type SpecChildList<M extends ModelTmpl> = Array<
-        ModelType.Spec<ValueOf<ModelTmpl.ChildList<M>>>
+    export type SpecChildList<M extends ModelDef> = Array<
+        ModelType.Spec<ValueOf<ModelDef.ChildList<M>>>
     >
 
     // 子节点反序列化参数
-    export type ChildBundleDict<M extends ModelTmpl> = {
-        [K in KeyOf<ModelTmpl.ChildDict<M>>]:
-            ModelType.Bundle<ModelTmpl.ChildDict<M>[K]>
+    export type ChildBundleDict<M extends ModelDef> = {
+        [K in KeyOf<ModelDef.ChildDict<M>>]:
+            ModelType.Bundle<ModelDef.ChildDict<M>[K]>
     }
-    export type ChildBundleList<M extends ModelTmpl> = Array<
-        ModelType.Bundle<ValueOf<ModelTmpl.ChildList<M>>>
+    export type ChildBundleList<M extends ModelDef> = Array<
+        ModelType.Bundle<ValueOf<ModelDef.ChildList<M>>>
     >
 
     // 子节点序列化参数
-    export type ChildConfigDict<M extends ModelTmpl> = {
-        [K in KeyOf<ModelTmpl.ChildDict<M>>]: 
-            PureModelConfig<ModelTmpl.ChildDict<M>[K]>
+    export type ChildConfigDict<M extends ModelDef> = {
+        [K in KeyOf<ModelDef.ChildDict<M>>]: 
+            PureModelConfig<ModelDef.ChildDict<M>[K]>
     }
-    export type ChildConfigList<M extends ModelTmpl> = Array<
-        PureModelConfig<ValueOf<ModelTmpl.ChildList<M>>>
+    export type ChildConfigList<M extends ModelDef> = Array<
+        PureModelConfig<ValueOf<ModelDef.ChildList<M>>>
     >
     
 }

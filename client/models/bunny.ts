@@ -1,10 +1,10 @@
 import { SpecModel } from ".";
 import { ModelCode } from "../services/factory";
 import { ModelConfig } from "../type/model";
-import { SpecModelTmpl } from "../type/model-tmpl";
+import { SpecModelDef } from "../type/model-def";
 import { Random } from "../utils/random";
 
-export type BunnyModelTmpl = SpecModelTmpl<{
+export type BunnyModelDef = SpecModelDef<{
     code: ModelCode.Bunny,
     info: {
         curAge: number,
@@ -15,12 +15,12 @@ export type BunnyModelTmpl = SpecModelTmpl<{
     }
 }>
 
-export class BunnyModel extends SpecModel<BunnyModelTmpl> {
+export class BunnyModel extends SpecModel<BunnyModelDef> {
     protected _reactDict = this._initReactDict({
         timeUpdateDone: this.handleTimeUpdateDone
     });
 
-    constructor(config: ModelConfig<BunnyModelTmpl>) {
+    constructor(config: ModelConfig<BunnyModelDef>) {
         super({
             ...config,
             childDict: {},
