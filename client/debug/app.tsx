@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import type { App } from "../app";
 import { ModelComp } from ".";
 import type { ArchieveData } from "../services/archieve";
@@ -29,6 +29,10 @@ export function AppComp(props: {
         await app.quitGame();
         setStatus(app.status);
     };
+
+    useEffect(() => {
+        startGame(0);
+    }, []);
 
     if (status === AppStatus.UNMOUNTED) {
         return <div>

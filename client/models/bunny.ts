@@ -29,7 +29,7 @@ export class BunnyModel extends SpecModel<BunnyModelTmpl> {
                 maxAge: config.info?.maxAge ||  Random.number(-25, 25) + 100
             }
         });
-        this.testcaseDict = {
+        this.apiDict = {
             spawnChild: this.spawnChild
         };
     }

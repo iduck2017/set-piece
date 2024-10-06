@@ -38,41 +38,79 @@ export function ModelComp<
     } = state;
 
     return (
-        <div
-            className="model" 
-            id={model.id}
-        >
+        <div className="model" id={model.id}>
             <div className="data">
                 <div className="title">{model.constructor.name}</div>
+                <div className="row">
+                    <div className="field">Code</div>
+                    <div className="value">{model.code}</div>
+                </div>
+                <div className="row">
+                    <div className="field">ID</div>
+                    <div className="value">{model.id}</div>
+                </div>
+                <div className="row">
+                    <div className="field">Info</div>
+                    <div className="value">
+                        <div className="function">open</div>
+                        <div className="function">fold</div>
+                    </div>
+                </div>
                 {Object.keys(info).map(key => (
                     <div className="row" key={key}>
                         <div className="key">{key}</div>
                         <div className="value">{info[key]}</div>
                     </div>
                 ))}
-                {Object.keys(model.testcaseDict).map(key => (
+                <div className="row">
+                    <div className="field">Child</div>
+                    <div className="value">
+                        <div className="function">open</div>
+                        <div className="function">fold</div>
+                    </div>
+                </div>
+                {Object.keys(childDict).map(key => (
+                    <div className="row" key={key}>
+                        <div className="key">{key}</div>
+                        <div className="function">check</div>
+                    </div>
+                ))}
+                {childList.map((item, index) => (
+                    <div className="row" key={index}>
+                        <div className="key">iterator[{index}]</div>
+                        <div className="function">check</div>
+                    </div>
+                ))}
+                <div className="row">
+                    <div className="field">API</div>
+                    <div className="value">
+                        <div className="function">open</div>
+                        <div className="function">fold</div>
+                    </div>
+                </div>
+                {Object.keys(model.apiDict).map(key => (
                     <div className="row" key={key}>
                         <div className="key">{key}</div>
                         <div 
                             className="function"
                             onClick={() => {
-                                model.testcaseDict[key].call(model);
+                                model.apiDict[key].call(model);
                             }}
                         >
-                            function
+                            call
                         </div>
                     </div>
                 ))}
             </div>
             <div className="children">
-                {childList.map((item) => (
+                {childList.map(item => (
                     <ModelComp 
                         key={item.id}
                         model={item as any}
                         app={app}
                     />
                 ))}
-                {Object.values(childDict).map((item) => (
+                {Object.values(childDict).map(item => (
                     <ModelComp 
                         key={item.id}
                         model={item as any}

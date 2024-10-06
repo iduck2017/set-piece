@@ -25,7 +25,7 @@ export class TimerModel extends SpecModel<TimerModelTmpl> {
             },
             childDict: {}
         });
-        this.testcaseDict = {
+        this.apiDict = {
             updateTime: this._updateTime.bind(this, 1)
         };
     }

@@ -34,7 +34,7 @@ export abstract class Model<
     protected readonly _childList: ModelType.ChildList<M>;
 
     // 调试器相关
-    public testcaseDict: Record<string, () => void>;
+    public apiDict: Record<string, () => void>;
     public readonly setterList: Array<(data: ModelState<M>) => void>;
 
     public readonly getState = () => {
@@ -317,7 +317,7 @@ export abstract class Model<
         });
 
         // 初始化调试器
-        this.testcaseDict = {};
+        this.apiDict = {};
         this.setterList = [];
 
         // 初始化根节点业务逻辑

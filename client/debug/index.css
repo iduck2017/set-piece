@@ -1,12 +1,12 @@
 .model {
     display: flex;
-    font-size: 14px;
+    font-size: 12px;
 }
 
 .data {
     display: flex;
     flex-direction: column;
-    width: 200px;
+    width: max-content;
     margin-right: 8px;
     margin-bottom: 8px;
 }
@@ -15,17 +15,19 @@
     display: flex;
 }
 
-
 .row:nth-of-type(odd) {
-    background: #f8f8f8;
+    background: #edfcdf;
 }
 
 .row:nth-of-type(even) {
-    background: #f0f0f0;
+    background: #f6ffed;
 }
 
 .title {
-    background: #f0f0f0;
+    background: #edfcdf;
+    font-weight: bold;
+    line-height: 21px;
+    text-align: center;
 }
 
 .children {
@@ -35,14 +37,25 @@
 
 .key {
     width: 100px;
+    padding-left: 4px;
 }
 
 .value {
+    width: 80px;
+    display: flex;
+    padding-right: 4px;
+    overflow: hidden;
+}
+
+.field {
     width: 100px;
+    padding-left: 4px;
+    font-weight: bold;
 }
 
 .function {
     text-decoration: underline;
     cursor: pointer;
-    color: #4d6aff
+    margin-right: 4px;
+    color: #4d6aff;
 }

@@ -3,6 +3,7 @@ import { ReactIntf } from "./react";
 import { ModelTmpl } from "./model-tmpl";
 import { Model } from "../models";
 
+const EVENT_SYMBOL = Symbol('eventSymbol');
 
 export type StateUpdateBefore<
     M extends ModelTmpl, T
@@ -25,13 +26,13 @@ export type StateUpdateDone<
 export type EventIntf<E = any> = 
     SafeEvent<E> &
     Readonly<{
+        model: Model;
         reactList: ReactIntf<E>[];
         safeEvent: SafeEvent<E>;
         emitEvent: (event: E) => void;
         destroy: () => void;
     }>
 
-const EVENT_SYMBOL = Symbol('eventSymbol');
 export type SafeEvent<E = any> = Readonly<{
     modelId: string;
     eventKey: string;
