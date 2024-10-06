@@ -16,10 +16,7 @@ export type BunnyModelDef = SpecModelDef<{
 }>
 
 export class BunnyModel extends SpecModel<BunnyModelDef> {
-    protected _reactDict = this._initReactDict({
-        timeUpdateDone: this.handleTimeUpdateDone
-    });
-
+   
     constructor(config: ModelConfig<BunnyModelDef>) {
         super({
             ...config,
@@ -34,29 +31,27 @@ export class BunnyModel extends SpecModel<BunnyModelDef> {
         };
     }
 
-    public readonly initialize = () => {
+    protected readonly _activate = () => {
         const timer = this.app.root.childDict.timer;
         this._reactDict.timeUpdateDone.bindEvent(
             timer.eventDict.timeUpdateDone
         );
     };
 
-    // public bootDriver() {
-    //     const timer = this.root.childDict.time;
-    //     timer.emitterDict.tickDone.bindHandler(
-    //         this._handlerDict.tickDone
-    //     );
-    // }
-
     // /** 繁殖幼崽 */
-    public spawnChild() {
+    public readonly spawnChild = () => {
         this.app.root.spawnCreature({
             code: ModelCode.Bunny
         });
-    }
+    };
 
     /** 年龄增长 */
-    private handleTimeUpdateDone() {
+    private readonly _handleTimeUpdateDone = () => {
+        console.log('growing');
         this._originInfo.curAge += 1;
-    }
+    };
+
+    protected _reactDict = this._initReactDict({
+        timeUpdateDone: this._handleTimeUpdateDone
+    });
 }

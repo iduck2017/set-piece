@@ -49,6 +49,9 @@ export abstract class Model<
     public apiDict: Record<string, () => void>;
     public readonly setterList: Array<(data: ModelState<M>) => void>;
 
+    // 初始化
+    private _isActived?: boolean;
+
     public readonly getState = (): ModelState<M> => {
         return {
             childDict: this._childDict,
@@ -93,7 +96,7 @@ export abstract class Model<
     ): ReactDict<M> => {
         return initAutomicProxy(key => (
             new React(
-                callback[key],
+                callback[key].bind(this),
                 this._setState
             )
         ));
@@ -153,7 +156,7 @@ export abstract class Model<
                 value: ModelType.ChildDict<M>[K]
             ) => {
                 target[key] = value;
-                value._initialize();
+                value.activate();
                 this._setState();
                 return true;
             },
@@ -174,7 +177,7 @@ export abstract class Model<
                 target[key] = value;
                 if (typeof key !== 'symbol' && !isNaN(Number(key))) {
                     const model: Model = value;
-                    model._initialize();
+                    model.activate();
                     this._setState();
                 }
                 return true;
@@ -253,16 +256,18 @@ export abstract class Model<
     };
 
     // 执行初始化函数
-    public readonly initialize = () => {};
-    private readonly _initialize = () => {
-        this.initialize();
+    protected readonly _activate = () => {};
+    public readonly activate = () => {
+        if (this._isActived) throw new Error();
+        this._activate();
         for (const child of this._childList) {
-            child._initialize();
+            child.activate();
         }
         for (const key in this._childDict) {
             const child = this._childDict[key];
-            child._initialize();
+            child.activate();
         }
+        this._isActived = true;
     };
 
     // 执行析构函数

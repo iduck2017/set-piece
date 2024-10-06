@@ -70,6 +70,7 @@ export class App {
             app: this,
             parent: this
         });
+        this._root.activate();
         this._status = AppStatus.MOUNTED;
     }
 

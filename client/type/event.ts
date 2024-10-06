@@ -37,6 +37,7 @@ export class Event<E = any> {
     private readonly _bindDone?: (event: Event<E>) => void; 
 
     public readonly bindReact = (react: React<E>) => {
+        console.log('bindReact', this._reactList);
         const index = this._reactList.indexOf(react);
         if (index >= 0) return;
         this._reactList.push(react);
@@ -53,6 +54,7 @@ export class Event<E = any> {
     };
 
     public readonly emitEvent = (event: E) => {
+        console.log('emitEvent', this._reactList);
         this._reactList.forEach(react => {
             react.handleEvent(event);
         });
