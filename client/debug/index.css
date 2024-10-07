@@ -38,6 +38,7 @@
 .key {
     width: 100px;
     padding-left: 4px;
+    overflow: hidden;
 }
 
 .value {
@@ -45,6 +46,10 @@
     display: flex;
     padding-right: 4px;
     overflow: hidden;
+}
+
+.row.fold {
+    background: #f0f0f0;
 }
 
 .field {

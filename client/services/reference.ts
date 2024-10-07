@@ -3,8 +3,8 @@ import type { Model } from "../models";
 import { ModelDef } from "../type/model-def";
 import { singleton } from "../utils/singleton";
 
-export const MIN_TICKET = 100000;
-export const MAX_TICKET = 999999;
+export const MIN_TICKET = 100;
+export const MAX_TICKET = 999;
 
 @singleton
 export class ReferenceService {
@@ -18,9 +18,9 @@ export class ReferenceService {
         if (this._ticket > MAX_TICKET) {
             this._ticket = MIN_TICKET;
             while (now === this._timestamp) now = Date.now();
-            this._timestamp = now;
         }
-        return ticket.toString(16) + now.toString(16);
+        this._timestamp = now;
+        return now.toString(36) + ticket.toString(36);
     }
 
     constructor(app: App) {

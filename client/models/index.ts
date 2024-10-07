@@ -5,17 +5,16 @@ import { ModelState } from "../debug";
 import { 
     Event,
     EventDict, 
-    ModifyEventDict, 
-    ModifySafeEventDict, 
-    React, 
-    ReactDict, 
-    SafeEventDict, 
+    ModifyEventDict,
     UpdateEventDict, 
-    UpdateSafeEventDict
-} from "../type/event";
+    SafeEventDict, 
+    UpdateSafeEventDict,
+    ModifySafeEventDict 
+} from "../utils/event";
 import { ModelType, PureModelConfig } from "../type/model";
 import type { App } from "../app";
 import { ModelCode } from "../type/model-reg";
+import { React, ReactDict } from "../utils/react";
 
 
 // 模型层节点

@@ -8,7 +8,7 @@ import { RenderService } from "./services/render";
 import { META_SAVE_PATH } from "./configs/context";
 import { AppStatus } from "./type/status";
 
-export type MetaData = {
+export type AppInfo = {
     majorVersion: number
     minorVersion: number
     patchVersion: number
@@ -83,7 +83,7 @@ export class App {
     }
 
     public async saveMetaData() {
-        const save: MetaData = {
+        const save: AppInfo = {
             majorVersion: this.majorVersion,
             minorVersion: this.minorVersion,
             patchVersion: this.patchVersion,
@@ -93,10 +93,10 @@ export class App {
         await localStorage.setItem(META_SAVE_PATH, JSON.stringify(save));
     } 
     
-    private async _loadMetaData(): Promise<MetaData> {
+    private async _loadMetaData(): Promise<AppInfo> {
         const raw = await localStorage.getItem(META_SAVE_PATH);
-        if (!raw) return Generator.appMetaData();
-        const result = JSON.parse(raw) as MetaData;
+        if (!raw) return Generator.appInfo();
+        const result = JSON.parse(raw) as AppInfo;
         return result;
     }
 }

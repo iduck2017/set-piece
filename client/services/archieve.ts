@@ -45,7 +45,7 @@ export class ArchieveService {
             name: 'hello',
             progress: 0
         });
-        const record = Generator.rootModelConfig();
+        const record = Generator.rootConfig();
         await localStorage.setItem(`${ARCHIEVE_SAVE_PATH}_${id}`, JSON.stringify(record));
         await this.app.saveMetaData();
         return record;
