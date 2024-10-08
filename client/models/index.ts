@@ -46,12 +46,12 @@ export abstract class Model<
 
     // 调试器相关
     public apiDict: Record<string, () => void>;
-    public readonly setterList: Array<(data: ModelState<M>) => void>;
+    private readonly _setterList: Array<(data: ModelState<M>) => void>;
 
     // 初始化
     private _isActived?: boolean;
 
-    public readonly getState = (): ModelState<M> => {
+    public readonly _getState = (): ModelState<M> => {
         return {
             childDict: this._childDict,
             childList: this._childList,
@@ -63,17 +63,17 @@ export abstract class Model<
         };
     };
 
-    public readonly useState = (setter: (data: ModelState<M>) => void) => {
-        this.setterList.push(setter);
+    public readonly _useState = (setter: (data: ModelState<M>) => void) => {
+        this._setterList.push(setter);
         return () => {
-            const index = this.setterList.indexOf(setter);
+            const index = this._setterList.indexOf(setter);
             if (index < 0) throw new Error();
-            this.setterList.splice(index, 1);
+            this._setterList.splice(index, 1);
         };
     };
 
     private readonly _setState = () => {
-        for (const useModel of this.setterList) {
+        for (const useModel of this._setterList) {
             useModel({
                 childDict: this._childDict,
                 childList: this._childList,
@@ -196,7 +196,7 @@ export abstract class Model<
 
         // 初始化调试器
         this.apiDict = {};
-        this.setterList = [];
+        this._setterList = [];
     }
 
     // 更新状态

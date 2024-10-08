@@ -1,6 +1,8 @@
 .model {
     display: flex;
     font-size: 12px;
+    color: #262626; 
+    user-select: none; 
 }
 
 .data {
@@ -13,21 +15,22 @@
 
 .row {
     display: flex;
+    width: 150px;
 }
 
 .row:nth-of-type(odd) {
-    background: #edfcdf;
+    background: #cbe0bb;
 }
 
 .row:nth-of-type(even) {
-    background: #f6ffed;
+    background: #d4e1ca;
 }
 
-.title {
-    background: #edfcdf;
+.head {
+    background: #cbe0bb;
     font-weight: bold;
-    line-height: 21px;
     text-align: center;
+    cursor: pointer;
 }
 
 .children {
@@ -36,31 +39,38 @@
 }
 
 .key {
-    width: 100px;
     padding-left: 4px;
     overflow: hidden;
+    margin-right: 4px;
 }
 
 .value {
-    width: 80px;
     display: flex;
     padding-right: 4px;
     overflow: hidden;
 }
 
-.row.fold {
-    background: #f0f0f0;
+.fold:nth-of-type(even) {
+    background: #d0d0d0;
 }
 
-.field {
-    width: 100px;
-    padding-left: 4px;
+.fold:nth-of-type(odd) {
+    background: #d4d4d4;
+}
+
+.title {
     font-weight: bold;
 }
 
-.function {
+.link {
     text-decoration: underline;
     cursor: pointer;
     margin-right: 4px;
     color: #4d6aff;
+}
+
+.icon {
+    margin-left: auto;
+    margin-right: 4px;
+    cursor: pointer;
 }
