@@ -2,6 +2,7 @@ import { KeyOf } from "../type";
 import { ModelDef } from "../type/model-def";
 import { StateUpdateBefore, StateUpdateDone } from "../type/event";
 import type { React } from "./react";
+import { App } from "../app";
 
 export type EventDict<M extends ModelDef> = {
     [K in KeyOf<ModelDef.EventDict<M>>]: Event<ModelDef.EventDict<M>[K]>;
@@ -14,14 +15,24 @@ export type UpdateEventDict<M extends ModelDef> = {
 }
 
 export class Event<E = any> {
+    public readonly id: string;
+
     private readonly _reactList: React<E>[];
+    public get reactIdList() {
+        return this._reactList.map(react => react.id);
+    }
+
     public readonly safeEvent: SafeEvent<E>;
 
     constructor(
+        app: App,
         bindDone?: (event: Event<E>) => void
     ) {
+        this.id = app.referenceService.ticket;
         this._reactList = [];
+
         this.safeEvent = {
+            id: this.id,
             bindReact: this.bindReact.bind(this),
             unbindReact: this.unbindReact.bind(this)
         };
@@ -31,7 +42,6 @@ export class Event<E = any> {
     private readonly _bindDone?: (event: Event<E>) => void; 
 
     public readonly bindReact = (react: React<E>) => {
-        console.log('bindReact', this._reactList);
         const index = this._reactList.indexOf(react);
         if (index >= 0) return;
         this._reactList.push(react);
@@ -48,7 +58,6 @@ export class Event<E = any> {
     };
 
     public readonly emitEvent = (event: E) => {
-        console.log('emitEvent', this._reactList);
         this._reactList.forEach(react => {
             react.handleEvent(event);
         });
@@ -63,6 +72,7 @@ export class Event<E = any> {
 
 
 export type SafeEvent<E = any> = {
+    id: string;
     bindReact: (react: React<E>) => void;
     unbindReact: (react: React<E>) => void;
 }

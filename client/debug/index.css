@@ -3,19 +3,37 @@
     font-size: 12px;
     color: #262626; 
     user-select: none; 
+    color: #389e0d;
 }
 
-.data {
+.body {
     display: flex;
     flex-direction: column;
     width: max-content;
     margin-right: 8px;
     margin-bottom: 8px;
+    border: 1px solid transparent;
+}
+
+div.actived {
+    border: 1px solid #ff4d4f;
+}
+
+.link.hover {
+    color: #ff4d4f;
+}
+
+.api {
+    color: #ff4d4f;
+    text-decoration: underline;
+    cursor: pointer;
 }
 
 .row {
     display: flex;
     width: 150px;
+    height: 18px;
+    border: 1px solid transparent;
 }
 
 .row:nth-of-type(odd) {
@@ -42,6 +60,7 @@
     padding-left: 4px;
     overflow: hidden;
     margin-right: 4px;
+    flex: 0 0 auto;
 }
 
 .value {
@@ -73,4 +92,5 @@
     margin-left: auto;
     margin-right: 4px;
     cursor: pointer;
+    font-size: 16px;
 }

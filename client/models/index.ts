@@ -93,12 +93,14 @@ export abstract class Model<
             ) => void;
         }
     ): ReactDict<M> => {
-        return initAutomicProxy(key => (
-            new React(
+        return initAutomicProxy(key => {
+            console.log(this.constructor.name, key, 'react');
+            return new React(
+                this.app,
                 callback[key].bind(this),
                 this._setState
-            )
-        ));
+            );
+        });
     };
     
 
@@ -129,16 +131,28 @@ export abstract class Model<
 
         // 初始化事件依赖关系
         this._eventDict = initAutomicProxy(
-            () => new Event(this._setState)
+            (key) => {
+                console.log(this.constructor.name, key);
+                return new Event(
+                    this.app,
+                    this._setState
+                );
+            }
         );
         this._updateEventDict = initAutomicProxy(
-            () => new Event(this._setState)
+            () => new Event(
+                this.app,
+                this._setState
+            )
         );
         this._modifyEventDict = initAutomicProxy(
-            key => new Event(() => {
-                this._setState();
-                this._updateInfo(key);
-            })
+            key => new Event(
+                this.app, 
+                () => {
+                    this._setState();
+                    this._updateInfo(key);
+                }
+            )
         );
 
         // 初始化节点从属关系

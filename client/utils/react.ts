@@ -1,3 +1,4 @@
+import { App } from "../app";
 import { KeyOf } from "../type";
 import { ModelDef } from "../type/model-def";
 import { SafeEvent } from "./event";
@@ -8,12 +9,19 @@ export type ReactDict<M extends ModelDef> = {
 }
 
 export class React<E = any> {
+    public readonly id: string;
+
     private readonly _eventList: SafeEvent<E>[] = [];
+    public get eventIdList() {
+        return this._eventList.map(event => event.id);
+    }
 
     constructor(
+        app: App,
         handleEvent: (event: E) => void,
         bindDone?: () => void
     ) {
+        this.id = app.referenceService.ticket;
         this.handleEvent = handleEvent;
         this._bindDone = bindDone;
     }
