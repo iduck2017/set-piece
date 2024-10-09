@@ -1,4 +1,4 @@
-import { App } from "../app";
+import type { App } from "../app";
 import { KeyOf } from "../type";
 import { ModelDef } from "../type/model-def";
 import { SafeEvent } from "./event";

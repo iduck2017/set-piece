@@ -1,7 +1,7 @@
 /* eslint-disable max-len */
 import React, { ReactNode, useEffect, useState } from "react";
 import type { App } from "../app";
-import { Model } from "../models";
+import type { Model } from "../models";
 import "./index.css";
 import { ModelType } from "../type/model";
 import { Event as IEvent, EventDict, ModifyEventDict, UpdateEventDict } from "../utils/event";

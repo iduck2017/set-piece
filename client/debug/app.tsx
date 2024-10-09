@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import type { App } from "../app";
 import { ModelComp } from ".";
-import type { ArchieveData } from "../services/archieve";
+import { ArchieveData } from "../services/archieve";
 import { AppStatus } from "../type/status";
 
 export function AppComp(props: {

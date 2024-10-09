@@ -2,7 +2,7 @@ import { KeyOf } from "../type";
 import { ModelDef } from "../type/model-def";
 import { StateUpdateBefore, StateUpdateDone } from "../type/event";
 import type { React } from "./react";
-import { App } from "../app";
+import type { App } from "../app";
 
 export type EventDict<M extends ModelDef> = {
     [K in KeyOf<ModelDef.EventDict<M>>]: Event<ModelDef.EventDict<M>[K]>;
