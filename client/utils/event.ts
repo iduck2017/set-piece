@@ -1,6 +1,6 @@
-import { KeyOf } from "../type";
-import { ModelDef } from "../type/model-def";
-import { StateUpdateBefore, StateUpdateDone } from "../type/event";
+import { KeyOf } from "../configs";
+import { ModelDef } from "../configs/model-def";
+import { StateUpdateBefore, StateUpdateDone } from "../configs/event";
 import type { React } from "./react";
 import type { App } from "../app";
 

@@ -1,8 +1,8 @@
 import { Model } from ".";
-import { KeyOf, ValueOf } from "../type";
-import { BaseModelConfig, PureModelConfig } from "../type/model";
-import { ModelDef } from "../type/model-def";
-import type { ModelReg } from "../type/model-reg";
+import { KeyOf, ValueOf } from "../configs";
+import { BaseModelConfig, PureModelConfig } from "../configs/model";
+import { ModelDef } from "../configs/model-def";
+import type { ModelReg } from "../configs/model-reg";
 import { ModifySafeEventDict, SafeEventDict, UpdateSafeEventDict } from "../utils/event";
 import { initAutomicProxy, initReadonlyProxy } from "../utils/proxy";
 

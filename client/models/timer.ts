@@ -1,6 +1,6 @@
-import { ModelConfig } from "../type/model";
-import { SpecModelDef } from "../type/model-def";
-import { ModelCode } from "../type/model-code";
+import { ModelConfig } from "../configs/model";
+import { SpecModelDef } from "../configs/model-def";
+import { ModelCode } from "../configs/model-code";
 import { SpecModel } from "./specific";
 
 export type TimerModelDef = SpecModelDef<{

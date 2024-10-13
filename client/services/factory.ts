@@ -1,9 +1,9 @@
 import type { App } from "../app";
 import type { Model } from "../models";
-import { Base } from "../type";
-import type { ModelConfig } from "../type/model";
-import { MODEL_REG } from "../type/model-reg";
-import { ModelDef } from "../type/model-def";
+import { Base } from "../configs";
+import type { ModelConfig } from "../configs/model";
+import { MODEL_REG } from "../configs/model-reg";
+import { ModelDef } from "../configs/model-def";
 import { singleton } from "../utils/singleton";
 
 

@@ -4,10 +4,10 @@ import type { App } from "../app";
 import type { Model } from "../models";
 import "./index.css";
 import { Event as IEvent, EventDict, ModifyEventDict, UpdateEventDict } from "../utils/event";
-import { ModelDef } from "../type/model-def";
+import { ModelDef } from "../configs/model-def";
 import { ReactDict, React as IReact } from "../utils/react";
-import { Base } from "../type";
-import { ModelDict, ModelList } from "../type/model";
+import { Base } from "../configs";
+import { ModelDict, ModelList } from "../configs/model";
 
 
 export type ModelProps<M extends ModelDef> = {

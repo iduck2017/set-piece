@@ -1,8 +1,8 @@
 
-import { SpecModelDef } from "../type/model-def";
-import { ModelCode } from "../type/model-code";
+import { SpecModelDef } from "../configs/model-def";
+import { ModelCode } from "../configs/model-code";
 import { SpecModel } from "./specific";
-import { ModelConfig } from "../type/model";
+import { ModelConfig } from "../configs/model";
 import { PlayerModelDef } from "./player";
 
 export type GameModelDef = SpecModelDef<{

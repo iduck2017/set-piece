@@ -1,5 +1,5 @@
-import { SpecModelDef } from "../type/model-def";
-import { ModelCode } from "../type/model-code";
+import { SpecModelDef } from "../configs/model-def";
+import { ModelCode } from "../configs/model-code";
 import { SpecModel } from "./specific";
 
 export type CardModelDef = SpecModelDef<{

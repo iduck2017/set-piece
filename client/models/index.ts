@@ -1,5 +1,5 @@
-import { KeyOf } from "../type";
-import { ModelDef } from "../type/model-def";
+import { KeyOf } from "../configs";
+import { ModelDef } from "../configs/model-def";
 import { initAutomicProxy, initReadonlyProxy } from "../utils/proxy";
 import { ModelState } from "../debug";
 import { React, ReactDict } from "../utils/react";
@@ -15,9 +15,9 @@ import {
     ModelBundleDict, 
     ModelDict, 
     ModelList 
-} from "../type/model";
+} from "../configs/model";
 import type { App } from "../app";
-import { ModelCode } from "../type/model-code";
+import { ModelCode } from "../configs/model-code";
 
 
 // 模型层节点
