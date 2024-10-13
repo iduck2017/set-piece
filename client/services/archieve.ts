@@ -1,8 +1,8 @@
 import type { App } from "../app";
 import { ARCHIEVE_SAVE_PATH } from "../configs/context";
-import { Generator } from "../configs/generator";
 import { RootModelDef } from "../models/root";
 import { PureModelConfig } from "../type/model";
+import { ModelCode } from "../type/model-reg";
 import { initReadonlyProxy } from "../utils/proxy";
 import { singleton } from "../utils/singleton";
 
@@ -45,7 +45,7 @@ export class ArchieveService {
             name: 'hello',
             progress: 0
         });
-        const record = Generator.rootConfig();
+        const record: PureModelConfig<RootModelDef> = { code: ModelCode.Root };
         await localStorage.setItem(`${ARCHIEVE_SAVE_PATH}_${id}`, JSON.stringify(record));
         await this.app.saveMetaData();
         return record;

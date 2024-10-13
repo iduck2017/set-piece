@@ -1,8 +1,8 @@
-import { SpecModel } from ".";
 import { ModelConfig } from "../type/model";
 import { SpecModelDef } from "../type/model-def";
 import { ModelCode } from "../type/model-reg";
 import { Random } from "../utils/random";
+import { SpecModel } from "./specific";
 
 export type BunnyModelDef = SpecModelDef<{
     code: ModelCode.Bunny,

@@ -3,11 +3,11 @@ import React, { ReactNode, useEffect, useState } from "react";
 import type { App } from "../app";
 import type { Model } from "../models";
 import "./index.css";
-import { ModelType } from "../type/model";
 import { Event as IEvent, EventDict, ModifyEventDict, UpdateEventDict } from "../utils/event";
 import { ModelDef } from "../type/model-def";
 import { ReactDict, React as IReact } from "../utils/react";
 import { Base } from "../type";
+import { ModelDict, ModelList } from "../type/model";
 
 
 export type ModelProps<M extends ModelDef> = {
@@ -16,8 +16,8 @@ export type ModelProps<M extends ModelDef> = {
 }
 
 export type ModelState<M extends ModelDef> = {
-    childList: ModelType.ChildList<M>,
-    childDict: ModelType.ChildDict<M>,
+    childList: ModelList<M>,
+    childDict: ModelDict<M>,
     eventDict: EventDict<M>,
     updateEventDict: UpdateEventDict<M>,
     modifyEventDict: ModifyEventDict<M>,

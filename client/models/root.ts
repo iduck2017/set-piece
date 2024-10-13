@@ -1,9 +1,9 @@
-import { SpecModel } from ".";
 import type { App } from "../app";
 import { ModelConfig, PureModelConfig } from "../type/model";
 import { SpecModelDef } from "../type/model-def";
 import { ModelCode } from "../type/model-reg";
 import { BunnyModelDef } from "./bunny";
+import { SpecModel } from "./specific";
 import { TimerModelDef } from "./timer";
 
 export type RootModelDef = SpecModelDef<{

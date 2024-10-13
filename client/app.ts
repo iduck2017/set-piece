@@ -1,11 +1,10 @@
 import { FactoryService } from "./services/factory";
 import { ReferenceService } from "./services/reference";
-import { Generator } from "./configs/generator";
 import { ArchieveData, ArchieveService } from "./services/archieve";
 import { PerferenceData, PreferenceService } from "./services/perference";
 import { RootModel } from "./models/root";
 import { RenderService } from "./services/render";
-import { META_SAVE_PATH } from "./configs/context";
+import { MAJOR_VERSION, META_SAVE_PATH, MINOR_VERSION, PATCH_VERSION } from "./configs/context";
 import { AppStatus } from "./type/status";
 
 export type AppInfo = {
@@ -95,7 +94,18 @@ export class App {
     
     private async _loadMetaData(): Promise<AppInfo> {
         const raw = await localStorage.getItem(META_SAVE_PATH);
-        if (!raw) return Generator.appInfo();
+        if (!raw) {
+            return {
+                majorVersion: MAJOR_VERSION,
+                minorVersion: MINOR_VERSION,
+                patchVersion: PATCH_VERSION,
+                archieveDataList: [],
+                perferenceData: {
+                    mute: false,
+                    fullscreen: true
+                }
+            };
+        }
         const result = JSON.parse(raw) as AppInfo;
         return result;
     }
