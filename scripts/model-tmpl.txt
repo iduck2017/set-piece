@@ -3,7 +3,7 @@ import { ModelCode } from "../configs/model-code";
 import { SpecModel } from "./specific";
 import { ModelConfig } from "../configs/model";
 
-export type {{MODEL_NAME}}Def = SpecModelDef<{
+export type {{MODEL_NAME}}ModelDef = SpecModelDef<{
     code: ModelCode.{{MODEL_NAME}},
 }>
 

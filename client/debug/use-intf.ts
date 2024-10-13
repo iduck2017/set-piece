@@ -5,8 +5,9 @@ import { TimerModel } from "../models/timer";
 export function useIntf(model: Model): Record<string, () => void> {
     if (model instanceof BunnyModel) {
         return {
-            spawnChild: model.reproduce,
-            suicide: model.suicide
+            reproduce: model.reproduce,
+            suicide: model.suicide,
+            castrate: model.castrate
         };
     }
     if (model instanceof TimerModel) {

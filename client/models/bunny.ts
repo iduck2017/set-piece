@@ -3,16 +3,21 @@ import { SpecModelDef } from "../configs/model-def";
 import { ModelCode } from "../configs/model-code";
 import { Random } from "../utils/random";
 import { SpecModel } from "./specific";
+import { FeaturesModelDef } from "./features";
 
 export type BunnyModelDef = SpecModelDef<{
     code: ModelCode.Bunny,
     info: {
         curAge: number,
         maxAge: number,
+        curHappiness: number,
     },
     reactDict: {
         timeUpdateDone: void,
     },
+    childDict: {
+        features: FeaturesModelDef
+    }
     parent: SpecModel,
 }>
 
@@ -21,10 +26,13 @@ export class BunnyModel extends SpecModel<BunnyModelDef> {
     constructor(config: ModelConfig<BunnyModelDef>) {
         super({
             ...config,
-            childDict: {},
+            childDict: {
+                features: config.childDict?.features || { code: ModelCode.Features }
+            },
             info: {
                 curAge: config.info?.curAge || 0,
-                maxAge: config.info?.maxAge ||  Random.number(-25, 25) + 100
+                maxAge: config.info?.maxAge ||  Random.number(-25, 25) + 100,
+                curHappiness: config.info?.curHappiness || 100
             }
         });
     }
@@ -46,6 +54,16 @@ export class BunnyModel extends SpecModel<BunnyModelDef> {
     /** 自杀 */
     public readonly suicide = () => {
         this.app.root.killCreature(this);
+    };
+
+    /** 绝育 */
+    public readonly castrate = () => {
+        const featureList = this.childDict.features.childList;
+        if (featureList.find(feature => feature.code === ModelCode.Castrated)) return;
+        this.childDict.features.addFeature( {
+            code: ModelCode.Castrated
+        });
+        this._originInfo.curHappiness -= Random.number(0, 25);
     };
 
     /** 年龄增长 */

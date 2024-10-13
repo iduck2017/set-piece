@@ -31,9 +31,9 @@ export function AppComp(props: {
     };
 
     useEffect(() => {
-        if (app.archieveService.data.length) {
-            startGame(0);
-        }
+        // if (app.archieveService.data.length) {
+        //     startGame(0);
+        // }
     }, []);
 
     if (status === AppStatus.UNMOUNTED) {

@@ -1,3 +1,5 @@
+import { CastratedModel } from '../models/castrated';
+import { FeaturesModel } from '../models/features';
 import { DeckModel } from '../models/deck';
 
 import { Validate } from ".";
@@ -13,6 +15,8 @@ import { ModelDef } from "./model-def";
 
 export const MODEL_REGISTRY = {
     // @model-registry
+    [ModelCode.Castrated]: CastratedModel,
+    [ModelCode.Features]: FeaturesModel,
     [ModelCode.Deck]: DeckModel,
     [ModelCode.Root]: RootModel,
     [ModelCode.Timer]: TimerModel,

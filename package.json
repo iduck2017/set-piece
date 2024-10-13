@@ -40,6 +40,7 @@
     "watch": "webpack -w",
     "build": "webpack --mode production",
     "serve": "webpack serve",
-    "tauri": "tauri"
+    "tauri": "tauri",
+    "model": "node scripts/model.js"
   }
 }

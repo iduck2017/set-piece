@@ -13,6 +13,7 @@
     margin-right: 8px;
     margin-bottom: 8px;
     border: 1px solid transparent;
+    height: min-content;
 }
 
 div.actived {
