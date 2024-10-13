@@ -1,7 +1,7 @@
 import { Base, Override } from ".";
 import type { App } from "../app";
 import type { Model } from "../models";
-import { ModelCode } from "./model-reg";
+import type { ModelCode } from "./model-code";
 
 // 模型层节点定义
 export type ModelDef = {
@@ -30,7 +30,6 @@ export type SpecModelDef<
     M extends Partial<ModelDef>
 > = Readonly<Override<{
     // 空模型层节点定义
-    code: never,
     info: Base.VoidData,
     parent: Model,
     childList: Base.VoidList,

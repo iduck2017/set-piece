@@ -18,7 +18,7 @@ import {
     PureModelConfig 
 } from "../type/model";
 import type { App } from "../app";
-import { ModelCode } from "../type/model-reg";
+import { ModelCode } from "../type/model-code";
 
 
 // 模型层节点
@@ -98,7 +98,6 @@ export abstract class Model<
         }
     ): ReactDict<M> => {
         return initAutomicProxy(key => {
-            console.log(this.constructor.name, key, 'react');
             return new React(
                 this.app,
                 callback[key].bind(this),
@@ -163,7 +162,12 @@ export abstract class Model<
         Object.keys(config.childDict).forEach((
             key: KeyOf<ModelDict<M>>
         ) => {
-            childDict[key] = this._unserialize(config.childDict[key]);
+            if (!config.childDict[key]) return;
+            childDict[key] = this.app.factoryService.unserialize({
+                ...config.childDict[key],
+                parent: this,
+                app: this.app
+            });    
         });
         this._childDict = new Proxy(childDict, {
             set: <K extends KeyOf<ModelDict<M>>>(
@@ -186,7 +190,11 @@ export abstract class Model<
         });
 
         const childList = (config.childList || []).map(config => (
-            this._unserialize(config)
+            this.app.factoryService.unserialize({
+                ...config,
+                parent: this,
+                app: this.app
+            })
         ));
         this._childList = new Proxy(childList, {
             set: (target, key: KeyOf<ModelList<M>>, value) => {
@@ -236,16 +244,6 @@ export abstract class Model<
         }
     };
 
-    // 生成反序列化节点
-    protected readonly _unserialize = <C extends ModelDef>(
-        config: PureModelConfig<C>
-    ): Model<C> => {
-        return this.app.factoryService.unserialize({
-            ...config,
-            parent: this,
-            app: this.app
-        });
-    };
 
     // 序列化模型层节点
     public readonly serialize = (): ModelBundle<M> => {

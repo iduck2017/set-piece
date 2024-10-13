@@ -1,11 +1,10 @@
 import { Model } from ".";
 import { KeyOf, ValueOf } from "../type";
-import { BaseModelConfig } from "../type/model";
+import { BaseModelConfig, PureModelConfig } from "../type/model";
 import { ModelDef } from "../type/model-def";
-import { ModelReg } from "../type/model-reg";
+import type { ModelReg } from "../type/model-reg";
 import { ModifySafeEventDict, SafeEventDict, UpdateSafeEventDict } from "../utils/event";
 import { initAutomicProxy, initReadonlyProxy } from "../utils/proxy";
-
 
 export type SpecModelDict<M extends ModelDef> = {
     [K in KeyOf<ModelDef.ChildDict<M>>]: 
@@ -32,4 +31,17 @@ export abstract class SpecModel<
         this.updateEventDict = initAutomicProxy(key => this._updateEventDict[key].safeEvent);
         this.modifyEventDict = initAutomicProxy(key => this._modifyEventDict[key].safeEvent);
     }
+
+    protected readonly _unserialize = <
+        C extends ModelDef.Code<M>,
+        M extends ModelDef
+    >(
+        config: PureModelConfig<M> & { code: C }
+    ): InstanceType<ModelReg[C]> => {
+        return this.app.factoryService.unserialize({
+            ...config,
+            parent: this,
+            app: this.app
+        }) as InstanceType<ModelReg[ModelDef.Code<M>]>;
+    };
 }

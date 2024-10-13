@@ -4,8 +4,12 @@ import { ArchieveData, ArchieveService } from "./services/archieve";
 import { PerferenceData, PreferenceService } from "./services/perference";
 import { RootModel } from "./models/root";
 import { RenderService } from "./services/render";
-import { MAJOR_VERSION, META_SAVE_PATH, MINOR_VERSION, PATCH_VERSION } from "./configs/context";
-import { AppStatus } from "./type/status";
+import { AppStatus } from "./type/app-status";
+
+export const MAJOR_VERSION = 0;
+export const MINOR_VERSION = 1;
+export const PATCH_VERSION = 0;
+export const META_SAVE_PATH = 'meta';
 
 export type AppInfo = {
     majorVersion: number

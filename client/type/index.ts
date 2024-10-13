@@ -13,6 +13,7 @@ export namespace Base {
 export type ValueOf<M extends Base.Dict> = M extends Array<any> ? M[number] : M[keyof M];
 export type KeyOf<M extends Base.Dict> = keyof M & string;
 export type Optional<T> = T | undefined;
+export type Validate<A extends B, B> = A
 
 // 重写部分参数
 export type Override<

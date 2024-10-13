@@ -1,10 +1,11 @@
 import type { App } from "../app";
-import { ARCHIEVE_SAVE_PATH } from "../configs/context";
 import { RootModelDef } from "../models/root";
 import { PureModelConfig } from "../type/model";
-import { ModelCode } from "../type/model-reg";
+import { ModelCode } from "../type/model-code";
 import { initReadonlyProxy } from "../utils/proxy";
 import { singleton } from "../utils/singleton";
+
+export const ARCHIEVE_SAVE_PATH = 'archieve';
 
 export type ArchieveData = {
     id: string

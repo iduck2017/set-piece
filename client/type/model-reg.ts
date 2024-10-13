@@ -1,18 +1,23 @@
-import type { BunnyModel } from "../models/bunny";
-import type { RootModel } from "../models/root";
-import type { TimerModel } from "../models/timer";
+import { Validate } from ".";
+import { Model } from "../models";
+import { BunnyModel } from "../models/bunny";
+import { CardModel } from "../models/card";
+import { GameModel } from "../models/game";
+import { PlayerModel } from "../models/player";
+import { RootModel } from "../models/root";
+import { TimerModel } from "../models/timer";
+import { ModelCode } from "./model-code";
+import { ModelDef } from "./model-def";
 
-/** 模型注册表 */
-export enum ModelCode {
-    Root = 'root',
-    Timer = 'timer',
-    Bunny = 'bunny',
-}
+export const MODEL_REG = {
+    root: RootModel,
+    timer: TimerModel,
+    bunny: BunnyModel,
+    card: CardModel,
+    player: PlayerModel,
+    game: GameModel
+}; 
 
-/** 数据到模型 */
-export type ModelReg = {
-    root: typeof RootModel,
-    timer: typeof TimerModel,
-    bunny: typeof BunnyModel,
-};
-
+export type ModelReg = Validate<typeof MODEL_REG, { 
+    [K in ModelCode]: new (config: any) => Model<ModelDef & { code: K }>
+}>

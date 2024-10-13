@@ -2,14 +2,17 @@ import { KeyOf, ValueOf } from ".";
 import type { App } from "../app";
 import type { Model } from "../models";
 import { ModelDef } from "./model-def";
-import { ModelReg } from "./model-reg";
 
 // 子节点初始化参数
 export type ModelConfigList<M extends ModelDef> = 
     Array<PureModelConfig<ValueOf<ModelDef.ChildList<M>>>>
 export type ModelConfigDict<M extends ModelDef> = {
-    [K in KeyOf<ModelDef.ChildDict<M>>]: PureModelConfig<ModelDef.ChildDict<M>[K]>
+    [K in KeyOf<ModelDef.ChildDict<M>>]: 
+        ModelDef.ChildDict<M>[K] extends ModelDef ? 
+            PureModelConfig<ModelDef.ChildDict<M>[K]> : 
+            PureModelConfig<ModelDef.ChildDict<M>[K]> | undefined
 }
+
 
 export type PureModelConfig<
     M extends ModelDef
