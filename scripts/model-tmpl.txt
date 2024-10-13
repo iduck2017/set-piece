@@ -1,0 +1,21 @@
+import { SpecModelDef } from "../type/model-def";
+import { ModelCode } from "../type/model-code";
+import { SpecModel } from "./specific";
+import { ModelConfig } from "../type/model";
+
+export type {{MODEL_NAME}}Def = SpecModelDef<{
+    code: ModelCode.{{MODEL_NAME}},
+}>
+
+
+export class {{MODEL_NAME}}Model extends SpecModel<{{MODEL_NAME}}Def> {
+    protected _reactDict = {};
+
+    constructor(config: ModelConfig<{{MODEL_NAME}}Def>) {
+        super({
+            ...config,
+            info: {},
+            childDict: {}
+        });
+    }
+}

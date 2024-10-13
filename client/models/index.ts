@@ -14,8 +14,7 @@ import {
     ModelBundle, 
     ModelBundleDict, 
     ModelDict, 
-    ModelList, 
-    PureModelConfig 
+    ModelList 
 } from "../type/model";
 import type { App } from "../app";
 import { ModelCode } from "../type/model-code";
