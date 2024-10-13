@@ -2,16 +2,16 @@ import { Model } from ".";
 import { KeyOf, ValueOf } from "../configs";
 import { BaseModelConfig, PureModelConfig } from "../configs/model";
 import { ModelDef } from "../configs/model-def";
-import type { ModelReg } from "../configs/model-reg";
+import type { ModelRegstry } from "../configs/model-registry";
 import { ModifySafeEventDict, SafeEventDict, UpdateSafeEventDict } from "../utils/event";
 import { initAutomicProxy, initReadonlyProxy } from "../utils/proxy";
 
 export type SpecModelDict<M extends ModelDef> = {
     [K in KeyOf<ModelDef.ChildDict<M>>]: 
-        InstanceType<ModelReg[ModelDef.Code<ModelDef.ChildDict<M>[K]>]>
+        InstanceType<ModelRegstry[ModelDef.Code<ModelDef.ChildDict<M>[K]>]>
 }
 export type SpecModelList<M extends ModelDef> = 
-    Array<InstanceType<ModelReg[ModelDef.Code<ValueOf<ModelDef.ChildList<M>>>]>>
+    Array<InstanceType<ModelRegstry[ModelDef.Code<ValueOf<ModelDef.ChildList<M>>>]>>
     
 
 export abstract class SpecModel<
@@ -37,11 +37,11 @@ export abstract class SpecModel<
         M extends ModelDef
     >(
         config: PureModelConfig<M> & { code: C }
-    ): InstanceType<ModelReg[C]> => {
+    ): InstanceType<ModelRegstry[C]> => {
         return this.app.factoryService.unserialize({
             ...config,
             parent: this,
             app: this.app
-        }) as InstanceType<ModelReg[ModelDef.Code<M>]>;
+        }) as InstanceType<ModelRegstry[ModelDef.Code<M>]>;
     };
 }

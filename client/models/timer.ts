@@ -9,8 +9,8 @@ export type TimerModelDef = SpecModelDef<{
         time: number,
     },
     eventDict: {
-        timeUpdateBefore: void,
-        timeUpdateDone: void,
+        tickBefore: void,
+        tickDone: void,
     }
 }>
 
@@ -25,15 +25,12 @@ export class TimerModel extends SpecModel<TimerModelDef> {
             },
             childDict: {}
         });
-        this.apiDict = {
-            updateTime: this._updateTime.bind(this, 1)
-        };
     }
     
     /** 更新时间 */
-    private readonly _updateTime = (offsetTime: number) => {
-        this._eventDict.timeUpdateBefore.emitEvent();
+    public readonly tick = (offsetTime: number) => {
+        this._eventDict.tickBefore.emitEvent();
         this._originInfo.time += offsetTime;
-        this._eventDict.timeUpdateDone.emitEvent();
+        this._eventDict.tickDone.emitEvent();
     };
 }

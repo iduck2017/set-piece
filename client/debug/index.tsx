@@ -3,11 +3,12 @@ import React, { ReactNode, useEffect, useState } from "react";
 import type { App } from "../app";
 import type { Model } from "../models";
 import "./index.css";
-import { Event as IEvent, EventDict, ModifyEventDict, UpdateEventDict } from "../utils/event";
+import { Event as ModelEvent, EventDict, ModifyEventDict, UpdateEventDict } from "../utils/event";
 import { ModelDef } from "../configs/model-def";
-import { ReactDict, React as IReact } from "../utils/react";
+import { ReactDict, React as ModelReact } from "../utils/react";
 import { Base } from "../configs";
 import { ModelDict, ModelList } from "../configs/model";
+import { useIntf } from "./use-intf";
 
 
 export type ModelProps<M extends ModelDef> = {
@@ -27,7 +28,7 @@ export type ModelState<M extends ModelDef> = {
 
 export type VisibleInfo = {
     model: boolean;
-    api: boolean;
+    intf: boolean;
     info: boolean;
     child: boolean;
     event: boolean;
@@ -75,10 +76,12 @@ export function ModelComp<
     M extends ModelDef
 >(props: ModelProps<M>) {
     const { model, app } = props;
-    const [ state, setState ] = useState<ModelState<M>>(model._getState);
+
+    const modelIntf = useIntf(model);
+    const [ state, setState ] = useState<ModelState<M>>();
     const [ visible, setVisible ] = useState<VisibleInfo>({
         model: true,
-        api: true,
+        intf: true,
         info: true,
         child: true,
         event: true,
@@ -90,10 +93,9 @@ export function ModelComp<
         return `(${value})`;
     };
 
-
     const [ activedChild, setActivedChild ] = useState<Model>();
-    const [ activedEvent, setActivedEvent ] = useState<IEvent>();
-    const [ activedReact, setActivedReact ] = useState<IReact>();
+    const [ activedEvent, setActivedEvent ] = useState<ModelEvent>();
+    const [ activedReact, setActivedReact ] = useState<ModelReact>();
 
     useEffect(() => {
         if (!activedChild) return;
@@ -141,10 +143,10 @@ export function ModelComp<
     }, [ activedReact ]);
 
     useEffect(() => {
-        setState(model._getState());
         return model._useState(setState);
     }, [ model ]);
 
+    if (!state) return null;
 
     const {
         childDict,
@@ -190,15 +192,15 @@ export function ModelComp<
                     <FolderComp
                         visibleDict={visible}
                         setVisibleDict={setVisible}
-                        title="api"
-                        length={Object.keys(model.apiDict).length}
+                        title="intf"
+                        length={Object.keys(modelIntf).length}
                     >
-                        {Object.keys(model.apiDict).map(key => (
+                        {Object.keys(modelIntf).map(key => (
                             <div className="row" key={key}>
                                 <div 
-                                    className="key api"
+                                    className="key intf"
                                     onClick={() => {
-                                        model.apiDict[key].call(model);
+                                        modelIntf[key].call(model);
                                     }}
                                 >
                                     {key}

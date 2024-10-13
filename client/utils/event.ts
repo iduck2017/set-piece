@@ -55,6 +55,7 @@ export class Event<E = any> {
         this._reactList.splice(index, 1);
         react.unbindEvent(this);
         this._bindDone?.(this);
+        console.log('unbindReact', this._reactList.length);
     };
 
     public readonly emitEvent = (event: E) => {

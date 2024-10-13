@@ -39,7 +39,7 @@ export class React<E = any> {
 
     public readonly unbindEvent = (event: SafeEvent<E>) => {
         const index = this._eventList.indexOf(event);
-        if (index < 0) throw new Error('Event not found');
+        if (index < 0) return;
         this._eventList.splice(index, 1);
         event.unbindReact(this);
         this._bindDone?.(this);

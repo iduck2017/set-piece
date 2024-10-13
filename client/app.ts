@@ -71,9 +71,9 @@ export class App {
         this._root = new RootModel({
             ...config,
             app: this,
-            parent: this
+            parent: undefined
         });
-        this._root.activate();
+        this._root.activateRec();
         this._status = AppStatus.MOUNTED;
     }
 

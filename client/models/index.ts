@@ -1,7 +1,7 @@
 import { KeyOf } from "../configs";
 import { ModelDef } from "../configs/model-def";
 import { initAutomicProxy, initReadonlyProxy } from "../utils/proxy";
-import { ModelState } from "../debug";
+import type { ModelState } from "../debug";
 import { React, ReactDict } from "../utils/react";
 import { 
     Event,
@@ -13,6 +13,7 @@ import {
     BaseModelConfig, 
     ModelBundle, 
     ModelBundleDict, 
+    ModelConfigList, 
     ModelDict, 
     ModelList 
 } from "../configs/model";
@@ -48,26 +49,14 @@ export abstract class Model<
     protected readonly _childList: ModelList<M>;
 
     // 调试器相关
-    public apiDict: Record<string, () => void>;
     private readonly _setterList: Array<(data: ModelState<M>) => void>;
 
     // 初始化
     private _isActived?: boolean;
 
-    public readonly _getState = (): ModelState<M> => {
-        return {
-            childDict: this._childDict,
-            childList: this._childList,
-            eventDict: this._eventDict,
-            updateEventDict: this._updateEventDict,
-            modifyEventDict: this._modifyEventDict,
-            reactDict: this._reactDict,
-            info: this.actualInfo
-        };
-    };
-
     public readonly _useState = (setter: (data: ModelState<M>) => void) => {
         this._setterList.push(setter);
+        this._setState();
         return () => {
             const index = this._setterList.indexOf(setter);
             if (index < 0) throw new Error();
@@ -103,6 +92,75 @@ export abstract class Model<
                 this._setState
             );
         });
+    };
+
+    protected readonly _initChildList = (
+        config: ModelConfigList<M>
+    ) => {
+        const childList = (config).map(config => (
+            this.app.factoryService.unserialize({
+                ...config,
+                parent: this,
+                app: this.app
+            })
+        ));
+        childList.splice = (index, removeCount = 1, ...addList: Model[]) => {
+            const removeList = childList.slice(index, index + removeCount);
+            const result = Array.prototype.splice.call(
+                childList, 
+                index,
+                removeCount,
+                ...addList
+            );
+            addList.forEach(item => {
+                item.activateRec();
+                this._setState();
+            });
+            removeList.forEach(item => {
+                item._destroyRec();
+                this._setState();
+            });
+            return result;
+        };
+        childList.push = (...items) => {
+            const result = Array.prototype.push.apply(
+                childList, 
+                items
+            );
+            items.forEach(item => {
+                item.activateRec();
+                this._setState();
+            });
+            return result;
+        };
+        childList.pop = () => {
+            const item = childList.pop();
+            if (item) {
+                item._destroyRec();
+                this._setState();
+            }
+            return item;
+        };
+        childList.shift = () => {
+            const item = childList.shift();
+            if (item) {
+                item._destroyRec();
+                this._setState();
+            }
+            return item;
+        };
+        childList.unshift = (...items) => {
+            const result = Array.prototype.unshift.apply(
+                childList, 
+                items
+            );
+            items.forEach(item => {
+                item.activateRec();
+                this._setState();
+            });
+            return result;
+        };
+        return childList;
     };
     
     constructor(config: BaseModelConfig<M>) {
@@ -175,51 +233,21 @@ export abstract class Model<
                 value: ModelDict<M>[K]
             ) => {
                 target[key] = value;
-                value.activate();
+                value.activateRec();
                 this._setState();
                 return true;
             },
             deleteProperty: (target, key: KeyOf<ModelDict<M>>) => {
                 const value = target[key];
-                value._destroy();
+                value._destroyRec();
                 delete target[key];
                 this._setState();
                 return true;
             }
         });
-
-        const childList = (config.childList || []).map(config => (
-            this.app.factoryService.unserialize({
-                ...config,
-                parent: this,
-                app: this.app
-            })
-        ));
-        this._childList = new Proxy(childList, {
-            set: (target, key: KeyOf<ModelList<M>>, value) => {
-                target[key] = value;
-                if (typeof key !== 'symbol' && !isNaN(Number(key))) {
-                    const model: Model = value;
-                    model.activate();
-                    this._setState();
-                }
-                return true;
-            },
-            deleteProperty: (target, key: KeyOf<ModelList<M>>) => {
-                const value = target[key];
-                if (value instanceof Model) {
-                    const model: Model = value;
-                    model._destroy();
-                    this._setState();
-                }
-                delete target[key];
-                target.length --;
-                return true;
-            }
-        });
+        this._childList = this._initChildList(config.childList || []);
 
         // 初始化调试器
-        this.apiDict = {};
         this._setterList = [];
     }
 
@@ -270,28 +298,29 @@ export abstract class Model<
 
     // 执行初始化函数
     protected readonly _activate = () => {};
-    public readonly activate = () => {
-        if (this._isActived) throw new Error();
+    public readonly activateRec = () => {
+        if (this._isActived) return;
         this._activate();
         for (const child of this._childList) {
-            child.activate();
+            child.activateRec();
         }
         for (const key in this._childDict) {
             const child = this._childDict[key];
-            child.activate();
+            child.activateRec();
         }
         this._isActived = true;
     };
 
     // 执行析构函数
-    public readonly destroy = () => {};
-    private readonly _destroy = () => {
+    protected readonly _destroy = () => {};
+    private readonly _destroyRec = () => {
+        console.log('destroy', this.id);
         for (const child of this._childList) {
-            child._destroy();
+            child._destroyRec();
         }
         for (const key in this._childDict) {
             const child = this._childDict[key];
-            child._destroy();
+            child._destroyRec();
         }
         for (const key in this._reactDict) {
             const react = this._reactDict[key];

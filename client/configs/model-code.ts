@@ -1,5 +1,7 @@
 /** 模型注册表 */
 export enum ModelCode {
+    // @model-code
+    Deck = 'deck',
     Root = 'root',
     Timer = 'timer',
     Bunny = 'bunny',

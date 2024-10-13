@@ -1,5 +1,4 @@
 import { Base, Override } from ".";
-import type { App } from "../app";
 import type { Model } from "../models";
 import type { ModelCode } from "./model-code";
 
@@ -7,7 +6,7 @@ import type { ModelCode } from "./model-code";
 export type ModelDef = {
     code: ModelCode
     info: Base.Data
-    parent: Model | App;
+    parent: Model | undefined;
     childList: Array<ModelDef>
     childDict: Record<Base.Key, ModelDef>,
     eventDict: Base.Dict,
@@ -31,7 +30,7 @@ export type SpecModelDef<
 > = Readonly<Override<{
     // 空模型层节点定义
     info: Base.VoidData,
-    parent: Model,
+    parent: Model | undefined,
     childList: Base.VoidList,
     childDict: Base.VoidData
     eventDict: Base.VoidData,

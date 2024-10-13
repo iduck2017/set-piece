@@ -12,7 +12,8 @@ export type BunnyModelDef = SpecModelDef<{
     },
     reactDict: {
         timeUpdateDone: void,
-    }
+    },
+    parent: SpecModel,
 }>
 
 export class BunnyModel extends SpecModel<BunnyModelDef> {
@@ -26,27 +27,30 @@ export class BunnyModel extends SpecModel<BunnyModelDef> {
                 maxAge: config.info?.maxAge ||  Random.number(-25, 25) + 100
             }
         });
-        this.apiDict = {
-            spawnChild: this.spawnChild
-        };
     }
 
     protected readonly _activate = () => {
         const timer = this.app.root.childDict.timer;
-        timer.eventDict.timeUpdateDone.bindReact(
+        timer.eventDict.tickBefore.bindReact(
             this._reactDict.timeUpdateDone
         );
     };
 
     /** 繁殖幼崽 */
-    public readonly spawnChild = () => {
+    public readonly reproduce = () => {
         this.app.root.spawnCreature({
             code: ModelCode.Bunny
         });
     };
 
+    /** 自杀 */
+    public readonly suicide = () => {
+        this.app.root.killCreature(this);
+    };
+
     /** 年龄增长 */
     private readonly _handleTimeUpdateDone = () => {
+        console.log('growing', this.id);
         this._originInfo.curAge += 1;
     };
 

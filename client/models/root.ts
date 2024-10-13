@@ -1,4 +1,3 @@
-import type { App } from "../app";
 import { ModelConfig, PureModelConfig } from "../configs/model";
 import { SpecModelDef } from "../configs/model-def";
 import { ModelCode } from "../configs/model-code";
@@ -17,7 +16,7 @@ export type RootModelDef = SpecModelDef<{
         game?: GameModelDef
     },
     childList: BunnyModelDef[],
-    parent: App,
+    parent: undefined,
 }>
 
 export class RootModel extends SpecModel<RootModelDef> {
@@ -47,8 +46,16 @@ export class RootModel extends SpecModel<RootModelDef> {
 
     public spawnCreature(config: PureModelConfig<BunnyModelDef>) {
         const child = this._unserialize(config);
+        console.log(this._childList.push);
         this._childList.push(child);
         return child;
+    }
+
+    public killCreature(child: SpecModel<BunnyModelDef>) {
+        const index = this._childList.indexOf(child);
+        if (index >= 0) {
+            this._childList.splice(index, 1);
+        }
     }
 
     public prepareGame() {
