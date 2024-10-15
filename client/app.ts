@@ -73,7 +73,7 @@ export class App {
             app: this,
             parent: undefined
         });
-        this._root.activateRec();
+        this._root.recover();
         this._status = AppStatus.MOUNTED;
     }
 

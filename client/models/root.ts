@@ -21,7 +21,7 @@ export type RootModelDef = SpecModelDef<{
 
 export class RootModel extends SpecModel<RootModelDef> {
     protected _reactDict = {};
-
+    
     constructor(config: ModelConfig<RootModelDef>) {
         const childList = config.childList || [];
         if (childList.length === 0) {
@@ -65,4 +65,8 @@ export class RootModel extends SpecModel<RootModelDef> {
         this._childDict.game = game;
         return game;
     }
+
+    public readonly recover = () => {
+        this._recRecover();
+    };
 }

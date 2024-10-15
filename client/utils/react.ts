@@ -18,7 +18,7 @@ export class React<E = any> {
 
     constructor(
         app: App,
-        handleEvent: (event: E) => void,
+        handleEvent: (event: E) => E | void,
         bindDone?: () => void
     ) {
         this.id = app.referenceService.ticket;
@@ -27,7 +27,7 @@ export class React<E = any> {
     }
 
     private readonly _bindDone?: (react: React<E>) => void;
-    public readonly handleEvent: (event: E) => void;
+    public readonly handleEvent: (event: E) => E | void;
     
     public readonly bindEvent = (event: SafeEvent<E>) => {
         const index = this._eventList.indexOf(event);

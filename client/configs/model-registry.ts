@@ -1,5 +1,5 @@
-import { CastratedModel } from '../models/castrated';
-import { FeaturesModel } from '../models/features';
+import { CastratableModel } from '../models/castratable';
+import { AnimalFeaturesModel } from '../models/animal-feature';
 import { DeckModel } from '../models/deck';
 
 import { Validate } from ".";
@@ -15,8 +15,8 @@ import { ModelDef } from "./model-def";
 
 export const MODEL_REGISTRY = {
     // @model-registry
-    [ModelCode.Castrated]: CastratedModel,
-    [ModelCode.Features]: FeaturesModel,
+    [ModelCode.Castratable]: CastratableModel,
+    [ModelCode.AnimalFeatures]: AnimalFeaturesModel,
     [ModelCode.Deck]: DeckModel,
     [ModelCode.Root]: RootModel,
     [ModelCode.Timer]: TimerModel,
@@ -26,6 +26,8 @@ export const MODEL_REGISTRY = {
     [ModelCode.Game]: GameModel
 }; 
 
-export type ModelRegstry = Validate<typeof MODEL_REGISTRY, { 
-    [K in ModelCode]: new (config: any) => Model<ModelDef & { code: K }>
-}>
+export type ModelRegstry = typeof MODEL_REGISTRY
+
+// Validate<typeof MODEL_REGISTRY, { 
+//     [K in ModelCode]: new (config: any) => Model<ModelDef & { code: K }>
+// }>

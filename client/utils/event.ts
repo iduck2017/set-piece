@@ -1,17 +1,23 @@
 import { KeyOf } from "../configs";
 import { ModelDef } from "../configs/model-def";
-import { StateUpdateBefore, StateUpdateDone } from "../configs/event";
+import { EventInfo } from "../configs/event";
 import type { React } from "./react";
 import type { App } from "../app";
 
 export type EventDict<M extends ModelDef> = {
     [K in KeyOf<ModelDef.EventDict<M>>]: Event<ModelDef.EventDict<M>[K]>;
 }
+
 export type ModifyEventDict<M extends ModelDef> = {
-    [K in KeyOf<ModelDef.Info<M>>]: Event<StateUpdateBefore<M, ModelDef.Info<M>[K]>>
+    [K in KeyOf<ModelDef.Info<M>>]: Event<
+        EventInfo.StateUpdateBefore<M, ModelDef.Info<M>[K]>
+    >
 }
+
 export type UpdateEventDict<M extends ModelDef> = {
-    [K in KeyOf<ModelDef.Info<M>>]: Event<StateUpdateDone<M, ModelDef.Info<M>[K]>>
+    [K in KeyOf<ModelDef.Info<M>>]: Event<
+        EventInfo.StateUpdateDone<M, ModelDef.Info<M>[K]>
+    >
 }
 
 export class Event<E = any> {
@@ -58,10 +64,13 @@ export class Event<E = any> {
         console.log('unbindReact', this._reactList.length);
     };
 
-    public readonly emitEvent = (event: E) => {
+    public readonly emitEvent = (event: E): E | void => {
+        let prevEvent = event;
         this._reactList.forEach(react => {
-            react.handleEvent(event);
+            const result = react.handleEvent(prevEvent);
+            if (result) prevEvent = result;
         });
+        return prevEvent;
     };
 
     public readonly destroy = () => {
@@ -79,11 +88,18 @@ export type SafeEvent<E = any> = {
 }
 
 export type SafeEventDict<M extends ModelDef> = {
-    [K in KeyOf<ModelDef.EventDict<M>>]: SafeEvent<ModelDef.EventDict<M>[K]>;
+    [K in KeyOf<ModelDef.EventDict<M>>]: 
+        SafeEvent<ModelDef.EventDict<M>[K]>;
 }
+
 export type ModifySafeEventDict<M extends ModelDef> = {
-    [K in KeyOf<ModelDef.Info<M>>]: SafeEvent<StateUpdateBefore<M, ModelDef.Info<M>[K]>>
+    [K in KeyOf<ModelDef.Info<M>>]: SafeEvent<
+        EventInfo.StateUpdateBefore<M, ModelDef.Info<M>[K]>
+    >
 }
+
 export type UpdateSafeEventDict<M extends ModelDef> = {
-    [K in KeyOf<ModelDef.Info<M>>]: SafeEvent<StateUpdateDone<M, ModelDef.Info<M>[K]>>
+    [K in KeyOf<ModelDef.Info<M>>]: SafeEvent<
+        EventInfo.StateUpdateDone<M, ModelDef.Info<M>[K]>
+    >
 }

@@ -3,7 +3,7 @@ import { SpecModelDef } from "../configs/model-def";
 import { ModelCode } from "../configs/model-code";
 import { Random } from "../utils/random";
 import { SpecModel } from "./specific";
-import { FeaturesModelDef } from "./features";
+import { AnimalFeaturesModelDef } from "./animal-feature";
 
 export type BunnyModelDef = SpecModelDef<{
     code: ModelCode.Bunny,
@@ -16,7 +16,7 @@ export type BunnyModelDef = SpecModelDef<{
         timeUpdateDone: void,
     },
     childDict: {
-        features: FeaturesModelDef
+        features: AnimalFeaturesModelDef
     }
     parent: SpecModel,
 }>
@@ -27,7 +27,7 @@ export class BunnyModel extends SpecModel<BunnyModelDef> {
         super({
             ...config,
             childDict: {
-                features: config.childDict?.features || { code: ModelCode.Features }
+                features: config.childDict?.features || { code: ModelCode.AnimalFeatures }
             },
             info: {
                 curAge: config.info?.curAge || 0,
@@ -37,7 +37,7 @@ export class BunnyModel extends SpecModel<BunnyModelDef> {
         });
     }
 
-    protected readonly _activate = () => {
+    protected readonly _recover = () => {
         const timer = this.app.root.childDict.timer;
         timer.eventDict.tickBefore.bindReact(
             this._reactDict.timeUpdateDone
@@ -54,16 +54,6 @@ export class BunnyModel extends SpecModel<BunnyModelDef> {
     /** 自杀 */
     public readonly suicide = () => {
         this.app.root.killCreature(this);
-    };
-
-    /** 绝育 */
-    public readonly castrate = () => {
-        const featureList = this.childDict.features.childList;
-        if (featureList.find(feature => feature.code === ModelCode.Castrated)) return;
-        this.childDict.features.addFeature( {
-            code: ModelCode.Castrated
-        });
-        this._originInfo.curHappiness -= Random.number(0, 25);
     };
 
     /** 年龄增长 */

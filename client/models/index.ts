@@ -82,7 +82,7 @@ export abstract class Model<
         callback: {
             [K in KeyOf<ModelDef.ReactDict<M>>]: (
                 event: ModelDef.ReactDict<M>[K]
-            ) => void;
+            ) => void | ModelDef.ReactDict<M>[K];
         }
     ): ReactDict<M> => {
         return initAutomicProxy(key => {
@@ -113,11 +113,11 @@ export abstract class Model<
                 ...addList
             );
             addList.forEach(item => {
-                item.activateRec();
+                item._recRecover();
                 this._setState();
             });
             removeList.forEach(item => {
-                item._destroyRec();
+                item._recDestroy();
                 this._setState();
             });
             return result;
@@ -128,7 +128,7 @@ export abstract class Model<
                 items
             );
             items.forEach(item => {
-                item.activateRec();
+                item._recRecover();
                 this._setState();
             });
             return result;
@@ -136,7 +136,7 @@ export abstract class Model<
         childList.pop = () => {
             const item = childList.pop();
             if (item) {
-                item._destroyRec();
+                item._recDestroy();
                 this._setState();
             }
             return item;
@@ -144,7 +144,7 @@ export abstract class Model<
         childList.shift = () => {
             const item = childList.shift();
             if (item) {
-                item._destroyRec();
+                item._recDestroy();
                 this._setState();
             }
             return item;
@@ -155,7 +155,7 @@ export abstract class Model<
                 items
             );
             items.forEach(item => {
-                item.activateRec();
+                item._recRecover();
                 this._setState();
             });
             return result;
@@ -233,13 +233,13 @@ export abstract class Model<
                 value: ModelDict<M>[K]
             ) => {
                 target[key] = value;
-                value.activateRec();
+                value._recRecover();
                 this._setState();
                 return true;
             },
             deleteProperty: (target, key: KeyOf<ModelDict<M>>) => {
                 const value = target[key];
-                value._destroyRec();
+                value._recDestroy();
                 delete target[key];
                 this._setState();
                 return true;
@@ -297,30 +297,30 @@ export abstract class Model<
     };
 
     // 执行初始化函数
-    protected readonly _activate = () => {};
-    public readonly activateRec = () => {
+    protected readonly _recover = () => {};
+    protected readonly _recRecover = () => {
         if (this._isActived) return;
-        this._activate();
+        this._recover();
         for (const child of this._childList) {
-            child.activateRec();
+            child._recRecover();
         }
         for (const key in this._childDict) {
             const child = this._childDict[key];
-            child.activateRec();
+            child._recRecover();
         }
         this._isActived = true;
     };
 
     // 执行析构函数
     protected readonly _destroy = () => {};
-    private readonly _destroyRec = () => {
+    private readonly _recDestroy = () => {
         console.log('destroy', this.id);
         for (const child of this._childList) {
-            child._destroyRec();
+            child._recDestroy();
         }
         for (const key in this._childDict) {
             const child = this._childDict[key];
-            child._destroyRec();
+            child._recDestroy();
         }
         for (const key in this._reactDict) {
             const react = this._reactDict[key];
