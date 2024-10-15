@@ -1,4 +1,4 @@
-import { Base, KeyOf } from "../configs";
+import { Base, KeyOf } from "../types";
 
 export function initAutomicProxy<T extends Base.Dict>(
     get: (key: KeyOf<T>) => T[KeyOf<T>],

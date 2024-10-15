@@ -1,6 +1,6 @@
 import type { App } from "../app";
-import { KeyOf } from "../configs";
-import { ModelDef } from "../configs/model-def";
+import { KeyOf } from "../types";
+import { ModelDef } from "../types/model-def";
 import { SafeEvent } from "./event";
 
 export type ReactDict<M extends ModelDef> = {

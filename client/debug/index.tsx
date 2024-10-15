@@ -4,10 +4,10 @@ import type { App } from "../app";
 import type { Model } from "../models";
 import "./index.css";
 import { Event as ModelEvent, EventDict, ModifyEventDict, UpdateEventDict } from "../utils/event";
-import { ModelDef } from "../configs/model-def";
+import { ModelDef } from "../types/model-def";
 import { ReactDict, React as ModelReact } from "../utils/react";
-import { Base } from "../configs";
-import { ModelDict, ModelList } from "../configs/model";
+import { Base } from "../types";
+import { ModelDict, ModelList } from "../types/model";
 import { useIntf } from "./use-intf";
 
 

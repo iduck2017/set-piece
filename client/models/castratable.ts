@@ -1,9 +1,9 @@
-import { SpecModelDef } from "../configs/model-def";
-import { ModelCode } from "../configs/model-code";
+import { SpecModelDef } from "../types/model-def";
+import { ModelCode } from "../types/model-code";
 import { SpecModel } from "./specific";
-import { ModelConfig } from "../configs/model";
+import { ModelConfig } from "../types/model";
 import { BunnyModel, BunnyModelDef } from "./bunny";
-import { EventInfo } from "../configs/event";
+import { EventInfo } from "../types/event";
 import { Random } from "../utils/random";
 import { AnimalFeaturesModel } from "./animal-feature";
 

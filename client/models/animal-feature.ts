@@ -1,7 +1,7 @@
-import { SpecModelDef } from "../configs/model-def";
-import { ModelCode } from "../configs/model-code";
+import { SpecModelDef } from "../types/model-def";
+import { ModelCode } from "../types/model-code";
 import { SpecModel } from "./specific";
-import { ModelConfig } from "../configs/model";
+import { ModelConfig } from "../types/model";
 import type { CastratableModelDef } from "./castratable";
 import type { BunnyModel } from "./bunny";
 

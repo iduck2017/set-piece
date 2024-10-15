@@ -1,6 +1,6 @@
-import { KeyOf } from "../configs";
-import { ModelDef } from "../configs/model-def";
-import { EventInfo } from "../configs/event";
+import { KeyOf } from "../types";
+import { ModelDef } from "../types/model-def";
+import { EventInfo } from "../types/event";
 import type { React } from "./react";
 import type { App } from "../app";
 

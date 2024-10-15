@@ -1,6 +1,6 @@
-import { ModelConfig, PureModelConfig } from "../configs/model";
-import { SpecModelDef } from "../configs/model-def";
-import { ModelCode } from "../configs/model-code";
+import { ModelConfig, PureModelConfig } from "../types/model";
+import { SpecModelDef } from "../types/model-def";
+import { ModelCode } from "../types/model-code";
 import { BunnyModelDef } from "./bunny";
 import { SpecModel } from "./specific";
 import { TimerModelDef } from "./timer";

@@ -1,6 +1,6 @@
-import { ModelConfig } from "../configs/model";
-import { ModelCode } from "../configs/model-code";
-import { SpecModelDef } from "../configs/model-def";
+import { ModelConfig } from "../types/model";
+import { ModelCode } from "../types/model-code";
+import { SpecModelDef } from "../types/model-def";
 import { SpecModel } from "./specific";
 
 export type PlayerModelDef = SpecModelDef<{

@@ -1,7 +1,7 @@
 import type { App } from "../app";
 import { RootModelDef } from "../models/root";
-import { PureModelConfig } from "../configs/model";
-import { ModelCode } from "../configs/model-code";
+import { PureModelConfig } from "../types/model";
+import { ModelCode } from "../types/model-code";
 import { initReadonlyProxy } from "../utils/proxy";
 import { singleton } from "../utils/singleton";
 
