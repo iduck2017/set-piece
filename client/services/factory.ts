@@ -1,8 +1,8 @@
 import type { App } from "../app";
 import type { Model } from "../models";
-import { Base } from "../types";
-import type { ModelConfig, PureModelConfig } from "../types/model";
-import { ModelDef } from "../types/model-def";
+import { Base } from "../type";
+import type { TmplModelConfig, ModelConfig } from "../type/model/config";
+import { ModelDef } from "../type/model/define";
 import { singleton } from "../utils/singleton";
 
 
@@ -12,11 +12,11 @@ export class FactoryService {
 
     private static readonly _productDict: Record<
         string,
-        new (config: PureModelConfig<any>) => Model
+        new (config: ModelConfig<any>) => Model
     >;
     public static readonly register = (
         code: string,
-        target: new (config: PureModelConfig<any>) => Model
+        target: new (config: ModelConfig<any>) => Model
     ) => {
         if (FactoryService._productDict[code] !== target) throw new Error();
         FactoryService._productDict[code] = target;
@@ -28,7 +28,7 @@ export class FactoryService {
 
     // 生成反序列化节点
     public readonly unserialize = <D extends ModelDef>(
-        config: ModelConfig<D>
+        config: TmplModelConfig<D>
     ): Model<D> => {
         const Type: Base.Class = FactoryService._productDict[config.code];
         return new Type(config);

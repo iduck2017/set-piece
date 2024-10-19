@@ -1,5 +1,5 @@
-import { KeyOf } from "../types";
-import { ModelDef } from "../types/model-def";
+import { KeyOf, ValueOf } from "../type";
+import { ModelDef } from "../type/model/define";
 import { initAutomicProxy, initReadonlyProxy } from "../utils/proxy";
 import type { ModelState } from "../debug";
 import { React, ReactDict } from "../utils/react";
@@ -14,14 +14,21 @@ import {
 } from "../utils/event";
 import { 
     BaseModelConfig, 
-    ModelBundle, 
-    ModelBundleDict, 
-    ModelConfigList, 
-    ModelDict, 
-    ModelList, 
-    PureModelConfig
-} from "../types/model";
+    ModelConfig
+} from "../type/model/config";
 import type { App } from "../app";
+import { ModelBundle } from "../type/model/bundle";
+
+export namespace Model {
+    export type ChildList<M extends ModelDef> = Array<
+        Model<ValueOf<ModelDef.ChildList<M>>>
+    >
+
+    export type ChildDict<M extends ModelDef> = {
+        [K in KeyOf<ModelDef.ChildDict<M>>]: 
+            Model<ModelDef.ChildDict<M>[K]>
+    }
+}
 
 
 // 模型层节点
@@ -50,13 +57,13 @@ export abstract class Model<
     public readonly modifyEventDict: ModifySafeEventDict<M>;
     
     protected abstract readonly _reactDict: ReactDict<M>;
-    public abstract readonly intf: ModelDef.Intf<M>
+    public abstract readonly intf: Readonly<ModelDef.Intf<M>>;
 
     // 节点从属关系
-    protected readonly _childDict: ModelDict<M>;
-    protected readonly _childList: ModelList<M>;
-    public readonly childDict: Readonly<ModelDict<M>>;
-    public readonly childList: Readonly<ModelList<M>>;
+    protected readonly _childDict: Model.ChildDict<M>;
+    protected readonly _childList: Model.ChildList<M>;
+    public readonly childDict: Readonly<Model.ChildDict<M>>;
+    public readonly childList: Readonly<Model.ChildList<M>>;
 
     // 调试器相关
     private readonly _setterList: Array<(data: ModelState<M>) => void>;
@@ -105,9 +112,9 @@ export abstract class Model<
     };
 
     protected readonly _initChildList = (
-        config: ModelConfigList<M>
-    ) => {
-        const childList = (config).map(config => (
+        config: ModelConfig.ChildList<M>
+    ): Model.ChildList<M> => {
+        const childList = config.map(config => (
             this.app.factoryService.unserialize({
                 ...config,
                 parent: this,
@@ -219,9 +226,9 @@ export abstract class Model<
         this.modifyEventDict = initAutomicProxy(key => this._modifyEventDict[key].safeEvent);
 
         // 初始化节点从属关系
-        const childDict = {} as ModelDict<M>;
+        const childDict = {} as Model.ChildDict<M>;
         Object.keys(config.childDict).forEach((
-            key: KeyOf<ModelDict<M>>
+            key: KeyOf<Model.ChildDict<M>>
         ) => {
             if (!config.childDict[key]) return;
             childDict[key] = 
@@ -232,17 +239,17 @@ export abstract class Model<
                 });    
         });
         this._childDict = new Proxy(childDict, {
-            set: <K extends KeyOf<ModelDict<M>>>(
-                target: ModelDict<M>, 
+            set: <K extends KeyOf<Model.ChildDict<M>>>(
+                target: Model.ChildDict<M>, 
                 key: K, 
-                value: ModelDict<M>[K]
+                value: Model.ChildDict<M>[K]
             ) => {
                 target[key] = value;
                 value._recRecover();
                 this._setState();
                 return true;
             },
-            deleteProperty: (target, key: KeyOf<ModelDict<M>>) => {
+            deleteProperty: (target, key: KeyOf<Model.ChildDict<M>>) => {
                 const value = target[key];
                 value._recDestroy();
                 delete target[key];
@@ -284,9 +291,9 @@ export abstract class Model<
     public readonly serialize = (): ModelBundle<M> => {
         // 序列化事件触发器/处理器字典
         // 序列化从属节点字典/列表
-        const childDict = {} as ModelBundleDict<M>;
+        const childDict = {} as ModelBundle.ChildDict<M>;
         Object.keys(this._childDict).forEach((
-            key: KeyOf<ModelDict<M>>
+            key: KeyOf<Model.ChildDict<M>>
         ) => {
             const child = this._childDict[key];
             childDict[key] = child.serialize();
@@ -343,7 +350,7 @@ export abstract class Model<
     };
 
     protected readonly _unserialize = <M extends ModelDef>(
-        config: PureModelConfig<M>
+        config: ModelConfig<M>
     ): Model<M> => {
         return this.app.factoryService.unserialize({
             ...config,

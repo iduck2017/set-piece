@@ -1,5 +1,5 @@
-import { TmplModelDef } from "../types/model-def";
-import { ModelConfig } from "../types/model";
+import { TmplModelDef } from "../type/model/define";
+import { TmplModelConfig } from "../type/model/config";
 import { CardModelDef } from "./card";
 import { Model } from ".";
 import { useProduct } from "../utils/product";
@@ -15,7 +15,7 @@ export class DeckModel extends Model<DeckModelDef> {
     protected _reactDict = {};
     public intf = {};
 
-    constructor(config: ModelConfig<DeckModelDef>) {
+    constructor(config: TmplModelConfig<DeckModelDef>) {
         super({
             ...config,
             info: {},

@@ -1,5 +1,5 @@
-import { ModelConfig } from "../types/model";
-import { TmplModelDef } from "../types/model-def";
+import { TmplModelConfig } from "../type/model/config";
+import { TmplModelDef } from "../type/model/define";
 import { Random } from "../utils/random";
 import { AnimalFeaturesModelDef } from "./animal-feature";
 import { Model } from ".";
@@ -23,7 +23,7 @@ export type BunnyModelDef = TmplModelDef<{
 @useProduct('bunny')
 export class BunnyModel extends Model<BunnyModelDef> {
    
-    constructor(config: ModelConfig<BunnyModelDef>) {
+    constructor(config: TmplModelConfig<BunnyModelDef>) {
         super({
             ...config,
             childDict: {

@@ -1,7 +1,7 @@
-import { TmplModelDef } from "../types/model-def";
-import { ModelConfig } from "../types/model";
+import { TmplModelDef } from "../type/model/define";
+import { TmplModelConfig } from "../type/model/config";
 import { BunnyModel, BunnyModelDef } from "./bunny";
-import { EventInfo } from "../types/event";
+import { EventInfo } from "../type/event";
 import { Random } from "../utils/random";
 import { AnimalFeaturesModel } from "./animal-feature";
 import { Model } from ".";
@@ -45,7 +45,7 @@ export class CastratableModel extends Model<CastratableModelDef> {
         ageUpdateBefore: this._handleAgeUpdateBefore
     });
 
-    constructor(config: ModelConfig<CastratableModelDef>) {
+    constructor(config: TmplModelConfig<CastratableModelDef>) {
         super({
             ...config,
             info: {

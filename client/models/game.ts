@@ -1,6 +1,6 @@
 
-import { TmplModelDef } from "../types/model-def";
-import { ModelConfig } from "../types/model";
+import { TmplModelDef } from "../type/model/define";
+import { TmplModelConfig } from "../type/model/config";
 import { PlayerModelDef } from "./player";
 import { Model } from ".";
 import { useProduct } from "../utils/product";
@@ -18,7 +18,7 @@ export type GameModelDef = TmplModelDef<{
 export class GameModel extends Model<GameModelDef> {
     protected _reactDict = {};
 
-    constructor(config: ModelConfig<GameModelDef>) {
+    constructor(config: TmplModelConfig<GameModelDef>) {
         super({
             ...config,
             info: {},

@@ -1,5 +1,5 @@
-import { ModelConfig, PureModelConfig } from "../types/model";
-import { TmplModelDef } from "../types/model-def";
+import { TmplModelConfig, ModelConfig } from "../type/model/config";
+import { TmplModelDef } from "../type/model/define";
 import { BunnyModelDef } from "./bunny";
 import { TimerModelDef } from "./timer";
 import { GameModelDef } from "./game";
@@ -13,7 +13,7 @@ export type RootModelDef = TmplModelDef<{
     },
     childDict: {
         timer: TimerModelDef,
-        game?: GameModelDef
+        game: GameModelDef
     },
     childList: BunnyModelDef[],
     parent: undefined,
@@ -23,7 +23,7 @@ export type RootModelDef = TmplModelDef<{
 export class RootModel extends Model<RootModelDef> {
     protected _reactDict = {};
     
-    constructor(config: ModelConfig<RootModelDef>) {
+    constructor(config: TmplModelConfig<RootModelDef>) {
         const childList = config.childList || [];
         if (childList.length === 0) {
             childList.push({
@@ -47,7 +47,7 @@ export class RootModel extends Model<RootModelDef> {
         });
     }
 
-    public spawnCreature(config: PureModelConfig<BunnyModelDef>) {
+    public spawnCreature(config: ModelConfig<BunnyModelDef>) {
         const child = this._unserialize<BunnyModelDef>(config);
         this._childList.push(child);
         return child;

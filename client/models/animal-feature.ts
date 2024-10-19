@@ -1,5 +1,5 @@
-import { TmplModelDef } from "../types/model-def";
-import { ModelConfig } from "../types/model";
+import { TmplModelDef } from "../type/model/define";
+import { TmplModelConfig } from "../type/model/config";
 import type { CastratableModelDef } from "./castratable";
 import type { BunnyModel } from "./bunny";
 import { Model } from ".";
@@ -8,7 +8,7 @@ import { useProduct } from "../utils/product";
 export type AnimalFeaturesModelDef = TmplModelDef<{
     code: 'animal_features',
     childDict: {
-        castratable?: CastratableModelDef
+        castratable: CastratableModelDef
     },
     parent: BunnyModel 
 }>
@@ -17,7 +17,7 @@ export type AnimalFeaturesModelDef = TmplModelDef<{
 export class AnimalFeaturesModel extends Model<AnimalFeaturesModelDef> {
     protected _reactDict = {};
  
-    constructor(config: ModelConfig<AnimalFeaturesModelDef>) {
+    constructor(config: TmplModelConfig<AnimalFeaturesModelDef>) {
         super({
             ...config,
             info: {},

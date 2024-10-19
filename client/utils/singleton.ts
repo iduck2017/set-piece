@@ -1,4 +1,4 @@
-import { Base } from "../types";
+import { Base } from "../type";
 
 const _singletonDict = new Set<Base.Class>();
 

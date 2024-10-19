@@ -1,5 +1,5 @@
-import { ModelConfig } from "../types/model";
-import { TmplModelDef } from "../types/model-def";
+import { TmplModelConfig } from "../type/model/config";
+import { TmplModelDef } from "../type/model/define";
 import { Model } from ".";
 import { useProduct } from "../utils/product";
 
@@ -18,7 +18,7 @@ export type TimerModelDef = TmplModelDef<{
 export class TimerModel extends Model<TimerModelDef> {
     protected _reactDict = {};
 
-    constructor(config: ModelConfig<TimerModelDef>) {
+    constructor(config: TmplModelConfig<TimerModelDef>) {
         super({
             ...config,
             info: {

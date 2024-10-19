@@ -1,7 +1,7 @@
 import type { App } from "../app";
 import { RootModelDef } from "../models/root";
-import { PureModelConfig } from "../types/model";
-import { ModelCode } from "../types/model-code";
+import { ModelConfig } from "../type/model/config";
+import { ModelCode } from "../type/model-code";
 import { initReadonlyProxy } from "../utils/proxy";
 import { singleton } from "../utils/singleton";
 
@@ -38,7 +38,7 @@ export class ArchieveService {
 
     // 创建新的档案
     public readonly createArchieve = async (
-    ): Promise<PureModelConfig<RootModelDef>> => {
+    ): Promise<ModelConfig<RootModelDef>> => {
         this.app.referenceService.reset();
         const id = this.app.referenceService.ticket;
         this._data.push({
@@ -46,7 +46,7 @@ export class ArchieveService {
             name: 'hello',
             progress: 0
         });
-        const record: PureModelConfig<RootModelDef> = { code: ModelCode.Root };
+        const record: ModelConfig<RootModelDef> = { code: ModelCode.Root };
         await localStorage.setItem(`${ARCHIEVE_SAVE_PATH}_${id}`, JSON.stringify(record));
         await this.app.saveMetaData();
         return record;
@@ -55,7 +55,7 @@ export class ArchieveService {
     // 加载档案
     public async loadArchieve(
         index: number
-    ): Promise<PureModelConfig<RootModelDef>> {
+    ): Promise<ModelConfig<RootModelDef>> {
         this._index = index;
         const archieve = this._data[index];
         const path = `${ARCHIEVE_SAVE_PATH}_${archieve.id}`;

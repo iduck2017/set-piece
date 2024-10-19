@@ -1,8 +1,8 @@
-import { Base, Override } from ".";
-import type { Model } from "../models";
+import { Base, KeyOf } from "..";
+import type { Model } from "../../models";
 
-// 模型层节点定义
-export type ModelDef = {
+// 模型定义
+export type ModelDef = Readonly<{
     code: string
     info: Base.Data
     intf: Record<Base.Key, Base.Function>
@@ -11,25 +11,24 @@ export type ModelDef = {
     eventDict: Base.Dict,
     reactDict: Base.Dict,
     parent: Model | undefined;
-}
+}>
 
+// 模型定义反射
 export namespace ModelDef {
-    // 基础参数反射
     export type Code<M extends ModelDef> = M['code']
     export type Info<M extends ModelDef> = M['info']
     export type Intf<M extends ModelDef> = M['intf']
     export type Parent<M extends ModelDef> = M['parent']
-    export type ChildDict<M extends ModelDef> = Required<M['childDict']>
     export type ChildList<M extends ModelDef> = M['childList']
-    export type EventDict<M extends ModelDef> = M['eventDict']
-    export type ReactDict<M extends ModelDef> = M['reactDict']
+    export type ChildDict<M extends ModelDef> = Required<M['childDict']>
+    export type EventDict<M extends ModelDef> = Required<M['eventDict']>
+    export type ReactDict<M extends ModelDef> = Required<M['reactDict']>
 }
 
-// 自定义模型层节点定义
+// 泛型模型定义
 export type TmplModelDef<
-    M extends Partial<ModelDef>
-> = Readonly<Override<M, {
-    // 空模型层节点定义
+    D extends Partial<ModelDef>
+> = Omit<{
     code: never,
     info: Base.VoidData,
     intf: Base.VoidData,
@@ -38,5 +37,4 @@ export type TmplModelDef<
     childDict: Base.VoidData
     eventDict: Base.VoidData,
     reactDict: Base.VoidData,
-}>>
-
+}, KeyOf<D>> & D
