@@ -1,8 +1,7 @@
 import type { App } from "../app";
-import { RootModelDef } from "../models/root";
+import { RootModelDef } from "../model/root";
 import { ModelConfig } from "../type/model/config";
-import { ModelCode } from "../type/model-code";
-import { initReadonlyProxy } from "../utils/proxy";
+import { Delegator } from "../utils/proxy";
 import { singleton } from "../utils/singleton";
 
 export const ARCHIEVE_SAVE_PATH = 'archieve';
@@ -22,7 +21,7 @@ export class ArchieveService {
 
     // 档案信息
     private _data: ArchieveData[];
-    public data: ArchieveData[]; 
+    public data: Readonly<ArchieveData[]>; 
 
     constructor(app: App) {
         this.app = app;
@@ -31,9 +30,9 @@ export class ArchieveService {
     }
 
     // 初始化档案信息
-    public readonly initialize = (data: ArchieveData[]) => {
-        this._data = data;
-        this.data = initReadonlyProxy(this._data);
+    public readonly initialize = (data: Readonly<ArchieveData[]>) => {
+        this._data = [ ...data ];
+        this.data = Delegator.ReadonlyDict(this._data);
     };
 
     // 创建新的档案
@@ -46,7 +45,7 @@ export class ArchieveService {
             name: 'hello',
             progress: 0
         });
-        const record: ModelConfig<RootModelDef> = { code: ModelCode.Root };
+        const record: ModelConfig<RootModelDef> = { code: 'root' };
         await localStorage.setItem(`${ARCHIEVE_SAVE_PATH}_${id}`, JSON.stringify(record));
         await this.app.saveMetaData();
         return record;

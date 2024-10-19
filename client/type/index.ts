@@ -13,6 +13,6 @@ export namespace Base {
 }
 
 // 对象遍历
-export type ValueOf<M extends Base.Dict> = M extends Base.List ? M[number] : M[keyof M];
+export type ValueOf<M extends Base.Dict> = M[KeyOf<M>];
 export type KeyOf<M extends Base.Dict> = keyof M & string;
 

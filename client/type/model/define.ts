@@ -1,5 +1,5 @@
 import { Base, KeyOf } from "..";
-import type { Model } from "../../models";
+import type { Model } from "../../model";
 
 // 模型定义
 export type ModelDef = Readonly<{

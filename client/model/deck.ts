@@ -2,7 +2,7 @@ import { TmplModelDef } from "../type/model/define";
 import { TmplModelConfig } from "../type/model/config";
 import { CardModelDef } from "./card";
 import { Model } from ".";
-import { useProduct } from "../utils/product";
+import { useProduct } from "../utils/decor/product";
 
 export type DeckModelDef = TmplModelDef<{
     code: 'deck',

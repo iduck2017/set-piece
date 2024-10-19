@@ -1,6 +1,6 @@
-import { KeyOf, ValueOf } from "../type";
+import { KeyOf } from "../type";
 import { ModelDef } from "../type/model/define";
-import { initAutomicProxy, initReadonlyProxy } from "../utils/proxy";
+import { Delegator } from "../utils/proxy";
 import type { ModelState } from "../debug";
 import { React, ReactDict } from "../utils/react";
 import { 
@@ -21,7 +21,7 @@ import { ModelBundle } from "../type/model/bundle";
 
 export namespace Model {
     export type ChildList<M extends ModelDef> = Array<
-        Model<ValueOf<ModelDef.ChildList<M>>>
+        Model<ModelDef.ChildList<M>[number]>
     >
 
     export type ChildDict<M extends ModelDef> = {
@@ -102,7 +102,7 @@ export abstract class Model<
             ) => void | ModelDef.ReactDict<M>[K];
         }
     ): ReactDict<M> => {
-        return initAutomicProxy(key => {
+        return Delegator.AutomicDict(key => {
             return new React(
                 this.app,
                 callback[key].bind(this),
@@ -202,28 +202,32 @@ export abstract class Model<
             }
         );
         this._actualInfo = { ...this._originInfo };
-        this.actualInfo = initReadonlyProxy(this._actualInfo);
-
+        this.actualInfo = Delegator.ReadonlyDict(this._actualInfo);
 
         // 初始化事件依赖关系
-        this._eventDict = initAutomicProxy(() => new Event(
-            this.app,
-            this._setState
+        this._eventDict = Delegator.AutomicDict(() => (
+            new Event(this.app, this._setState)
         ));
-        this._updateEventDict = initAutomicProxy(() => new Event(
-            this.app,
-            this._setState
+        this.eventDict = Delegator.AutomicDict(key => (
+            this._eventDict[key].safeEvent
         ));
-        this._modifyEventDict = initAutomicProxy(key => new Event(
-            this.app, 
-            () => {
+
+        this._updateEventDict = Delegator.AutomicDict(() => (
+            new Event(this.app, this._setState)
+        ));
+        this.updateEventDict = Delegator.AutomicDict(key => (
+            this._updateEventDict[key].safeEvent
+        ));
+
+        this._modifyEventDict = Delegator.AutomicDict(key => (
+            new Event(this.app, () => {
                 this._setState();
                 this._updateInfo(key);
-            }
+            })
         ));
-        this.eventDict = initAutomicProxy(key => this._eventDict[key].safeEvent);
-        this.updateEventDict = initAutomicProxy(key => this._updateEventDict[key].safeEvent);
-        this.modifyEventDict = initAutomicProxy(key => this._modifyEventDict[key].safeEvent);
+        this.modifyEventDict = Delegator.AutomicDict(key => (
+            this._modifyEventDict[key].safeEvent
+        ));
 
         // 初始化节点从属关系
         const childDict = {} as Model.ChildDict<M>;
@@ -259,8 +263,8 @@ export abstract class Model<
         });
         this._childList = this._initChildList(config.childList || []);
 
-        this.childDict = initReadonlyProxy(this._childDict);
-        this.childList = initReadonlyProxy(this._childList);
+        this.childDict = Delegator.ReadonlyDict(this._childDict);
+        this.childList = Delegator.ReadonlyDict(this._childList);
 
         // 初始化调试器
         this._setterList = [];

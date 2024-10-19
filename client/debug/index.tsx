@@ -1,13 +1,12 @@
 /* eslint-disable max-len */
 import React, { ReactNode, useEffect, useState } from "react";
 import type { App } from "../app";
-import type { Model } from "../models";
+import type { Model } from "../model";
 import "./index.css";
 import { Event as ModelEvent, EventDict, ModifyEventDict, UpdateEventDict } from "../utils/event";
 import { ModelDef } from "../type/model/define";
 import { ReactDict, React as ModelReact } from "../utils/react";
 import { Base } from "../type";
-import { ModelDict, ModelList } from "../type/model/config";
 import { useIntf } from "./use-intf";
 
 
@@ -17,8 +16,8 @@ export type ModelProps<M extends ModelDef> = {
 }
 
 export type ModelState<M extends ModelDef> = {
-    childList: ModelList<M>,
-    childDict: ModelDict<M>,
+    childList: Model.ChildList<M>,
+    childDict: Model.ChildDict<M>,
     eventDict: EventDict<M>,
     updateEventDict: UpdateEventDict<M>,
     modifyEventDict: ModifyEventDict<M>,

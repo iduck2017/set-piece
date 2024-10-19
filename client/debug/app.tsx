@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import type { App } from "../app";
 import { ModelComp } from ".";
-import { ArchieveData } from "../services/archieve";
+import { ArchieveData } from "../service/archieve";
 import { AppStatus } from "../type/status";
 
 export function AppComp(props: {
@@ -9,7 +9,9 @@ export function AppComp(props: {
 }) {
     const { app } = props;
     const [ status, setStatus ] = useState<AppStatus>(app.status);
-    const [ archieves, setArchieves ] = useState<ArchieveData[]>(app.archieveService.data);
+    const [ archieves, setArchieves ] = useState<
+        Readonly<ArchieveData[]>
+    >(app.archieveService.data);
   
     const createArchieve = async () => {
         await app.archieveService.createArchieve();

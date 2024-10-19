@@ -1,9 +1,9 @@
-import { FactoryService } from "./services/factory";
-import { ReferenceService } from "./services/reference";
-import { ArchieveData, ArchieveService } from "./services/archieve";
-import { PerferenceData, PreferenceService } from "./services/perference";
-import { RootModel } from "./models/root";
-import { RenderService } from "./services/render";
+import { FactoryService } from "./service/factory";
+import { ReferenceService } from "./service/reference";
+import { ArchieveData, ArchieveService } from "./service/archieve";
+import { PerferenceData, PreferenceService } from "./service/perference";
+import { RootModel } from "./model/root";
+import { RenderService } from "./service/render";
 import { AppStatus } from "./type/status";
 
 export const MAJOR_VERSION = 0;
@@ -11,13 +11,13 @@ export const MINOR_VERSION = 1;
 export const PATCH_VERSION = 0;
 export const META_SAVE_PATH = 'meta';
 
-export type AppInfo = {
+export type AppInfo = Readonly<{
     majorVersion: number
     minorVersion: number
     patchVersion: number
     perferenceData: PerferenceData
-    archieveDataList: ArchieveData[]
-}
+    archieveDataList: Readonly<ArchieveData[]>
+}>
 
 export class App {
     public readonly majorVersion: number;

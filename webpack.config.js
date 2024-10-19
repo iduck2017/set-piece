@@ -1,10 +1,19 @@
 const path = require('path');
-let Webpack = require('webpack');
-let HtmlWebpackPlugin=require('html-webpack-plugin');
+const Webpack = require('webpack');
+const fs = require('fs');
+const HtmlWebpackPlugin=require('html-webpack-plugin');
 const { CleanWebpackPlugin } = require('clean-webpack-plugin');
 
+const dir = fs
+    .readdirSync(path.resolve('client/model'))
+    .map(file => `./client/model/${file}`)
+console.log(dir);
+
 module.exports = {
-    entry: './client/main.ts',
+    entry: [
+        './client/main.ts',
+        ...dir
+    ],
     mode: "development",
     output: {
         filename: 'bundle.[hash:4].js',

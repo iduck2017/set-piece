@@ -1,4 +1,4 @@
-import { KeyOf, ValueOf } from "..";
+import { KeyOf } from "..";
 import type { App } from "../../app";
 import { ModelDef } from "./define";
 
@@ -13,7 +13,7 @@ export type ModelConfig<D extends ModelDef> = Readonly<{
 
 export namespace ModelConfig {
     export type ChildList<D extends ModelDef> = Array<
-        ModelConfig<ValueOf<ModelDef.ChildList<D>>>
+        ModelConfig<ModelDef.ChildList<D>[number]>
     >
     export type ChildDict<D extends ModelDef> = {
         [K in KeyOf<ModelDef.ChildDict<D>>]:

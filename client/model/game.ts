@@ -3,7 +3,7 @@ import { TmplModelDef } from "../type/model/define";
 import { TmplModelConfig } from "../type/model/config";
 import { PlayerModelDef } from "./player";
 import { Model } from ".";
-import { useProduct } from "../utils/product";
+import { useProduct } from "../utils/decor/product";
 
 export type GameModelDef = TmplModelDef<{
     code: 'game',
@@ -23,12 +23,8 @@ export class GameModel extends Model<GameModelDef> {
             ...config,
             info: {},
             childDict: {
-                redPlayer: config.childDict?.redPlayer || {
-                    code: 'player'
-                },
-                bluePlayer: config.childDict?.bluePlayer || {
-                    code: 'player'
-                }
+                redPlayer: config.childDict?.redPlayer || { code: 'player' },
+                bluePlayer: config.childDict?.bluePlayer || { code: 'player' }
             }
         });
     }

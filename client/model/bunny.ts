@@ -3,7 +3,7 @@ import { TmplModelDef } from "../type/model/define";
 import { Random } from "../utils/random";
 import { AnimalFeaturesModelDef } from "./animal-feature";
 import { Model } from ".";
-import { useProduct } from "../utils/product";
+import { useProduct } from "../utils/decor/product";
 
 export type BunnyModelDef = TmplModelDef<{
     code: 'bunny',

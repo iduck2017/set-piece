@@ -1,5 +1,5 @@
 import type { App } from "../app";
-import type { Model } from "../models";
+import type { Model } from "../model";
 import { Base } from "../type";
 import type { TmplModelConfig, ModelConfig } from "../type/model/config";
 import { ModelDef } from "../type/model/define";
@@ -13,12 +13,12 @@ export class FactoryService {
     private static readonly _productDict: Record<
         string,
         new (config: ModelConfig<any>) => Model
-    >;
+    > = {};
     public static readonly register = (
         code: string,
         target: new (config: ModelConfig<any>) => Model
     ) => {
-        if (FactoryService._productDict[code] !== target) throw new Error();
+        if (FactoryService._productDict[code]) throw new Error();
         FactoryService._productDict[code] = target;
     };
 
@@ -31,6 +31,7 @@ export class FactoryService {
         config: TmplModelConfig<D>
     ): Model<D> => {
         const Type: Base.Class = FactoryService._productDict[config.code];
+        if (!Type) throw new Error(`未注册的模型类型：${config.code}`);
         return new Type(config);
     };
 }

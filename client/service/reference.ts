@@ -1,5 +1,5 @@
 import type { App } from "../app";
-import type { Model } from "../models";
+import type { Model } from "../model";
 import { ModelDef } from "../type/model/define";
 import { singleton } from "../utils/singleton";
 

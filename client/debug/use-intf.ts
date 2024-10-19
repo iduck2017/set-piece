@@ -1,7 +1,7 @@
-import type { Model } from "../models";
-import { BunnyModel } from "../models/bunny";
-import { CastratableModel } from "../models/castratable";
-import { TimerModel } from "../models/timer";
+import type { Model } from "../model";
+import { BunnyModel } from "../model/bunny";
+import { CastratableModel } from "../model/castratable";
+import { TimerModel } from "../model/timer";
 
 export function useIntf(model: Model): Record<string, () => void> {
     if (model instanceof BunnyModel) {

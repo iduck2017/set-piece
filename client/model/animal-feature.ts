@@ -3,7 +3,7 @@ import { TmplModelConfig } from "../type/model/config";
 import type { CastratableModelDef } from "./castratable";
 import type { BunnyModel } from "./bunny";
 import { Model } from ".";
-import { useProduct } from "../utils/product";
+import { useProduct } from "../utils/decor/product";
 
 export type AnimalFeaturesModelDef = TmplModelDef<{
     code: 'animal_features',

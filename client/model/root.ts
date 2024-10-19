@@ -4,7 +4,7 @@ import { BunnyModelDef } from "./bunny";
 import { TimerModelDef } from "./timer";
 import { GameModelDef } from "./game";
 import { Model } from ".";
-import { useProduct } from "../utils/product";
+import { useProduct } from "../utils/decor/product";
 
 export type RootModelDef = TmplModelDef<{
     code: 'root',
@@ -26,9 +26,7 @@ export class RootModel extends Model<RootModelDef> {
     constructor(config: TmplModelConfig<RootModelDef>) {
         const childList = config.childList || [];
         if (childList.length === 0) {
-            childList.push({
-                code: 'bunny'
-            });
+            childList.push({ code: 'bunny' });
         }
         super({
             ...config,
@@ -36,12 +34,8 @@ export class RootModel extends Model<RootModelDef> {
                 progress: config.info?.progress || 0
             },
             childDict: {
-                timer: config.childDict?.timer || {
-                    code: 'timer'
-                },
-                game: config.childDict?.game || {
-                    code: 'game'
-                }
+                timer: config.childDict?.timer || { code: 'timer' },
+                game: config.childDict?.game || { code: 'game' }
             },
             childList
         });

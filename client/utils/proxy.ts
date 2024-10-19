@@ -1,27 +1,25 @@
-import { Base, KeyOf } from "../type";
+import { Base, KeyOf, ValueOf } from "../type";
 
-export function initAutomicProxy<T extends Base.Dict>(
-    get: (key: KeyOf<T>) => T[KeyOf<T>],
-    origin?: Partial<T>
-): T {
-    if (!origin) origin = {};
-    return new Proxy(origin as T, {
-        get: (origin, key: KeyOf<T>) => {
-            if (!origin[key]) {
-                origin[key] = get(key);
-            }
-            return origin[key];
-        },
-        set: () => false,
-        deleteProperty: () => false
-    });
-}
+export namespace Delegator {
+    export function AutomicDict<T extends Base.Dict>(
+        get: (key: KeyOf<T>) => ValueOf<T>
+    ): T {
+        return new Proxy({} as T, {
+            get: (origin, key: KeyOf<T>) => {
+                if (!origin[key]) origin[key] = get(key);
+                return origin[key];
+            },
+            set: () => false,
+            deleteProperty: () => false
+        });
+    }
 
-export function initReadonlyProxy<T extends Base.Dict>(
-    origin: T
-): T {
-    return new Proxy(origin, {
-        set: () => false,
-        deleteProperty: () => false
-    });
+    export function ReadonlyDict<T extends Base.Dict>(
+        origin: T
+    ): Readonly<T> {
+        return new Proxy(origin, {
+            set: () => false,
+            deleteProperty: () => false
+        });
+    }
 }

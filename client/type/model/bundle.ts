@@ -1,4 +1,4 @@
-import { KeyOf, ValueOf } from "..";
+import { KeyOf } from "..";
 import { ModelDef } from "./define";
 
 // 模型序列化对象
@@ -12,7 +12,7 @@ export type ModelBundle<D extends ModelDef> = Readonly<{
 
 export namespace ModelBundle {
     export type ChildList<D extends ModelDef> = Array<
-        ModelBundle<ValueOf<ModelDef.ChildList<D>>>
+        ModelBundle<ModelDef.ChildList<D>[number]>
     >
     export type ChildDict<D extends ModelDef> = {
         [K in KeyOf<ModelDef.ChildDict<D>>]: 

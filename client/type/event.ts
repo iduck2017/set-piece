@@ -1,4 +1,4 @@
-import type { Model } from "../models";
+import type { Model } from "../model";
 import { ModelDef } from "./model/define";
 
 export namespace EventInfo {
