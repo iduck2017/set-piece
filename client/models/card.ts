@@ -1,13 +1,13 @@
 import { TmplModelDef } from "../types/model-def";
-import { ModelCode } from "../types/model-code";
 import { ModelConfig } from "../types/model";
 import { Model } from ".";
+import { useProduct } from "../utils/product";
 
 export type CardModelDef = TmplModelDef<{
-    code: ModelCode.Card,
+    code: 'card',
 }>
 
-
+@useProduct('card')
 export class CardModel extends Model<CardModelDef> {
     protected _reactDict = {};
 

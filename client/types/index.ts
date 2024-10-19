@@ -16,7 +16,7 @@ export type Optional<T> = T | undefined;
 export type Validate<A extends B, B> = A
 
 // 重写部分参数
-export type Override<
-    A extends Base.Dict, 
-    B extends Base.Dict
+export type Override< 
+    B extends Base.Dict,
+    A extends Base.Dict,
 > = Omit<A, KeyOf<B>> & B

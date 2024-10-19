@@ -1,10 +1,10 @@
 import { ModelConfig } from "../types/model";
 import { TmplModelDef } from "../types/model-def";
-import { ModelCode } from "../types/model-code";
 import { Model } from ".";
+import { useProduct } from "../utils/product";
 
 export type TimerModelDef = TmplModelDef<{
-    code: ModelCode.Timer,
+    code: 'timer',
     info: {
         time: number,
     },
@@ -14,6 +14,7 @@ export type TimerModelDef = TmplModelDef<{
     }
 }>
 
+@useProduct('timer')
 export class TimerModel extends Model<TimerModelDef> {
     protected _reactDict = {};
 

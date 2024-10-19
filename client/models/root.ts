@@ -1,13 +1,13 @@
 import { ModelConfig, PureModelConfig } from "../types/model";
 import { TmplModelDef } from "../types/model-def";
-import { ModelCode } from "../types/model-code";
 import { BunnyModelDef } from "./bunny";
 import { TimerModelDef } from "./timer";
 import { GameModelDef } from "./game";
 import { Model } from ".";
+import { useProduct } from "../utils/product";
 
 export type RootModelDef = TmplModelDef<{
-    code: ModelCode.Root,
+    code: 'root',
     info: {
         progress: number,
     },
@@ -19,6 +19,7 @@ export type RootModelDef = TmplModelDef<{
     parent: undefined,
 }>
 
+@useProduct('root')
 export class RootModel extends Model<RootModelDef> {
     protected _reactDict = {};
     
@@ -26,7 +27,7 @@ export class RootModel extends Model<RootModelDef> {
         const childList = config.childList || [];
         if (childList.length === 0) {
             childList.push({
-                code: ModelCode.Bunny
+                code: 'bunny'
             });
         }
         super({
@@ -36,9 +37,11 @@ export class RootModel extends Model<RootModelDef> {
             },
             childDict: {
                 timer: config.childDict?.timer || {
-                    code: ModelCode.Timer
+                    code: 'timer'
                 },
-                game: config.childDict?.game
+                game: config.childDict?.game || {
+                    code: 'game'
+                }
             },
             childList
         });
@@ -59,7 +62,7 @@ export class RootModel extends Model<RootModelDef> {
 
     public prepareGame() {
         const game = this._unserialize<GameModelDef>({
-            code: ModelCode.Game
+            code: 'game'
         });
         this._childDict.game = game;
         return game;

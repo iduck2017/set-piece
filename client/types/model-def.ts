@@ -1,10 +1,9 @@
 import { Base, Override } from ".";
 import type { Model } from "../models";
-import type { ModelCode } from "./model-code";
 
 // 模型层节点定义
 export type ModelDef = {
-    code: ModelCode
+    code: string
     info: Base.Data
     intf: Record<Base.Key, Base.Function>
     childList: Array<ModelDef>
@@ -20,7 +19,7 @@ export namespace ModelDef {
     export type Info<M extends ModelDef> = M['info']
     export type Intf<M extends ModelDef> = M['intf']
     export type Parent<M extends ModelDef> = M['parent']
-    export type ChildDict<M extends ModelDef> = M['childDict']
+    export type ChildDict<M extends ModelDef> = Required<M['childDict']>
     export type ChildList<M extends ModelDef> = M['childList']
     export type EventDict<M extends ModelDef> = M['eventDict']
     export type ReactDict<M extends ModelDef> = M['reactDict']
@@ -29,8 +28,9 @@ export namespace ModelDef {
 // 自定义模型层节点定义
 export type TmplModelDef<
     M extends Partial<ModelDef>
-> = Readonly<Override<{
+> = Readonly<Override<M, {
     // 空模型层节点定义
+    code: never,
     info: Base.VoidData,
     intf: Base.VoidData,
     parent: Model | undefined,
@@ -38,5 +38,5 @@ export type TmplModelDef<
     childDict: Base.VoidData
     eventDict: Base.VoidData,
     reactDict: Base.VoidData,
-}, M>>
+}>>
 

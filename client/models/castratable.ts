@@ -1,16 +1,15 @@
 import { TmplModelDef } from "../types/model-def";
-import { ModelCode } from "../types/model-code";
 import { ModelConfig } from "../types/model";
 import { BunnyModel, BunnyModelDef } from "./bunny";
 import { EventInfo } from "../types/event";
 import { Random } from "../utils/random";
 import { AnimalFeaturesModel } from "./animal-feature";
 import { Model } from ".";
-
+import { useProduct } from "../utils/product";
 
 /** 可阉割的 */
 export type CastratableModelDef = TmplModelDef<{
-    code: ModelCode.Castratable,
+    code: 'castratable',
     info: {
         /** 是否已经阉割 */
         castrated: boolean,
@@ -29,6 +28,7 @@ export type CastratableModelDef = TmplModelDef<{
     parent: AnimalFeaturesModel
 }>
 
+@useProduct('castratable')
 export class CastratableModel extends Model<CastratableModelDef> {
 
     /** 预期寿命修饰符 */

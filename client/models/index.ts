@@ -22,7 +22,6 @@ import {
     PureModelConfig
 } from "../types/model";
 import type { App } from "../app";
-import { ModelCode } from "../types/model-code";
 
 
 // 模型层节点
@@ -35,7 +34,7 @@ export abstract class Model<
     
     // 唯一标识符
     public readonly id: string;
-    public readonly code: ModelCode;
+    public readonly code: string;
 
     // 数据结构
     protected readonly _originInfo: ModelDef.Info<M>;
@@ -200,30 +199,21 @@ export abstract class Model<
 
 
         // 初始化事件依赖关系
-        this._eventDict = initAutomicProxy(
-            (key) => {
-                console.log(this.constructor.name, key);
-                return new Event(
-                    this.app,
-                    this._setState
-                );
+        this._eventDict = initAutomicProxy(() => new Event(
+            this.app,
+            this._setState
+        ));
+        this._updateEventDict = initAutomicProxy(() => new Event(
+            this.app,
+            this._setState
+        ));
+        this._modifyEventDict = initAutomicProxy(key => new Event(
+            this.app, 
+            () => {
+                this._setState();
+                this._updateInfo(key);
             }
-        );
-        this._updateEventDict = initAutomicProxy(
-            () => new Event(
-                this.app,
-                this._setState
-            )
-        );
-        this._modifyEventDict = initAutomicProxy(
-            key => new Event(
-                this.app, 
-                () => {
-                    this._setState();
-                    this._updateInfo(key);
-                }
-            )
-        );
+        ));
         this.eventDict = initAutomicProxy(key => this._eventDict[key].safeEvent);
         this.updateEventDict = initAutomicProxy(key => this._updateEventDict[key].safeEvent);
         this.modifyEventDict = initAutomicProxy(key => this._modifyEventDict[key].safeEvent);
@@ -234,11 +224,12 @@ export abstract class Model<
             key: KeyOf<ModelDict<M>>
         ) => {
             if (!config.childDict[key]) return;
-            childDict[key] = this.app.factoryService.unserialize({
-                ...config.childDict[key],
-                parent: this,
-                app: this.app
-            });    
+            childDict[key] = 
+                this.app.factoryService.unserialize({
+                    ...config.childDict[key],
+                    parent: this,
+                    app: this.app
+                });    
         });
         this._childDict = new Proxy(childDict, {
             set: <K extends KeyOf<ModelDict<M>>>(

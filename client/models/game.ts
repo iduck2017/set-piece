@@ -1,12 +1,12 @@
 
 import { TmplModelDef } from "../types/model-def";
-import { ModelCode } from "../types/model-code";
 import { ModelConfig } from "../types/model";
 import { PlayerModelDef } from "./player";
 import { Model } from ".";
+import { useProduct } from "../utils/product";
 
 export type GameModelDef = TmplModelDef<{
-    code: ModelCode.Game,
+    code: 'game',
     childList: [],
     childDict: {
         redPlayer: PlayerModelDef,
@@ -14,7 +14,7 @@ export type GameModelDef = TmplModelDef<{
     }
 }>
 
-
+@useProduct('game')
 export class GameModel extends Model<GameModelDef> {
     protected _reactDict = {};
 
@@ -24,10 +24,10 @@ export class GameModel extends Model<GameModelDef> {
             info: {},
             childDict: {
                 redPlayer: config.childDict?.redPlayer || {
-                    code: ModelCode.Player
+                    code: 'player'
                 },
                 bluePlayer: config.childDict?.bluePlayer || {
-                    code: ModelCode.Player
+                    code: 'player'
                 }
             }
         });

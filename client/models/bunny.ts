@@ -1,12 +1,12 @@
 import { ModelConfig } from "../types/model";
 import { TmplModelDef } from "../types/model-def";
-import { ModelCode } from "../types/model-code";
 import { Random } from "../utils/random";
 import { AnimalFeaturesModelDef } from "./animal-feature";
 import { Model } from ".";
+import { useProduct } from "../utils/product";
 
 export type BunnyModelDef = TmplModelDef<{
-    code: ModelCode.Bunny,
+    code: 'bunny',
     info: {
         curAge: number,
         maxAge: number,
@@ -20,13 +20,14 @@ export type BunnyModelDef = TmplModelDef<{
     }
 }>
 
+@useProduct('bunny')
 export class BunnyModel extends Model<BunnyModelDef> {
    
     constructor(config: ModelConfig<BunnyModelDef>) {
         super({
             ...config,
             childDict: {
-                features: config.childDict?.features || { code: ModelCode.AnimalFeatures }
+                features: config.childDict?.features || { code: 'animal_features' }
             },
             info: {
                 curAge: config.info?.curAge || 0,
@@ -46,7 +47,7 @@ export class BunnyModel extends Model<BunnyModelDef> {
     /** 繁殖幼崽 */
     public readonly reproduce = () => {
         this.app.root.spawnCreature({
-            code: ModelCode.Bunny
+            code: 'bunny'
         });
     };
 
