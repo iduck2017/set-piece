@@ -1,15 +1,15 @@
-import { SpecModelDef } from "../types/model-def";
+import { TmplModelDef } from "../types/model-def";
 import { ModelCode } from "../types/model-code";
-import { SpecModel } from "./specific";
 import { ModelConfig } from "../types/model";
 import { BunnyModel, BunnyModelDef } from "./bunny";
 import { EventInfo } from "../types/event";
 import { Random } from "../utils/random";
 import { AnimalFeaturesModel } from "./animal-feature";
+import { Model } from ".";
 
 
 /** 可阉割的 */
-export type CastratableModelDef = SpecModelDef<{
+export type CastratableModelDef = TmplModelDef<{
     code: ModelCode.Castratable,
     info: {
         /** 是否已经阉割 */
@@ -29,7 +29,7 @@ export type CastratableModelDef = SpecModelDef<{
     parent: AnimalFeaturesModel
 }>
 
-export class CastratableModel extends SpecModel<CastratableModelDef> {
+export class CastratableModel extends Model<CastratableModelDef> {
 
     /** 预期寿命修饰符 */
     private readonly _handleAgeUpdateBefore = (
@@ -81,4 +81,6 @@ export class CastratableModel extends SpecModel<CastratableModelDef> {
         this._eventDict.castrateDone.emitEvent({ model: animal });
     };
 
+    
+    public readonly intf = {};
 }

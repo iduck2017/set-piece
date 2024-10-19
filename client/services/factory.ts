@@ -2,7 +2,6 @@ import type { App } from "../app";
 import type { Model } from "../models";
 import { Base } from "../types";
 import type { ModelConfig } from "../types/model";
-import { MODEL_REGISTRY } from "../types/model-registry";
 import { ModelDef } from "../types/model-def";
 import { singleton } from "../utils/singleton";
 
@@ -16,10 +15,10 @@ export class FactoryService {
     }
 
     // 生成反序列化节点
-    public readonly unserialize = <C extends ModelDef>(
-        config: ModelConfig<C>
-    ): Model<C> => {
-        const Type: Base.Class = MODEL_REGISTRY[config.code];
+    public readonly unserialize = <D extends ModelDef>(
+        config: ModelConfig<D>
+    ): Model<D> => {
+        // const Type: Base.Class = MODEL_REGISTRY[config.code];
         return new Type(config);
     };
 }

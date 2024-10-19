@@ -1,11 +1,11 @@
-import { SpecModelDef } from "../types/model-def";
+import { TmplModelDef } from "../types/model-def";
 import { ModelCode } from "../types/model-code";
-import { SpecModel } from "./specific";
 import { ModelConfig } from "../types/model";
 import type { CastratableModelDef } from "./castratable";
 import type { BunnyModel } from "./bunny";
+import { Model } from ".";
 
-export type AnimalFeaturesModelDef = SpecModelDef<{
+export type AnimalFeaturesModelDef = TmplModelDef<{
     code: ModelCode.AnimalFeatures,
     childDict: {
         castratable?: CastratableModelDef
@@ -13,7 +13,7 @@ export type AnimalFeaturesModelDef = SpecModelDef<{
     parent: BunnyModel 
 }>
 
-export class AnimalFeaturesModel extends SpecModel<AnimalFeaturesModelDef> {
+export class AnimalFeaturesModel extends Model<AnimalFeaturesModelDef> {
     protected _reactDict = {};
  
     constructor(config: ModelConfig<AnimalFeaturesModelDef>) {
@@ -27,4 +27,6 @@ export class AnimalFeaturesModel extends SpecModel<AnimalFeaturesModelDef> {
             }
         });
     }
+    
+    public readonly intf = {};
 }

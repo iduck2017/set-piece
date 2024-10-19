@@ -1,14 +1,14 @@
-import { SpecModelDef } from "../types/model-def";
+import { TmplModelDef } from "../types/model-def";
 import { ModelCode } from "../types/model-code";
-import { SpecModel } from "./specific";
 import { ModelConfig } from "../types/model";
+import { Model } from ".";
 
-export type CardModelDef = SpecModelDef<{
+export type CardModelDef = TmplModelDef<{
     code: ModelCode.Card,
 }>
 
 
-export class CardModel extends SpecModel<CardModelDef> {
+export class CardModel extends Model<CardModelDef> {
     protected _reactDict = {};
 
     constructor(config: ModelConfig<CardModelDef>) {
@@ -18,4 +18,6 @@ export class CardModel extends SpecModel<CardModelDef> {
             childDict: {}
         });
     }
+    
+    public readonly intf = {};
 }

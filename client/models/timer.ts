@@ -1,9 +1,9 @@
 import { ModelConfig } from "../types/model";
-import { SpecModelDef } from "../types/model-def";
+import { TmplModelDef } from "../types/model-def";
 import { ModelCode } from "../types/model-code";
-import { SpecModel } from "./specific";
+import { Model } from ".";
 
-export type TimerModelDef = SpecModelDef<{
+export type TimerModelDef = TmplModelDef<{
     code: ModelCode.Timer,
     info: {
         time: number,
@@ -14,7 +14,7 @@ export type TimerModelDef = SpecModelDef<{
     }
 }>
 
-export class TimerModel extends SpecModel<TimerModelDef> {
+export class TimerModel extends Model<TimerModelDef> {
     protected _reactDict = {};
 
     constructor(config: ModelConfig<TimerModelDef>) {
@@ -33,4 +33,6 @@ export class TimerModel extends SpecModel<TimerModelDef> {
         this._originInfo.time += offsetTime;
         this._eventDict.tickDone.emitEvent();
     };
+    
+    public readonly intf = {};
 }

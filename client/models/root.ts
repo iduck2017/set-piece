@@ -1,12 +1,12 @@
 import { ModelConfig, PureModelConfig } from "../types/model";
-import { SpecModelDef } from "../types/model-def";
+import { TmplModelDef } from "../types/model-def";
 import { ModelCode } from "../types/model-code";
 import { BunnyModelDef } from "./bunny";
-import { SpecModel } from "./specific";
 import { TimerModelDef } from "./timer";
 import { GameModelDef } from "./game";
+import { Model } from ".";
 
-export type RootModelDef = SpecModelDef<{
+export type RootModelDef = TmplModelDef<{
     code: ModelCode.Root,
     info: {
         progress: number,
@@ -19,7 +19,7 @@ export type RootModelDef = SpecModelDef<{
     parent: undefined,
 }>
 
-export class RootModel extends SpecModel<RootModelDef> {
+export class RootModel extends Model<RootModelDef> {
     protected _reactDict = {};
     
     constructor(config: ModelConfig<RootModelDef>) {
@@ -45,13 +45,12 @@ export class RootModel extends SpecModel<RootModelDef> {
     }
 
     public spawnCreature(config: PureModelConfig<BunnyModelDef>) {
-        const child = this._unserialize(config);
-        console.log(this._childList.push);
+        const child = this._unserialize<BunnyModelDef>(config);
         this._childList.push(child);
         return child;
     }
 
-    public killCreature(child: SpecModel<BunnyModelDef>) {
+    public killCreature(child: Model<BunnyModelDef>) {
         const index = this._childList.indexOf(child);
         if (index >= 0) {
             this._childList.splice(index, 1);
@@ -59,7 +58,7 @@ export class RootModel extends SpecModel<RootModelDef> {
     }
 
     public prepareGame() {
-        const game = this._unserialize({
+        const game = this._unserialize<GameModelDef>({
             code: ModelCode.Game
         });
         this._childDict.game = game;
@@ -69,4 +68,7 @@ export class RootModel extends SpecModel<RootModelDef> {
     public readonly recover = () => {
         this._recRecover();
     };
+
+    
+    public readonly intf = {};
 }

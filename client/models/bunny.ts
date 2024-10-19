@@ -1,11 +1,11 @@
 import { ModelConfig } from "../types/model";
-import { SpecModelDef } from "../types/model-def";
+import { TmplModelDef } from "../types/model-def";
 import { ModelCode } from "../types/model-code";
 import { Random } from "../utils/random";
-import { SpecModel } from "./specific";
 import { AnimalFeaturesModelDef } from "./animal-feature";
+import { Model } from ".";
 
-export type BunnyModelDef = SpecModelDef<{
+export type BunnyModelDef = TmplModelDef<{
     code: ModelCode.Bunny,
     info: {
         curAge: number,
@@ -18,10 +18,9 @@ export type BunnyModelDef = SpecModelDef<{
     childDict: {
         features: AnimalFeaturesModelDef
     }
-    parent: SpecModel,
 }>
 
-export class BunnyModel extends SpecModel<BunnyModelDef> {
+export class BunnyModel extends Model<BunnyModelDef> {
    
     constructor(config: ModelConfig<BunnyModelDef>) {
         super({
@@ -62,7 +61,9 @@ export class BunnyModel extends SpecModel<BunnyModelDef> {
         this._originInfo.curAge += 1;
     };
 
-    protected _reactDict = this._initReactDict({
+    protected readonly _reactDict = this._initReactDict({
         timeUpdateDone: this._handleTimeUpdateDone
     });
+
+    public readonly intf = {};
 }

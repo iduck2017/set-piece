@@ -1,11 +1,11 @@
 
-import { SpecModelDef } from "../types/model-def";
+import { TmplModelDef } from "../types/model-def";
 import { ModelCode } from "../types/model-code";
-import { SpecModel } from "./specific";
 import { ModelConfig } from "../types/model";
 import { PlayerModelDef } from "./player";
+import { Model } from ".";
 
-export type GameModelDef = SpecModelDef<{
+export type GameModelDef = TmplModelDef<{
     code: ModelCode.Game,
     childList: [],
     childDict: {
@@ -15,7 +15,7 @@ export type GameModelDef = SpecModelDef<{
 }>
 
 
-export class GameModel extends SpecModel<GameModelDef> {
+export class GameModel extends Model<GameModelDef> {
     protected _reactDict = {};
 
     constructor(config: ModelConfig<GameModelDef>) {
@@ -32,4 +32,6 @@ export class GameModel extends SpecModel<GameModelDef> {
             }
         });
     }
+    
+    public readonly intf = {};
 }

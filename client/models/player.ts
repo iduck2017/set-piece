@@ -1,14 +1,14 @@
+import { Model } from ".";
 import { ModelConfig } from "../types/model";
 import { ModelCode } from "../types/model-code";
-import { SpecModelDef } from "../types/model-def";
-import { SpecModel } from "./specific";
+import { TmplModelDef } from "../types/model-def";
 
-export type PlayerModelDef = SpecModelDef<{
+export type PlayerModelDef = TmplModelDef<{
     code: ModelCode.Player,
 }>
 
 
-export class PlayerModel extends SpecModel<PlayerModelDef> {
+export class PlayerModel extends Model<PlayerModelDef> {
     protected _reactDict = {};
     
     constructor(
@@ -20,4 +20,6 @@ export class PlayerModel extends SpecModel<PlayerModelDef> {
             info: {}
         });
     }
+    
+    public readonly intf = {};
 }

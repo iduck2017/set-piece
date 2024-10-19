@@ -7,7 +7,10 @@ import {
     Event,
     EventDict, 
     ModifyEventDict,
-    UpdateEventDict 
+    ModifySafeEventDict,
+    SafeEventDict,
+    UpdateEventDict, 
+    UpdateSafeEventDict
 } from "../utils/event";
 import { 
     BaseModelConfig, 
@@ -15,7 +18,8 @@ import {
     ModelBundleDict, 
     ModelConfigList, 
     ModelDict, 
-    ModelList 
+    ModelList, 
+    PureModelConfig
 } from "../types/model";
 import type { App } from "../app";
 import { ModelCode } from "../types/model-code";
@@ -23,7 +27,7 @@ import { ModelCode } from "../types/model-code";
 
 // 模型层节点
 export abstract class Model<
-    M extends ModelDef = ModelDef
+    M extends ModelDef = ModelDef,
 > {
     // 外部指针
     public readonly app: App;
@@ -39,14 +43,21 @@ export abstract class Model<
     public readonly actualInfo: ModelDef.Info<M>;
 
     // 事件依赖关系
-    protected abstract readonly _reactDict: ReactDict<M>;
     protected readonly _eventDict: EventDict<M>;
     protected readonly _updateEventDict: UpdateEventDict<M>;
     protected readonly _modifyEventDict: ModifyEventDict<M>;
+    public readonly eventDict: SafeEventDict<M>;
+    public readonly updateEventDict: UpdateSafeEventDict<M>;
+    public readonly modifyEventDict: ModifySafeEventDict<M>;
+    
+    protected abstract readonly _reactDict: ReactDict<M>;
+    public abstract readonly intf: ModelDef.Intf<M>
 
     // 节点从属关系
     protected readonly _childDict: ModelDict<M>;
     protected readonly _childList: ModelList<M>;
+    public readonly childDict: Readonly<ModelDict<M>>;
+    public readonly childList: Readonly<ModelList<M>>;
 
     // 调试器相关
     private readonly _setterList: Array<(data: ModelState<M>) => void>;
@@ -213,6 +224,9 @@ export abstract class Model<
                 }
             )
         );
+        this.eventDict = initAutomicProxy(key => this._eventDict[key].safeEvent);
+        this.updateEventDict = initAutomicProxy(key => this._updateEventDict[key].safeEvent);
+        this.modifyEventDict = initAutomicProxy(key => this._modifyEventDict[key].safeEvent);
 
         // 初始化节点从属关系
         const childDict = {} as ModelDict<M>;
@@ -246,6 +260,9 @@ export abstract class Model<
             }
         });
         this._childList = this._initChildList(config.childList || []);
+
+        this.childDict = initReadonlyProxy(this._childDict);
+        this.childList = initReadonlyProxy(this._childList);
 
         // 初始化调试器
         this._setterList = [];
@@ -334,5 +351,14 @@ export abstract class Model<
         this._destroy();
     };
 
+    protected readonly _unserialize = <M extends ModelDef>(
+        config: PureModelConfig<M>
+    ): Model<M> => {
+        return this.app.factoryService.unserialize({
+            ...config,
+            parent: this,
+            app: this.app
+        });
+    };
 }
 
