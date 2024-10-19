@@ -22,4 +22,5 @@ export namespace Delegator {
             deleteProperty: () => false
         });
     }
+
 }
