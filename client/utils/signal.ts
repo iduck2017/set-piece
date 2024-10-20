@@ -32,12 +32,12 @@ export namespace Signal {
         [K in KeyOf<ModelDef.SignalDict<D>>]: Signal<ModelDef.SignalDict<D>[K]>;
     }
 
-    export type StateCheckDict<D extends ModelDef> = {
+    export type StateEditorDict<D extends ModelDef> = {
         [K in KeyOf<ModelDef.State<D>>]: Signal<
             Event.StateEditor<D, ModelDef.State<D>[K]>
         >
     }
-    export type StateAlterDict<D extends ModelDef> = {
+    export type StatePosterDict<D extends ModelDef> = {
         [K in KeyOf<ModelDef.State<D>>]: Signal<
             Event.StatePoster<D, ModelDef.State<D>[K]>
         >

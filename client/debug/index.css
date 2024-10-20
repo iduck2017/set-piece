@@ -11,12 +11,12 @@
     width: max-content;
     margin-right: 8px;
     margin-bottom: 8px;
-    border: 1px solid transparent;
+    border: 2px solid transparent;
     height: min-content;
 }
 
-div.actived {
-    border: 1px solid #ff4d4f;
+.model .actived {
+    border: 2px solid #ff4d4f;
 }
 
 .link.hover {
@@ -33,7 +33,7 @@ div.actived {
     display: flex;
     width: 150px;
     height: 18px;
-    border: 1px solid transparent;
+    border: 2px solid transparent;
 }
 
 .row:nth-of-type(odd) {

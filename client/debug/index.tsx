@@ -19,8 +19,8 @@ export type ModelInfo<M extends ModelDef> = {
     childList: Model.ChildList<M>,
     childDict: Model.ChildDict<M>,
     signalDict: Signal.ModelDict<M>,
-    updateSignalDict: Signal.StateAlterDict<M>,
-    modifySignalDict: Signal.StateCheckDict<M>,
+    statePosterDict: Signal.StatePosterDict<M>,
+    stateEditorDict: Signal.StateEditorDict<M>,
     effectDict: Effect.ModelDict<M>,
     state: ModelDef.State<M>
 }
@@ -87,14 +87,14 @@ export function ModelComp<
         method: true
     });
     
+    const [ activedChild, setActivedChild ] = useState<Model>();
+    const [ activedSignal, setActivedSignal ] = useState<Signal>();
+    const [ activedEffect, setActivedEffect ] = useState<Effect>();
+
     const formatValue = (value: Base.Value) => {
         if (typeof value === 'string') return `"${value}"`;
         return `(${value})`;
     };
-
-    const [ activedChild, setActivedChild ] = useState<Model>();
-    const [ activedSignal, setActivedSignal ] = useState<Signal>();
-    const [ activedEffect, setActivedEffect ] = useState<Effect>();
 
     useEffect(() => {
         if (!activedChild) return;
@@ -141,9 +141,7 @@ export function ModelComp<
         };
     }, [ activedEffect ]);
 
-    useEffect(() => {
-        return model._useState.call(model, setModelInfo);
-    }, [ model ]);
+    useEffect(() => model._useState.call(model, setModelInfo), [ model ]);
 
     if (!modelInfo) return null;
 
@@ -152,9 +150,10 @@ export function ModelComp<
         childList,
         signalDict,
         effectDict,
-        state
+        state,
+        stateEditorDict
+        // statePosterDict
     } = modelInfo;
-
 
     return (
         <div className="model">
@@ -201,8 +200,16 @@ export function ModelComp<
                         length={Object.keys(state).length}
                     >
                         {Object.keys(state).map(key => (
-                            <div className="row" key={key}>
-                                <div className="key link">{key}</div>
+                            <div 
+                                className="row" 
+                                key={key} 
+                                id={stateEditorDict[key].id}
+                                onMouseEnter={() => setActivedSignal(stateEditorDict[key])}
+                                onMouseLeave={() => setActivedSignal(undefined)}
+                            >
+                                <div className={`key link  ${activedSignal === stateEditorDict[key] ? 'hover' : ''}`}>
+                                    {key}
+                                </div>
                                 <div className="value">{formatValue(state[key])}</div>
                             </div>
                         ))}

@@ -1,8 +1,8 @@
 import { TmplModelDef } from "../type/model/define";
 import { TmplModelConfig } from "../type/model/config";
-import { BunnyModel, BunnyModelDef } from "./bunny";
+import { BunnyModelDef } from "./bunny";
 import { Random } from "../utils/random";
-import { AnimalFeaturesModel } from "./animal-feature";
+import { AnimalFeaturesModelDef } from "./animal-feature";
 import { Model } from ".";
 import { useProduct } from "../utils/decor/product";
 import { Event } from "../type/event";
@@ -19,18 +19,18 @@ export type CastratableModelDef = TmplModelDef<{
     signalDict: {
         /** 被阉割前 */
         castrateBefore: {
-            model: BunnyModel,
+            model: Model<BunnyModelDef>,
             isBreak?: boolean
         },
         /** 被阉割后 */
         castrateAfter: {
-            model: BunnyModel,
+            model: Model<BunnyModelDef>,
         }
     }
     effectDict: {
         ageUpdateBefore: Event.StateEditor<BunnyModelDef, number>
     },
-    parent: AnimalFeaturesModel
+    parent: AnimalFeaturesModelDef
 }>
 
 @useProduct('castratable')
@@ -64,7 +64,7 @@ export class CastratableModel extends Model<CastratableModelDef> {
     protected readonly _active = () => {
         if (this.actualState.castrated) {
             const animal = this.parent?.parent;
-            animal.checkSignalDict.maxAge.bindEffect(
+            animal.stateEditorDict.maxAge.bindEffect(
                 this._effectDict.ageUpdateBefore
             );
         }
@@ -80,7 +80,7 @@ export class CastratableModel extends Model<CastratableModelDef> {
         });
         if (result?.isBreak)  return;
         this._originState.castrated = true;
-        animal.checkSignalDict.maxAge.bindEffect(
+        animal.stateEditorDict.maxAge.bindEffect(
             this._effectDict.ageUpdateBefore
         );
         this._signalDict.castrateAfter.emitSignal({ model: animal });

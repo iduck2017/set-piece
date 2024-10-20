@@ -1,7 +1,7 @@
 import { TmplModelDef } from "../type/model/define";
 import { TmplModelConfig } from "../type/model/config";
 import type { CastratableModelDef } from "./castratable";
-import type { BunnyModel } from "./bunny";
+import type { BunnyModelDef } from "./bunny";
 import { Model } from ".";
 import { useProduct } from "../utils/decor/product";
 
@@ -10,7 +10,7 @@ export type AnimalFeaturesModelDef = TmplModelDef<{
     childDict: {
         castratable: CastratableModelDef
     },
-    parent: BunnyModel 
+    parent: BunnyModelDef
 }>
 
 @useProduct('animal_features')

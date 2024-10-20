@@ -10,7 +10,7 @@ export type ModelDef = Readonly<{
     signalDict: Base.Dict,
     effectDict: Base.Dict,
     methodDict: Record<Base.Key, Base.Function>
-    parent: Model | undefined;
+    parent: ModelDef | undefined;
 }>
 
 // 模型定义反射
@@ -31,10 +31,10 @@ export type TmplModelDef<
 > = Omit<{
     code: never,
     state: Base.VoidData,
-    parent: Model | undefined,
     childList: Base.VoidList,
     childDict: Base.VoidData
     signalDict: Base.VoidData,
     effectDict: Base.VoidData,
     methodDict: Base.VoidData,
+    parent: ModelDef,
 }, KeyOf<D>> & D

@@ -1,5 +1,6 @@
 import { KeyOf } from "..";
 import type { App } from "../../app";
+import { Model } from "../../model";
 import { ModelDef } from "./define";
 
 // 模型初始化对象
@@ -26,7 +27,7 @@ export type TmplModelConfig<D extends ModelDef> =
     ModelConfig<D> &
     Readonly<{
         app: App,
-        parent: ModelDef.Parent<D>
+        parent: any
     }>
 
 // 基础模型初始化参数
@@ -35,7 +36,7 @@ export type BaseModelConfig<D extends ModelDef> = Readonly<{
     app: App,
     code: ModelDef.Code<D>,
     state: ModelDef.State<D>,
-    parent: ModelDef.Parent<D>,
+    parent: Model.Parent<D>,
     childList?: ModelConfig.ChildList<D>,
     childDict: ModelConfig.ChildDict<D>,
 }>
