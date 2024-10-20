@@ -4,16 +4,16 @@ import { Model } from ".";
 import { useProduct } from "../utils/decor/product";
 import { Effect } from "../utils/effect";
 
-export type CardModelDef = TmplModelDef<{
-    code: 'card',
+export type KittyModelDef = TmplModelDef<{
+    code: 'kitty',
 }>
 
-@useProduct('card')
-export class CardModel extends Model<CardModelDef> {
-    protected readonly _effectDict: Effect.ModelDict<CardModelDef> = {};
-    public readonly methodDict: Readonly<ModelDef.MethodDict<CardModelDef>> = {};
+@useProduct('kitty')
+export class KittyModel extends Model<KittyModelDef> {
+    protected readonly _effectDict: Effect.ModelDict<KittyModelDef> = {};
+    public readonly methodDict: Readonly<ModelDef.MethodDict<KittyModelDef>> = {};
 
-    constructor(config: TmplModelConfig<CardModelDef>) {
+    constructor(config: TmplModelConfig<KittyModelDef>) {
         super({
             ...config,
             state: {},

@@ -1,0 +1,23 @@
+import { ModelDef, TmplModelDef } from "../type/model/define";
+import { TmplModelConfig } from "../type/model/config";
+import { Model } from ".";
+import { useProduct } from "../utils/decor/product";
+import { Effect } from "../utils/effect";
+
+export type #MODEL_NAME#ModelDef = TmplModelDef<{
+    code: '#MODEL_CODE#',
+}>
+
+@useProduct('#MODEL_CODE#')
+export class #MODEL_NAME#Model extends Model<#MODEL_NAME#ModelDef> {
+    protected readonly _effectDict: Effect.ModelDict<#MODEL_NAME#ModelDef> = {};
+    public readonly methodDict: Readonly<ModelDef.MethodDict<#MODEL_NAME#ModelDef>> = {};
+
+    constructor(config: TmplModelConfig<#MODEL_NAME#ModelDef>) {
+        super({
+            ...config,
+            state: {},
+            childDict: {}
+        });
+    }
+}
