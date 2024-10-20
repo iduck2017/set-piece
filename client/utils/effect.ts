@@ -3,12 +3,14 @@ import { KeyOf } from "../type";
 import { ModelDef } from "../type/model/define";
 import { SafeEvent } from "./event";
 
-export type ReactDict<M extends ModelDef> = {
-    [K in KeyOf<ModelDef.ReactDict<M>>]: 
-        React<ModelDef.ReactDict<M>[K]>
+export namespace Effect {
+    export type ModelDict<D extends ModelDef> = {
+        [K in KeyOf<ModelDef.EffectDict<D>>]: 
+            Effect<ModelDef.EffectDict<D>[K]>
+    }
 }
 
-export class React<E = any> {
+export class Effect<E = any> {
     public readonly id: string;
 
     private readonly _eventList: SafeEvent<E>[] = [];
@@ -26,14 +28,14 @@ export class React<E = any> {
         this._bindDone = bindDone;
     }
 
-    private readonly _bindDone?: (react: React<E>) => void;
+    private readonly _bindDone?: (react: Effect<E>) => void;
     public readonly handleEvent: (event: E) => E | void;
     
     public readonly bindEvent = (event: SafeEvent<E>) => {
         const index = this._eventList.indexOf(event);
         if (index >= 0) return;
         this._eventList.push(event);
-        event.bindReact(this);
+        event.bindEffect(this);
         this._bindDone?.(this);
     };
 
@@ -41,7 +43,7 @@ export class React<E = any> {
         const index = this._eventList.indexOf(event);
         if (index < 0) return;
         this._eventList.splice(index, 1);
-        event.unbindReact(this);
+        event.unbindEffect(this);
         this._bindDone?.(this);
     };
 

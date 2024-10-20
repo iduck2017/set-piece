@@ -16,7 +16,7 @@ export type GameModelDef = TmplModelDef<{
 
 @useProduct('game')
 export class GameModel extends Model<GameModelDef> {
-    protected _reactDict = {};
+    protected _effectDict = {};
 
     constructor(config: TmplModelConfig<GameModelDef>) {
         super({
@@ -29,5 +29,5 @@ export class GameModel extends Model<GameModelDef> {
         });
     }
     
-    public readonly intf = {};
+    public readonly methodDict = {};
 }

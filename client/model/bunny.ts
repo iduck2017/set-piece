@@ -12,7 +12,7 @@ export type BunnyModelDef = TmplModelDef<{
         maxAge: number,
         curHappiness: number,
     },
-    reactDict: {
+    effectDict: {
         timeUpdateDone: void,
     },
     childDict: {
@@ -39,8 +39,8 @@ export class BunnyModel extends Model<BunnyModelDef> {
 
     protected readonly _active = () => {
         const timer = this.app.root.childDict.timer;
-        timer.eventDict.tickBefore.bindReact(
-            this._reactDict.timeUpdateDone
+        timer.eventDict.tickBefore.bindEffect(
+            this._effectDict.timeUpdateDone
         );
     };
 
@@ -62,9 +62,9 @@ export class BunnyModel extends Model<BunnyModelDef> {
         this._originInfo.curAge += 1;
     };
 
-    protected readonly _reactDict = this._initReactDict({
+    protected readonly _effectDict = this._initEffectDict({
         timeUpdateDone: this._handleTimeUpdateDone
     });
 
-    public readonly intf = {};
+    public readonly methodDict = {};
 }

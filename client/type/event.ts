@@ -1,8 +1,8 @@
 import type { Model } from "../model";
 import { ModelDef } from "./model/define";
 
-export namespace EventInfo {
-    export type StateUpdateBefore<
+export namespace EventType {
+    export type StateCheckBefore<
         M extends ModelDef, T
     > = {
         target: Model<M>,
@@ -11,7 +11,7 @@ export namespace EventInfo {
         isAborted?: boolean
     }
         
-    export type StateUpdateDone<
+    export type StateAlterDone<
         M extends ModelDef, T
     > = {
         target: Model<M>,

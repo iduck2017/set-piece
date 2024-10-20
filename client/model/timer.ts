@@ -12,7 +12,7 @@ export type TimerModelDef = TmplModelDef<{
         tickBefore: void,
         tickDone: void,
     },
-    intf: {
+    methodDict: {
         updateTime: (offsetTime: number) => void,
     }
 }>
@@ -37,9 +37,9 @@ export class TimerModel extends Model<TimerModelDef> {
         this._eventDict.tickDone.emitEvent();
     };
     
-    protected _reactDict = {};
+    protected _effectDict = {};
     
-    public readonly intf = {
+    public readonly methodDict = {
         updateTime: this.updateTime.bind(this)
     };
 }

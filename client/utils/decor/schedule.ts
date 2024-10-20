@@ -12,7 +12,7 @@ export function useSchedule() {
             this: Model, 
             ...args
         ) {
-            this.app.root?.childDict.timer.intf.updateTime(1);
+            this.app.root?.childDict.timer.methodDict.updateTime(1);
             return original?.apply(this, args);
         };
         return descriptor;

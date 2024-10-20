@@ -9,7 +9,7 @@ export type CardModelDef = TmplModelDef<{
 
 @useProduct('card')
 export class CardModel extends Model<CardModelDef> {
-    protected _reactDict = {};
+    protected _effectDict = {};
 
     constructor(config: TmplModelConfig<CardModelDef>) {
         super({
@@ -19,5 +19,5 @@ export class CardModel extends Model<CardModelDef> {
         });
     }
     
-    public readonly intf = {};
+    public readonly methodDict = {};
 }

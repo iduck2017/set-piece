@@ -1,7 +1,7 @@
 import { TmplModelDef } from "../type/model/define";
 import { TmplModelConfig } from "../type/model/config";
 import { BunnyModel, BunnyModelDef } from "./bunny";
-import { EventInfo } from "../type/event";
+import { EventType } from "../type/event";
 import { Random } from "../utils/random";
 import { AnimalFeaturesModel } from "./animal-feature";
 import { Model } from ".";
@@ -18,12 +18,12 @@ export type CastratableModelDef = TmplModelDef<{
     },
     eventDict: {
         /** 被阉割前 */
-        castrateBefore: EventInfo.CastrateBefore<BunnyModel>,
+        castrateBefore: EventType.CastrateBefore<BunnyModel>,
         /** 被阉割后 */
-        castrateDone: EventInfo.CastrateDone<BunnyModel>
+        castrateDone: EventType.CastrateDone<BunnyModel>
     }
-    reactDict: {
-        ageUpdateBefore: EventInfo.StateUpdateBefore<BunnyModelDef, number>
+    effectDict: {
+        ageUpdateBefore: EventType.StateCheckBefore<BunnyModelDef, number>
     },
     parent: AnimalFeaturesModel
 }>
@@ -33,15 +33,15 @@ export class CastratableModel extends Model<CastratableModelDef> {
 
     /** 预期寿命修饰符 */
     private readonly _handleAgeUpdateBefore = (
-        event: EventInfo.StateUpdateBefore<BunnyModelDef, number>
-    ): EventInfo.StateUpdateBefore<BunnyModelDef, number> => {
+        event: EventType.StateCheckBefore<BunnyModelDef, number>
+    ): EventType.StateCheckBefore<BunnyModelDef, number> => {
         return {
             ...event,
             next: event.next + this.actualInfo.maxAgeBonus
         };
     };
 
-    protected _reactDict = this._initReactDict({
+    protected _effectDict = this._initEffectDict({
         ageUpdateBefore: this._handleAgeUpdateBefore
     });
 
@@ -59,8 +59,8 @@ export class CastratableModel extends Model<CastratableModelDef> {
     protected readonly _active = () => {
         if (this.actualInfo.castrated) {
             const animal = this.parent?.parent;
-            animal.modifyEventDict.maxAge.bindReact(
-                this._reactDict.ageUpdateBefore
+            animal.modifyEventDict.maxAge.bindEffect(
+                this._effectDict.ageUpdateBefore
             );
         }
     };
@@ -75,12 +75,12 @@ export class CastratableModel extends Model<CastratableModelDef> {
         });
         if (result?.isAborted)  return;
         this._originInfo.castrated = true;
-        animal.modifyEventDict.maxAge.bindReact(
-            this._reactDict.ageUpdateBefore
+        animal.modifyEventDict.maxAge.bindEffect(
+            this._effectDict.ageUpdateBefore
         );
         this._eventDict.castrateDone.emitEvent({ model: animal });
     };
 
     
-    public readonly intf = {};
+    public readonly methodDict = {};
 }

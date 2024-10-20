@@ -1,15 +1,10 @@
 import { KeyOf } from "../type";
 import { ModelDef } from "../type/model/define";
 import type { ModelState } from "../debug";
-import { React, ReactDict } from "../utils/react";
+import { Effect } from "../utils/effect";
 import { 
     Event,
-    EventDict, 
-    ModifyEventDict,
-    ModifySafeEventDict,
-    SafeEventDict,
-    UpdateEventDict, 
-    UpdateSafeEventDict
+    SafeEvent
 } from "../utils/event";
 import { 
     BaseModelConfig, 
@@ -50,16 +45,16 @@ export abstract class Model<
     public readonly actualInfo: ModelDef.Info<M>;
 
     // 依赖关系
-    protected readonly _eventDict: EventDict<M>;
-    protected readonly _updateEventDict: UpdateEventDict<M>;
-    protected readonly _modifyEventDict: ModifyEventDict<M>;
+    protected readonly _eventDict: Readonly<Event.ModelDict<M>>;
+    protected readonly _updateEventDict: Event.StateAlterDict<M>;
+    protected readonly _modifyEventDict: Event.StateCheckDict<M>;
 
-    public readonly eventDict: SafeEventDict<M>;
-    public readonly updateEventDict: UpdateSafeEventDict<M>;
-    public readonly modifyEventDict: ModifySafeEventDict<M>;
+    public readonly eventDict: Readonly<SafeEvent.ModelDict<M>>;
+    public readonly updateEventDict: SafeEvent.StateAlterDict<M>;
+    public readonly modifyEventDict: SafeEvent.StateCheckDict<M>;
     
-    protected abstract readonly _reactDict: ReactDict<M>;
-    public abstract readonly intf: Readonly<ModelDef.Intf<M>>;
+    protected abstract readonly _effectDict: Readonly<Effect.ModelDict<M>>;
+    public abstract readonly methodDict: Readonly<ModelDef.MethodDict<M>>;
 
     // 从属关系
     protected readonly _childDict: Model.ChildDict<M>;
@@ -89,21 +84,21 @@ export abstract class Model<
                 eventDict: this._eventDict,
                 updateEventDict: this._updateEventDict,
                 modifyEventDict: this._modifyEventDict,
-                reactDict: this._reactDict,
+                effectDict: this._effectDict,
                 info: this.actualInfo
             });
         }
     }
 
-    protected readonly _initReactDict = (
+    protected readonly _initEffectDict = (
         callback: {
-            [K in KeyOf<ModelDef.ReactDict<M>>]: (
-                event: ModelDef.ReactDict<M>[K]
-            ) => void | ModelDef.ReactDict<M>[K];
+            [K in KeyOf<ModelDef.EffectDict<M>>]: (
+                event: ModelDef.EffectDict<M>[K]
+            ) => void | ModelDef.EffectDict<M>[K];
         }
-    ): ReactDict<M> => {
+    ): Effect.ModelDict<M> => {
         return AutomicProxy(key => {
-            return new React(
+            return new Effect(
                 this.app,
                 callback[key].bind(this),
                 this._setState.bind(this)
@@ -211,7 +206,7 @@ export abstract class Model<
     };
 
     // 执行初始化函数
-    protected readonly _active = () => {};
+    protected _active() {}
     protected readonly _activeAll = () => {
         if (this._isActived) return;
         this._active();
@@ -226,9 +221,8 @@ export abstract class Model<
     };
 
     // 执行析构函数
-    protected readonly _destroy = () => {};
+    protected _destroy() {}
     private readonly _destroyAll = () => {
-        console.log('destroy', this.id);
         for (const child of this._childList) {
             child._destroyAll();
         }
@@ -236,9 +230,9 @@ export abstract class Model<
             const child = this._childDict[key];
             child._destroyAll();
         }
-        for (const key in this._reactDict) {
-            const react = this._reactDict[key];
-            react.destroy();
+        for (const key in this._effectDict) {
+            const effect = this._effectDict[key];
+            effect.destroy();
         }
         for (const key in this._eventDict) {
             const event = this._eventDict[key];

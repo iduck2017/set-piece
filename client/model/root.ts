@@ -21,7 +21,7 @@ export type RootModelDef = TmplModelDef<{
 
 @useProduct('root')
 export class RootModel extends Model<RootModelDef> {
-    protected _reactDict = {};
+    protected _effectDict = {};
     
     constructor(config: TmplModelConfig<RootModelDef>) {
         const childList = config.childList || [];
@@ -67,5 +67,5 @@ export class RootModel extends Model<RootModelDef> {
     };
 
     
-    public readonly intf = {};
+    public readonly methodDict = {};
 }

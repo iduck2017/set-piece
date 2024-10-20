@@ -9,7 +9,7 @@ export type PlayerModelDef = TmplModelDef<{
 
 @useProduct('player')
 export class PlayerModel extends Model<PlayerModelDef> {
-    protected _reactDict = {};
+    protected _effectDict = {};
     
     constructor(
         config: TmplModelConfig<PlayerModelDef>
@@ -21,5 +21,5 @@ export class PlayerModel extends Model<PlayerModelDef> {
         });
     }
     
-    public readonly intf = {};
+    public readonly methodDict = {};
 }

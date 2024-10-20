@@ -15,7 +15,7 @@ export type AnimalFeaturesModelDef = TmplModelDef<{
 
 @useProduct('animal_features')
 export class AnimalFeaturesModel extends Model<AnimalFeaturesModelDef> {
-    protected _reactDict = {};
+    protected _effectDict = {};
  
     constructor(config: TmplModelConfig<AnimalFeaturesModelDef>) {
         super({
@@ -29,5 +29,5 @@ export class AnimalFeaturesModel extends Model<AnimalFeaturesModelDef> {
         });
     }
     
-    public readonly intf = {};
+    public readonly methodDict = {};
 }

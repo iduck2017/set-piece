@@ -12,8 +12,8 @@ export type DeckModelDef = TmplModelDef<{
 
 @useProduct('deck')
 export class DeckModel extends Model<DeckModelDef> {
-    protected _reactDict = {};
-    public intf = {};
+    protected _effectDict = {};
+    public methodDict = {};
 
     constructor(config: TmplModelConfig<DeckModelDef>) {
         super({

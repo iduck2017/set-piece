@@ -1,106 +1,110 @@
 import { KeyOf } from "../type";
 import { ModelDef } from "../type/model/define";
-import { EventInfo } from "../type/event";
-import type { React } from "./react";
+import { EventType } from "../type/event";
+import type { Effect } from "./effect";
 import type { App } from "../app";
 
-export type EventDict<M extends ModelDef> = {
-    [K in KeyOf<ModelDef.EventDict<M>>]: Event<ModelDef.EventDict<M>[K]>;
+
+export namespace SafeEvent {
+    export type ModelDict<D extends ModelDef> = {
+        [K in KeyOf<ModelDef.EventDict<D>>]: SafeEvent<ModelDef.EventDict<D>[K]>;
+    }
+
+    export type StateCheckDict<D extends ModelDef> = {
+        [K in KeyOf<ModelDef.Info<D>>]: SafeEvent<
+            EventType.StateCheckBefore<D, ModelDef.Info<D>[K]>
+        >
+    }
+    export type StateAlterDict<D extends ModelDef> = {
+        [K in KeyOf<ModelDef.Info<D>>]: SafeEvent<
+            EventType.StateAlterDone<D, ModelDef.Info<D>[K]>
+        >
+    }
 }
 
-export type ModifyEventDict<M extends ModelDef> = {
-    [K in KeyOf<ModelDef.Info<M>>]: Event<
-        EventInfo.StateUpdateBefore<M, ModelDef.Info<M>[K]>
-    >
+export type SafeEvent<E = any> = {
+    id: string;
+    bindEffect: (effect: Effect<E>) => void;
+    unbindEffect: (effect: Effect<E>) => void;
 }
 
-export type UpdateEventDict<M extends ModelDef> = {
-    [K in KeyOf<ModelDef.Info<M>>]: Event<
-        EventInfo.StateUpdateDone<M, ModelDef.Info<M>[K]>
-    >
-}
+export namespace Event {
+    export type ModelDict<D extends ModelDef> = {
+        [K in KeyOf<ModelDef.EventDict<D>>]: Event<ModelDef.EventDict<D>[K]>;
+    }
 
+    export type StateCheckDict<D extends ModelDef> = {
+        [K in KeyOf<ModelDef.Info<D>>]: Event<
+            EventType.StateCheckBefore<D, ModelDef.Info<D>[K]>
+        >
+    }
+    export type StateAlterDict<D extends ModelDef> = {
+        [K in KeyOf<ModelDef.Info<D>>]: Event<
+            EventType.StateAlterDone<D, ModelDef.Info<D>[K]>
+        >
+    }
+}
 
 export class Event<E = any> {
     public readonly id: string;
 
-    private readonly _reactList: React<E>[];
-    public get reactIdList() {
-        return this._reactList.map(react => react.id);
+    private readonly _effectList: Effect<E>[];
+    public get effectIdList() {
+        const effectIdList = [];
+        for (const effect of this._effectList) {
+            effectIdList.push(effect.id);
+        }
+        return effectIdList;
     }
 
     public readonly safeEvent: SafeEvent<E>;
 
     constructor(
         app: App,
-        bindDone?: (event: Event<E>) => void
+        handleUpdate?: (event: Event<E>) => void
     ) {
         this.id = app.referenceService.ticket;
-        this._reactList = [];
+        this._effectList = [];
 
         this.safeEvent = {
             id: this.id,
-            bindReact: this.bindReact.bind(this),
-            unbindReact: this.unbindReact.bind(this)
+            bindEffect: this.bindEffect.bind(this),
+            unbindEffect: this.unbindEffect.bind(this)
         };
-        this._bindDone = bindDone;
+        this._handleUpdate = handleUpdate;
     }
 
-    private readonly _bindDone?: (event: Event<E>) => void; 
+    private readonly _handleUpdate?: (event: Event<E>) => void; 
 
-    public readonly bindReact = (react: React<E>) => {
-        const index = this._reactList.indexOf(react);
+    public readonly bindEffect = (effect: Effect<E>) => {
+        const index = this._effectList.indexOf(effect);
         if (index >= 0) return;
-        this._reactList.push(react);
-        react.bindEvent(this);
-        this._bindDone?.(this);
+        this._effectList.push(effect);
+        effect.bindEvent(this);
+        this._handleUpdate?.(this);
     };
 
-    public readonly unbindReact = (react: React<E>) => {
-        const index = this._reactList.indexOf(react);
+    public readonly unbindEffect = (effect: Effect<E>) => {
+        const index = this._effectList.indexOf(effect);
         if (index < 0) return;
-        this._reactList.splice(index, 1);
-        react.unbindEvent(this);
-        this._bindDone?.(this);
-        console.log('unbindReact', this._reactList.length);
+        this._effectList.splice(index, 1);
+        effect.unbindEvent(this);
+        this._handleUpdate?.(this);
     };
 
     public readonly emitEvent = (event: E): E | void => {
         let prevEvent = event;
-        this._reactList.forEach(react => {
-            const result = react.handleEvent(prevEvent);
+        for (const effect of this._effectList) {
+            const result = effect.handleEvent(prevEvent);
             if (result) prevEvent = result;
-        });
+        }
         return prevEvent;
     };
 
     public readonly destroy = () => {
-        for (const react of this._reactList) {
-            this.unbindReact(react);
+        for (const effect of this._effectList) {
+            this.unbindEffect(effect);
         }
     };
 }
 
-
-export type SafeEvent<E = any> = {
-    id: string;
-    bindReact: (react: React<E>) => void;
-    unbindReact: (react: React<E>) => void;
-}
-
-export type SafeEventDict<M extends ModelDef> = {
-    [K in KeyOf<ModelDef.EventDict<M>>]: 
-        SafeEvent<ModelDef.EventDict<M>[K]>;
-}
-
-export type ModifySafeEventDict<M extends ModelDef> = {
-    [K in KeyOf<ModelDef.Info<M>>]: SafeEvent<
-        EventInfo.StateUpdateBefore<M, ModelDef.Info<M>[K]>
-    >
-}
-
-export type UpdateSafeEventDict<M extends ModelDef> = {
-    [K in KeyOf<ModelDef.Info<M>>]: SafeEvent<
-        EventInfo.StateUpdateDone<M, ModelDef.Info<M>[K]>
-    >
-}

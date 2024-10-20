@@ -3,9 +3,9 @@ import React, { ReactNode, useEffect, useState } from "react";
 import type { App } from "../app";
 import type { Model } from "../model";
 import "./index.css";
-import { Event as ModelEvent, EventDict, ModifyEventDict, UpdateEventDict } from "../utils/event";
+import { Event } from "../utils/event";
 import { ModelDef } from "../type/model/define";
-import { ReactDict, React as ModelReact } from "../utils/react";
+import { Effect } from "../utils/effect";
 import { Base } from "../type";
 import { useIntf } from "./use-intf";
 
@@ -18,20 +18,20 @@ export type ModelProps<M extends ModelDef> = {
 export type ModelState<M extends ModelDef> = {
     childList: Model.ChildList<M>,
     childDict: Model.ChildDict<M>,
-    eventDict: EventDict<M>,
-    updateEventDict: UpdateEventDict<M>,
-    modifyEventDict: ModifyEventDict<M>,
-    reactDict: ReactDict<M>,
+    eventDict: Event.ModelDict<M>,
+    updateEventDict: Event.StateAlterDict<M>,
+    modifyEventDict: Event.StateCheckDict<M>,
+    effectDict: Effect.ModelDict<M>,
     info: ModelDef.Info<M>
 }
 
 export type VisibleInfo = {
     model: boolean;
-    intf: boolean;
+    method: boolean;
     info: boolean;
     child: boolean;
     event: boolean;
-    react: boolean;
+    effect: boolean;
 }
 
 const FolderComp = (props: {
@@ -80,11 +80,11 @@ export function ModelComp<
     const [ state, setState ] = useState<ModelState<M>>();
     const [ visible, setVisible ] = useState<VisibleInfo>({
         model: true,
-        intf: true,
         info: true,
         child: true,
         event: true,
-        react: true
+        effect: true,
+        method: true
     });
     
     const formatValue = (value: Base.Value) => {
@@ -93,8 +93,8 @@ export function ModelComp<
     };
 
     const [ activedChild, setActivedChild ] = useState<Model>();
-    const [ activedEvent, setActivedEvent ] = useState<ModelEvent>();
-    const [ activedReact, setActivedReact ] = useState<ModelReact>();
+    const [ activedEvent, setActivedEvent ] = useState<Event>();
+    const [ activedEffect, setActivedEffect ] = useState<Effect>();
 
     useEffect(() => {
         if (!activedChild) return;
@@ -107,15 +107,15 @@ export function ModelComp<
 
     useEffect(() => {
         if (!activedEvent) return;
-        for (const reactId of activedEvent.reactIdList) {
-            const elem = document.getElementById(reactId);
+        for (const effectId of activedEvent.effectIdList) {
+            const elem = document.getElementById(effectId);
             if (elem) {
                 elem.classList.add('actived');
             }
         }
         return () => {
-            for (const reactId of activedEvent.reactIdList) {
-                const elem = document.getElementById(reactId);
+            for (const effectId of activedEvent.effectIdList) {
+                const elem = document.getElementById(effectId);
                 if (elem) {
                     elem.classList.remove('actived');
                 }
@@ -124,22 +124,22 @@ export function ModelComp<
     }, [ activedEvent ]);
 
     useEffect(() => {
-        if (!activedReact) return;
-        for (const eventId of activedReact.eventIdList) {
+        if (!activedEffect) return;
+        for (const eventId of activedEffect.eventIdList) {
             const elem = document.getElementById(eventId);
             if (elem) {
                 elem.classList.add('actived');
             }
         }
         return () => {
-            for (const eventId of activedReact.eventIdList) {
+            for (const eventId of activedEffect.eventIdList) {
                 const elem = document.getElementById(eventId);
                 if (elem) {
                     elem.classList.remove('actived');
                 }
             }
         };
-    }, [ activedReact ]);
+    }, [ activedEffect ]);
 
     useEffect(() => {
         return model._useState.call(model, setState);
@@ -151,7 +151,7 @@ export function ModelComp<
         childDict,
         childList,
         eventDict,
-        reactDict,
+        effectDict,
         info
     } = state;
 
@@ -191,13 +191,13 @@ export function ModelComp<
                     <FolderComp
                         visibleDict={visible}
                         setVisibleDict={setVisible}
-                        title="intf"
+                        title="method"
                         length={Object.keys(modelIntf).length}
                     >
                         {Object.keys(modelIntf).map(key => (
                             <div className="row" key={key}>
                                 <div 
-                                    className="key intf"
+                                    className="key method"
                                     onClick={() => {
                                         modelIntf[key].call(model);
                                     }}
@@ -268,23 +268,23 @@ export function ModelComp<
                     <FolderComp
                         visibleDict={visible}
                         setVisibleDict={setVisible}
-                        title="react"
-                        length={Object.keys(reactDict).length}
+                        title="effect"
+                        length={Object.keys(effectDict).length}
                     >
-                        {Object.keys(reactDict).map(key => (
+                        {Object.keys(effectDict).map(key => (
                             <div 
-                                id={reactDict[key].id}
+                                id={effectDict[key].id}
                                 className="row" 
                                 key={key}
                             >
                                 <div 
-                                    className={`key link ${activedReact === reactDict[key] ? 'hover' : ''}`}
-                                    onMouseEnter={() => setActivedReact(reactDict[key])}
-                                    onMouseLeave={() => setActivedReact(undefined)}
+                                    className={`key link ${activedEffect === effectDict[key] ? 'hover' : ''}`}
+                                    onMouseEnter={() => setActivedEffect(effectDict[key])}
+                                    onMouseLeave={() => setActivedEffect(undefined)}
                                 >
                                     {key}
                                 </div>
-                                <div className="value">{formatValue(reactDict[key].id)}</div>
+                                <div className="value">{formatValue(effectDict[key].id)}</div>
                             </div>
                         ))}
                     </FolderComp>
