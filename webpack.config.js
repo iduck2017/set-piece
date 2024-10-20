@@ -7,7 +7,6 @@ const { CleanWebpackPlugin } = require('clean-webpack-plugin');
 const dir = fs
     .readdirSync(path.resolve('client/model'))
     .map(file => `./client/model/${file}`)
-console.log(dir);
 
 module.exports = {
     entry: [

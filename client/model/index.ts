@@ -179,8 +179,9 @@ export abstract class Model<
             prev: current,
             next: current
         };
-        this._checkSignalDict[key].emitSignal(signal);
-        const next = signal.next;
+        const result = this._checkSignalDict[key].emitSignal(signal);
+        if (!result) return;
+        const next = result.next;
         if (prev !== next) {
             this._actualInfo[key] = next;
             this._alterSignalDict[key].emitSignal(signal);
@@ -226,7 +227,6 @@ export abstract class Model<
     protected readonly _unserialize = <M extends ModelDef>(
         config: ModelConfig<M>
     ): Model<M> => {
-        console.log(config, this);
         return this.app.factoryService.unserialize({
             ...config,
             parent: this,

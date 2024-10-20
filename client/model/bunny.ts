@@ -58,7 +58,6 @@ export class BunnyModel extends Model<BunnyModelDef> {
 
     /** 年龄增长 */
     private readonly _handleTimeUpdateDone = () => {
-        console.log('growing', this.id);
         this._originInfo.curAge += 1;
     };
 
