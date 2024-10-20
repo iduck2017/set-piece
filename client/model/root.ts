@@ -63,7 +63,7 @@ export class RootModel extends Model<RootModelDef> {
         }
     }
 
-    public prepareGame() {
+    private _prepareGame() {
         const game = this._unserialize<GameModelDef>({
             code: 'game'
         });

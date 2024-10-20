@@ -50,8 +50,8 @@ export abstract class Model<
     protected readonly _checkSignalDict: Signal.StateCheckDict<M>;
 
     public readonly signalDict: Readonly<SafeSignal.ModelDict<M>>;
-    public readonly alterSignalDict: SafeSignal.StateAlterDict<M>;
-    public readonly checkSignalDict: SafeSignal.StateCheckDict<M>;
+    public readonly alterSignalDict: SafeSignal.StatePosterDict<M>;
+    public readonly checkSignalDict: SafeSignal.StateEditorDict<M>;
     
     protected abstract readonly _effectDict: Readonly<Effect.ModelDict<M>>;
     public abstract readonly methodDict: Readonly<ModelDef.MethodDict<M>>;

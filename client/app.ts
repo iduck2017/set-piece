@@ -2,7 +2,7 @@ import { FactoryService } from "./service/factory";
 import { ReferenceService } from "./service/reference";
 import { ArchieveData, ArchieveService } from "./service/archieve";
 import { PerferenceData, PreferenceService } from "./service/perference";
-import { RootModel, RootModelDef } from "./model/root";
+import { RootModelDef } from "./model/root";
 import { RenderService } from "./service/render";
 import { AppStatus } from "./type/status";
 import { Model } from "./model";

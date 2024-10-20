@@ -1,22 +1,22 @@
 import { KeyOf } from "../type";
 import { ModelDef } from "../type/model/define";
-import { Event } from "../type/event";
 import type { Effect } from "./effect";
 import type { App } from "../app";
+import { Event } from "../type/event";
 
 export namespace SafeSignal {
     export type ModelDict<D extends ModelDef> = {
         [K in KeyOf<ModelDef.SignalDict<D>>]: SafeSignal<ModelDef.SignalDict<D>[K]>;
     }
 
-    export type StateCheckDict<D extends ModelDef> = {
+    export type StateEditorDict<D extends ModelDef> = {
         [K in KeyOf<ModelDef.State<D>>]: SafeSignal<
-            Event.StateCheck<D, ModelDef.State<D>[K]>
+            Event.StateEditor<D, ModelDef.State<D>[K]>
         >
     }
-    export type StateAlterDict<D extends ModelDef> = {
+    export type StatePosterDict<D extends ModelDef> = {
         [K in KeyOf<ModelDef.State<D>>]: SafeSignal<
-            Event.StateAlter<D, ModelDef.State<D>[K]>
+            Event.StatePoster<D, ModelDef.State<D>[K]>
         >
     }
 }
@@ -34,12 +34,12 @@ export namespace Signal {
 
     export type StateCheckDict<D extends ModelDef> = {
         [K in KeyOf<ModelDef.State<D>>]: Signal<
-            Event.StateCheck<D, ModelDef.State<D>[K]>
+            Event.StateEditor<D, ModelDef.State<D>[K]>
         >
     }
     export type StateAlterDict<D extends ModelDef> = {
         [K in KeyOf<ModelDef.State<D>>]: Signal<
-            Event.StateAlter<D, ModelDef.State<D>[K]>
+            Event.StatePoster<D, ModelDef.State<D>[K]>
         >
     }
 }

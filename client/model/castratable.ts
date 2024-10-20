@@ -1,11 +1,11 @@
 import { TmplModelDef } from "../type/model/define";
 import { TmplModelConfig } from "../type/model/config";
 import { BunnyModel, BunnyModelDef } from "./bunny";
-import { Event } from "../type/event";
 import { Random } from "../utils/random";
 import { AnimalFeaturesModel } from "./animal-feature";
 import { Model } from ".";
 import { useProduct } from "../utils/decor/product";
+import { Event } from "../type/event";
 
 /** 可阉割的 */
 export type CastratableModelDef = TmplModelDef<{
@@ -18,12 +18,17 @@ export type CastratableModelDef = TmplModelDef<{
     },
     signalDict: {
         /** 被阉割前 */
-        castrateBefore: Event.PreCastrated<BunnyModel>,
+        castrateBefore: {
+            model: BunnyModel,
+            isBreak?: boolean
+        },
         /** 被阉割后 */
-        castrateDone: Event.Castrated<BunnyModel>
+        castrateAfter: {
+            model: BunnyModel,
+        }
     }
     effectDict: {
-        ageUpdateBefore: Event.StateAlter<BunnyModelDef, number>
+        ageUpdateBefore: Event.StateEditor<BunnyModelDef, number>
     },
     parent: AnimalFeaturesModel
 }>
@@ -33,8 +38,8 @@ export class CastratableModel extends Model<CastratableModelDef> {
 
     /** 预期寿命修饰符 */
     private readonly _handleAgeUpdateBefore = (
-        signal: Event.StateAlter<BunnyModelDef, number>
-    ): Event.StateAlter<BunnyModelDef, number> => {
+        signal: Event.StateEditor<BunnyModelDef, number>
+    ): Event.StateEditor<BunnyModelDef, number> => {
         return {
             ...signal,
             next: signal.next + this.actualState.maxAgeBonus
@@ -73,12 +78,12 @@ export class CastratableModel extends Model<CastratableModelDef> {
         const result = this._signalDict.castrateBefore.emitSignal({
             model: animal
         });
-        if (result?.isAborted)  return;
+        if (result?.isBreak)  return;
         this._originState.castrated = true;
         animal.checkSignalDict.maxAge.bindEffect(
             this._effectDict.ageUpdateBefore
         );
-        this._signalDict.castrateDone.emitSignal({ model: animal });
+        this._signalDict.castrateAfter.emitSignal({ model: animal });
     };
 
     
