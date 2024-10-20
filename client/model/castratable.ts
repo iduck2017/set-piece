@@ -10,7 +10,7 @@ import { useProduct } from "../utils/decor/product";
 /** 可阉割的 */
 export type CastratableModelDef = TmplModelDef<{
     code: 'castratable',
-    info: {
+    state: {
         /** 是否已经阉割 */
         castrated: boolean,
         /** 阉割造成的预期寿命加成 */
@@ -37,7 +37,7 @@ export class CastratableModel extends Model<CastratableModelDef> {
     ): Event.StateAlter<BunnyModelDef, number> => {
         return {
             ...signal,
-            next: signal.next + this.actualInfo.maxAgeBonus
+            next: signal.next + this.actualState.maxAgeBonus
         };
     };
 
@@ -48,16 +48,16 @@ export class CastratableModel extends Model<CastratableModelDef> {
     constructor(config: TmplModelConfig<CastratableModelDef>) {
         super({
             ...config,
-            info: {
-                castrated: config.info?.castrated || false,
-                maxAgeBonus: config.info?.maxAgeBonus || Random.number(0, 25)
+            state: {
+                castrated: config.state?.castrated || false,
+                maxAgeBonus: config.state?.maxAgeBonus || Random.number(0, 25)
             },
             childDict: {}
         });
     }
 
     protected readonly _active = () => {
-        if (this.actualInfo.castrated) {
+        if (this.actualState.castrated) {
             const animal = this.parent?.parent;
             animal.checkSignalDict.maxAge.bindEffect(
                 this._effectDict.ageUpdateBefore
@@ -68,13 +68,13 @@ export class CastratableModel extends Model<CastratableModelDef> {
 
     /** 执行阉割 */
     public readonly castrate = () => {
-        if (this.actualInfo.castrated) return;
+        if (this.actualState.castrated) return;
         const animal = this.parent?.parent;
         const result = this._signalDict.castrateBefore.emitSignal({
             model: animal
         });
         if (result?.isAborted)  return;
-        this._originInfo.castrated = true;
+        this._originState.castrated = true;
         animal.checkSignalDict.maxAge.bindEffect(
             this._effectDict.ageUpdateBefore
         );

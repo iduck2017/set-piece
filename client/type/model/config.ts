@@ -6,7 +6,7 @@ import { ModelDef } from "./define";
 export type ModelConfig<D extends ModelDef> = Readonly<{
     id?: string
     code: ModelDef.Code<D>
-    info?: Partial<ModelDef.Info<D>>
+    state?: Partial<ModelDef.State<D>>
     childList?: ModelConfig.ChildList<D>,
     childDict?: Partial<ModelConfig.ChildDict<D>>,
 }>
@@ -34,7 +34,7 @@ export type BaseModelConfig<D extends ModelDef> = Readonly<{
     id?: string,
     app: App,
     code: ModelDef.Code<D>,
-    info: ModelDef.Info<D>,
+    state: ModelDef.State<D>,
     parent: ModelDef.Parent<D>,
     childList?: ModelConfig.ChildList<D>,
     childDict: ModelConfig.ChildDict<D>,

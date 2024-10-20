@@ -4,7 +4,7 @@ import type { Model } from "../../model";
 // 模型定义
 export type ModelDef = Readonly<{
     code: string
-    info: Base.Data
+    state: Base.Data
     childList: Array<ModelDef>
     childDict: Record<Base.Key, ModelDef>,
     signalDict: Base.Dict,
@@ -16,13 +16,13 @@ export type ModelDef = Readonly<{
 // 模型定义反射
 export namespace ModelDef {
     export type Code<M extends ModelDef> = M['code']
-    export type Info<M extends ModelDef> = M['info']
-    export type Parent<M extends ModelDef> = M['parent']
+    export type State<M extends ModelDef> = M['state']
     export type ChildList<M extends ModelDef> = M['childList']
     export type ChildDict<M extends ModelDef> = Required<M['childDict']>
     export type SignalDict<M extends ModelDef> = Required<M['signalDict']>
     export type EffectDict<M extends ModelDef> = Required<M['effectDict']>
     export type MethodDict<M extends ModelDef> = M['methodDict']
+    export type Parent<M extends ModelDef> = M['parent']
 }
 
 // 泛型模型定义
@@ -30,7 +30,7 @@ export type TmplModelDef<
     D extends Partial<ModelDef>
 > = Omit<{
     code: never,
-    info: Base.VoidData,
+    state: Base.VoidData,
     parent: Model | undefined,
     childList: Base.VoidList,
     childDict: Base.VoidData

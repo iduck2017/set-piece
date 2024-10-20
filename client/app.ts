@@ -2,9 +2,10 @@ import { FactoryService } from "./service/factory";
 import { ReferenceService } from "./service/reference";
 import { ArchieveData, ArchieveService } from "./service/archieve";
 import { PerferenceData, PreferenceService } from "./service/perference";
-import { RootModel } from "./model/root";
+import { RootModel, RootModelDef } from "./model/root";
 import { RenderService } from "./service/render";
 import { AppStatus } from "./type/status";
+import { Model } from "./model";
 
 export const MAJOR_VERSION = 0;
 export const MINOR_VERSION = 1;
@@ -30,13 +31,18 @@ export class App {
     public readonly archieveService: ArchieveService;
     public readonly renderService: RenderService;
 
-    private _root?: RootModel;
     private _status: AppStatus;
-    
     public get status() { return this._status; }
-    public get root(): RootModel { 
+
+    
+    private _root?: Model<RootModelDef>;
+    public get root(): Model<RootModelDef> { 
         if (!this._root) throw new Error();
         return this._root;
+    }
+    public set root(value: any) {
+        if (this._root) throw new Error();
+        this._root = value;
     }
 
     constructor() {
@@ -68,12 +74,11 @@ export class App {
         const config = index === undefined ?
             await this.archieveService.createArchieve() :
             await this.archieveService.loadArchieve(index);
-        this._root = new RootModel({
+        this.factoryService.unserialize({
             ...config,
             app: this,
             parent: undefined
         });
-        this._root.recover();
         this._status = AppStatus.MOUNTED;
     }
 

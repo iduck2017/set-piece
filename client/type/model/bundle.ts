@@ -5,7 +5,7 @@ import { ModelDef } from "./define";
 export type ModelBundle<D extends ModelDef> = Readonly<{
     id: string;
     code: ModelDef.Code<D>,
-    info: ModelDef.Info<D>,
+    state: ModelDef.State<D>,
     childList: ModelBundle.ChildList<D>,   
     childDict: ModelBundle.ChildDict<D>,
 }>

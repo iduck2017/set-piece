@@ -17,7 +17,7 @@ export class PlayerModel extends Model<PlayerModelDef> {
         super({
             ...config,
             childDict: {},
-            info: {}
+            state: {}
         });
     }
     

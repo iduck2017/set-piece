@@ -20,7 +20,7 @@ export class AnimalFeaturesModel extends Model<AnimalFeaturesModelDef> {
     constructor(config: TmplModelConfig<AnimalFeaturesModelDef>) {
         super({
             ...config,
-            info: {},
+            state: {},
             childDict: {
                 castratable: config.childDict?.castratable || {
                     code: 'castratable'

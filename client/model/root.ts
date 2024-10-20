@@ -8,7 +8,7 @@ import { useProduct } from "../utils/decor/product";
 
 export type RootModelDef = TmplModelDef<{
     code: 'root',
-    info: {
+    state: {
         progress: number,
     },
     childDict: {
@@ -17,11 +17,20 @@ export type RootModelDef = TmplModelDef<{
     },
     childList: BunnyModelDef[],
     parent: undefined,
+    methodDict: {
+        spawnCreature: (config: ModelConfig<BunnyModelDef>) => void,
+        killCreature: (child: Model<BunnyModelDef>) => void,
+    }
 }>
 
 @useProduct('root')
 export class RootModel extends Model<RootModelDef> {
     protected _effectDict = {};
+    
+    public readonly methodDict = {
+        spawnCreature: this._spawnCreature,
+        killCreature: this._killCreature
+    };
     
     constructor(config: TmplModelConfig<RootModelDef>) {
         const childList = config.childList || [];
@@ -30,8 +39,8 @@ export class RootModel extends Model<RootModelDef> {
         }
         super({
             ...config,
-            info: {
-                progress: config.info?.progress || 0
+            state: {
+                progress: config.state?.progress || 0
             },
             childDict: {
                 timer: config.childDict?.timer || { code: 'timer' },
@@ -41,13 +50,13 @@ export class RootModel extends Model<RootModelDef> {
         });
     }
 
-    public spawnCreature(config: ModelConfig<BunnyModelDef>) {
+    private _spawnCreature(config: ModelConfig<BunnyModelDef>) {
         const child = this._unserialize<BunnyModelDef>(config);
         this._childList.push(child);
         return child;
     }
 
-    public killCreature(child: Model<BunnyModelDef>) {
+    private _killCreature(child: Model<BunnyModelDef>) {
         const index = this._childList.indexOf(child);
         if (index >= 0) {
             this._childList.splice(index, 1);
@@ -61,11 +70,4 @@ export class RootModel extends Model<RootModelDef> {
         this._childDict.game = game;
         return game;
     }
-
-    public readonly recover = () => {
-        this._activeAll();
-    };
-
-    
-    public readonly methodDict = {};
 }

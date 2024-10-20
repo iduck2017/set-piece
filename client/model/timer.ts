@@ -5,7 +5,7 @@ import { useProduct } from "../utils/decor/product";
 
 export type TimerModelDef = TmplModelDef<{
     code: 'timer',
-    info: {
+    state: {
         time: number,
     },
     signalDict: {
@@ -23,8 +23,8 @@ export class TimerModel extends Model<TimerModelDef> {
     constructor(config: TmplModelConfig<TimerModelDef>) {
         super({
             ...config,
-            info: {
-                time: config.info?.time || 0
+            state: {
+                time: config.state?.time || 0
             },
             childDict: {}
         });
@@ -33,7 +33,7 @@ export class TimerModel extends Model<TimerModelDef> {
     /** 更新时间 */
     public readonly updateTime = (offsetTime: number) => {
         this._signalDict.tickBefore.emitSignal();
-        this._originInfo.time += offsetTime;
+        this._originState.time += offsetTime;
         this._signalDict.tickDone.emitSignal();
     };
     

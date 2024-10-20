@@ -10,13 +10,13 @@ export namespace SafeSignal {
     }
 
     export type StateCheckDict<D extends ModelDef> = {
-        [K in KeyOf<ModelDef.Info<D>>]: SafeSignal<
-            Event.StateCheck<D, ModelDef.Info<D>[K]>
+        [K in KeyOf<ModelDef.State<D>>]: SafeSignal<
+            Event.StateCheck<D, ModelDef.State<D>[K]>
         >
     }
     export type StateAlterDict<D extends ModelDef> = {
-        [K in KeyOf<ModelDef.Info<D>>]: SafeSignal<
-            Event.StateAlter<D, ModelDef.Info<D>[K]>
+        [K in KeyOf<ModelDef.State<D>>]: SafeSignal<
+            Event.StateAlter<D, ModelDef.State<D>[K]>
         >
     }
 }
@@ -33,13 +33,13 @@ export namespace Signal {
     }
 
     export type StateCheckDict<D extends ModelDef> = {
-        [K in KeyOf<ModelDef.Info<D>>]: Signal<
-            Event.StateCheck<D, ModelDef.Info<D>[K]>
+        [K in KeyOf<ModelDef.State<D>>]: Signal<
+            Event.StateCheck<D, ModelDef.State<D>[K]>
         >
     }
     export type StateAlterDict<D extends ModelDef> = {
-        [K in KeyOf<ModelDef.Info<D>>]: Signal<
-            Event.StateAlter<D, ModelDef.Info<D>[K]>
+        [K in KeyOf<ModelDef.State<D>>]: Signal<
+            Event.StateAlter<D, ModelDef.State<D>[K]>
         >
     }
 }

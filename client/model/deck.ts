@@ -18,7 +18,7 @@ export class DeckModel extends Model<DeckModelDef> {
     constructor(config: TmplModelConfig<DeckModelDef>) {
         super({
             ...config,
-            info: {},
+            state: {},
             childDict: {}
         });
     }

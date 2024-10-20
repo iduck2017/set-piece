@@ -1,6 +1,6 @@
 import { KeyOf } from "../type";
 import { ModelDef } from "../type/model/define";
-import type { ModelState } from "../debug";
+import type { ModelInfo } from "../debug";
 import { Effect } from "../utils/effect";
 import { 
     Signal,
@@ -40,9 +40,9 @@ export abstract class Model<
     public readonly code: string;
 
     // 数据结构
-    protected readonly _originInfo: ModelDef.Info<M>;
-    private readonly _actualInfo: ModelDef.Info<M>;
-    public readonly actualInfo: ModelDef.Info<M>;
+    protected readonly _originState: ModelDef.State<M>;
+    private readonly _actualState: ModelDef.State<M>;
+    public readonly actualState: ModelDef.State<M>;
 
     // 依赖关系
     protected readonly _signalDict: Readonly<Signal.ModelDict<M>>;
@@ -62,12 +62,10 @@ export abstract class Model<
     public readonly childDict: Readonly<Model.ChildDict<M>>;
     public readonly childList: Readonly<Model.ChildList<M>>;
 
-    private _isActived?: boolean;
-
     // 调试器相关
-    private readonly _useModelList: Array<(data: ModelState<M>) => void>;
+    private readonly _useModelList: Array<(data: ModelInfo<M>) => void>;
 
-    public _useState(setter: (data: ModelState<M>) => void) {
+    public _useState(setter: (data: ModelInfo<M>) => void) {
         this._useModelList.push(setter);
         this._setState();
         return () => {
@@ -85,7 +83,7 @@ export abstract class Model<
                 updateSignalDict: this._alterSignalDict,
                 modifySignalDict: this._checkSignalDict,
                 effectDict: this._effectDict,
-                info: this.actualInfo
+                state: this.actualState
             });
         }
     }
@@ -118,13 +116,13 @@ export abstract class Model<
         this.app.referenceService.registerModel(this);
 
         // 初始化数据结构
-        this._originInfo = ControlledProxy(
-            config.info,
-            this._updateInfo,
-            this._updateInfo
+        this._originState = ControlledProxy(
+            config.state,
+            this._updateState,
+            this._updateState
         );
-        this._actualInfo = { ...this._originInfo };
-        this.actualInfo = ReadonlyProxy(this._actualInfo);
+        this._actualState = { ...this._originState };
+        this.actualState = ReadonlyProxy(this._actualState);
 
         // 初始化事件依赖关系
         this._signalDict = AutomicProxy(() => (
@@ -138,7 +136,7 @@ export abstract class Model<
         this._checkSignalDict = AutomicProxy(key => (
             new Signal(this.app, () => {
                 this._setState.bind(this);
-                this._updateInfo(key);
+                this._updateState(key);
             })
         ));
 
@@ -166,14 +164,19 @@ export abstract class Model<
 
         // 初始化调试器
         this._useModelList = [];
+
+        if (this.parent === undefined) {
+            this.app.root = this;
+        }
+        this._activeAll();
     }
 
     // 更新状态
-    private readonly _updateInfo = (
-        key: KeyOf<ModelDef.Info<M>>
+    private readonly _updateState = (
+        key: KeyOf<ModelDef.State<M>>
     ) => {
-        const prev = this._actualInfo[key];
-        const current = this._originInfo[key];
+        const prev = this._actualState[key];
+        const current = this._originState[key];
         const signal = {
             target: this,
             prev: current,
@@ -183,7 +186,7 @@ export abstract class Model<
         if (!result) return;
         const next = result.next;
         if (prev !== next) {
-            this._actualInfo[key] = next;
+            this._actualState[key] = next;
             this._alterSignalDict[key].emitSignal(signal);
             this._setState();
         }
@@ -195,7 +198,7 @@ export abstract class Model<
         return {
             id: this.id,
             code: this.code,
-            info: this._originInfo,
+            state: this._originState,
             childDict: this._childDict.format(child => child.serialize()),
             childList: this._childList.map(child => child.serialize())
         };
@@ -203,12 +206,10 @@ export abstract class Model<
 
     // 执行初始化函数
     protected _active() {}
-    protected _activeAll() {
-        if (this._isActived) return;
+    private _activeAll() {
         this._active();
         for (const child of this._childList) child._activeAll();
         for (const child of Object.values(this._childDict)) child._activeAll();
-        this._isActived = true;
     }
 
     // 执行析构函数

@@ -14,7 +14,7 @@ export class CardModel extends Model<CardModelDef> {
     constructor(config: TmplModelConfig<CardModelDef>) {
         super({
             ...config,
-            info: {},
+            state: {},
             childDict: {}
         });
     }

@@ -15,20 +15,20 @@ export type ModelProps<M extends ModelDef> = {
     app: App
 }
 
-export type ModelState<M extends ModelDef> = {
+export type ModelInfo<M extends ModelDef> = {
     childList: Model.ChildList<M>,
     childDict: Model.ChildDict<M>,
     signalDict: Signal.ModelDict<M>,
     updateSignalDict: Signal.StateAlterDict<M>,
     modifySignalDict: Signal.StateCheckDict<M>,
     effectDict: Effect.ModelDict<M>,
-    info: ModelDef.Info<M>
+    state: ModelDef.State<M>
 }
 
 export type VisibleInfo = {
     model: boolean;
     method: boolean;
-    info: boolean;
+    state: boolean;
     child: boolean;
     signal: boolean;
     effect: boolean;
@@ -77,10 +77,10 @@ export function ModelComp<
     const { model, app } = props;
 
     const modelIntf = useIntf(model);
-    const [ state, setState ] = useState<ModelState<M>>();
-    const [ visible, setVisible ] = useState<VisibleInfo>({
+    const [ modelInfo, setModelInfo ] = useState<ModelInfo<M>>();
+    const [ modelVisible, setModelVisible ] = useState<VisibleInfo>({
         model: true,
-        info: true,
+        state: true,
         child: true,
         signal: true,
         effect: true,
@@ -142,55 +142,42 @@ export function ModelComp<
     }, [ activedEffect ]);
 
     useEffect(() => {
-        return model._useState.call(model, setState);
+        return model._useState.call(model, setModelInfo);
     }, [ model ]);
 
-    if (!state) return null;
+    if (!modelInfo) return null;
 
     const {
         childDict,
         childList,
         signalDict,
         effectDict,
-        info
-    } = state;
+        state
+    } = modelInfo;
 
 
     return (
         <div className="model">
             <div className="body" id={model.id}>
                 <div 
-                    className={`head ${visible.model ? '' : 'fold'}`}
+                    className={`head ${modelVisible.model ? '' : 'fold'}`}
                     onClick={() => {
-                        setVisible(prev => ({
+                        setModelVisible(prev => ({
                             ...prev,
-                            model: !visible.model
+                            model: !modelVisible.model
                         }));
                     }}
                 >
                     {model.code}
                 </div>
-                <div className={`row ${visible.model ? '' : 'fold'}`}>
+                <div className={`row ${modelVisible.model ? '' : 'fold'}`}>
                     <div className="title key">id</div>
                     <div className="value">{formatValue(model.id)}</div>
                 </div>
-                {visible.model && <>
-                    <FolderComp 
-                        visibleDict={visible}
-                        setVisibleDict={setVisible}
-                        title="info"
-                        length={Object.keys(info).length}
-                    >
-                        {Object.keys(info).map(key => (
-                            <div className="row" key={key}>
-                                <div className="key link">{key}</div>
-                                <div className="value">{formatValue(info[key])}</div>
-                            </div>
-                        ))}
-                    </FolderComp>
+                {modelVisible.model && <>
                     <FolderComp
-                        visibleDict={visible}
-                        setVisibleDict={setVisible}
+                        visibleDict={modelVisible}
+                        setVisibleDict={setModelVisible}
                         title="method"
                         length={Object.keys(modelIntf).length}
                     >
@@ -207,9 +194,22 @@ export function ModelComp<
                             </div>
                         ))}
                     </FolderComp>
+                    <FolderComp 
+                        visibleDict={modelVisible}
+                        setVisibleDict={setModelVisible}
+                        title="state"
+                        length={Object.keys(state).length}
+                    >
+                        {Object.keys(state).map(key => (
+                            <div className="row" key={key}>
+                                <div className="key link">{key}</div>
+                                <div className="value">{formatValue(state[key])}</div>
+                            </div>
+                        ))}
+                    </FolderComp>
                     <FolderComp
-                        visibleDict={visible}
-                        setVisibleDict={setVisible}
+                        visibleDict={modelVisible}
+                        setVisibleDict={setModelVisible}
                         title="child"
                         length={Object.keys(childDict).length + childList.length}
                     >
@@ -243,8 +243,8 @@ export function ModelComp<
                         ))}
                     </FolderComp>
                     <FolderComp
-                        visibleDict={visible}
-                        setVisibleDict={setVisible}
+                        visibleDict={modelVisible}
+                        setVisibleDict={setModelVisible}
                         title="signal"
                         length={Object.keys(signalDict).length}
                     >
@@ -266,8 +266,8 @@ export function ModelComp<
                         ))}
                     </FolderComp>
                     <FolderComp
-                        visibleDict={visible}
-                        setVisibleDict={setVisible}
+                        visibleDict={modelVisible}
+                        setVisibleDict={setModelVisible}
                         title="effect"
                         length={Object.keys(effectDict).length}
                     >
@@ -290,7 +290,7 @@ export function ModelComp<
                     </FolderComp>
                 </>}
             </div>
-            {visible.model && <div className="children">
+            {modelVisible.model && <div className="children">
                 {childList.map(item => (
                     <ModelComp 
                         key={item.id}

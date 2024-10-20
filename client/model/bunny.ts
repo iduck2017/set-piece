@@ -7,7 +7,7 @@ import { useProduct } from "../utils/decor/product";
 
 export type BunnyModelDef = TmplModelDef<{
     code: 'bunny',
-    info: {
+    state: {
         curAge: number,
         maxAge: number,
         curHappiness: number,
@@ -17,7 +17,7 @@ export type BunnyModelDef = TmplModelDef<{
     },
     childDict: {
         features: AnimalFeaturesModelDef
-    }
+    },
 }>
 
 @useProduct('bunny')
@@ -29,10 +29,10 @@ export class BunnyModel extends Model<BunnyModelDef> {
             childDict: {
                 features: config.childDict?.features || { code: 'animal_features' }
             },
-            info: {
-                curAge: config.info?.curAge || 0,
-                maxAge: config.info?.maxAge ||  Random.number(-25, 25) + 100,
-                curHappiness: config.info?.curHappiness || 100
+            state: {
+                curAge: config.state?.curAge || 0,
+                maxAge: config.state?.maxAge ||  Random.number(-25, 25) + 100,
+                curHappiness: config.state?.curHappiness || 100
             }
         });
     }
@@ -46,19 +46,19 @@ export class BunnyModel extends Model<BunnyModelDef> {
 
     /** 繁殖幼崽 */
     public readonly reproduce = () => {
-        this.app.root.spawnCreature({
+        this.app.root.methodDict.spawnCreature({
             code: 'bunny'
         });
     };
 
     /** 自杀 */
     public readonly suicide = () => {
-        this.app.root.killCreature(this);
+        this.app.root.methodDict.killCreature(this);
     };
 
     /** 年龄增长 */
     private readonly _handleTimeUpdateDone = () => {
-        this._originInfo.curAge += 1;
+        this._originState.curAge += 1;
     };
 
     protected readonly _effectDict = this._initEffectDict({

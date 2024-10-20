@@ -21,7 +21,7 @@ export class GameModel extends Model<GameModelDef> {
     constructor(config: TmplModelConfig<GameModelDef>) {
         super({
             ...config,
-            info: {},
+            state: {},
             childDict: {
                 redPlayer: config.childDict?.redPlayer || { code: 'player' },
                 bluePlayer: config.childDict?.bluePlayer || { code: 'player' }
