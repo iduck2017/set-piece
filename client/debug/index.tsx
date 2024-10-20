@@ -3,7 +3,7 @@ import React, { ReactNode, useEffect, useState } from "react";
 import type { App } from "../app";
 import type { Model } from "../model";
 import "./index.css";
-import { Event } from "../utils/event";
+import { Signal } from "../utils/signal";
 import { ModelDef } from "../type/model/define";
 import { Effect } from "../utils/effect";
 import { Base } from "../type";
@@ -18,9 +18,9 @@ export type ModelProps<M extends ModelDef> = {
 export type ModelState<M extends ModelDef> = {
     childList: Model.ChildList<M>,
     childDict: Model.ChildDict<M>,
-    eventDict: Event.ModelDict<M>,
-    updateEventDict: Event.StateAlterDict<M>,
-    modifyEventDict: Event.StateCheckDict<M>,
+    signalDict: Signal.ModelDict<M>,
+    updateSignalDict: Signal.StateAlterDict<M>,
+    modifySignalDict: Signal.StateCheckDict<M>,
     effectDict: Effect.ModelDict<M>,
     info: ModelDef.Info<M>
 }
@@ -30,7 +30,7 @@ export type VisibleInfo = {
     method: boolean;
     info: boolean;
     child: boolean;
-    event: boolean;
+    signal: boolean;
     effect: boolean;
 }
 
@@ -82,7 +82,7 @@ export function ModelComp<
         model: true,
         info: true,
         child: true,
-        event: true,
+        signal: true,
         effect: true,
         method: true
     });
@@ -93,7 +93,7 @@ export function ModelComp<
     };
 
     const [ activedChild, setActivedChild ] = useState<Model>();
-    const [ activedEvent, setActivedEvent ] = useState<Event>();
+    const [ activedSignal, setActivedSignal ] = useState<Signal>();
     const [ activedEffect, setActivedEffect ] = useState<Effect>();
 
     useEffect(() => {
@@ -106,34 +106,34 @@ export function ModelComp<
     }, [ activedChild ]);
 
     useEffect(() => {
-        if (!activedEvent) return;
-        for (const effectId of activedEvent.effectIdList) {
+        if (!activedSignal) return;
+        for (const effectId of activedSignal.effectIdList) {
             const elem = document.getElementById(effectId);
             if (elem) {
                 elem.classList.add('actived');
             }
         }
         return () => {
-            for (const effectId of activedEvent.effectIdList) {
+            for (const effectId of activedSignal.effectIdList) {
                 const elem = document.getElementById(effectId);
                 if (elem) {
                     elem.classList.remove('actived');
                 }
             }
         };
-    }, [ activedEvent ]);
+    }, [ activedSignal ]);
 
     useEffect(() => {
         if (!activedEffect) return;
-        for (const eventId of activedEffect.eventIdList) {
-            const elem = document.getElementById(eventId);
+        for (const signalId of activedEffect.signalIdList) {
+            const elem = document.getElementById(signalId);
             if (elem) {
                 elem.classList.add('actived');
             }
         }
         return () => {
-            for (const eventId of activedEffect.eventIdList) {
-                const elem = document.getElementById(eventId);
+            for (const signalId of activedEffect.signalIdList) {
+                const elem = document.getElementById(signalId);
                 if (elem) {
                     elem.classList.remove('actived');
                 }
@@ -150,7 +150,7 @@ export function ModelComp<
     const {
         childDict,
         childList,
-        eventDict,
+        signalDict,
         effectDict,
         info
     } = state;
@@ -245,23 +245,23 @@ export function ModelComp<
                     <FolderComp
                         visibleDict={visible}
                         setVisibleDict={setVisible}
-                        title="event"
-                        length={Object.keys(eventDict).length}
+                        title="signal"
+                        length={Object.keys(signalDict).length}
                     >
-                        {Object.keys(eventDict).map(key => (
+                        {Object.keys(signalDict).map(key => (
                             <div 
-                                id={eventDict[key].id}
+                                id={signalDict[key].id}
                                 className="row" 
                                 key={key}
                             >
                                 <div 
-                                    className={`key link ${activedEvent === eventDict[key] ? 'hover' : ''}`}
-                                    onMouseEnter={() => setActivedEvent(eventDict[key])}
-                                    onMouseLeave={() => setActivedEvent(undefined)}
+                                    className={`key link ${activedSignal === signalDict[key] ? 'hover' : ''}`}
+                                    onMouseEnter={() => setActivedSignal(signalDict[key])}
+                                    onMouseLeave={() => setActivedSignal(undefined)}
                                 >
                                     {key}
                                 </div>
-                                <div className="value">{formatValue(eventDict[key].id)}</div>
+                                <div className="value">{formatValue(signalDict[key].id)}</div>
                             </div>
                         ))}
                     </FolderComp>

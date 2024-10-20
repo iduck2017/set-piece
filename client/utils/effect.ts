@@ -1,7 +1,8 @@
 import type { App } from "../app";
 import { KeyOf } from "../type";
+import { Event } from "../type/event";
 import { ModelDef } from "../type/model/define";
-import { SafeEvent } from "./event";
+import { SafeSignal } from "./signal";
 
 export namespace Effect {
     export type ModelDict<D extends ModelDef> = {
@@ -13,43 +14,43 @@ export namespace Effect {
 export class Effect<E = any> {
     public readonly id: string;
 
-    private readonly _eventList: SafeEvent<E>[] = [];
-    public get eventIdList() {
-        return this._eventList.map(event => event.id);
+    private readonly _signalList: SafeSignal<E>[] = [];
+    public get signalIdList() {
+        return this._signalList.map(signal => signal.id);
     }
 
     constructor(
         app: App,
-        handleEvent: (event: E) => E | void,
+        handleSignal: Event<E>,
         bindDone?: () => void
     ) {
         this.id = app.referenceService.ticket;
-        this.handleEvent = handleEvent;
+        this.handleSignal = handleSignal;
         this._bindDone = bindDone;
     }
 
     private readonly _bindDone?: (react: Effect<E>) => void;
-    public readonly handleEvent: (event: E) => E | void;
+    public readonly handleSignal: Event<E>;
     
-    public readonly bindEvent = (event: SafeEvent<E>) => {
-        const index = this._eventList.indexOf(event);
+    public readonly bindSignal = (signal: SafeSignal<E>) => {
+        const index = this._signalList.indexOf(signal);
         if (index >= 0) return;
-        this._eventList.push(event);
-        event.bindEffect(this);
+        this._signalList.push(signal);
+        signal.bindEffect(this);
         this._bindDone?.(this);
     };
 
-    public readonly unbindEvent = (event: SafeEvent<E>) => {
-        const index = this._eventList.indexOf(event);
+    public readonly unbindSignal = (signal: SafeSignal<E>) => {
+        const index = this._signalList.indexOf(signal);
         if (index < 0) return;
-        this._eventList.splice(index, 1);
-        event.unbindEffect(this);
+        this._signalList.splice(index, 1);
+        signal.unbindEffect(this);
         this._bindDone?.(this);
     };
 
     public readonly destroy = () => {
-        for (const event of this._eventList) {
-            this.unbindEvent(event);
+        for (const signal of this._signalList) {
+            this.unbindSignal(signal);
         }
     };
 }

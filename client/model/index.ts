@@ -3,9 +3,9 @@ import { ModelDef } from "../type/model/define";
 import type { ModelState } from "../debug";
 import { Effect } from "../utils/effect";
 import { 
-    Event,
-    SafeEvent
-} from "../utils/event";
+    Signal,
+    SafeSignal
+} from "../utils/signal";
 import { 
     BaseModelConfig, 
     ModelConfig
@@ -45,13 +45,13 @@ export abstract class Model<
     public readonly actualInfo: ModelDef.Info<M>;
 
     // 依赖关系
-    protected readonly _eventDict: Readonly<Event.ModelDict<M>>;
-    protected readonly _updateEventDict: Event.StateAlterDict<M>;
-    protected readonly _modifyEventDict: Event.StateCheckDict<M>;
+    protected readonly _signalDict: Readonly<Signal.ModelDict<M>>;
+    protected readonly _alterSignalDict: Signal.StateAlterDict<M>;
+    protected readonly _checkSignalDict: Signal.StateCheckDict<M>;
 
-    public readonly eventDict: Readonly<SafeEvent.ModelDict<M>>;
-    public readonly updateEventDict: SafeEvent.StateAlterDict<M>;
-    public readonly modifyEventDict: SafeEvent.StateCheckDict<M>;
+    public readonly signalDict: Readonly<SafeSignal.ModelDict<M>>;
+    public readonly alterSignalDict: SafeSignal.StateAlterDict<M>;
+    public readonly checkSignalDict: SafeSignal.StateCheckDict<M>;
     
     protected abstract readonly _effectDict: Readonly<Effect.ModelDict<M>>;
     public abstract readonly methodDict: Readonly<ModelDef.MethodDict<M>>;
@@ -81,9 +81,9 @@ export abstract class Model<
             useModel({
                 childDict: this._childDict,
                 childList: this._childList,
-                eventDict: this._eventDict,
-                updateEventDict: this._updateEventDict,
-                modifyEventDict: this._modifyEventDict,
+                signalDict: this._signalDict,
+                updateSignalDict: this._alterSignalDict,
+                modifySignalDict: this._checkSignalDict,
                 effectDict: this._effectDict,
                 info: this.actualInfo
             });
@@ -93,7 +93,7 @@ export abstract class Model<
     protected readonly _initEffectDict = (
         callback: {
             [K in KeyOf<ModelDef.EffectDict<M>>]: (
-                event: ModelDef.EffectDict<M>[K]
+                signal: ModelDef.EffectDict<M>[K]
             ) => void | ModelDef.EffectDict<M>[K];
         }
     ): Effect.ModelDict<M> => {
@@ -127,29 +127,24 @@ export abstract class Model<
         this.actualInfo = ReadonlyProxy(this._actualInfo);
 
         // 初始化事件依赖关系
-        this._eventDict = AutomicProxy(() => (
-            new Event(this.app, this._setState.bind(this))
-        ));
-        this.eventDict = AutomicProxy(key => (
-            this._eventDict[key].safeEvent
+        this._signalDict = AutomicProxy(() => (
+            new Signal(this.app, this._setState.bind(this))
         ));
 
-        this._updateEventDict = AutomicProxy(() => (
-            new Event(this.app, this._setState.bind(this))
-        ));
-        this.updateEventDict = AutomicProxy(key => (
-            this._updateEventDict[key].safeEvent
+        this._alterSignalDict = AutomicProxy(() => (
+            new Signal(this.app, this._setState.bind(this))
         ));
 
-        this._modifyEventDict = AutomicProxy(key => (
-            new Event(this.app, () => {
+        this._checkSignalDict = AutomicProxy(key => (
+            new Signal(this.app, () => {
                 this._setState.bind(this);
                 this._updateInfo(key);
             })
         ));
-        this.modifyEventDict = AutomicProxy(key => (
-            this._modifyEventDict[key].safeEvent
-        ));
+
+        this.signalDict = AutomicProxy(key => this._signalDict[key].safeSignal);
+        this.alterSignalDict = AutomicProxy(key => this._alterSignalDict[key].safeSignal);
+        this.checkSignalDict = AutomicProxy(key => this._checkSignalDict[key].safeSignal);
 
         // 初始化节点从属关系
         this._childDict = ControlledProxy(
@@ -179,16 +174,16 @@ export abstract class Model<
     ) => {
         const prev = this._actualInfo[key];
         const current = this._originInfo[key];
-        const event = {
+        const signal = {
             target: this,
             prev: current,
             next: current
         };
-        this._modifyEventDict[key].emitEvent(event);
-        const next = event.next;
+        this._checkSignalDict[key].emitSignal(signal);
+        const next = signal.next;
         if (prev !== next) {
             this._actualInfo[key] = next;
-            this._updateEventDict[key].emitEvent(event);
+            this._alterSignalDict[key].emitSignal(signal);
             this._setState();
         }
     };
@@ -207,37 +202,23 @@ export abstract class Model<
 
     // 执行初始化函数
     protected _active() {}
-    protected readonly _activeAll = () => {
+    protected _activeAll() {
         if (this._isActived) return;
         this._active();
-        for (const child of this._childList) {
-            child._activeAll();
-        }
-        for (const key in this._childDict) {
-            const child = this._childDict[key];
-            child._activeAll();
-        }
+        for (const child of this._childList) child._activeAll();
+        for (const child of Object.values(this._childDict)) child._activeAll();
         this._isActived = true;
-    };
+    }
 
     // 执行析构函数
     protected _destroy() {}
     private readonly _destroyAll = () => {
-        for (const child of this._childList) {
-            child._destroyAll();
-        }
-        for (const key in this._childDict) {
-            const child = this._childDict[key];
-            child._destroyAll();
-        }
-        for (const key in this._effectDict) {
-            const effect = this._effectDict[key];
-            effect.destroy();
-        }
-        for (const key in this._eventDict) {
-            const event = this._eventDict[key];
-            event.destroy();
-        }
+        for (const child of this._childList) child._destroyAll();
+        for (const child of Object.values(this._childDict)) child._destroyAll();
+        for (const signal of Object.values(this._signalDict)) signal.destroy();
+        for (const signal of Object.values(this._alterSignalDict)) signal.destroy();
+        for (const signal of Object.values(this._checkSignalDict)) signal.destroy();
+        for (const effect of Object.values(this._effectDict)) effect.destroy();
         this.app.referenceService.unregisterModel(this);
         this._destroy();
     };
@@ -245,6 +226,7 @@ export abstract class Model<
     protected readonly _unserialize = <M extends ModelDef>(
         config: ModelConfig<M>
     ): Model<M> => {
+        console.log(config, this);
         return this.app.factoryService.unserialize({
             ...config,
             parent: this,

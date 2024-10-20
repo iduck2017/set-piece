@@ -8,7 +8,7 @@ export type TimerModelDef = TmplModelDef<{
     info: {
         time: number,
     },
-    eventDict: {
+    signalDict: {
         tickBefore: void,
         tickDone: void,
     },
@@ -32,9 +32,9 @@ export class TimerModel extends Model<TimerModelDef> {
     
     /** 更新时间 */
     public readonly updateTime = (offsetTime: number) => {
-        this._eventDict.tickBefore.emitEvent();
+        this._signalDict.tickBefore.emitSignal();
         this._originInfo.time += offsetTime;
-        this._eventDict.tickDone.emitEvent();
+        this._signalDict.tickDone.emitSignal();
     };
     
     protected _effectDict = {};

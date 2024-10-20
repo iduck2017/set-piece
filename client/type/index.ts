@@ -9,7 +9,7 @@ export namespace Base {
     export type VoidList = Array<never>
     export type Function = (...params: any) => any
     export type Class = new (...args: any) => any
-    export type Event<T> = new (event: T) => T | undefined
+    export type Signal<T> = new (signal: T) => T | undefined
 }
 
 // 对象遍历

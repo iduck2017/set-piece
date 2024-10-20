@@ -7,7 +7,7 @@ Object.prototype.format = function<
     formatValue: (value: A[T]) => B[T] 
 ): B {
     const result = {} as B;
-    Object.keys(origin).forEach((key: T) => {
+    Object.keys(this).forEach((key: T) => {
         result[key] = formatValue(this[key]);
     });
     return result;

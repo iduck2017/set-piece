@@ -1,51 +1,50 @@
 import { KeyOf } from "../type";
 import { ModelDef } from "../type/model/define";
-import { EventType } from "../type/event";
+import { Event } from "../type/event";
 import type { Effect } from "./effect";
 import type { App } from "../app";
 
-
-export namespace SafeEvent {
+export namespace SafeSignal {
     export type ModelDict<D extends ModelDef> = {
-        [K in KeyOf<ModelDef.EventDict<D>>]: SafeEvent<ModelDef.EventDict<D>[K]>;
+        [K in KeyOf<ModelDef.SignalDict<D>>]: SafeSignal<ModelDef.SignalDict<D>[K]>;
     }
 
     export type StateCheckDict<D extends ModelDef> = {
-        [K in KeyOf<ModelDef.Info<D>>]: SafeEvent<
-            EventType.StateCheckBefore<D, ModelDef.Info<D>[K]>
+        [K in KeyOf<ModelDef.Info<D>>]: SafeSignal<
+            Event.StateCheck<D, ModelDef.Info<D>[K]>
         >
     }
     export type StateAlterDict<D extends ModelDef> = {
-        [K in KeyOf<ModelDef.Info<D>>]: SafeEvent<
-            EventType.StateAlterDone<D, ModelDef.Info<D>[K]>
+        [K in KeyOf<ModelDef.Info<D>>]: SafeSignal<
+            Event.StateAlter<D, ModelDef.Info<D>[K]>
         >
     }
 }
 
-export type SafeEvent<E = any> = {
+export type SafeSignal<E = any> = {
     id: string;
     bindEffect: (effect: Effect<E>) => void;
     unbindEffect: (effect: Effect<E>) => void;
 }
 
-export namespace Event {
+export namespace Signal {
     export type ModelDict<D extends ModelDef> = {
-        [K in KeyOf<ModelDef.EventDict<D>>]: Event<ModelDef.EventDict<D>[K]>;
+        [K in KeyOf<ModelDef.SignalDict<D>>]: Signal<ModelDef.SignalDict<D>[K]>;
     }
 
     export type StateCheckDict<D extends ModelDef> = {
-        [K in KeyOf<ModelDef.Info<D>>]: Event<
-            EventType.StateCheckBefore<D, ModelDef.Info<D>[K]>
+        [K in KeyOf<ModelDef.Info<D>>]: Signal<
+            Event.StateCheck<D, ModelDef.Info<D>[K]>
         >
     }
     export type StateAlterDict<D extends ModelDef> = {
-        [K in KeyOf<ModelDef.Info<D>>]: Event<
-            EventType.StateAlterDone<D, ModelDef.Info<D>[K]>
+        [K in KeyOf<ModelDef.Info<D>>]: Signal<
+            Event.StateAlter<D, ModelDef.Info<D>[K]>
         >
     }
 }
 
-export class Event<E = any> {
+export class Signal<E = any> {
     public readonly id: string;
 
     private readonly _effectList: Effect<E>[];
@@ -57,16 +56,16 @@ export class Event<E = any> {
         return effectIdList;
     }
 
-    public readonly safeEvent: SafeEvent<E>;
+    public readonly safeSignal: SafeSignal<E>;
 
     constructor(
         app: App,
-        handleUpdate?: (event: Event<E>) => void
+        handleUpdate?: (signal: Signal<E>) => void
     ) {
         this.id = app.referenceService.ticket;
         this._effectList = [];
 
-        this.safeEvent = {
+        this.safeSignal = {
             id: this.id,
             bindEffect: this.bindEffect.bind(this),
             unbindEffect: this.unbindEffect.bind(this)
@@ -74,13 +73,13 @@ export class Event<E = any> {
         this._handleUpdate = handleUpdate;
     }
 
-    private readonly _handleUpdate?: (event: Event<E>) => void; 
+    private readonly _handleUpdate?: (signal: Signal<E>) => void; 
 
     public readonly bindEffect = (effect: Effect<E>) => {
         const index = this._effectList.indexOf(effect);
         if (index >= 0) return;
         this._effectList.push(effect);
-        effect.bindEvent(this);
+        effect.bindSignal(this);
         this._handleUpdate?.(this);
     };
 
@@ -88,17 +87,17 @@ export class Event<E = any> {
         const index = this._effectList.indexOf(effect);
         if (index < 0) return;
         this._effectList.splice(index, 1);
-        effect.unbindEvent(this);
+        effect.unbindSignal(this);
         this._handleUpdate?.(this);
     };
 
-    public readonly emitEvent = (event: E): E | void => {
-        let prevEvent = event;
+    public readonly emitSignal = (signal: E): E | void => {
+        let prevSignal = signal;
         for (const effect of this._effectList) {
-            const result = effect.handleEvent(prevEvent);
-            if (result) prevEvent = result;
+            const result = effect.handleSignal(prevSignal);
+            if (result) prevSignal = result;
         }
-        return prevEvent;
+        return prevSignal;
     };
 
     public readonly destroy = () => {

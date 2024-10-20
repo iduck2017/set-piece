@@ -1,7 +1,7 @@
 import { TmplModelDef } from "../type/model/define";
 import { TmplModelConfig } from "../type/model/config";
 import { BunnyModel, BunnyModelDef } from "./bunny";
-import { EventType } from "../type/event";
+import { Event } from "../type/event";
 import { Random } from "../utils/random";
 import { AnimalFeaturesModel } from "./animal-feature";
 import { Model } from ".";
@@ -16,14 +16,14 @@ export type CastratableModelDef = TmplModelDef<{
         /** 阉割造成的预期寿命加成 */
         maxAgeBonus: number
     },
-    eventDict: {
+    signalDict: {
         /** 被阉割前 */
-        castrateBefore: EventType.CastrateBefore<BunnyModel>,
+        castrateBefore: Event.PreCastrated<BunnyModel>,
         /** 被阉割后 */
-        castrateDone: EventType.CastrateDone<BunnyModel>
+        castrateDone: Event.Castrated<BunnyModel>
     }
     effectDict: {
-        ageUpdateBefore: EventType.StateCheckBefore<BunnyModelDef, number>
+        ageUpdateBefore: Event.StateAlter<BunnyModelDef, number>
     },
     parent: AnimalFeaturesModel
 }>
@@ -33,11 +33,11 @@ export class CastratableModel extends Model<CastratableModelDef> {
 
     /** 预期寿命修饰符 */
     private readonly _handleAgeUpdateBefore = (
-        event: EventType.StateCheckBefore<BunnyModelDef, number>
-    ): EventType.StateCheckBefore<BunnyModelDef, number> => {
+        signal: Event.StateAlter<BunnyModelDef, number>
+    ): Event.StateAlter<BunnyModelDef, number> => {
         return {
-            ...event,
-            next: event.next + this.actualInfo.maxAgeBonus
+            ...signal,
+            next: signal.next + this.actualInfo.maxAgeBonus
         };
     };
 
@@ -59,7 +59,7 @@ export class CastratableModel extends Model<CastratableModelDef> {
     protected readonly _active = () => {
         if (this.actualInfo.castrated) {
             const animal = this.parent?.parent;
-            animal.modifyEventDict.maxAge.bindEffect(
+            animal.checkSignalDict.maxAge.bindEffect(
                 this._effectDict.ageUpdateBefore
             );
         }
@@ -70,15 +70,15 @@ export class CastratableModel extends Model<CastratableModelDef> {
     public readonly castrate = () => {
         if (this.actualInfo.castrated) return;
         const animal = this.parent?.parent;
-        const result = this._eventDict.castrateBefore.emitEvent({
+        const result = this._signalDict.castrateBefore.emitSignal({
             model: animal
         });
         if (result?.isAborted)  return;
         this._originInfo.castrated = true;
-        animal.modifyEventDict.maxAge.bindEffect(
+        animal.checkSignalDict.maxAge.bindEffect(
             this._effectDict.ageUpdateBefore
         );
-        this._eventDict.castrateDone.emitEvent({ model: animal });
+        this._signalDict.castrateDone.emitSignal({ model: animal });
     };
 
     
