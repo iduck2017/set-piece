@@ -7,7 +7,7 @@ export namespace Base {
     export type Data = Record<Key, Value>
     export type VoidData = Record<never, never>
     export type VoidList = Array<never>
-    export type Function = (params: any) => any
+    export type Function = (...params: any) => any
     export type Class = new (...args: any) => any
     export type Event<T> = new (event: T) => T | undefined
 }

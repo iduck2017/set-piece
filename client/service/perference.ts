@@ -1,12 +1,12 @@
 import type { App } from "../app";
-import { singleton } from "../utils/singleton";
+import { useSingleton } from "../utils/decor/singleton";
 
 export type PerferenceData = {
     fullscreen: boolean
     mute: boolean
 }
 
-@singleton
+@useSingleton
 export class PreferenceService {
     public readonly app: App;
 

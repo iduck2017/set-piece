@@ -11,12 +11,14 @@ export type TimerModelDef = TmplModelDef<{
     eventDict: {
         tickBefore: void,
         tickDone: void,
+    },
+    intf: {
+        updateTime: (offsetTime: number) => void,
     }
 }>
 
 @useProduct('timer')
 export class TimerModel extends Model<TimerModelDef> {
-    protected _reactDict = {};
 
     constructor(config: TmplModelConfig<TimerModelDef>) {
         super({
@@ -29,11 +31,15 @@ export class TimerModel extends Model<TimerModelDef> {
     }
     
     /** 更新时间 */
-    public readonly tick = (offsetTime: number) => {
+    public readonly updateTime = (offsetTime: number) => {
         this._eventDict.tickBefore.emitEvent();
         this._originInfo.time += offsetTime;
         this._eventDict.tickDone.emitEvent();
     };
     
-    public readonly intf = {};
+    protected _reactDict = {};
+    
+    public readonly intf = {
+        updateTime: this.updateTime.bind(this)
+    };
 }

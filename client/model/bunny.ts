@@ -37,7 +37,7 @@ export class BunnyModel extends Model<BunnyModelDef> {
         });
     }
 
-    protected readonly _recover = () => {
+    protected readonly _active = () => {
         const timer = this.app.root.childDict.timer;
         timer.eventDict.tickBefore.bindReact(
             this._reactDict.timeUpdateDone

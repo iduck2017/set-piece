@@ -56,7 +56,7 @@ export class CastratableModel extends Model<CastratableModelDef> {
         });
     }
 
-    protected readonly _recover = () => {
+    protected readonly _active = () => {
         if (this.actualInfo.castrated) {
             const animal = this.parent?.parent;
             animal.modifyEventDict.maxAge.bindReact(

@@ -3,10 +3,9 @@ import type { Model } from "../model";
 import { Base } from "../type";
 import type { TmplModelConfig, ModelConfig } from "../type/model/config";
 import { ModelDef } from "../type/model/define";
-import { singleton } from "../utils/singleton";
+import { useSingleton } from "../utils/decor/singleton";
 
-
-@singleton
+@useSingleton
 export class FactoryService {
     public readonly app: App;
 

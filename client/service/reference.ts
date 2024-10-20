@@ -1,12 +1,12 @@
 import type { App } from "../app";
 import type { Model } from "../model";
 import { ModelDef } from "../type/model/define";
-import { singleton } from "../utils/singleton";
+import { useSingleton } from "../utils/decor/singleton";
 
 export const MIN_TICKET = 100;
 export const MAX_TICKET = 999;
 
-@singleton
+@useSingleton
 export class ReferenceService {
     public readonly app: App;
     private modelDict: Record<string, Model> = {};

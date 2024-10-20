@@ -63,7 +63,7 @@ export class RootModel extends Model<RootModelDef> {
     }
 
     public readonly recover = () => {
-        this._recRecover();
+        this._activeAll();
     };
 
     

@@ -1,8 +1,8 @@
 import type { App } from "../app";
 import { RootModelDef } from "../model/root";
 import { ModelConfig } from "../type/model/config";
-import { Delegator } from "../utils/proxy";
-import { singleton } from "../utils/singleton";
+import { useSingleton } from "../utils/decor/singleton";
+import { ReadonlyProxy } from "../utils/proxy/readonly";
 
 export const ARCHIEVE_SAVE_PATH = 'archieve';
 
@@ -12,7 +12,7 @@ export type ArchieveData = {
     progress: number
 }
 
-@singleton
+@useSingleton
 export class ArchieveService {
     public readonly app: App;
 
@@ -32,7 +32,7 @@ export class ArchieveService {
     // 初始化档案信息
     public readonly initialize = (data: Readonly<ArchieveData[]>) => {
         this._data = [ ...data ];
-        this.data = Delegator.ReadonlyDict(this._data);
+        this.data = ReadonlyProxy(this._data);
     };
 
     // 创建新的档案

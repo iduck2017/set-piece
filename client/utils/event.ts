@@ -20,6 +20,7 @@ export type UpdateEventDict<M extends ModelDef> = {
     >
 }
 
+
 export class Event<E = any> {
     public readonly id: string;
 

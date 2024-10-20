@@ -142,7 +142,7 @@ export function ModelComp<
     }, [ activedReact ]);
 
     useEffect(() => {
-        return model._useState(setState);
+        return model._useState.call(model, setState);
     }, [ model ]);
 
     if (!state) return null;

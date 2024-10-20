@@ -11,6 +11,7 @@ console.log(dir);
 
 module.exports = {
     entry: [
+        './client/utils/object.ts',
         './client/main.ts',
         ...dir
     ],
