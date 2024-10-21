@@ -35,7 +35,6 @@ export type CastratableModelDef = TmplModelDef<{
 
 @useProduct('castratable')
 export class CastratableModel extends Model<CastratableModelDef> {
-
     /** 预期寿命修饰符 */
     private readonly _handleAgeUpdateBefore = (
         signal: Event.StateEditor<BunnyModelDef, number>
@@ -46,7 +45,7 @@ export class CastratableModel extends Model<CastratableModelDef> {
         };
     };
 
-    protected _effectDict = this._initEffectDict({
+    protected _effectDict = this.EffectDict({
         ageUpdateBefore: this._handleAgeUpdateBefore
     });
 
@@ -61,14 +60,14 @@ export class CastratableModel extends Model<CastratableModelDef> {
         });
     }
 
-    protected readonly _active = () => {
+    protected _active() {
         if (this.actualState.castrated) {
             const animal = this.parent?.parent;
             animal.stateEditorDict.maxAge.bindEffect(
                 this._effectDict.ageUpdateBefore
             );
         }
-    };
+    }
 
 
     /** 执行阉割 */

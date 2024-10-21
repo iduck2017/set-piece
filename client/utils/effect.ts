@@ -48,9 +48,9 @@ export class Effect<E = any> {
         this._bindDone?.(this);
     };
 
-    public readonly destroy = () => {
+    public destroy () {
         for (const signal of this._signalList) {
             this.unbindSignal(signal);
         }
-    };
+    }
 }

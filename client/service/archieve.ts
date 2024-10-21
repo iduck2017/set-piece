@@ -30,14 +30,13 @@ export class ArchieveService {
     }
 
     // 初始化档案信息
-    public readonly initialize = (data: Readonly<ArchieveData[]>) => {
+    public initialize(data: Readonly<ArchieveData[]>) {
         this._data = [ ...data ];
         this.data = ReadonlyProxy(this._data);
-    };
+    }
 
     // 创建新的档案
-    public readonly createArchieve = async (
-    ): Promise<ModelConfig<RootModelDef>> => {
+    public async createArchieve(): Promise<ModelConfig<RootModelDef>> {
         this.app.referenceService.reset();
         const id = this.app.referenceService.ticket;
         this._data.push({
@@ -49,7 +48,7 @@ export class ArchieveService {
         await localStorage.setItem(`${ARCHIEVE_SAVE_PATH}_${id}`, JSON.stringify(record));
         await this.app.saveMetaData();
         return record;
-    };
+    }
 
     // 加载档案
     public async loadArchieve(
@@ -86,7 +85,7 @@ export class ArchieveService {
         }
         const slot = this._data[index];
         const path = `${ARCHIEVE_SAVE_PATH}_${slot.id}`;
-        const record = rootModel.serialize();
+        const record = rootModel.bundle;
         // 更新档案信息
         this._data[index] = {
             ...slot,

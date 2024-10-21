@@ -22,7 +22,14 @@ export type BunnyModelDef = TmplModelDef<{
 
 @useProduct('bunny')
 export class BunnyModel extends Model<BunnyModelDef> {
-   
+    public readonly methodDict = {
+        reproduce: this._reproduce,
+        suicide: this._suicide
+    };
+    protected readonly _effectDict = this.EffectDict({
+        timeUpdateDone: this._handleTimeUpdateDone
+    });
+
     constructor(config: TmplModelConfig<BunnyModelDef>) {
         super({
             ...config,
@@ -37,33 +44,27 @@ export class BunnyModel extends Model<BunnyModelDef> {
         });
     }
 
-    protected readonly _active = () => {
+    protected _active() {
         const timer = this.app.root.childDict.timer;
         timer.signalDict.tickBefore.bindEffect(
             this._effectDict.timeUpdateDone
         );
-    };
+    }
 
     /** 繁殖幼崽 */
-    public readonly reproduce = () => {
+    private _reproduce() {
         this.app.root.methodDict.spawnCreature({
             code: 'bunny'
         });
-    };
+    }
 
     /** 自杀 */
-    public readonly suicide = () => {
+    public _suicide() {
         this.app.root.methodDict.killCreature(this);
-    };
+    }
 
     /** 年龄增长 */
-    private readonly _handleTimeUpdateDone = () => {
+    private _handleTimeUpdateDone() {
         this._originState.curAge += 1;
-    };
-
-    protected readonly _effectDict = this._initEffectDict({
-        timeUpdateDone: this._handleTimeUpdateDone
-    });
-
-    public readonly methodDict = {};
+    }
 }

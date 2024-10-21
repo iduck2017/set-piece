@@ -1,6 +1,5 @@
 /* eslint-disable max-len */
 import React, { ReactNode, useEffect, useState } from "react";
-import type { App } from "../app";
 import type { Model } from "../model";
 import "./index.css";
 import { Signal } from "../utils/signal";
@@ -8,22 +7,7 @@ import { ModelDef } from "../type/model/define";
 import { Effect } from "../utils/effect";
 import { Base } from "../type";
 import { useIntf } from "./use-intf";
-
-
-export type ModelProps<M extends ModelDef> = {
-    model: Model<M>,
-    app: App
-}
-
-export type ModelInfo<M extends ModelDef> = {
-    childList: Model.ChildList<M>,
-    childDict: Model.ChildDict<M>,
-    signalDict: Signal.ModelDict<M>,
-    statePosterDict: Signal.StatePosterDict<M>,
-    stateEditorDict: Signal.StateEditorDict<M>,
-    effectDict: Effect.ModelDict<M>,
-    state: ModelDef.State<M>
-}
+import { ModelInfo, ModelProps } from "../type/model/inspector";
 
 export type VisibleInfo = {
     model: boolean;
@@ -141,7 +125,7 @@ export function ModelComp<
         };
     }, [ activedEffect ]);
 
-    useEffect(() => model._useState.call(model, setModelInfo), [ model ]);
+    useEffect(() => model.useInfo.call(model, setModelInfo), [ model ]);
 
     if (!modelInfo) return null;
 
