@@ -13,24 +13,25 @@ export class FactoryService {
         string,
         new (config: ModelConfig<any>) => Model
     > = {};
-    public static readonly register = (
+
+    public static register<M extends ModelDef>(
         code: string,
-        target: new (config: ModelConfig<any>) => Model
-    ) => {
+        target: new (config: ModelConfig<M>) => Model<M>
+    ) {
         if (FactoryService._productDict[code]) throw new Error();
         FactoryService._productDict[code] = target;
-    };
+    }
 
     constructor(app: App) {
         this.app = app;
     }
 
     // 生成反序列化节点
-    public readonly unserialize = <D extends ModelDef>(
+    public unserialize<D extends ModelDef>(
         config: TmplModelConfig<D>
-    ): Model<D> => {
+    ): Model<D> {
         const Type: Base.Class = FactoryService._productDict[config.code];
         if (!Type) throw new Error(`未注册的模型类型：${config.code}`);
         return new Type(config);
-    };
+    }
 }

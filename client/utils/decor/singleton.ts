@@ -13,5 +13,5 @@ export function useSingleton<T extends Base.Class>(
             _singletonDict.add(IConstructor);
             super(...config);
         }
-    } as T;
+    };
 }

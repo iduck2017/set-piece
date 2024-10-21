@@ -48,8 +48,8 @@ export function ControlledArray<T>(
             handleUpdate(value);
             return true;
         },
-        deleteProperty: (target, key: KeyOf<T[]>) => {
-            const value = target[key] as T;
+        deleteProperty: (target, key: any) => {
+            const value = target[key];
             delete target[key];
             if (_lock) return true;
             handleUpdate(value, true);
