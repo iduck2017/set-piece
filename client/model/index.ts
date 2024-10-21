@@ -1,5 +1,5 @@
 import type { App } from "../app";
-import { KeyOf } from "../type";
+import { Base, KeyOf } from "../type";
 import { ModelDef } from "../type/model/define";
 import { Effect } from "../utils/effect";
 import { Signal, SafeSignal } from "../utils/signal";
@@ -63,7 +63,7 @@ export abstract class Model<
     private readonly _hookList: Array<(data: ModelInfo<D>) => void>; 
     
     public abstract readonly methodDict: Readonly<ModelDef.MethodDict<D>>;
-    public readonly testMethodDict: Record<string, () => unknown>;
+    public testMethodDict: Record<string, Base.Function>;
 
     protected EffectDict(
         callbackDict: {
@@ -213,6 +213,7 @@ export abstract class Model<
         value: Model,
         isNew: boolean
     ) {
+        console.log('update', value, isNew);
         if (isNew) value._activeAll();
         else value._destroyAll();
         this._resetInfo();

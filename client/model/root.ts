@@ -28,8 +28,8 @@ export class RootModel extends Model<RootModelDef> {
     protected _effectDict = {};
     
     public readonly methodDict = {
-        spawnCreature: this._spawnCreature,
-        killCreature: this._killCreature
+        spawnCreature: this._spawnCreature.bind(this),
+        killCreature: this._killCreature.bind(this)
     };
     
     constructor(config: TmplModelConfig<RootModelDef>) {

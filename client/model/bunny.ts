@@ -23,8 +23,8 @@ export type BunnyModelDef = TmplModelDef<{
 @useProduct('bunny')
 export class BunnyModel extends Model<BunnyModelDef> {
     public readonly methodDict = {
-        reproduce: this._reproduce,
-        suicide: this._suicide
+        reproduce: this._reproduce.bind(this),
+        suicide: this._suicide.bind(this)
     };
     protected readonly _effectDict = this.EffectDict({
         timeUpdateDone: this._handleTimeUpdateDone
@@ -42,6 +42,9 @@ export class BunnyModel extends Model<BunnyModelDef> {
                 curHappiness: config.state?.curHappiness || 100
             }
         });
+        this.testMethodDict = {
+            reproduce: this._reproduce.bind(this)
+        };
     }
 
     protected _active() {
