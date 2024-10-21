@@ -4,14 +4,14 @@ import { ModelDef } from "./model/define";
 export type Event<E> = (event: E) => E | void;
 
 export namespace Event {
-    export type StateEditor<M extends ModelDef, T> = {
+    export type StateEdit<M extends ModelDef, T> = {
         target: Model<M>,
         prev: T,
         next: T,
-        isAborted?: boolean
+        isBreak?: boolean
     }
     
-    export type StatePoster<M extends ModelDef, T> = {
+    export type StatePost<M extends ModelDef, T> = {
         target: Model<M>,
         next: T,
         prev: T,

@@ -19,5 +19,6 @@ export class #MODEL_NAME#Model extends Model<#MODEL_NAME#ModelDef> {
             state: {},
             childDict: {}
         });
+        this.testMethodDict = {}
     }
 }

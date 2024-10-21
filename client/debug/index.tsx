@@ -6,16 +6,15 @@ import { Signal } from "../utils/signal";
 import { ModelDef } from "../type/model/define";
 import { Effect } from "../utils/effect";
 import { Base } from "../type";
-import { useIntf } from "./use-intf";
 import { ModelInfo, ModelProps } from "../type/model/inspector";
 
 export type VisibleInfo = {
     model: boolean;
-    method: boolean;
     state: boolean;
     child: boolean;
     signal: boolean;
     effect: boolean;
+    method: boolean;
 }
 
 const FolderComp = (props: {
@@ -60,7 +59,6 @@ export function ModelComp<
 >(props: ModelProps<M>) {
     const { model, app } = props;
 
-    const modelIntf = useIntf(model);
     const [ modelInfo, setModelInfo ] = useState<ModelInfo<M>>();
     const [ modelVisible, setModelVisible ] = useState<VisibleInfo>({
         model: true,
@@ -162,14 +160,14 @@ export function ModelComp<
                         visibleDict={modelVisible}
                         setVisibleDict={setModelVisible}
                         title="method"
-                        length={Object.keys(modelIntf).length}
+                        length={Object.keys(model.testMethodDict).length}
                     >
-                        {Object.keys(modelIntf).map(key => (
+                        {Object.keys(model.testMethodDict).map(key => (
                             <div className="row" key={key}>
                                 <div 
                                     className="key method"
                                     onClick={() => {
-                                        modelIntf[key].call(model);
+                                        model.testMethodDict[key].call(model);
                                     }}
                                 >
                                     {key}

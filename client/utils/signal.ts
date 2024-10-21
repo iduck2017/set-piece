@@ -11,12 +11,12 @@ export namespace SafeSignal {
 
     export type StateEditorDict<D extends ModelDef> = {
         [K in KeyOf<ModelDef.State<D>>]: SafeSignal<
-            Event.StateEditor<D, ModelDef.State<D>[K]>
+            Event.StateEdit<D, ModelDef.State<D>[K]>
         >
     }
     export type StatePosterDict<D extends ModelDef> = {
         [K in KeyOf<ModelDef.State<D>>]: SafeSignal<
-            Event.StatePoster<D, ModelDef.State<D>[K]>
+            Event.StatePost<D, ModelDef.State<D>[K]>
         >
     }
 }
@@ -34,12 +34,12 @@ export namespace Signal {
 
     export type StateEditorDict<D extends ModelDef> = {
         [K in KeyOf<ModelDef.State<D>>]: Signal<
-            Event.StateEditor<D, ModelDef.State<D>[K]>
+            Event.StateEdit<D, ModelDef.State<D>[K]>
         >
     }
     export type StatePosterDict<D extends ModelDef> = {
         [K in KeyOf<ModelDef.State<D>>]: Signal<
-            Event.StatePoster<D, ModelDef.State<D>[K]>
+            Event.StatePost<D, ModelDef.State<D>[K]>
         >
     }
 }

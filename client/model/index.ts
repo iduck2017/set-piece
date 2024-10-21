@@ -9,12 +9,12 @@ import { AutomicProxy } from "../utils/proxy/automic";
 import { ReadonlyProxy } from "../utils/proxy/readonly";
 import { ControlledArray, ControlledProxy } from "../utils/proxy/controlled";
 import { ModelInfo } from "../type/model/inspector";
+import { Event } from "../type/event";
 
 export namespace Model {
     export type ChildList<M extends ModelDef> = Array<
         Model<ModelDef.ChildList<M>[number]>
     >
-
     export type ChildDict<M extends ModelDef> = {
         [K in KeyOf<ModelDef.ChildDict<M>>]: 
             Model<ModelDef.ChildDict<M>[K]>
@@ -52,9 +52,7 @@ export abstract class Model<
     public readonly statePosterDict: SafeSignal.StatePosterDict<D>;
     public readonly stateEditorDict: SafeSignal.StateEditorDict<D>;
 
-    public readonly testerDict: Record<string, () => unknown>;
     protected abstract readonly _effectDict: Readonly<Effect.ModelDict<D>>;
-    public abstract readonly methodDict: Readonly<ModelDef.MethodDict<D>>;
 
     // 从属关系
     protected readonly _childDict: Model.ChildDict<D>;
@@ -62,27 +60,29 @@ export abstract class Model<
     public readonly childDict: Readonly<Model.ChildDict<D>>;
     public readonly childList: Readonly<Model.ChildList<D>>;
 
-    private readonly _setInfoList: Array<(data: ModelInfo<D>) => void>; 
+    private readonly _hookList: Array<(data: ModelInfo<D>) => void>; 
+    
+    public abstract readonly methodDict: Readonly<ModelDef.MethodDict<D>>;
+    public readonly testMethodDict: Record<string, () => unknown>;
 
     protected EffectDict(
-        handleEventDict: {
-            [K in KeyOf<ModelDef.EffectDict<D>>]: (
-                signal: ModelDef.EffectDict<D>[K]
-            ) => void | ModelDef.EffectDict<D>[K];
+        callbackDict: {
+            [K in KeyOf<ModelDef.EffectDict<D>>]: 
+                Event<ModelDef.EffectDict<D>[K]>
         }
     ): Effect.ModelDict<D> {
         return AutomicProxy(key => {
             return new Effect(
                 this.app,
-                handleEventDict[key].bind(this),
+                callbackDict[key].bind(this),
                 this._resetInfo.bind(this)
             );
         });
     }
 
     constructor(config: BaseModelConfig<D>) {
-        this.testerDict = {};
-        this._setInfoList = [];
+        this.testMethodDict = {};
+        this._hookList = [];
 
         this.app = config.app;
         this.code = config.code; 
@@ -93,11 +93,9 @@ export abstract class Model<
 
         this._originState = ControlledProxy(
             config.state,
-            this._updateState.bind(this)
+            this._resetState.bind(this)
         );
-        
         this._actualState = { ...this._originState };
-        this.actualState = ReadonlyProxy(this._actualState);
 
         this._signalDict = AutomicProxy(() => new Signal(
             this.app, 
@@ -109,13 +107,8 @@ export abstract class Model<
         ));
         this._stateEditorDict = AutomicProxy(key => new Signal(
             this.app,
-            this._updateState.bind(this, key)
+            this._resetState.bind(this, key)
         ));
-
-        this.signalDict = AutomicProxy(key => this._signalDict[key].safeSignal);
-        this.statePosterDict = AutomicProxy(key => this._statePosterDict[key].safeSignal);
-        this.stateEditorDict = AutomicProxy(key => this._stateEditorDict[key].safeSignal);
-
         this._childDict = ControlledProxy(
             config.childDict.format(this._unserialize.bind(this)),
             this._handleChildUpdate.bind(this)
@@ -125,8 +118,12 @@ export abstract class Model<
             this._handleChildUpdate.bind(this, undefined)
         );
 
+        this.signalDict = AutomicProxy(key => this._signalDict[key].safeSignal);
+        this.statePosterDict = AutomicProxy(key => this._statePosterDict[key].safeSignal);
+        this.stateEditorDict = AutomicProxy(key => this._stateEditorDict[key].safeSignal);
         this.childDict = ReadonlyProxy(this._childDict);
         this.childList = ReadonlyProxy(this._childList);
+        this.actualState = ReadonlyProxy(this._actualState);
 
         if (this.parent === undefined) {
             this.app.root = this;
@@ -135,7 +132,7 @@ export abstract class Model<
     }
 
     // 更新状态
-    private _updateState(
+    private _resetState(
         key: KeyOf<ModelDef.State<D>>
     ) {
         const prev = this._actualState[key];
@@ -214,16 +211,16 @@ export abstract class Model<
     private _handleChildUpdate(
         key: unknown,
         value: Model,
-        isRemove?: boolean
+        isNew: boolean
     ) {
-        if (isRemove) value._destroyAll();
-        else value._activeAll();
+        if (isNew) value._activeAll();
+        else value._destroyAll();
         this._resetInfo();
     }
     
     // 重置调试器
     private _resetInfo() {
-        for (const setInfo of this._setInfoList) {
+        for (const setInfo of this._hookList) {
             setInfo({
                 childDict: this._childDict,
                 childList: this._childList,
@@ -237,13 +234,15 @@ export abstract class Model<
     }
 
     // 注册调试器
-    public useInfo(setInfo: (data: ModelInfo<D>) => void) {
-        this._setInfoList.push(setInfo);
+    public useInfo(
+        setInfo: (data: ModelInfo<D>) => void
+    ) {
+        this._hookList.push(setInfo);
         this._resetInfo();
         return () => {
-            const index = this._setInfoList.indexOf(setInfo);
+            const index = this._hookList.indexOf(setInfo);
             if (index < 0) throw new Error();
-            this._setInfoList.splice(index, 1);
+            this._hookList.splice(index, 1);
         };
     }
 

@@ -28,7 +28,7 @@ export type CastratableModelDef = TmplModelDef<{
         }
     }
     effectDict: {
-        ageUpdateBefore: Event.StateEditor<BunnyModelDef, number>
+        ageUpdateBefore: Event.StateEdit<BunnyModelDef, number>
     },
     parent: AnimalFeaturesModelDef
 }>
@@ -37,8 +37,8 @@ export type CastratableModelDef = TmplModelDef<{
 export class CastratableModel extends Model<CastratableModelDef> {
     /** 预期寿命修饰符 */
     private readonly _handleAgeUpdateBefore = (
-        signal: Event.StateEditor<BunnyModelDef, number>
-    ): Event.StateEditor<BunnyModelDef, number> => {
+        signal: Event.StateEdit<BunnyModelDef, number>
+    ): Event.StateEdit<BunnyModelDef, number> => {
         return {
             ...signal,
             next: signal.next + this.actualState.maxAgeBonus
