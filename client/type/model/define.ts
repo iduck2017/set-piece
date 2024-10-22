@@ -8,7 +8,7 @@ export type ModelDef = Readonly<{
     childDict: Record<Base.Key, ModelDef>,
     signalDict: Base.Dict,
     effectDict: Base.Dict,
-    methodDict: Record<Base.Key, Base.Function>
+    actionDict: Record<Base.Key, Base.Function>
     parent: ModelDef | undefined;
 }>
 
@@ -20,7 +20,7 @@ export namespace ModelDef {
     export type ChildDict<M extends ModelDef> = Required<M['childDict']>
     export type SignalDict<M extends ModelDef> = Required<M['signalDict']>
     export type EffectDict<M extends ModelDef> = Required<M['effectDict']>
-    export type MethodDict<M extends ModelDef> = M['methodDict']
+    export type ActionDict<M extends ModelDef> = M['actionDict']
     export type Parent<M extends ModelDef> = M['parent']
 }
 
@@ -34,6 +34,6 @@ export type TmplModelDef<
     childDict: Base.VoidData
     signalDict: Base.VoidData,
     effectDict: Base.VoidData,
-    methodDict: Base.VoidData,
+    actionDict: Base.VoidData,
     parent: ModelDef,
 }, KeyOf<D>> & D

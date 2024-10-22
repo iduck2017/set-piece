@@ -75,35 +75,35 @@ export class Signal<E = any> {
 
     private readonly _handleUpdate?: (signal: Signal<E>) => void; 
 
-    public readonly bindEffect = (effect: Effect<E>) => {
+    public bindEffect(effect: Effect<E>) {
         const index = this._effectList.indexOf(effect);
         if (index >= 0) return;
         this._effectList.push(effect);
         effect.bindSignal(this);
         this._handleUpdate?.(this);
-    };
+    }
 
-    public readonly unbindEffect = (effect: Effect<E>) => {
+    public unbindEffect(effect: Effect<E>) {
         const index = this._effectList.indexOf(effect);
         if (index < 0) return;
         this._effectList.splice(index, 1);
         effect.unbindSignal(this);
         this._handleUpdate?.(this);
-    };
+    }
 
-    public readonly emitSignal = (signal: E): E | void => {
+    public emitEvent(signal: E): E | void {
         let prevSignal = signal;
         for (const effect of this._effectList) {
-            const result = effect.handleSignal(prevSignal);
+            const result = effect.handleEvent(prevSignal);
             if (result) prevSignal = result;
         }
         return prevSignal;
-    };
+    }
 
-    public readonly destroy = () => {
+    public destroy()  {
         for (const effect of this._effectList) {
             this.unbindEffect(effect);
         }
-    };
+    }
 }
 

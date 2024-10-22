@@ -21,5 +21,5 @@ export class PlayerModel extends Model<PlayerModelDef> {
         });
     }
     
-    public readonly methodDict = {};
+    public readonly actionDict = {};
 }

@@ -1,6 +1,6 @@
 import { KeyOf } from "..";
 import type { App } from "../../app";
-import { Model } from "../../model";
+import type { Model } from "../../model";
 import { ModelDef } from "./define";
 
 // 模型初始化对象

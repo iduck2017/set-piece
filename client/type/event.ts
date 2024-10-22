@@ -1,4 +1,4 @@
-import { Model } from "../model";
+import type { Model } from "../model";
 import { ModelDef } from "./model/define";
 
 export type Event<E> = (event: E) => E | void;

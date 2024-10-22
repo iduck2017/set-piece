@@ -14,7 +14,7 @@ export type VisibleInfo = {
     child: boolean;
     signal: boolean;
     effect: boolean;
-    method: boolean;
+    action: boolean;
 }
 
 const FolderComp = (props: {
@@ -66,7 +66,7 @@ export function ModelComp<
         child: true,
         signal: true,
         effect: true,
-        method: true
+        action: true
     });
     
     const [ activedChild, setActivedChild ] = useState<Model>();
@@ -159,15 +159,15 @@ export function ModelComp<
                     <FolderComp
                         visibleDict={modelVisible}
                         setVisibleDict={setModelVisible}
-                        title="method"
-                        length={Object.keys(model.testMethodDict).length}
+                        title="action"
+                        length={Object.keys(model.testActionDict).length}
                     >
-                        {Object.keys(model.testMethodDict).map(key => (
+                        {Object.keys(model.testActionDict).map(key => (
                             <div className="row" key={key}>
                                 <div 
-                                    className="key method"
+                                    className="key action"
                                     onClick={() => {
-                                        model.testMethodDict[key].call(model);
+                                        model.testActionDict[key].call(model);
                                     }}
                                 >
                                     {key}

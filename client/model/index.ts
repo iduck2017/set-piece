@@ -62,26 +62,21 @@ export abstract class Model<
 
     private readonly _hookList: Array<(data: ModelInfo<D>) => void>; 
     
-    public abstract readonly methodDict: Readonly<ModelDef.MethodDict<D>>;
-    public testMethodDict: Record<string, Base.Function>;
+    public abstract readonly actionDict: Readonly<ModelDef.ActionDict<D>>;
+    public testActionDict: Record<string, Base.Function>;
 
-    protected EffectDict(
-        callbackDict: {
-            [K in KeyOf<ModelDef.EffectDict<D>>]: 
-                Event<ModelDef.EffectDict<D>[K]>
-        }
-    ): Effect.ModelDict<D> {
-        return AutomicProxy(key => {
-            return new Effect(
-                this.app,
-                callbackDict[key].bind(this),
-                this._resetInfo.bind(this)
-            );
-        });
+    protected EffectDict(actionDict: {
+        [K in KeyOf<ModelDef.EffectDict<D>>]: 
+            Event<ModelDef.EffectDict<D>[K]>
+    }): Effect.ModelDict<D> {
+        return AutomicProxy(key => new Effect(
+            this.app,
+            actionDict[key].bind(this),
+            this._resetInfo.bind(this)
+        ));
     }
 
     constructor(config: BaseModelConfig<D>) {
-        this.testMethodDict = {};
         this._hookList = [];
 
         this.app = config.app;
@@ -97,33 +92,53 @@ export abstract class Model<
         );
         this._actualState = { ...this._originState };
 
-        this._signalDict = AutomicProxy(() => new Signal(
-            this.app, 
-            this._resetInfo.bind(this)
+        this._signalDict = AutomicProxy(() => (
+            new Signal(
+                this.app, 
+                this._resetInfo.bind(this)
+            )
         ));
-        this._statePosterDict = AutomicProxy(() => new Signal(
-            this.app, 
-            this._resetInfo.bind(this)
+        this._statePosterDict = AutomicProxy(() => (
+            new Signal(
+                this.app, 
+                this._resetInfo.bind(this)
+            )
         ));
-        this._stateEditorDict = AutomicProxy(key => new Signal(
-            this.app,
-            this._resetState.bind(this, key)
+        this._stateEditorDict = AutomicProxy(key => (
+            new Signal(
+                this.app, 
+                this._resetState.bind(this, key)
+            )
         ));
+
         this._childDict = ControlledProxy(
-            config.childDict.format(this._unserialize.bind(this)),
+            config.childDict.format(
+                this._unserialize.bind(this)
+            ),
             this._handleChildUpdate.bind(this)
         );
         this._childList = ControlledArray(
-            config.childList?.map(this._unserialize.bind(this)),
+            config.childList?.map(
+                this._unserialize.bind(this)
+            ),
             this._handleChildUpdate.bind(this, undefined)
         );
 
-        this.signalDict = AutomicProxy(key => this._signalDict[key].safeSignal);
-        this.statePosterDict = AutomicProxy(key => this._statePosterDict[key].safeSignal);
-        this.stateEditorDict = AutomicProxy(key => this._stateEditorDict[key].safeSignal);
+        this.signalDict = AutomicProxy(key => (
+            this._signalDict[key].safeSignal
+        ));
+        this.statePosterDict = AutomicProxy(key => (
+            this._statePosterDict[key].safeSignal
+        ));
+        this.stateEditorDict = AutomicProxy(key => (
+            this._stateEditorDict[key].safeSignal
+        ));
+
         this.childDict = ReadonlyProxy(this._childDict);
         this.childList = ReadonlyProxy(this._childList);
         this.actualState = ReadonlyProxy(this._actualState);
+
+        this.testActionDict = {};
 
         if (this.parent === undefined) {
             this.app.root = this;
@@ -142,12 +157,12 @@ export abstract class Model<
             prev: current,
             next: current
         };
-        const result = this._stateEditorDict[key].emitSignal(signal);
+        const result = this._stateEditorDict[key].emitEvent(signal);
         if (!result) throw new Error();
         const next = result.next;
         if (prev !== next) {
             this._actualState[key] = next;
-            this._statePosterDict[key].emitSignal(signal);
+            this._statePosterDict[key].emitEvent(signal);
         }
         this._resetInfo();
     }
@@ -180,18 +195,34 @@ export abstract class Model<
     // 遍历启用模型
     private _activeAll() {
         this._active();
-        for (const child of this._childList) child._activeAll();
-        for (const child of Object.values(this._childDict)) child._activeAll();
+        for (const child of this._childList) {
+            child._activeAll();
+        }
+        for (const child of Object.values(this._childDict)) { 
+            child._activeAll(); 
+        }
     }
 
     // 遍历析构模型
     private _destroyAll() {
-        for (const child of this._childList) child._destroyAll();
-        for (const child of Object.values(this._childDict)) child._destroyAll();
-        for (const signal of Object.values(this._signalDict)) signal.destroy();
-        for (const signal of Object.values(this._statePosterDict)) signal.destroy();
-        for (const signal of Object.values(this._stateEditorDict)) signal.destroy();
-        for (const effect of Object.values(this._effectDict)) effect.destroy();
+        for (const child of this._childList) {
+            child._destroyAll();
+        }
+        for (const child of Object.values(this._childDict)) {
+            child._destroyAll();
+        }
+        for (const signal of Object.values(this._signalDict)) {
+            signal.destroy();
+        }
+        for (const signal of Object.values(this._statePosterDict)) {
+            signal.destroy();
+        }
+        for (const signal of Object.values(this._stateEditorDict)) {
+            signal.destroy();
+        }
+        for (const effect of Object.values(this._effectDict)) {
+            effect.destroy();
+        }
         this.app.referenceService.unregisterModel(this);
         this._destroy();
     }

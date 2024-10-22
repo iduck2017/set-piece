@@ -11,7 +11,7 @@ export type CardModelDef = TmplModelDef<{
 @useProduct('card')
 export class CardModel extends Model<CardModelDef> {
     protected readonly _effectDict: Effect.ModelDict<CardModelDef> = {};
-    public readonly methodDict: Readonly<ModelDef.MethodDict<CardModelDef>> = {};
+    public readonly actionDict: Readonly<ModelDef.ActionDict<CardModelDef>> = {};
 
     constructor(config: TmplModelConfig<CardModelDef>) {
         super({

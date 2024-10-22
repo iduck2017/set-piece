@@ -13,7 +13,7 @@ export type DeckModelDef = TmplModelDef<{
 @useProduct('deck')
 export class DeckModel extends Model<DeckModelDef> {
     protected _effectDict = {};
-    public methodDict = {};
+    public actionDict = {};
 
     constructor(config: TmplModelConfig<DeckModelDef>) {
         super({

@@ -21,32 +21,32 @@ export class Effect<E = any> {
 
     constructor(
         app: App,
-        handleSignal: Event<E>,
-        bindDone?: () => void
+        handleEvent: Event<E>,
+        handleUpdate?: () => void
     ) {
         this.id = app.referenceService.ticket;
-        this.handleSignal = handleSignal;
-        this._bindDone = bindDone;
+        this.handleEvent = handleEvent;
+        this._handleUpdate = handleUpdate;
     }
 
-    private readonly _bindDone?: (react: Effect<E>) => void;
-    public readonly handleSignal: Event<E>;
+    private readonly _handleUpdate?: (react: Effect<E>) => void;
+    public readonly handleEvent: Event<E>;
     
-    public readonly bindSignal = (signal: SafeSignal<E>) => {
+    public bindSignal(signal: SafeSignal<E>) {
         const index = this._signalList.indexOf(signal);
         if (index >= 0) return;
         this._signalList.push(signal);
         signal.bindEffect(this);
-        this._bindDone?.(this);
-    };
+        this._handleUpdate?.(this);
+    }
 
-    public readonly unbindSignal = (signal: SafeSignal<E>) => {
+    public unbindSignal(signal: SafeSignal<E>) {
         const index = this._signalList.indexOf(signal);
         if (index < 0) return;
         this._signalList.splice(index, 1);
         signal.unbindEffect(this);
-        this._bindDone?.(this);
-    };
+        this._handleUpdate?.(this);
+    }
 
     public destroy () {
         for (const signal of this._signalList) {
