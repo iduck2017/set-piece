@@ -10,15 +10,15 @@ export type #MODEL_NAME#ModelDef = TmplModelDef<{
 
 @useProduct('#MODEL_CODE#')
 export class #MODEL_NAME#Model extends Model<#MODEL_NAME#ModelDef> {
-    protected readonly _effectDict: Effect.ModelDict<#MODEL_NAME#ModelDef> = {};
-    public readonly actionDict: Readonly<ModelDef.ActionDict<#MODEL_NAME#ModelDef>> = {};
-
     constructor(config: TmplModelConfig<#MODEL_NAME#ModelDef>) {
         super({
             ...config,
-            state: {},
-            childDict: {}
+            state: {}
         });
-        this.testActionDict = {}
+        this.testActionDict = {};
     }
+
+    protected readonly _effectDict: Effect.ModelDict<#MODEL_NAME#ModelDef> = {};
+
+    public readonly actionDict: Readonly<ModelDef.ActionDict<#MODEL_NAME#ModelDef>> = {};
 }

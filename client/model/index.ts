@@ -3,7 +3,7 @@ import { Base, KeyOf } from "../type";
 import { ModelDef } from "../type/model/define";
 import { Effect } from "../utils/effect";
 import { Signal, SafeSignal } from "../utils/signal";
-import { BaseModelConfig, ModelConfig } from "../type/model/config";
+import { ModelConfig, BaseModelConfig } from "../type/model/config";
 import { ModelBundle } from "../type/model/bundle";
 import { AutomicProxy } from "../utils/proxy/automic";
 import { ReadonlyProxy } from "../utils/proxy/readonly";
@@ -12,18 +12,21 @@ import { ModelInfo } from "../type/model/inspector";
 import { Event } from "../type/event";
 
 export namespace Model {
-    export type ChildList<M extends ModelDef> = Array<
-        Model<ModelDef.ChildList<M>[number]>
+    export type ChildList<D extends ModelDef> = Array<
+        Model<ModelDef.ChildItem<D>>
     >
-    export type ChildDict<M extends ModelDef> = {
-        [K in KeyOf<ModelDef.ChildDict<M>>]: 
-            Model<ModelDef.ChildDict<M>[K]>
+    export type ChildDict<D extends ModelDef> = {
+        [K in KeyOf<ModelDef.ChildDict<D>>]?: 
+            Model<ModelDef.ChildDict<D>[K]>
     }
-
-    export type Parent<M extends ModelDef> = 
-        ModelDef.Parent<M> extends ModelDef ?
-            Model<ModelDef.Parent<M>> :
-            undefined;
+    // export type ChildDict<D extends ModelDef> = {
+    //     [K in KeyOf<ModelDef.ChildDict<D>>]: 
+    //         ModelDef.ChildDict<D>[K] extends Required<ModelDef.ChildDict<D>[K]> ?
+    //             Model<Required<ModelDef.ChildDict<D>[K]>> :
+    //             Model<Required<ModelDef.ChildDict<D>[K]>> | undefined
+    // }
+    export type Parent<D extends ModelDef> = 
+        ModelDef.Parent<D> extends ModelDef ? Model<ModelDef.Parent<D>> : App
 }
 
 
@@ -32,6 +35,7 @@ export abstract class Model<
     D extends ModelDef = ModelDef,
 > {
     public readonly app: App;
+    
     public readonly parent: Model.Parent<D>;
     
     // 唯一标识符
@@ -63,7 +67,7 @@ export abstract class Model<
     private readonly _hookList: Array<(data: ModelInfo<D>) => void>; 
     
     public abstract readonly actionDict: Readonly<ModelDef.ActionDict<D>>;
-    public testActionDict: Record<string, Base.Function>;
+    public debugActionDict: Record<string, Base.Function>;
 
     protected EffectDict(actionDict: {
         [K in KeyOf<ModelDef.EffectDict<D>>]: 
@@ -72,11 +76,11 @@ export abstract class Model<
         return AutomicProxy(key => new Effect(
             this.app,
             actionDict[key].bind(this),
-            this._resetInfo.bind(this)
+            this._resetInfo
         ));
     }
 
-    constructor(config: BaseModelConfig<D>) {
+    constructor(config: ModelConfig<D>) {
         this._hookList = [];
 
         this.app = config.app;
@@ -86,50 +90,34 @@ export abstract class Model<
         this.id = config.id || this.app.referenceService.ticket;
         this.app.referenceService.registerModel(this);
 
-        this._originState = ControlledProxy(
-            config.state,
-            this._resetState.bind(this)
-        );
+        this._originState = ControlledProxy(config.state, this._resetState);
         this._actualState = { ...this._originState };
 
-        this._signalDict = AutomicProxy(() => (
-            new Signal(
-                this.app, 
-                this._resetInfo.bind(this)
-            )
-        ));
-        this._statePosterDict = AutomicProxy(() => (
-            new Signal(
-                this.app, 
-                this._resetInfo.bind(this)
-            )
-        ));
-        this._stateEditorDict = AutomicProxy(key => (
-            new Signal(
-                this.app, 
-                this._resetState.bind(this, key)
-            )
+        this._signalDict = AutomicProxy(() => new Signal(this.app, this._resetInfo));
+        this._statePosterDict = AutomicProxy(() => new Signal(this.app, this._resetInfo));
+        this._stateEditorDict = AutomicProxy(key => new Signal(
+            this.app, 
+            this._resetState.bind(this, key)
         ));
 
         this._childDict = ControlledProxy(
-            config.childDict.format(
-                this._unserialize.bind(this)
-            ),
-            this._handleChildUpdate.bind(this)
+            config.childDict?.format(this._unserialize) || {},
+            this._handleChildUpdate
         );
+
         this._childList = ControlledArray(
-            config.childList?.map(
-                this._unserialize.bind(this)
-            ),
+            config.childList?.map(this._unserialize),
             this._handleChildUpdate.bind(this, undefined)
         );
 
         this.signalDict = AutomicProxy(key => (
             this._signalDict[key].safeSignal
         ));
+
         this.statePosterDict = AutomicProxy(key => (
             this._statePosterDict[key].safeSignal
         ));
+        
         this.stateEditorDict = AutomicProxy(key => (
             this._stateEditorDict[key].safeSignal
         ));
@@ -138,18 +126,18 @@ export abstract class Model<
         this.childList = ReadonlyProxy(this._childList);
         this.actualState = ReadonlyProxy(this._actualState);
 
-        this.testActionDict = {};
+        this.debugActionDict = {};
 
-        if (this.parent === undefined) {
+        if (this.parent === this.app) {
             this.app.root = this;
             this._activeAll();
         }
     }
 
     // 更新状态
-    private _resetState(
+    private readonly _resetState = (
         key: KeyOf<ModelDef.State<D>>
-    ) {
+    ) => {
         const prev = this._actualState[key];
         const current = this._originState[key];
         const signal = {
@@ -165,7 +153,7 @@ export abstract class Model<
             this._statePosterDict[key].emitEvent(signal);
         }
         this._resetInfo();
-    }
+    };
 
     // 序列化对象
     public get bundle(): ModelBundle<D> {
@@ -173,13 +161,13 @@ export abstract class Model<
             id: this.id,
             code: this.code,
             state: this._originState,
-            childDict: this._childDict.format(child => child.bundle),
+            childDict: this._childDict.format(child => child?.bundle),
             childList: this._childList.map(child => child.bundle)
         };
     }
 
     // 初始化对象
-    public get config(): ModelConfig<D> {
+    public get config(): BaseModelConfig<D> {
         return {
             ...this.bundle,
             id: undefined
@@ -195,63 +183,59 @@ export abstract class Model<
     // 遍历启用模型
     private _activeAll() {
         this._active();
-        for (const child of this._childList) {
-            child._activeAll();
-        }
-        for (const child of Object.values(this._childDict)) { 
-            child._activeAll(); 
+        for (const child of [
+            ...this._childList,
+            ...Object.values(this._childDict)
+        ]) {
+            child?._activeAll();
         }
     }
 
     // 遍历析构模型
     private _destroyAll() {
-        for (const child of this._childList) {
-            child._destroyAll();
+        for (const child of [
+            ...this._childList,
+            ...Object.values(this._childDict)
+        ]) {
+            child?._destroyAll();
         }
-        for (const child of Object.values(this._childDict)) {
-            child._destroyAll();
-        }
-        for (const signal of Object.values(this._signalDict)) {
+        for (const signal of [
+            ...Object.values(this._signalDict),
+            ...Object.values(this._statePosterDict),
+            ...Object.values(this._stateEditorDict),
+            ...Object.values(this._effectDict)
+        ]) {
             signal.destroy();
-        }
-        for (const signal of Object.values(this._statePosterDict)) {
-            signal.destroy();
-        }
-        for (const signal of Object.values(this._stateEditorDict)) {
-            signal.destroy();
-        }
-        for (const effect of Object.values(this._effectDict)) {
-            effect.destroy();
         }
         this.app.referenceService.unregisterModel(this);
         this._destroy();
     }
 
     // 初始化子模型
-    protected _unserialize<M extends ModelDef>(
-        config: ModelConfig<M>
-    ): Model<M> {
+    protected readonly _unserialize = <M extends ModelDef>(
+        config: BaseModelConfig<M>
+    ): Model<M> => {
         return this.app.factoryService.unserialize({
             ...config,
             parent: this,
             app: this.app
         });
-    }
+    };
 
     // 监听子模型变更
-    private _handleChildUpdate(
+    private readonly _handleChildUpdate = (
         key: unknown,
         value: Model,
         isNew: boolean
-    ) {
-        console.log('update', value, isNew);
+    ) => {
+        if (!value) return;
         if (isNew) value._activeAll();
         else value._destroyAll();
         this._resetInfo();
-    }
+    };
     
     // 重置调试器
-    private _resetInfo() {
+    private readonly _resetInfo = () => {
         for (const setInfo of this._hookList) {
             setInfo({
                 childDict: this._childDict,
@@ -263,12 +247,12 @@ export abstract class Model<
                 state: this.actualState
             });
         }
-    }
+    };
 
     // 注册调试器
-    public useInfo(
+    public readonly useInfo = (
         setInfo: (data: ModelInfo<D>) => void
-    ) {
+    ) => {
         this._hookList.push(setInfo);
         this._resetInfo();
         return () => {
@@ -276,7 +260,7 @@ export abstract class Model<
             if (index < 0) throw new Error();
             this._hookList.splice(index, 1);
         };
-    }
+    };
 
 }
 

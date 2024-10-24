@@ -12,10 +12,16 @@ export type ModelBundle<D extends ModelDef> = Readonly<{
 
 export namespace ModelBundle {
     export type ChildList<D extends ModelDef> = Array<
-        ModelBundle<ModelDef.ChildList<D>[number]>
+        ModelBundle<ModelDef.ChildItem<D>>
     >
     export type ChildDict<D extends ModelDef> = {
-        [K in KeyOf<ModelDef.ChildDict<D>>]: 
+        [K in KeyOf<ModelDef.ChildDict<D>>]?: 
             ModelBundle<ModelDef.ChildDict<D>[K]>
     }
+    // export type ChildDict<D extends ModelDef> = {
+    //     [K in KeyOf<ModelDef.ChildDict<D>>]:
+    //         ModelDef.ChildDict<D>[K] extends Required<ModelDef.ChildDict<D>>[K] ?
+    //             ModelBundle<Required<ModelDef.ChildDict<D>[K]>> : 
+    //             ModelBundle<Required<ModelDef.ChildDict<D>[K]>> | undefined
+    // }
 }

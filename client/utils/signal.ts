@@ -91,8 +91,8 @@ export class Signal<E = any> {
         this._handleUpdate?.(this);
     }
 
-    public emitEvent(signal: E): E | void {
-        let prevSignal = signal;
+    public emitEvent(event: E): E | void {
+        let prevSignal = event;
         for (const effect of this._effectList) {
             const result = effect.handleEvent(prevSignal);
             if (result) prevSignal = result;

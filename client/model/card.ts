@@ -1,23 +1,21 @@
-import { ModelDef, TmplModelDef } from "../type/model/define";
-import { TmplModelConfig } from "../type/model/config";
+import { BaseModelDef, ModelDef, TmplModelDef } from "../type/model/define";
 import { Model } from ".";
-import { useProduct } from "../utils/decor/product";
-import { Effect } from "../utils/effect";
+import { FeatModelDef } from "./feat";
 
-export type CardModelDef = TmplModelDef<{
-    code: 'card',
+export type CardModelDef<
+    D extends BaseModelDef = ModelDef
+> = TmplModelDef<D & {
+    state: {
+        readonly name: string,
+        readonly desc: string,
+    },
+    childDict: {
+        feat?: FeatModelDef
+    }
 }>
 
-@useProduct('card')
-export class CardModel extends Model<CardModelDef> {
-    protected readonly _effectDict: Effect.ModelDict<CardModelDef> = {};
-    public readonly actionDict: Readonly<ModelDef.ActionDict<CardModelDef>> = {};
-
-    constructor(config: TmplModelConfig<CardModelDef>) {
-        super({
-            ...config,
-            state: {},
-            childDict: {}
-        });
-    }
+export abstract class CardModel<
+    D extends CardModelDef<ModelDef>
+> extends Model<D> {
+    
 }

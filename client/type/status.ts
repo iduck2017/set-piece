@@ -6,4 +6,4 @@ export enum AppStatus {
     MOUNTED,    // 已挂载
     UNMOUNTING, // 卸载中
 }
-   
+

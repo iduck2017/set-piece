@@ -1,7 +1,7 @@
 import type { App } from "../app";
 import type { Model } from "../model";
 import { Base } from "../type";
-import type { TmplModelConfig, ModelConfig } from "../type/model/config";
+import type { TmplModelConfig, BaseModelConfig } from "../type/model/config";
 import { ModelDef } from "../type/model/define";
 import { useSingleton } from "../utils/decor/singleton";
 
@@ -11,12 +11,12 @@ export class FactoryService {
 
     private static readonly _productDict: Record<
         string,
-        new (config: ModelConfig<any>) => Model
+        new (config: BaseModelConfig<any>) => Model
     > = {};
 
     public static register<M extends ModelDef>(
         code: string,
-        target: new (config: ModelConfig<M>) => Model<M>
+        target: new (config: BaseModelConfig<M>) => Model<M>
     ) {
         if (FactoryService._productDict[code]) throw new Error();
         FactoryService._productDict[code] = target;

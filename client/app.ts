@@ -34,7 +34,6 @@ export class App {
     private _status: AppStatus;
     public get status() { return this._status; }
 
-    
     private _root?: Model<RootModelDef>;
     public get root(): Model<RootModelDef> { 
         if (!this._root) throw new Error();
@@ -77,7 +76,7 @@ export class App {
         this.factoryService.unserialize({
             ...config,
             app: this,
-            parent: undefined
+            parent: this
         });
         this._status = AppStatus.MOUNTED;
     }

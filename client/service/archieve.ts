@@ -1,6 +1,6 @@
 import type { App } from "../app";
 import { RootModelDef } from "../model/root";
-import { ModelConfig } from "../type/model/config";
+import { BaseModelConfig } from "../type/model/config";
 import { useSingleton } from "../utils/decor/singleton";
 import { ReadonlyProxy } from "../utils/proxy/readonly";
 
@@ -36,7 +36,7 @@ export class ArchieveService {
     }
 
     // 创建新的档案
-    public async createArchieve(): Promise<ModelConfig<RootModelDef>> {
+    public async createArchieve(): Promise<BaseModelConfig<RootModelDef>> {
         this.app.referenceService.reset();
         const id = this.app.referenceService.ticket;
         this._data.push({
@@ -44,7 +44,7 @@ export class ArchieveService {
             name: 'hello',
             progress: 0
         });
-        const record: ModelConfig<RootModelDef> = { code: 'root' };
+        const record: BaseModelConfig<RootModelDef> = { code: 'root' };
         await localStorage.setItem(`${ARCHIEVE_SAVE_PATH}_${id}`, JSON.stringify(record));
         await this.app.saveMetaData();
         return record;
@@ -53,7 +53,7 @@ export class ArchieveService {
     // 加载档案
     public async loadArchieve(
         index: number
-    ): Promise<ModelConfig<RootModelDef>> {
+    ): Promise<BaseModelConfig<RootModelDef>> {
         this._index = index;
         const archieve = this._data[index];
         const path = `${ARCHIEVE_SAVE_PATH}_${archieve.id}`;

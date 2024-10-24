@@ -3,6 +3,7 @@ import { TmplModelDef } from "../type/model/define";
 import { GameModelDef } from "./game";
 import { Model } from ".";
 import { useProduct } from "../utils/decor/product";
+import type { App } from "../app";
 
 export type RootModelDef = TmplModelDef<{
     code: 'root',
@@ -12,18 +13,15 @@ export type RootModelDef = TmplModelDef<{
     childDict: {
         game: GameModelDef
     },
-    childList: [],
-    parent: undefined,
+    parent: App
     actionDict: {
+        startGame: () => void
     }
 }>
 
+
 @useProduct('root')
 export class RootModel extends Model<RootModelDef> {
-    protected readonly _effectDict = {};
-    public readonly actionDict = {
-    };
-    
     constructor(config: TmplModelConfig<RootModelDef>) {
         super({
             ...config,
@@ -31,17 +29,22 @@ export class RootModel extends Model<RootModelDef> {
                 progress: config.state?.progress || 0
             },
             childDict: {
-                game: config.childDict?.game || { code: 'game' }
-            },
-            childList: []
+                ...config.childDict
+            }
         });
+        this.debugActionDict = {
+            startGame: this._startGame  
+        };
     }
 
-    private _prepareGame() {
-        const game = this._unserialize<GameModelDef>({
-            code: 'game'
-        });
-        this._childDict.game = game;
-        return game;
-    }
+    private _startGame = () => {
+        this._childDict.game = this._unserialize({ code: 'game' });
+        this._childDict.game.actionDict.startGame();
+    };
+    
+    protected readonly _effectDict = {};
+
+    public readonly actionDict = {
+        startGame: this._startGame
+    };
 }

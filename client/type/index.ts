@@ -5,7 +5,7 @@ export namespace Base {
     export type Dict = Record<Key, any>
     export type List = Array<any>
     export type Data = Record<Key, Value>
-    export type VoidData = Record<never, never>
+    export type VoidData = Record<Key, never>
     export type VoidList = Array<never>
     export type Function = (...args: any) => any
     export type Class = new (...args: any) => any

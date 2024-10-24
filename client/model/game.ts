@@ -4,30 +4,65 @@ import { TmplModelConfig } from "../type/model/config";
 import { PlayerModelDef } from "./player";
 import { Model } from ".";
 import { useProduct } from "../utils/decor/product";
+import { Random } from "../utils/random";
+
+export enum GamePlayer {
+    PlayerA = 'playerA',
+    PlayerB = 'playerB',
+}
 
 export type GameModelDef = TmplModelDef<{
     code: 'game',
     childList: [],
+    state: {
+        curRound: number,
+        curPlayer: GamePlayer,
+    }
     childDict: {
-        redPlayer: PlayerModelDef,
-        bluePlayer: PlayerModelDef
+        playerA: PlayerModelDef,
+        playerB: PlayerModelDef
+    },
+    signalDict: {
+        gameStartPre: void,
+        gameStartPost: void,
+    }
+    actionDict: {
+        startGame: () => void,
     }
 }>
 
 @useProduct('game')
 export class GameModel extends Model<GameModelDef> {
-    protected _effectDict = {};
 
     constructor(config: TmplModelConfig<GameModelDef>) {
         super({
             ...config,
-            state: {},
+            state: {
+                curRound: 0,
+                curPlayer: Random.type(
+                    GamePlayer.PlayerA,
+                    GamePlayer.PlayerB
+                ),
+                ...config.state
+            },
             childDict: {
-                redPlayer: config.childDict?.redPlayer || { code: 'player' },
-                bluePlayer: config.childDict?.bluePlayer || { code: 'player' }
+                ...config.childDict
             }
         });
     }
+
+    private readonly _startGame = () => {
+        this._signalDict.gameStartPre.emitEvent();
+        this._childDict.playerA = this._unserialize({ code: 'player' });
+        this._childDict.playerB = this._unserialize({ code: 'player' });
+        this._childDict.playerA.actionDict.startGame();
+        this._childDict.playerB.actionDict.startGame();
+        this._signalDict.gameStartPost.emitEvent();
+    };
     
-    public readonly actionDict = {};
+    protected readonly _effectDict = this.EffectDict({});
+
+    public readonly actionDict = {
+        startGame: this._startGame
+    };
 }

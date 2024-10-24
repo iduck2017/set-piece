@@ -160,14 +160,14 @@ export function ModelComp<
                         visibleDict={modelVisible}
                         setVisibleDict={setModelVisible}
                         title="action"
-                        length={Object.keys(model.testActionDict).length}
+                        length={Object.keys(model.debugActionDict).length}
                     >
-                        {Object.keys(model.testActionDict).map(key => (
+                        {Object.keys(model.debugActionDict).map(key => (
                             <div className="row" key={key}>
                                 <div 
                                     className="key action"
                                     onClick={() => {
-                                        model.testActionDict[key].call(model);
+                                        model.debugActionDict[key].call(model);
                                     }}
                                 >
                                     {key}
@@ -288,11 +288,11 @@ export function ModelComp<
                     />
                 ))}
                 {Object.values(childDict).map(item => (
-                    <ModelComp 
+                    item ? <ModelComp 
                         key={item.id}
                         model={item}
                         app={app}
-                    />
+                    /> : null
                 ))}
             </div>}
         </div>
