@@ -52,7 +52,6 @@ export function ModelComp(props: {
     model: Readonly<Model>,
 }) {
     const { model } = props;
-    const { app } = model;
 
     const [ info, setInfo ] = useState<ModelInfo>();
     const [ visible, setVisible ] = useState<VisibleInfo>({

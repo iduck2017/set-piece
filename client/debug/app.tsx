@@ -1,8 +1,7 @@
 import React, { useEffect, useState } from "react";
-import type { App } from "../app";
+import { App, AppStatus } from "../app";
 import { ModelComp } from ".";
 import { ArchieveData } from "../service/archieve";
-import { AppStatus } from "../type/status";
 
 export function AppComp(props: {
     app: App
@@ -19,7 +18,7 @@ export function AppComp(props: {
     };
 
     const startGame = async (index: number) => {
-        await app.startGame(index);
+        await app.start(index);
         setStatus(app.status);
     };
 
@@ -28,7 +27,7 @@ export function AppComp(props: {
     };
 
     const quitGame = async () => {
-        await app.quitGame();
+        await app.quit();
         setStatus(app.status);
     };
 

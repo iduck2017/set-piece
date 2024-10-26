@@ -6,7 +6,7 @@ type RootState = {
     progress: number
 }
 
-@Model.useProduct('root')
+@Model.$useProduct('root')
 export class RootModel extends Model<
     'root',
     RootState,
@@ -58,12 +58,12 @@ export class RootModel extends Model<
         }, parent);
     }
 
-    @Model.useDebug()
+    @Model.$useDebug()
     add() {
         this.$state.progress += 1;
     }
 
-    @Model.useDebug()
+    @Model.$useDebug()
     minus() {
         if (this.$state.progress > 0) {
             this.$state.progress -= 1;

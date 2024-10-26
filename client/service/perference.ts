@@ -23,7 +23,7 @@ export class PreferenceService {
 
     public async updateSettings(data: PerferenceData) {
         this._data = data;
-        await this.app.saveMetaData();
+        await this.app.save();
         return;
     }
 }

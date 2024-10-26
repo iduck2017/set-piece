@@ -36,8 +36,7 @@ export class ArchieveService {
 
     // 创建新的档案
     public async createArchieve(): Promise<RootModel['config']> {
-        this.app.referenceService.reset();
-        const id = this.app.referenceService.ticket;
+        const id = Date.now().toString(36);
         this._data.push({
             id,
             name: 'hello',
@@ -48,7 +47,7 @@ export class ArchieveService {
             `${ARCHIEVE_SAVE_PATH}_${id}`, 
             JSON.stringify(record)
         );
-        await this.app.saveMetaData();
+        await this.app.save();
         return record;
     }
 
@@ -70,7 +69,7 @@ export class ArchieveService {
         const path = `${ARCHIEVE_SAVE_PATH}_${slot.id}`;
         this._data.splice(index, 1);
         await localStorage.removeItem(path);
-        await this.app.saveMetaData();
+        await this.app.save();
     }
 
     // 卸载当前档案
@@ -97,6 +96,6 @@ export class ArchieveService {
             path, 
             JSON.stringify(record)
         );
-        await this.app.saveMetaData();
+        await this.app.save();
     }
 }

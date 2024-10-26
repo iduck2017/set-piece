@@ -28,8 +28,9 @@ export abstract class IAnimalModel<
 > {
     declare parent: RootModel;
     
-    @Model.useDebug()
+    @Model.$useDebug()
     growup() {
         this.$state.curAge += 1;
     }
 }
+

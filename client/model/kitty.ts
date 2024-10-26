@@ -14,7 +14,7 @@ export type KittyState = {
     gender: Gender;
 }
 
-@Model.useProduct('kitty')
+@Model.$useProduct('kitty')
 export class KittyModel extends IAnimalModel<
     'kitty',
     KittyState

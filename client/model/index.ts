@@ -19,7 +19,6 @@ export type ModelConfig<
     }
 }
 
-
 export type ModelEvent<
     S extends Record<string, any> = any,
     D extends Record<string, Model> = any,
@@ -224,7 +223,7 @@ export class Model<
         string[]
     > = new Map();
 
-    static useProduct<
+    protected static $useProduct<
         I extends string,
         M extends Model<I>
     >(code: I) {
@@ -243,7 +242,7 @@ export class Model<
         };
     }
 
-    static useDebug() {
+    protected static $useDebug() {
         return function(
             target: Model,
             key: string,
@@ -263,6 +262,27 @@ export class Model<
         };
     }
 
+    static #ticket = 36 ** 2;
+    static #timestamp = Date.now(); 
+
+    static get ticket(): string {
+        let now = Date.now();
+        const ticket = Model.#ticket;
+        Model.#ticket += 1;
+        if (Model.#ticket > 36 ** 3 - 1) {
+            Model.#ticket = 36 ** 2;
+            while (now === Model.#timestamp) {
+                now = Date.now();
+            }
+        }
+        this.#timestamp = now;
+        return now.toString(36) + ticket.toString(36);
+    }
+
+    static #registry: Record<string, Model> = {};
+    protected static get registry(): Readonly<Record<string, Model>> {
+        return { ...this.#registry };
+    }
 
     readonly id: string;
     readonly code: I;
@@ -294,10 +314,8 @@ export class Model<
 
         // unique id
         this.code = config.code;
-        this.id = 
-            config.id || 
-            this.app.referenceService.ticket;
-        this.app.referenceService.registerModel(this);
+        this.id = config.id || Model.ticket;
+        Model.#registry[this.id] = this;
 
         // state
         this.$state = ControlledProxy(
@@ -562,9 +580,8 @@ export class Model<
     }
 
     #destroy() {
-        // console.log('model destroy', this);
         this.$deactivateAll();
-        this.app.referenceService.unregisterModel(this);
+        delete Model.#registry[this.id];
     }
 
 

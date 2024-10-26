@@ -2,11 +2,11 @@ import { Model } from ".";
 import { AnimalModel, IAnimalModel } from "./animal";
 import { RootModel } from "./root";
 
-type BunnyState = {
+export type BunnyState = {
     curDensity: number;
 }
 
-@Model.useProduct('bunny')
+@Model.$useProduct('bunny')
 export class BunnyModel extends IAnimalModel<
     'bunny',
     BunnyState
@@ -61,14 +61,14 @@ export class BunnyModel extends IAnimalModel<
         }
     }
 
-    @Model.useDebug()
+    @Model.$useDebug()
     reproduce() {
         this.parent.spawn({
             code: 'bunny'
         });
     }
 
-    @Model.useDebug()
+    @Model.$useDebug()
     sacrifice() {
         this.$unmount();
     }
