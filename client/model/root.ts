@@ -1,50 +1,96 @@
-import { TmplModelConfig } from "../type/model/config";
-import { TmplModelDef } from "../type/model/define";
-import { GameModelDef } from "./game";
 import { Model } from ".";
-import { useProduct } from "../utils/decor/product";
 import type { App } from "../app";
+import { AnimalModel } from "./animal";
 
-export type RootModelDef = TmplModelDef<{
-    code: 'root',
-    state: {
-        progress: number,
-    },
-    childDict: {
-        game: GameModelDef
-    },
-    parent: App
-    actionDict: {
-        startGame: () => void
+type RootState = {
+    progress: number
+}
+
+@Model.useProduct('root')
+export class RootModel extends Model<
+    'root',
+    RootState,
+    {},
+    AnimalModel,
+    {
+        prevSpawn: {
+            config: AnimalModel['config']
+            isAbort?: boolean
+        },
+        postSpawn: {
+            target: AnimalModel
+        }
     }
-}>
-
-
-@useProduct('root')
-export class RootModel extends Model<RootModelDef> {
-    constructor(config: TmplModelConfig<RootModelDef>) {
+> {
+    constructor(
+        config: RootModel['config'],
+        parent: App
+    ) {
+        if (!config.child) {
+            config.child = {
+                list: []
+            };
+            if (!config.child.list?.length) {
+                config.child.list = [];
+            }
+            config.child.list.push({
+                code: 'bunny',
+                state: {
+                    curDensity: 3
+                }
+            }, {
+                code: 'kitty',
+                state: {
+                    name: 'Kelly'
+                }
+            });
+        }
         super({
             ...config,
-            state: {
-                progress: config.state?.progress || 0
+            child: {
+                ...config.child,
+                dict: config.child?.dict || {}
             },
-            childDict: {
-                ...config.childDict
+            state: {
+                progress: 0,
+                ...config.state
             }
-        });
-        this.debugActionDict = {
-            startGame: this._startGame  
-        };
+        }, parent);
     }
 
-    private _startGame = () => {
-        this._childDict.game = this._unserialize({ code: 'game' });
-        this._childDict.game.actionDict.startGame();
-    };
-    
-    protected readonly _effectDict = {};
+    @Model.useDebug()
+    add() {
+        this.$state.progress += 1;
+    }
 
-    public readonly actionDict = {
-        startGame: this._startGame
-    };
+    @Model.useDebug()
+    minus() {
+        if (this.$state.progress > 0) {
+            this.$state.progress -= 1;
+        }
+    }
+
+    spawn(config: AnimalModel['config']) {
+        const {
+            config: $config,
+            isAbort
+        } = this.$event.base.prevSpawn.emit({
+            config
+        });
+        if (isAbort) {
+            console.log('Aborted spawn');
+            return;
+        }
+        const target: AnimalModel = this.$new($config);
+        this.$child.list.push(target);
+        this.$event.base.postSpawn.emit({
+            target
+        });
+    }
+
+    activate() {
+        console.log('activate', this, this.$activateAll);
+        this.$activateAll();
+    }
+
 }

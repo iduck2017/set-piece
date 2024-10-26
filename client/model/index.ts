@@ -1,266 +1,604 @@
 import type { App } from "../app";
 import { Base, KeyOf } from "../type";
-import { ModelDef } from "../type/model/define";
-import { Effect } from "../utils/effect";
-import { Signal, SafeSignal } from "../utils/signal";
-import { ModelConfig, BaseModelConfig } from "../type/model/config";
-import { ModelBundle } from "../type/model/bundle";
 import { AutomicProxy } from "../utils/proxy/automic";
-import { ReadonlyProxy } from "../utils/proxy/readonly";
 import { ControlledArray, ControlledProxy } from "../utils/proxy/controlled";
-import { ModelInfo } from "../type/model/inspector";
-import { Event } from "../type/event";
+import { ReadonlyProxy } from "../utils/proxy/readonly";
 
-export namespace Model {
-    export type ChildList<D extends ModelDef> = Array<
-        Model<ModelDef.ChildItem<D>>
-    >
-    export type ChildDict<D extends ModelDef> = {
-        [K in KeyOf<ModelDef.ChildDict<D>>]?: 
-            Model<ModelDef.ChildDict<D>[K]>
+export type ModelConfig<
+    I extends string = any, 
+    S extends Record<string, Base.Value> = any,
+    D extends Record<string, Model> = any,
+    L extends Model = any,
+> = {
+    id?: string;
+    code: I;
+    state?: Partial<S>;
+    child?: {
+        dict?: { [K in keyof D]?: Required<D>[K]['config'] }
+        list?: L['config'][]
     }
-    // export type ChildDict<D extends ModelDef> = {
-    //     [K in KeyOf<ModelDef.ChildDict<D>>]: 
-    //         ModelDef.ChildDict<D>[K] extends Required<ModelDef.ChildDict<D>[K]> ?
-    //             Model<Required<ModelDef.ChildDict<D>[K]>> :
-    //             Model<Required<ModelDef.ChildDict<D>[K]>> | undefined
-    // }
-    export type Parent<D extends ModelDef> = 
-        ModelDef.Parent<D> extends ModelDef ? Model<ModelDef.Parent<D>> : App
 }
 
 
-// 模型基类
-export abstract class Model<
-    D extends ModelDef = ModelDef,
-> {
-    public readonly app: App;
+export type ModelEvent<
+    S extends Record<string, any> = any,
+    D extends Record<string, Model> = any,
+    L extends Model = any,
+    E extends Record<string, any> = any,
+> = Readonly<{
+    base: Readonly<{
+        [K in keyof E]: Event<E[K]>
+    }>,
+    state: Readonly<{
+        edit: {
+            [K in keyof S]: Event<{
+                target: Model<string, S>;
+                prev: S[K];
+                next: S[K];
+            }>
+        },
+        post: {
+            [K in keyof S]: Event<{
+                target: Model<string, S>;
+                prev: S[K];
+                next: S[K];
+            }>
+        }
+    }>,
+    child: Readonly<{
+        list: Event<{
+            value: L;
+        }>,
+        dict: {
+            [K in KeyOf<D>]: Event<{
+                key: K;
+                value: D[K];
+            }>
+        }
+    }>
+}>
+
+export type SafeModelEvent<
+    S extends Record<string, Base.Value> = any,
+    D extends Record<string, Model> = any,
+    L extends Model = any,
+    E extends Record<string, any> = any,
+> = Readonly<{
+    base: Readonly<{
+        [K in keyof E]: SafeEvent<E[K]>
+    }>,
+    state: Readonly<{
+        edit: Readonly<{
+            [K in keyof S]: SafeEvent<{
+                target: Model<string, S>;
+                prev: S[K];
+                next: S[K];
+            }>
+        }>,
+        post: Readonly<{
+            [K in keyof S]: SafeEvent<{
+                target: Model<string, S>;
+                prev: S[K];
+                next: S[K];
+            }>
+        }>
+    }>,
+    child: Readonly<{
+        list: SafeEvent<{
+            value: L;
+        }>,
+        dict: Readonly<{
+            [K in KeyOf<D>]: SafeEvent<{
+                key: K;
+                value: D[K];
+            }>
+        }>
+    }>
+}>
+
+
+export type ModelInfo<
+    S extends Base.Data = any,
+    D extends Record<string, Model> = any,
+    L extends Model = any,
+    E extends Base.Dict = any,
+> = Readonly<{
+    child: Readonly<{
+        list: Readonly<Readonly<L>[]>,
+        dict: Readonly<{
+            [K in keyof D]: Readonly<D[K]>
+        }>,
+    }>,
+    state: {
+        raw: Readonly<S>,
+        cur: Readonly<S>,
+    },
+    refer: Model[],
+    debug: Record<string, Base.Function>
+    event: ModelEvent<S, D, L, E>;
+}>
+
+type SafeEvent<E> = Readonly<{
+    on(
+        refer: Model, 
+        handler: (form: E) => E | void
+    ): void;
+    off(
+        refer: Model, 
+        handler?: (form: E) => E | void
+    ): void;
+}>
+
+export class Event<E> implements SafeEvent<E> {
+    readonly #handleUpdate: () => void;
+
+    readonly #handleEvent: Array<Readonly<[
+        Model,
+        (form: E) => E | void,
+    ]>>;
+    get handleEvent() {
+        return [ ... this.#handleEvent ];
+    } 
+
+    readonly parent: Model;
+    readonly safeEvent: SafeEvent<E>;
     
-    public readonly parent: Model.Parent<D>;
-    
-    // 唯一标识符
-    public readonly id: string;
-    public readonly code: string;
+    constructor(
+        parent: Model,
+        handleUpdate: () => void
+    ) {
+        this.#handleEvent = [];
+        this.#handleUpdate = handleUpdate;
 
-    // 数据结构
-    protected readonly _originState: ModelDef.State<D>;
-    private readonly _actualState: ModelDef.State<D>;
-    public readonly actualState: ModelDef.State<D>;
-
-    // 依赖关系
-    protected readonly _signalDict: Readonly<Signal.ModelDict<D>>;
-    protected readonly _statePosterDict: Signal.StatePosterDict<D>;
-    protected readonly _stateEditorDict: Signal.StateEditorDict<D>;
-
-    public readonly signalDict: Readonly<SafeSignal.ModelDict<D>>;
-    public readonly statePosterDict: SafeSignal.StatePosterDict<D>;
-    public readonly stateEditorDict: SafeSignal.StateEditorDict<D>;
-
-    protected abstract readonly _effectDict: Readonly<Effect.ModelDict<D>>;
-
-    // 从属关系
-    protected readonly _childDict: Model.ChildDict<D>;
-    protected readonly _childList: Model.ChildList<D>;
-    public readonly childDict: Readonly<Model.ChildDict<D>>;
-    public readonly childList: Readonly<Model.ChildList<D>>;
-
-    private readonly _hookList: Array<(data: ModelInfo<D>) => void>; 
-    
-    public abstract readonly actionDict: Readonly<ModelDef.ActionDict<D>>;
-    public debugActionDict: Record<string, Base.Function>;
-
-    protected EffectDict(actionDict: {
-        [K in KeyOf<ModelDef.EffectDict<D>>]: 
-            Event<ModelDef.EffectDict<D>[K]>
-    }): Effect.ModelDict<D> {
-        return AutomicProxy(key => new Effect(
-            this.app,
-            actionDict[key].bind(this),
-            this._resetInfo
-        ));
+        this.parent = parent;
+        this.safeEvent = {
+            on: this.on.bind(this),
+            off: this.off.bind(this)
+        };
     }
 
-    constructor(config: ModelConfig<D>) {
-        this._hookList = [];
+    on(
+        refer: Model,
+        handler: (form: E) => E | void
+    ) {
+        this.#handleEvent.push([ refer, handler ]);
+        refer.connect(this.parent);
+        this.parent.connect(refer);
+        this.#handleUpdate();
+    }
 
-        this.app = config.app;
-        this.code = config.code; 
-        this.parent = config.parent;
+    off(
+        refer: Model,
+        handler: (form: E) => E | void
+    ) {
+        this.destroy(refer, handler);
+    }
 
-        this.id = config.id || this.app.referenceService.ticket;
+    destroy(
+        refer: Model,
+        handler?: (form: E) => E | void
+    ) {
+        while (true) {
+            const index = this.#handleEvent.findIndex(([ 
+                $refer, 
+                $handler 
+            ]) => {
+                if (!handler) return $refer === refer;
+                return $refer === refer && $handler === handler;
+            });
+            if (index < 0) break;
+            this.#handleEvent.splice(index, 1);
+        }
+        this.#handleUpdate();
+    }
+
+    emit(form: E): E {
+        let $event = form;
+        const handleEvent = [ ...this.#handleEvent ];
+        for (const [ refer, handler ] of handleEvent) {
+            const result = handler.call(refer, $event);
+            if (result) $event = result;
+        }
+        return $event;
+    }
+}
+
+export class Model<
+    I extends string = any, 
+    S extends Record<string, Base.Value> = any,
+    D extends Record<string, Model> = any,
+    L extends Model = any,
+    E extends Record<string, any> = any,
+> {
+    // product
+    static readonly #product: Record<
+        string, 
+        new (
+            config: Model['config'], 
+            parent: Model | App
+        ) => Model
+    > = {};
+
+    static readonly #debug: Map<
+        Function,
+        string[]
+    > = new Map();
+
+    static useProduct<
+        I extends string,
+        M extends Model<I>
+    >(code: I) {
+        return function (
+            target: new (
+                config: M['config'], 
+                parent: Model | App
+            ) => M
+        ) {
+            console.log(
+                'useProduct', 
+                code,
+                target
+            );
+            Model.#product[code] = target;
+        };
+    }
+
+    static useDebug() {
+        return function(
+            target: Model,
+            key: string,
+            descriptor: TypedPropertyDescriptor<Base.Function>
+        ): TypedPropertyDescriptor<Base.Function> {
+            console.log(
+                'useDebug',
+                target.constructor.name,
+                key
+            );
+            const keys = Model.#debug.get(
+                target.constructor
+            ) || [];
+            keys.push(key);
+            Model.#debug.set(target.constructor, keys);
+            return descriptor;
+        };
+    }
+
+
+    readonly id: string;
+    readonly code: I;
+    readonly app: App;
+    readonly parent: Model | App;
+
+    constructor(
+        config: {
+            id?: string;
+            code: I;
+            state: S;
+            child: {
+                dict: {
+                    [K in keyof D]: D[K] extends Required<D>[K] ?
+                        Required<D>[K]['config'] :
+                        Required<D>[K]['config'] | undefined
+                },
+                list?: L['config'][]
+            }
+        },
+        parent: Model | App
+    ) {
+
+        // context
+        this.parent = parent;
+        this.app = parent instanceof Model? 
+            parent.app : 
+            parent;
+
+        // unique id
+        this.code = config.code;
+        this.id = 
+            config.id || 
+            this.app.referenceService.ticket;
         this.app.referenceService.registerModel(this);
 
-        this._originState = ControlledProxy(config.state, this._resetState);
-        this._actualState = { ...this._originState };
-
-        this._signalDict = AutomicProxy(() => new Signal(this.app, this._resetInfo));
-        this._statePosterDict = AutomicProxy(() => new Signal(this.app, this._resetInfo));
-        this._stateEditorDict = AutomicProxy(key => new Signal(
-            this.app, 
-            this._resetState.bind(this, key)
-        ));
-
-        this._childDict = ControlledProxy(
-            config.childDict?.format(this._unserialize) || {},
-            this._handleChildUpdate
+        // state
+        this.$state = ControlledProxy(
+            config.state,
+            this.#updateState.bind(this)
         );
-
-        this._childList = ControlledArray(
-            config.childList?.map(this._unserialize),
-            this._handleChildUpdate.bind(this, undefined)
-        );
-
-        this.signalDict = AutomicProxy(key => (
-            this._signalDict[key].safeSignal
-        ));
-
-        this.statePosterDict = AutomicProxy(key => (
-            this._statePosterDict[key].safeSignal
-        ));
+        this.#state = { 
+            ...this.$state 
+        };
+        this.state = ReadonlyProxy(this.#state);
         
-        this.stateEditorDict = AutomicProxy(key => (
-            this._stateEditorDict[key].safeSignal
-        ));
+        // child
+        const dict = {} as D;
+        for (const key in config.child.dict) {
+            const value = config.child.dict[key];
+            if (value) {
+                dict[key] = this.$new(value);
+            }
+        } 
+        this.$child = {
+            dict: ControlledProxy(
+                dict,
+                this.#updateChild.bind(this)
+            ),
+            list: ControlledArray<L>(
+                config.child.list?.map(c => this.$new(c)) || [],
+                this.#updateChild.bind(this, '')
+            )
+        };
+        this.child = {
+            dict: ReadonlyProxy(this.$child.dict),
+            list: ReadonlyProxy(this.$child.list)
+        };
 
-        this.childDict = ReadonlyProxy(this._childDict);
-        this.childList = ReadonlyProxy(this._childList);
-        this.actualState = ReadonlyProxy(this._actualState);
+        // event
+        this.#refer = [];
+        this.$event = {
+            base: AutomicProxy(() => new Event(
+                this,
+                this.#updateInfo.bind(this)
+            )),
+            state: {
+                edit: AutomicProxy((key: string) => new Event(
+                    this,
+                    this.#updateState.bind(this, key)
+                )),
+                post: AutomicProxy(() => new Event(
+                    this,
+                    this.#updateInfo.bind(this)
+                ))
+            },
+            child: {
+                list: new Event(
+                    this,
+                    this.#updateInfo.bind(this)
+                ),
+                dict: AutomicProxy(() => new Event(
+                    this,
+                    this.#updateInfo.bind(this)
+                ))
+            }
+        };
+        this.event = {
+            base: AutomicProxy(key => (
+                this.$event.base[key].safeEvent
+            )),
+            state: {
+                edit: AutomicProxy(key => (
+                    this.$event.state.edit[key].safeEvent
+                )),
+                post: AutomicProxy(key => (
+                    this.$event.state.post[key].safeEvent
+                ))
+            },  
+            child: {
+                list: this.$event.child.list.safeEvent,
+                dict: AutomicProxy(key => (
+                    this.$event.child.dict[key].safeEvent
+                ))
+            }
+        };
 
-        this.debugActionDict = {};
+        this.#setInfo = [];
 
-        if (this.parent === this.app) {
-            this.app.root = this;
-            this._activeAll();
+        this.$debug = {};
+        let constructor = this.constructor;
+        while (Reflect.get(constructor, '__proto__') !== null) {
+            console.log(
+                'getDebug',
+                constructor.name,
+                Model.#debug.get(this.constructor)
+            );
+            for (const key of Model.#debug.get(constructor) || []) {
+                this.$debug[key] = Reflect.get(this, key) as Base.Function;
+            }
+            constructor = Reflect.get(constructor, '__proto__');
         }
     }
 
-    // 更新状态
-    private readonly _resetState = (
-        key: KeyOf<ModelDef.State<D>>
-    ) => {
-        const prev = this._actualState[key];
-        const current = this._originState[key];
+    readonly #refer: Model[];
+    connect(refer: Model) {
+        if (this.#refer.includes(refer)) return;
+        this.#refer.push(refer);    
+    }
+    #unconnect(refer: Model) {
+        const index = this.#refer.indexOf(refer);
+        if (index < 0) return;
+        this.#refer.splice(index, 1);
+        const events = [
+            ...Object.values(this.$event.state.edit),
+            ...Object.values(this.$event.state.post),
+            ...Object.values(this.$event.base),
+            ...Object.values(this.$event.child.dict),
+            this.$event.child.list
+        ] as Event<any>[];
+        for (const event of events) {
+            event.destroy(refer);
+        }
+        console.log(
+            'unconnect', 
+            this.#refer
+        );
+    }
+
+    protected readonly $event: ModelEvent<S, D, L, E>;
+    readonly event: SafeModelEvent<S, D, L, E>;
+
+    readonly state: Readonly<S>;
+    readonly #state: S;
+    protected readonly $state: S;
+
+    #updateState(
+        key: KeyOf<S>
+    ) {
+        // const $prev = prev === undefined ?
+        //     this.$state[key] :
+        //     prev;
+        const current = this.$state[key];
         const signal = {
             target: this,
             prev: current,
             next: current
         };
-        const result = this._stateEditorDict[key].emitEvent(signal);
-        if (!result) throw new Error();
-        const next = result.next;
-        if (prev !== next) {
-            this._actualState[key] = next;
-            this._statePosterDict[key].emitEvent(signal);
-        }
-        this._resetInfo();
-    };
+        const { next } = this.$event.state.edit[key].emit(signal);
+        // console.log('updateState', key, next, $prev);
+        this.#state[key] = next;
+        this.$event.state.post[key].emit(signal);
+        this.#updateInfo();
+    }
 
-    // 序列化对象
-    public get bundle(): ModelBundle<D> {
+    // serialize
+    get config(): ModelConfig<I, S, D, L> {
+        const dict = {} as {
+            [K in keyof D]?: D[K]['config']
+        };
+        for (const key in this.$child.dict) {
+            const value = this.$child.dict[key];
+            if (value) {
+                dict[key] = value.config;
+            }
+        }
         return {
             id: this.id,
             code: this.code,
-            state: this._originState,
-            childDict: this._childDict.format(child => child?.bundle),
-            childList: this._childList.map(child => child.bundle)
+            state: this.$state,
+            child: {
+                list: this.$child.list.map(c => c.config),
+                dict
+            }
         };
     }
-
-    // 初始化对象
-    public get config(): BaseModelConfig<D> {
-        return {
-            ...this.bundle,
-            id: undefined
-        };
+    protected $new<M extends Model>(
+        config: M['config']
+    ): M {
+        const Type = Model.#product[config.code];
+        if (!Type) {
+            throw new Error(`Model ${config.code} not found`);
+        }
+        return new Type(config, this) as M;
     }
 
-    // 启用模型
-    protected _active() {}
-
-    // 析构模型
-    protected _destroy() {}
-
-    // 遍历启用模型
-    private _activeAll() {
-        this._active();
-        for (const child of [
-            ...this._childList,
-            ...Object.values(this._childDict)
-        ]) {
-            child?._activeAll();
+    protected $unmount() {
+        if (this.parent instanceof Model) {
+            for (const key in this.parent.$child.dict) {
+                if (this.parent.$child.dict[key] === this) {
+                    delete this.parent.$child.dict[key];
+                    return;
+                }
+            }
+            // console.log('unmount');
+            const index = this.parent.$child.list.indexOf(this);
+            if (index >= 0) {
+                this.parent.$child.list.splice(index, 1);
+                return;
+            }
         }
     }
 
-    // 遍历析构模型
-    private _destroyAll() {
-        for (const child of [
-            ...this._childList,
-            ...Object.values(this._childDict)
-        ]) {
-            child?._destroyAll();
-        }
-        for (const signal of [
-            ...Object.values(this._signalDict),
-            ...Object.values(this._statePosterDict),
-            ...Object.values(this._stateEditorDict),
-            ...Object.values(this._effectDict)
-        ]) {
-            signal.destroy();
-        }
-        this.app.referenceService.unregisterModel(this);
-        this._destroy();
-    }
 
-    // 初始化子模型
-    protected readonly _unserialize = <M extends ModelDef>(
-        config: BaseModelConfig<M>
-    ): Model<M> => {
-        return this.app.factoryService.unserialize({
-            ...config,
-            parent: this,
-            app: this.app
-        });
+    // child
+    protected readonly $child: {
+        readonly dict: D
+        readonly list: L[]
     };
-
-    // 监听子模型变更
-    private readonly _handleChildUpdate = (
-        key: unknown,
+    readonly child: {
+        readonly dict: Readonly<{
+            [K in keyof D]: Readonly<D[K]>
+        }>
+        readonly list: Readonly<Readonly<L>[]>
+    };
+    #updateChild(
+        key: string,
         value: Model,
         isNew: boolean
-    ) => {
+    ) {
         if (!value) return;
-        if (isNew) value._activeAll();
-        else value._destroyAll();
-        this._resetInfo();
-    };
-    
-    // 重置调试器
-    private readonly _resetInfo = () => {
-        for (const setInfo of this._hookList) {
+        if (isNew) value.$activateAll();
+        else value.#destroy();
+        this.#updateInfo();
+    }
+
+    // lifecycle
+    #isActive = false;
+    protected $activate() {}
+    protected $activateAll() {
+        if (this.#isActive) {
+            throw new Error(
+                'Model is already active'
+            );
+        }
+        this.$activate();
+        for (const child of [
+            ...Object.values(this.$child.dict),
+            ...this.$child.list
+        ]) {
+            child.$activateAll();
+        }
+        this.#isActive = true;
+    }
+
+    protected $deactivate() {}
+    protected $deactivateAll() {
+        if (!this.#isActive) {
+            throw new Error(
+                'Model is already deactive'
+            );
+        }
+        this.$deactivate();
+        for (const child of [
+            ...Object.values(this.$child.dict),
+            ...this.$child.list
+        ]) {
+            child.$deactivateAll();
+        }
+        for (const refer of [
+            ...this.#refer
+        ]) {
+            refer.#unconnect(this);
+            this.#unconnect(refer);
+        }
+        this.#isActive = false;
+    }
+
+    #destroy() {
+        // console.log('model destroy', this);
+        this.$deactivateAll();
+        this.app.referenceService.unregisterModel(this);
+    }
+
+
+    // inspector
+    protected readonly $debug: Record<string, Base.Function>;
+    readonly #setInfo: Array<React.Dispatch<
+        React.SetStateAction<ModelInfo<S, D, L>>
+    >>;
+    #updateInfo() {
+        // console.log('updateInfo', this.state);
+        for (const setInfo of this.#setInfo) {
             setInfo({
-                childDict: this._childDict,
-                childList: this._childList,
-                signalDict: this._signalDict,
-                statePosterDict: this._statePosterDict,
-                stateEditorDict: this._stateEditorDict,
-                effectDict: this._effectDict,
-                state: this.actualState
+                child: this.child,
+                state: {
+                    raw: { ...this.$state },
+                    cur: { ...this.#state }
+                },
+                refer: [ ...this.#refer ],
+                debug: { ...this.$debug },
+                event: this.$event
             });
         }
-    };
-
-    // 注册调试器
-    public readonly useInfo = (
-        setInfo: (data: ModelInfo<D>) => void
+    }
+    readonly useInfo = (
+        setInfo: React.Dispatch<
+            React.SetStateAction<ModelInfo<S, D, L>>
+        >
     ) => {
-        this._hookList.push(setInfo);
-        this._resetInfo();
+        this.#setInfo.push(setInfo);
+        this.#updateInfo();
         return () => {
-            const index = this._hookList.indexOf(setInfo);
-            if (index < 0) throw new Error();
-            this._hookList.splice(index, 1);
+            const index = this.#setInfo.indexOf(setInfo);
+            if (index < 0) return;
+            this.#setInfo.splice(index, 1);
         };
     };
-
 }
-

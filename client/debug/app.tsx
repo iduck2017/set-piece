@@ -24,7 +24,7 @@ export function AppComp(props: {
     };
 
     const saveArchieve = () => {
-        app.archieveService.saveArchieve();
+        app.archieveService.save();
     };
 
     const quitGame = async () => {
@@ -62,10 +62,7 @@ export function AppComp(props: {
             <button onClick={quitGame}>
                 quit
             </button>
-            <ModelComp
-                model={app.root}
-                app={app}
-            />
+            <ModelComp model={app.root} />
         </div>;
     }
 }

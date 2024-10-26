@@ -1,20 +1,14 @@
 /* eslint-disable max-len */
 import React, { ReactNode, useEffect, useState } from "react";
-import type { Model } from "../model";
 import "./index.css";
-import { Signal } from "../utils/signal";
-import { ModelDef } from "../type/model/define";
-import { Effect } from "../utils/effect";
+import { Model, ModelInfo } from "../model";
 import { Base } from "../type";
-import { ModelInfo, ModelProps } from "../type/model/inspector";
 
 export type VisibleInfo = {
     model: boolean;
     state: boolean;
     child: boolean;
-    signal: boolean;
-    effect: boolean;
-    action: boolean;
+    debug: boolean;
 }
 
 const FolderComp = (props: {
@@ -54,24 +48,21 @@ const FolderComp = (props: {
     </>;
 };
 
-export function ModelComp<
-    M extends ModelDef
->(props: ModelProps<M>) {
-    const { model, app } = props;
+export function ModelComp(props: {
+    model: Readonly<Model>,
+}) {
+    const { model } = props;
+    const { app } = model;
 
-    const [ modelInfo, setModelInfo ] = useState<ModelInfo<M>>();
-    const [ modelVisible, setModelVisible ] = useState<VisibleInfo>({
+    const [ info, setInfo ] = useState<ModelInfo>();
+    const [ visible, setVisible ] = useState<VisibleInfo>({
         model: true,
         state: true,
         child: true,
-        signal: true,
-        effect: true,
-        action: true
+        debug: true
     });
     
-    const [ activedChild, setActivedChild ] = useState<Model>();
-    const [ activedSignal, setActivedSignal ] = useState<Signal>();
-    const [ activedEffect, setActivedEffect ] = useState<Effect>();
+    const [ activedChild, setActivedChild ] = useState<Readonly<Model>>();
 
     const formatValue = (value: Base.Value) => {
         if (typeof value === 'string') return `"${value}"`;
@@ -87,87 +78,88 @@ export function ModelComp<
         }
     }, [ activedChild ]);
 
-    useEffect(() => {
-        if (!activedSignal) return;
-        for (const effectId of activedSignal.effectIdList) {
-            const elem = document.getElementById(effectId);
-            if (elem) {
-                elem.classList.add('actived');
-            }
-        }
-        return () => {
-            for (const effectId of activedSignal.effectIdList) {
-                const elem = document.getElementById(effectId);
-                if (elem) {
-                    elem.classList.remove('actived');
-                }
-            }
-        };
-    }, [ activedSignal ]);
+    // useEffect(() => {
+    //     if (!activedSignal) return;
+    //     for (const effectId of activedSignal.effectIdList) {
+    //         const elem = document.getElementById(effectId);
+    //         if (elem) {
+    //             elem.classList.add('actived');
+    //         }
+    //     }
+    //     return () => {
+    //         for (const effectId of activedSignal.effectIdList) {
+    //             const elem = document.getElementById(effectId);
+    //             if (elem) {
+    //                 elem.classList.remove('actived');
+    //             }
+    //         }
+    //     };
+    // }, [ activedSignal ]);
+
+    // useEffect(() => {
+    //     if (!activedEffect) return;
+    //     for (const signalId of activedEffect.signalIdList) {
+    //         const elem = document.getElementById(signalId);
+    //         if (elem) {
+    //             elem.classList.add('actived');
+    //         }
+    //     }
+    //     return () => {
+    //         for (const signalId of activedEffect.signalIdList) {
+    //             const elem = document.getElementById(signalId);
+    //             if (elem) {
+    //                 elem.classList.remove('actived');
+    //             }
+    //         }
+    //     };
+    // }, [ activedEffect ]);
 
     useEffect(() => {
-        if (!activedEffect) return;
-        for (const signalId of activedEffect.signalIdList) {
-            const elem = document.getElementById(signalId);
-            if (elem) {
-                elem.classList.add('actived');
-            }
-        }
-        return () => {
-            for (const signalId of activedEffect.signalIdList) {
-                const elem = document.getElementById(signalId);
-                if (elem) {
-                    elem.classList.remove('actived');
-                }
-            }
-        };
-    }, [ activedEffect ]);
+        return model.useInfo(setInfo);
+    }, [ model ]);
 
-    useEffect(() => model.useInfo.call(model, setModelInfo), [ model ]);
-
-    if (!modelInfo) return null;
+    if (!info) return null;
 
     const {
-        childDict,
-        childList,
-        signalDict,
-        effectDict,
+        child,
         state,
-        stateEditorDict
-        // statePosterDict
-    } = modelInfo;
+        refer,
+        debug
+    } = info;
 
     return (
         <div className="model">
             <div className="body" id={model.id}>
                 <div 
-                    className={`head ${modelVisible.model ? '' : 'fold'}`}
+                    className={`head ${visible.model ? '' : 'fold'}`}
                     onClick={() => {
-                        setModelVisible(prev => ({
+                        setVisible(prev => ({
                             ...prev,
-                            model: !modelVisible.model
+                            model: !visible.model
                         }));
                     }}
                 >
                     {model.code}
                 </div>
-                <div className={`row ${modelVisible.model ? '' : 'fold'}`}>
+                <div className={`row ${visible.model ? '' : 'fold'}`}>
                     <div className="title key">id</div>
-                    <div className="value">{formatValue(model.id)}</div>
+                    <div className="value">
+                        {formatValue(model.id)}
+                    </div>
                 </div>
-                {modelVisible.model && <>
+                {visible.model && <>
                     <FolderComp
-                        visibleDict={modelVisible}
-                        setVisibleDict={setModelVisible}
-                        title="action"
-                        length={Object.keys(model.debugActionDict).length}
+                        visibleDict={visible}
+                        setVisibleDict={setVisible}
+                        title="debug"
+                        length={Object.keys(debug).length}
                     >
-                        {Object.keys(model.debugActionDict).map(key => (
+                        {Object.keys(debug).map(key => (
                             <div className="row" key={key}>
                                 <div 
                                     className="key action"
                                     onClick={() => {
-                                        model.debugActionDict[key].call(model);
+                                        debug[key].call(model);
                                     }}
                                 >
                                     {key}
@@ -176,33 +168,34 @@ export function ModelComp<
                         ))}
                     </FolderComp>
                     <FolderComp 
-                        visibleDict={modelVisible}
-                        setVisibleDict={setModelVisible}
+                        visibleDict={visible}
+                        setVisibleDict={setVisible}
                         title="state"
-                        length={Object.keys(state).length}
+                        length={Object.keys(state.raw).length}
                     >
-                        {Object.keys(state).map(key => (
+                        {Object.keys(state.raw).map(key => (
                             <div 
                                 className="row" 
                                 key={key} 
-                                id={stateEditorDict[key].id}
-                                onMouseEnter={() => setActivedSignal(stateEditorDict[key])}
-                                onMouseLeave={() => setActivedSignal(undefined)}
                             >
-                                <div className={`key link  ${activedSignal === stateEditorDict[key] ? 'hover' : ''}`}>
+                                <div className={`key link`}>
                                     {key}
                                 </div>
-                                <div className="value">{formatValue(state[key])}</div>
+                                <div className="value">
+                                    {formatValue(state.cur[key])}
+                                </div>
                             </div>
                         ))}
                     </FolderComp>
                     <FolderComp
-                        visibleDict={modelVisible}
-                        setVisibleDict={setModelVisible}
+                        visibleDict={visible}
+                        setVisibleDict={setVisible}
                         title="child"
-                        length={Object.keys(childDict).length + childList.length}
+                        length={
+                            Object.keys(child.dict).length + 
+                            child.list.length}
                     >
-                        {childList.map((item, index) => (
+                        {child.list.map((item, index) => (
                             <div 
                                 className='row' 
                                 key={index}
@@ -216,14 +209,14 @@ export function ModelComp<
                                 </div>
                             </div>
                         ))}
-                        {Object.keys(childDict).map(key => (
+                        {Object.keys(child.dict).map(key => (
                             <div 
                                 className='row'
                                 key={key}
                             > 
                                 <div 
-                                    className={`key link ${activedChild === childDict[key] ? 'hover' : ''}`}
-                                    onMouseEnter={() => setActivedChild(childDict[key])}
+                                    className={`key link ${activedChild === child.dict[key] ? 'hover' : ''}`}
+                                    onMouseEnter={() => setActivedChild(child.dict[key])}
                                     onMouseLeave={() => setActivedChild(undefined)}
                                 >
                                     {key}
@@ -231,9 +224,9 @@ export function ModelComp<
                             </div>
                         ))}
                     </FolderComp>
-                    <FolderComp
-                        visibleDict={modelVisible}
-                        setVisibleDict={setModelVisible}
+                    {/* <FolderComp
+                        visibleDict={visible}
+                        setVisibleDict={setVisible}
                         title="signal"
                         length={Object.keys(signalDict).length}
                     >
@@ -253,45 +246,20 @@ export function ModelComp<
                                 <div className="value">{formatValue(signalDict[key].id)}</div>
                             </div>
                         ))}
-                    </FolderComp>
-                    <FolderComp
-                        visibleDict={modelVisible}
-                        setVisibleDict={setModelVisible}
-                        title="effect"
-                        length={Object.keys(effectDict).length}
-                    >
-                        {Object.keys(effectDict).map(key => (
-                            <div 
-                                id={effectDict[key].id}
-                                className="row" 
-                                key={key}
-                            >
-                                <div 
-                                    className={`key link ${activedEffect === effectDict[key] ? 'hover' : ''}`}
-                                    onMouseEnter={() => setActivedEffect(effectDict[key])}
-                                    onMouseLeave={() => setActivedEffect(undefined)}
-                                >
-                                    {key}
-                                </div>
-                                <div className="value">{formatValue(effectDict[key].id)}</div>
-                            </div>
-                        ))}
-                    </FolderComp>
+                    </FolderComp> */}
                 </>}
             </div>
-            {modelVisible.model && <div className="children">
-                {childList.map(item => (
+            {visible.model && <div className="children">
+                {child.list.map(item => (
                     <ModelComp 
                         key={item.id}
                         model={item}
-                        app={app}
                     />
                 ))}
-                {Object.values(childDict).map(item => (
+                {Object.values(child.dict).map(item => (
                     item ? <ModelComp 
                         key={item.id}
                         model={item}
-                        app={app}
                     /> : null
                 ))}
             </div>}

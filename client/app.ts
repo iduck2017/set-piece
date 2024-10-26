@@ -1,11 +1,9 @@
-import { FactoryService } from "./service/factory";
 import { ReferenceService } from "./service/reference";
 import { ArchieveData, ArchieveService } from "./service/archieve";
 import { PerferenceData, PreferenceService } from "./service/perference";
-import { RootModelDef } from "./model/root";
 import { RenderService } from "./service/render";
 import { AppStatus } from "./type/status";
-import { Model } from "./model";
+import { RootModel } from "./model/root";
 
 export const MAJOR_VERSION = 0;
 export const MINOR_VERSION = 1;
@@ -21,27 +19,24 @@ export type AppInfo = Readonly<{
 }>
 
 export class App {
-    public readonly majorVersion: number;
-    public readonly minorVersion: number;
-    public readonly patchVersion: number;
+    readonly majorVersion: number;
+    readonly minorVersion: number;
+    readonly patchVersion: number;
 
-    public readonly factoryService: FactoryService;
-    public readonly referenceService: ReferenceService;
-    public readonly perferenceService: PreferenceService;
-    public readonly archieveService: ArchieveService;
-    public readonly renderService: RenderService;
+    readonly referenceService: ReferenceService;
+    readonly perferenceService: PreferenceService;
+    readonly archieveService: ArchieveService;
+    readonly renderService: RenderService;
 
-    private _status: AppStatus;
-    public get status() { return this._status; }
+    #status: AppStatus;
+    get status() { return this.#status; }
 
-    private _root?: Model<RootModelDef>;
-    public get root(): Model<RootModelDef> { 
-        if (!this._root) throw new Error();
-        return this._root;
-    }
-    public set root(value: any) {
-        if (this._root) throw new Error();
-        this._root = value;
+    #root?: RootModel;
+    public get root() { 
+        if (!this.#root) {
+            throw new Error('Root model is not generated yet.');
+        }
+        return this.#root;
     }
 
     constructor() {
@@ -51,45 +46,41 @@ export class App {
         this.minorVersion = 1;
         this.patchVersion = 0;
 
-        this.factoryService = new FactoryService(this);
         this.referenceService = new ReferenceService(this);
         this.perferenceService = new PreferenceService(this);
         this.archieveService = new ArchieveService(this);
         this.renderService = new RenderService(this);
 
-        this._status = AppStatus.CREATED;
+        this.#status = AppStatus.CREATED;
     }
 
-    public async initialize() {
+    async initialize() {
         const metadata = await this._loadMetaData();
         this.archieveService.initialize(metadata.archieveDataList);
         this.perferenceService.initialize(metadata.perferenceData);
         this.renderService.initialize();
-        this._status = AppStatus.UNMOUNTED;
+        this.#status = AppStatus.UNMOUNTED;
     }
 
-    public async startGame(index?: number) {
-        this._status = AppStatus.MOUNTING;
+    async startGame(index?: number) {
+        this.#status = AppStatus.MOUNTING;
         const config = index === undefined ?
             await this.archieveService.createArchieve() :
             await this.archieveService.loadArchieve(index);
-        this.factoryService.unserialize({
-            ...config,
-            app: this,
-            parent: this
-        });
-        this._status = AppStatus.MOUNTED;
+        this.#root = new RootModel(config, this);
+        this.#root.activate();
+        this.#status = AppStatus.MOUNTED;
     }
 
-    public async quitGame() {
-        this._status = AppStatus.UNMOUNTING;
-        this.archieveService.saveArchieve();
+    async quitGame() {
+        this.#status = AppStatus.UNMOUNTING;
+        this.archieveService.save();
         this.referenceService.reset();
-        this._root = undefined;
-        this._status = AppStatus.UNMOUNTED;
+        this.#root = undefined;
+        this.#status = AppStatus.UNMOUNTED;
     }
 
-    public async saveMetaData() {
+    async saveMetaData() {
         const save: AppInfo = {
             majorVersion: this.majorVersion,
             minorVersion: this.minorVersion,

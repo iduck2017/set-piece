@@ -1,6 +1,5 @@
 import type { App } from "../app";
-import type { Model } from "../model";
-import { ModelDef } from "../type/model/define";
+import { Model } from "../model";
 import { useSingleton } from "../utils/decor/singleton";
 
 export const MIN_TICKET = 100;
@@ -9,7 +8,7 @@ export const MAX_TICKET = 999;
 @useSingleton
 export class ReferenceService {
     public readonly app: App;
-    private modelDict: Record<string, Model> = {};
+    private modelDict: Record<string, any> = {};
 
     public get ticket(): string {
         let now = Date.now();
@@ -39,13 +38,12 @@ export class ReferenceService {
         this.modelDict = {};
     }
 
-
-    public registerModel(model: Model) {
-        this.modelDict[model.id] = model;
+    public registerModel(model: any) {
+        this.modelDict[model.mid] = model;
     }
 
-    public unregisterModel<M extends ModelDef>(model: Model<M>) {
-        delete this.modelDict[model.id];
+    public unregisterModel(model: any) {
+        delete this.modelDict[model.mid];
     }
 
     public findModel(modelId: string): Model | undefined {

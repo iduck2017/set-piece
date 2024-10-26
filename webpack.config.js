@@ -10,7 +10,6 @@ const dir = fs
 
 module.exports = {
     entry: [
-        './client/utils/object.ts',
         './client/main.ts',
         ...dir
     ],

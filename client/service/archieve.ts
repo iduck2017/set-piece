@@ -1,6 +1,5 @@
 import type { App } from "../app";
-import { RootModelDef } from "../model/root";
-import { BaseModelConfig } from "../type/model/config";
+import { RootModel } from "../model/root";
 import { useSingleton } from "../utils/decor/singleton";
 import { ReadonlyProxy } from "../utils/proxy/readonly";
 
@@ -36,7 +35,7 @@ export class ArchieveService {
     }
 
     // 创建新的档案
-    public async createArchieve(): Promise<BaseModelConfig<RootModelDef>> {
+    public async createArchieve(): Promise<RootModel['config']> {
         this.app.referenceService.reset();
         const id = this.app.referenceService.ticket;
         this._data.push({
@@ -44,8 +43,11 @@ export class ArchieveService {
             name: 'hello',
             progress: 0
         });
-        const record: BaseModelConfig<RootModelDef> = { code: 'root' };
-        await localStorage.setItem(`${ARCHIEVE_SAVE_PATH}_${id}`, JSON.stringify(record));
+        const record: RootModel['config'] = { code: 'root' };
+        await localStorage.setItem(
+            `${ARCHIEVE_SAVE_PATH}_${id}`, 
+            JSON.stringify(record)
+        );
         await this.app.saveMetaData();
         return record;
     }
@@ -53,7 +55,7 @@ export class ArchieveService {
     // 加载档案
     public async loadArchieve(
         index: number
-    ): Promise<BaseModelConfig<RootModelDef>> {
+    ): Promise<RootModel['config']> {
         this._index = index;
         const archieve = this._data[index];
         const path = `${ARCHIEVE_SAVE_PATH}_${archieve.id}`;
@@ -72,12 +74,12 @@ export class ArchieveService {
     }
 
     // 卸载当前档案
-    public async unloadArchieve() {
+    async unload() {
         this._index = undefined;
     }
 
     // 更新当前档案
-    public async saveArchieve() {
+    async save() {
         const index = this._index;
         const rootModel = this.app.root;
         if (!rootModel || index === undefined) {
@@ -85,13 +87,16 @@ export class ArchieveService {
         }
         const slot = this._data[index];
         const path = `${ARCHIEVE_SAVE_PATH}_${slot.id}`;
-        const record = rootModel.bundle;
+        const record = rootModel.config;
         // 更新档案信息
         this._data[index] = {
             ...slot,
-            progress: rootModel.actualState.progress
+            progress: rootModel.state.progress
         };
-        await localStorage.setItem(path, JSON.stringify(record));
+        await localStorage.setItem(
+            path, 
+            JSON.stringify(record)
+        );
         await this.app.saveMetaData();
     }
 }

@@ -1,6 +1,6 @@
 import { Base, KeyOf, ValueOf } from "../../type";
 
-export function ControlledProxy<T extends Base.Dict>(
+export function ControlledProxy<T extends Record<string, any>>(
     origin: T,
     handleUpdate: (
         key: KeyOf<T>,
@@ -64,19 +64,25 @@ export function ControlledArray<T>(
     });
 
     result.push = useLock((...addList: T[]) => {
-        const index = Array.prototype.push.call(result, ...addList);
+        const index = Array.prototype.push.call(
+            result, 
+            ...addList
+        );
         for (const value of addList) handleUpdate(value, true);
         return index;
     });
 
     result.shift = useLock(() => {
-        const value = result.shift();
+        const value = Array.prototype.shift.call(result);
         if (value) handleUpdate(value, false);
         return value;
     });
 
     result.unshift = useLock((...addList: T[]) => {
-        const index = result.unshift(...addList);
+        const index = Array.prototype.unshift.call(
+            result, 
+            ...addList
+        );
         for (const value of addList) handleUpdate(value, true);
         return index;
     });
@@ -86,7 +92,12 @@ export function ControlledArray<T>(
         removeCnt: number,
         ...addList: T[]
     ) => {
-        const removeList = result.splice(start, removeCnt, ...addList);
+        const removeList = Array.prototype.splice.call(
+            result, 
+            start,
+            removeCnt,
+            ...addList
+        );
         for (const value of removeList)  handleUpdate(value, false);
         for (const value of addList) handleUpdate(value, true);
         return removeList;
