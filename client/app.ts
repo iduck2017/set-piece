@@ -1,7 +1,7 @@
 import { ArchieveData, FileService } from "./service/file";
 import { RenderService } from "./service/render";
 import { RootModel } from "./model/root";
-import { Model } from "./model";
+import { Global } from "./utils/global";
 
 export type AppInfo = Readonly<{
     version: [number, number, number]
@@ -16,15 +16,8 @@ export enum AppStatus {
     UNMOUNTING, 
 }
 
-export class App {
-    static #instance?: App;
-    static get instance(): App {
-        if (!this.#instance) {
-            this.#instance = new App();
-        }
-        return this.#instance;
-    }
-
+@Global.useSingleton
+export class App extends Global {
     readonly version: [number, number, number];
 
     readonly fileService: FileService;
@@ -42,7 +35,9 @@ export class App {
     }
 
 
-    private constructor() {
+    constructor() {
+        super();
+
         window._app = this;
         
         this.version = [ 0, 1, 0 ];
@@ -63,7 +58,7 @@ export class App {
     async start(index?: number) {
         this.#status = AppStatus.MOUNTING;
         const config = index === undefined ?
-            await this.fileService.create() :
+            await this.fileService.new() :
             await this.fileService.load(index);
         this.#root = new RootModel(config, this);
         this.#root.init();
@@ -74,7 +69,6 @@ export class App {
         this.#status = AppStatus.UNMOUNTING;
         this.fileService.save();
         this.#root = undefined;
-        Model.resetSingleton(this);
         this.#status = AppStatus.UNMOUNTED;
     }
 
@@ -98,3 +92,4 @@ export class App {
         return result;
     }
 }
+(window as any).m = App;

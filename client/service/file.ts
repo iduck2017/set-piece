@@ -11,6 +11,7 @@ export type ArchieveData = {
     progress: number
 }
 
+
 @Service.useSingleton
 export class FileService extends Service {
 
@@ -21,14 +22,14 @@ export class FileService extends Service {
     constructor(app: App) {
         super(app);
         this.#data = [];
-        this.data = Delegator.readonly(this.#data);
+        this.data = Delegator.readonlyMap(this.#data);
     }
 
     init(data: Readonly<ArchieveData[]>) {
         this.#data.push(...data);     
     }
 
-    async create(): Promise<RootModel['config']> {
+    async new(): Promise<RootModel['config']> {
         const id = Date.now().toString(36);
         this.#data.push({
             id,

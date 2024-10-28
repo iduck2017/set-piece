@@ -40,28 +40,31 @@ export class Event<E> {
         refer.connect(this.parent);
         this.parent.connect(refer);
         this.#listener();
+        // console.log('bind', this, this.parent, this.#handlerSet);
     }
 
     unbind(refer: Model, handler: Event.Handler<E>) {
-        this.destroy(refer, handler);
+        this.uninit(refer, handler);
     }
 
     emit(form: E): E {
+        // console.log('emit', form, this.parent, this, this.#handlerSet);
         let $event = form;
-        const handleEvent = [ ...this.#handlerSet ];
-        for (const [ refer, handler ] of handleEvent) {
+        const handlerSet = [ ...this.#handlerSet ];
+        for (const [ refer, handler ] of handlerSet) {
             const result = handler.call(refer, $event);
             if (result) $event = result;
         }
         return $event;
     }
 
-    destroy(refer: Model, handler?: Event.Handler<E>) {
+    uninit(refer?: Model, handler?: Event.Handler<E>) {
         while (true) {
             const index = this.#handlerSet.findIndex(item => {
                 const [ $refer, $handler ] = item;
-                if (!handler) return $refer === refer;
-                return $refer === refer && $handler === handler;
+                if (handler && $handler !== handler) return false;
+                if (refer && $refer !== refer) return false;
+                return true;
             });
             if (index < 0) break;
             this.#handlerSet.splice(index, 1);

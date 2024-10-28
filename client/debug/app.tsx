@@ -13,7 +13,7 @@ export function AppComp(props: {
     >(app.fileService.data);
   
     const createArchieve = async () => {
-        await app.fileService.create();
+        await app.fileService.new();
         setArchieves([ ...app.fileService.data ]);
     };
 

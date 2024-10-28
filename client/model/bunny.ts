@@ -6,6 +6,11 @@ export type BunnyState = {
     curDensity: number;
 }
 
+export type BunnyEvent = {
+    preReproduce: number;
+    reproduce: number;
+}
+
 @Model.useProduct('bunny')
 export class BunnyModel extends IAnimalModel<
     'bunny',
@@ -49,6 +54,7 @@ export class BunnyModel extends IAnimalModel<
             form.target !== this &&
             form.target instanceof BunnyModel
         ) {
+            console.log('onSpawn', this.code, form.target.code);
             form.target.stateGetEventMap.curDensity.bind(
                 this,
                 form => ({

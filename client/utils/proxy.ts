@@ -1,15 +1,15 @@
-import { Base, KeyOf } from "./base";
+import { Base, KeyOf, ValueOf } from "./base";
 
 export namespace Delegator {
-    export function automic<
+    export function automicMap<
         T extends Base.Map
     >(
-        initValue: (key: KeyOf<T>) => T[KeyOf<T>]
+        getter: (key: KeyOf<T>) => T[KeyOf<T>]
     ): T {
         return new Proxy({} as T, {
             get: (origin, key: KeyOf<T>) => {
                 if (!origin[key]) {
-                    origin[key] = initValue(key);
+                    origin[key] = getter(key);
                 }
                 return origin[key];
             },
@@ -18,7 +18,7 @@ export namespace Delegator {
         });
     }
 
-    export function readonly<T extends Base.Map>(
+    export function readonlyMap<T extends Base.Map>(
         origin: T
     ): Readonly<T> {
         return new Proxy(origin, {
@@ -27,22 +27,29 @@ export namespace Delegator {
         });
     }
 
-    export function traverse<
-        B extends Record<K, any>,
-        A extends Record<K, any>,
-        K extends string,
-    >(
-        raw: A,
-        initValue: (value: A[K], key: K) => B[K]
-    ): Readonly<B> {
-        const result = {} as B;
-        Object.keys(result).forEach((
-            key: K
-        ) => {
-            if (raw[key] !== undefined) {
-                result[key] = initValue(raw[key], key);
+    export function controlledMap<T extends Record<string, any>>(
+        origin: T,
+        listener: (
+            key: KeyOf<T>,
+            prev?: ValueOf<T>,
+            next?: ValueOf<T>
+        ) => void
+    ): T {
+        return new Proxy(origin, {
+            set: (target, key: KeyOf<T>, value) => {
+                const prev = target[key];
+                const next = target[key] = value;
+                listener(key, prev, next);
+                return true;
+            },
+            deleteProperty: (target, key: KeyOf<T>) => {
+                const value = target[key];
+                delete target[key];
+                listener(key, value, undefined);
+                return true;
             }
         });
-        return result;
     }
+    
+    
 }

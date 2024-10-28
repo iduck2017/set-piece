@@ -1,5 +1,5 @@
 import { AppStatus, type App } from "../app";
-import { Base, KeyOf } from "../utils/base";
+import { Base, KeyOf, ValueOf } from "../utils/base";
 import { Event } from "../utils/event";
 import { Delegator } from "../utils/proxy";
 import { ControlledArray, ControlledProxy } from "../utils/proxy/controlled";
@@ -54,8 +54,8 @@ export namespace Model {
     > = {
         [K in KeyOf<S>]: Event<{
             model: M;
-            raw: S[K];
-            cur: S[K];
+            prev: S[K];
+            next: S[K];
         }>
     }
 
@@ -65,8 +65,8 @@ export namespace Model {
     > = {
         [K in KeyOf<S>]: Event.Proxy<{
             model: M;
-            raw: S[K];
-            cur: S[K];
+            prev: S[K];
+            next: S[K];
         }>
     }
 
@@ -183,12 +183,6 @@ export class Model<
             }
         };
     }
-    static resetSingleton(app: App) {
-        if (app.status !== AppStatus.UNMOUNTING) {
-            throw new Error('Cannot reset singleton during mounting or unmounting');
-        }
-        Model.#singletonSet.clear();
-    }
 
     // Product
     static readonly #productReg: Record<string, Model.Class> = {};
@@ -292,12 +286,12 @@ export class Model<
         this.code = config.code || Model.ticket;
         this.type = config.type ;
 
-        this.$rawStateMap = ControlledProxy(
+        this.$rawStateMap = Delegator.controlledMap(
             config.stateMap,
             this.#onStateMod.bind(this)
         );
         this.#curStateMap = { ...this.$rawStateMap };
-        this.curStateMap = Delegator.readonly(this.#curStateMap);
+        this.curStateMap = Delegator.readonlyMap(this.#curStateMap);
 
         const childMap = {} as D;
         for (const key in config.childMap) {
@@ -310,35 +304,25 @@ export class Model<
             childMap, 
             this.#onChildMod.bind(this)
         );
-        this.childMap = Delegator.readonly(this.$childMap);
+        this.childMap = Delegator.readonlyMap(this.$childMap);
 
         this.$childSet = ControlledArray<L>(
             config.childSet?.map(c => this.$new(c)) || [],
             this.#onChildMod.bind(this, '')
         );
-        this.childSet = Delegator.readonly(this.$childSet);
+        this.childSet = Delegator.readonlyMap(this.$childSet);
 
-        this.#referSet = [];
-
-        this.$eventMap = Delegator.automic(() => new Event(
+        this.$eventMap = Delegator.automicMap(() => new Event(
             this,
             this.#onModelMod.bind(this)
         ));
-        this.eventMap = Delegator.automic(() => this.$eventMap.proxy);
+        this.eventMap = Delegator.automicMap(key => this.$eventMap[key].proxy);
 
-        this.$stateGetEventMap = Delegator.automic(key => new Event(
-            this,
-            this.#onStateMod.bind(this, key)
-        ));
-        this.stateGetEventMap = Delegator.automic(key => (
-            this.$stateGetEventMap[key].proxy
-        ));
-
-        this.$stateModEventMap = Delegator.automic(() => new Event(
+        this.$stateModEventMap = Delegator.automicMap(() => new Event(
             this,
             this.#onModelMod.bind(this)
         ));
-        this.stateModEventMap = Delegator.automic(key => (
+        this.stateModEventMap = Delegator.automicMap(key => (
             this.$stateModEventMap[key].proxy
         ));
 
@@ -348,16 +332,16 @@ export class Model<
         );
         this.childSetModEvent = this.$childSetModEvent.proxy;
 
-        this.$childModEventMap = Delegator.automic(() => new Event(
+        this.$childModEventMap = Delegator.automicMap(() => new Event(
             this,
             this.#onModelMod.bind(this)
         ));
-        this.childModEventMap = Delegator.automic(key => (
+        this.childModEventMap = Delegator.automicMap(key => (
             this.$childModEventMap[key].proxy
         ));
 
 
-        this.#setInfo = [];
+        this.#setterSet = [];
 
         this.#debugMap = {};
         let constructor: any = this.constructor;
@@ -378,7 +362,8 @@ export class Model<
     }
 
     // Refer
-    readonly #referSet: Model[];
+    readonly #referSet: Model[] = [];
+    readonly #referMap: Record<string, Model[] | Model> = {};
     
     connect(refer: Model) {
         if (!this.#referSet.includes(refer)) {
@@ -398,7 +383,7 @@ export class Model<
             this.$childSetModEvent
         ];
         for (const event of events) {
-            event.destroy(refer);
+            event.uninit(refer);
         }
         console.log(
             'unconnect', 
@@ -411,9 +396,16 @@ export class Model<
     readonly eventMap: Model.EventProxyMap<E>;
 
     protected readonly $stateGetEventMap: 
-        Model.StateGetEventMap<typeof this, S>;
+        Model.StateGetEventMap<typeof this, S> = 
+            Delegator.automicMap(key => new Event(
+                this,
+                this.#onStateMod.bind(this, key)
+            ));
     readonly stateGetEventMap: 
-        Model.StateGetEventProxyMap<typeof this, S>;
+        Model.StateGetEventProxyMap<typeof this, S> = 
+            Delegator.automicMap(key => (
+                this.$stateGetEventMap[key].proxy
+            ));
 
     protected readonly $stateModEventMap: 
         Model.StateModEventMap<typeof this, S>;
@@ -435,18 +427,30 @@ export class Model<
     readonly curStateMap: Readonly<S>;
     protected readonly $rawStateMap: S;
 
-    #onStateMod(
-        key: KeyOf<S>
+    #onStateMod<K extends KeyOf<S>>(
+        key: K,
+        prev?: S[K]
     ) {
-        const current = this.$rawStateMap[key];
-        const signal = {
+        if (prev === undefined) {
+            prev = this.#curStateMap[key];
+        }
+        const raw = this.$rawStateMap[key];
+        console.log('onStateGet', key, raw, prev);
+        const result = this.$stateGetEventMap[key].emit({
             model: this,
-            raw: current,
-            cur: current
-        };
-        const { cur } = this.$stateGetEventMap[key].emit(signal);
-        this.#curStateMap[key] = cur;
-        this.$stateModEventMap[key].emit(signal);
+            raw: raw,
+            cur: raw
+        });
+        const next = result.cur;
+        this.#curStateMap[key] = next;
+        if (prev !== next) {
+            console.log('onStateMod', key, prev, next);
+            this.$stateModEventMap[key].emit({
+                model: this,
+                prev,
+                next
+            });
+        }
         this.#onModelMod();
     }
 
@@ -512,13 +516,9 @@ export class Model<
     }
 
     // Lifecycle
-    #isInit = false;
     #initSet: Base.Function[] = [];
     #uninitSet: Base.Function[] = [];
     protected $init() {
-        if (this.#isInit) {
-            throw new Error('Model is already inited');
-        }
         for (const init of this.#initSet) {
             init();
         }
@@ -528,13 +528,9 @@ export class Model<
         ]) {
             child.$init();
         }
-        this.#isInit = true;
     }
 
     protected $uninit() {
-        if (!this.#isInit) {
-            throw new Error('Model is already uninited');
-        }
         for (const uninit of this.#uninitSet) { 
             uninit();
         }
@@ -550,16 +546,15 @@ export class Model<
             refer.#unconnect(this);
             this.#unconnect(refer);
         }
-        this.#isInit = false;
     }
 
     // inspector
     readonly #debugMap: Record<string, Base.Function>;
-    readonly #setInfo: Array<React.Dispatch<
+    readonly #setterSet: Array<React.Dispatch<
         React.SetStateAction<Model.Info<S, E, D, L>>
     >>;
     #onModelMod() {
-        for (const setInfo of this.#setInfo) {
+        for (const setInfo of this.#setterSet) {
             setInfo({
                 stateGetEventMap: {
                     ...this.$stateGetEventMap
@@ -582,16 +577,16 @@ export class Model<
         }
     }
     readonly useInfo = (
-        setInfo: React.Dispatch<
+        setter: React.Dispatch<
             React.SetStateAction<Model.Info<S, E, D, L>>
         >
     ) => {
-        this.#setInfo.push(setInfo);
+        this.#setterSet.push(setter);
         this.#onModelMod();
         return () => {
-            const index = this.#setInfo.indexOf(setInfo);
+            const index = this.#setterSet.indexOf(setter);
             if (index < 0) return;
-            this.#setInfo.splice(index, 1);
+            this.#setterSet.splice(index, 1);
         };
     };
 }

@@ -1,13 +1,14 @@
 import { Model } from ".";
 import type { App } from "../app";
 import { Base } from "../utils/base";
+import { Global } from "../utils/global";
 import { AnimalModel } from "./animal";
 
 type RootState = {
     time: number
 }
 
-@Model.useSingleton
+@Global.useSingleton
 @Model.useProduct('root')
 export class RootModel extends Model<
     'root',
@@ -24,6 +25,7 @@ export class RootModel extends Model<
     Record<never, never>,
     AnimalModel
 > {
+    private static $foo = 3;
     static useTimeline(duration?: number) {
         return function (
             target: unknown,
@@ -51,12 +53,12 @@ export class RootModel extends Model<
         config: RootModel['config'],
         parent: App
     ) {
-        // if (!config.childSet?.length) {
-        //     config.childSet = [
-        //         { type: 'bunny' },
-        //         { type: 'kitty' }
-        //     ];
-        // }
+        if (!config.childSet?.length) {
+            config.childSet = [
+                { type: 'bunny' },
+                { type: 'kitty' }
+            ];
+        }
         super({
             ...config,
             childMap: {},
@@ -85,6 +87,7 @@ export class RootModel extends Model<
         }
         const target: AnimalModel = this.$new($config);
         this.$childSet.push(target);
+        console.log('spawn', target.code);
         this.$eventMap.postSpawn.emit({
             target
         });
