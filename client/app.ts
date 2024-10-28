@@ -1,14 +1,11 @@
-import { ArchieveData, ArchieveService } from "./service/archieve";
-import { PerferenceData, PreferenceService } from "./service/perference";
+import { ArchieveData, FileService } from "./service/file";
 import { RenderService } from "./service/render";
 import { RootModel } from "./model/root";
-
-export const META_SAVE_PATH = 'meta';
+import { Model } from "./model";
 
 export type AppInfo = Readonly<{
     version: [number, number, number]
-    perferenceData: PerferenceData
-    archieveDataList: Readonly<ArchieveData[]>
+    files: Readonly<ArchieveData[]>
 }>
 
 export enum AppStatus {
@@ -19,12 +16,18 @@ export enum AppStatus {
     UNMOUNTING, 
 }
 
-
 export class App {
+    static #instance?: App;
+    static get instance(): App {
+        if (!this.#instance) {
+            this.#instance = new App();
+        }
+        return this.#instance;
+    }
+
     readonly version: [number, number, number];
 
-    readonly perferenceService: PreferenceService;
-    readonly archieveService: ArchieveService;
+    readonly fileService: FileService;
     readonly renderService: RenderService;
 
     #status: AppStatus;
@@ -38,13 +41,13 @@ export class App {
         return this.#root;
     }
 
-    constructor() {
+
+    private constructor() {
         window._app = this;
         
         this.version = [ 0, 1, 0 ];
 
-        this.perferenceService = new PreferenceService(this);
-        this.archieveService = new ArchieveService(this);
+        this.fileService = new FileService(this);
         this.renderService = new RenderService(this);
 
         this.#status = AppStatus.CREATED;
@@ -52,48 +55,43 @@ export class App {
 
     async init() {
         const meta = await this.#load();
-        this.archieveService.initialize(meta.archieveDataList);
-        this.perferenceService.initialize(meta.perferenceData);
-        this.renderService.initialize();
+        this.fileService.init(meta.files);
+        this.renderService.init();
         this.#status = AppStatus.UNMOUNTED;
     }
 
     async start(index?: number) {
         this.#status = AppStatus.MOUNTING;
         const config = index === undefined ?
-            await this.archieveService.createArchieve() :
-            await this.archieveService.loadArchieve(index);
+            await this.fileService.create() :
+            await this.fileService.load(index);
         this.#root = new RootModel(config, this);
-        this.#root.activate();
+        this.#root.init();
         this.#status = AppStatus.MOUNTED;
     }
 
     async quit() {
         this.#status = AppStatus.UNMOUNTING;
-        this.archieveService.save();
+        this.fileService.save();
         this.#root = undefined;
+        Model.resetSingleton(this);
         this.#status = AppStatus.UNMOUNTED;
     }
 
     async save() {
         const save: AppInfo = {
             version: this.version,
-            perferenceData: this.perferenceService.data,
-            archieveDataList: this.archieveService.data
+            files: this.fileService.data
         };
-        await localStorage.setItem(META_SAVE_PATH, JSON.stringify(save));
+        await localStorage.setItem('meta', JSON.stringify(save));
     } 
     
     async #load(): Promise<AppInfo> {
-        const raw = await localStorage.getItem(META_SAVE_PATH);
+        const raw = await localStorage.getItem('meta');
         if (!raw) {
             return {
                 version: this.version,
-                archieveDataList: [],
-                perferenceData: {
-                    mute: false,
-                    fullscreen: true
-                }
+                files: []
             };
         }
         const result = JSON.parse(raw) as AppInfo;

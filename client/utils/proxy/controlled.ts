@@ -1,4 +1,4 @@
-import { Base, KeyOf, ValueOf } from "../../type";
+import { Base, KeyOf, ValueOf } from "../base";
 
 export function ControlledProxy<T extends Record<string, any>>(
     origin: T,

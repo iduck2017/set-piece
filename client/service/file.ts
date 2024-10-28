@@ -1,7 +1,7 @@
-import type { App } from "../app";
+import { Service } from ".";
+import { App } from "../app";
 import { RootModel } from "../model/root";
-import { useSingleton } from "../utils/decor/singleton";
-import { ReadonlyProxy } from "../utils/proxy/readonly";
+import { Delegator } from "../utils/proxy";
 
 export const ARCHIEVE_SAVE_PATH = 'archieve';
 
@@ -11,38 +11,31 @@ export type ArchieveData = {
     progress: number
 }
 
-@useSingleton
-export class ArchieveService {
-    public readonly app: App;
+@Service.useSingleton
+export class FileService extends Service {
 
-    // 当前打开的档案
-    private _index?: number;
-
-    // 档案信息
-    private _data: ArchieveData[];
-    public data: Readonly<ArchieveData[]>; 
+    #index?: number;
+    readonly #data: ArchieveData[];
+    readonly data: Readonly<ArchieveData[]>; 
 
     constructor(app: App) {
-        this.app = app;
-        this._data = [];
-        this.data = [];
+        super(app);
+        this.#data = [];
+        this.data = Delegator.readonly(this.#data);
     }
 
-    // 初始化档案信息
-    public initialize(data: Readonly<ArchieveData[]>) {
-        this._data = [ ...data ];
-        this.data = ReadonlyProxy(this._data);
+    init(data: Readonly<ArchieveData[]>) {
+        this.#data.push(...data);     
     }
 
-    // 创建新的档案
-    public async createArchieve(): Promise<RootModel['config']> {
+    async create(): Promise<RootModel['config']> {
         const id = Date.now().toString(36);
-        this._data.push({
+        this.#data.push({
             id,
             name: 'hello',
             progress: 0
         });
-        const record: RootModel['config'] = { code: 'root' };
+        const record: RootModel['config'] = { type: 'root' };
         await localStorage.setItem(
             `${ARCHIEVE_SAVE_PATH}_${id}`, 
             JSON.stringify(record)
@@ -51,46 +44,42 @@ export class ArchieveService {
         return record;
     }
 
-    // 加载档案
-    public async loadArchieve(
+    async load(
         index: number
     ): Promise<RootModel['config']> {
-        this._index = index;
-        const archieve = this._data[index];
+        this.#index = index;
+        const archieve = this.#data[index];
         const path = `${ARCHIEVE_SAVE_PATH}_${archieve.id}`;
         const raw = await localStorage.getItem(path);
         if (!raw) throw new Error();
         return JSON.parse(raw);
     }
 
-    // 移除档案
-    public async removeArchieve(index: number) {
-        const slot = this._data[index];
+    async remove(index: number) {
+        const slot = this.#data[index];
         const path = `${ARCHIEVE_SAVE_PATH}_${slot.id}`;
-        this._data.splice(index, 1);
+        this.#data.splice(index, 1);
         await localStorage.removeItem(path);
         await this.app.save();
     }
 
-    // 卸载当前档案
     async unload() {
-        this._index = undefined;
+        this.#index = undefined;
     }
 
-    // 更新当前档案
     async save() {
-        const index = this._index;
+        const index = this.#index;
         const rootModel = this.app.root;
         if (!rootModel || index === undefined) {
             throw new Error();
         }
-        const slot = this._data[index];
+        const slot = this.#data[index];
         const path = `${ARCHIEVE_SAVE_PATH}_${slot.id}`;
         const record = rootModel.config;
         // 更新档案信息
-        this._data[index] = {
+        this.#data[index] = {
             ...slot,
-            progress: rootModel.state.progress
+            progress: rootModel.curStateMap.time
         };
         await localStorage.setItem(
             path, 

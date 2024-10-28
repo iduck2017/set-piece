@@ -1,20 +1,21 @@
 import { Root, createRoot } from 'react-dom/client';
 import React from 'react';
 import { AppComp } from '../debug/app';
-import type { App } from '../app';
+import { App } from '../app';
+import { Service } from '.';
 
-export class RenderService {
-    private _root?: Root;
-    public readonly app: App;
+@Service.useSingleton
+export class RenderService extends Service {
+    #root?: Root;
 
     constructor(app: App) {
-        this.app = app;
+        super(app);
     }
 
-    public initialize() {
+    init() {
         const element = document.getElementById('root');
         if (!element) throw new Error();
-        this._root = createRoot(element);
-        this._root.render(<AppComp app={this.app} />);
+        this.#root = createRoot(element);
+        this.#root.render(<AppComp app={this.app} />);
     }
 }

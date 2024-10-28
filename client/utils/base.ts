@@ -1,8 +1,8 @@
-// 基本类型
 export namespace Base {
     export type Key = string | number | symbol
     export type Value = string | number | boolean
-    export type Dict = Record<Key, any>
+    export type Map = Record<Key, any>
+    export type Set = Array<any>
     export type Data = Record<Key, Value>
     export type Function = (...args: any) => any
     export type Class = new (...args: any) => any

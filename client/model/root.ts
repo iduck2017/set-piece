@@ -1,17 +1,17 @@
 import { Model } from ".";
 import type { App } from "../app";
+import { Base } from "../utils/base";
 import { AnimalModel } from "./animal";
 
 type RootState = {
-    progress: number
+    time: number
 }
 
-@Model.$useProduct('root')
+@Model.useSingleton
+@Model.useProduct('root')
 export class RootModel extends Model<
     'root',
     RootState,
-    {},
-    AnimalModel,
     {
         prevSpawn: {
             config: AnimalModel['config']
@@ -20,61 +20,63 @@ export class RootModel extends Model<
         postSpawn: {
             target: AnimalModel
         }
-    }
+    },
+    Record<never, never>,
+    AnimalModel
 > {
+    static useTimeline(duration?: number) {
+        return function (
+            target: unknown,
+            key: string,
+            descriptor: TypedPropertyDescriptor<Base.Function>
+        ): TypedPropertyDescriptor<Base.Function> {
+            console.log(
+                'useTimeline',
+                target,
+                key
+            );
+            const original = descriptor.value;
+            descriptor.value = function(
+                this: Model, 
+                ...args
+            ) {
+                this.app.root.$rawStateMap.time += duration || 1;
+                return original?.apply(this, args);
+            };
+            return descriptor;
+        };
+    }
+
     constructor(
         config: RootModel['config'],
         parent: App
     ) {
-        if (!config.child) {
-            config.child = {
-                list: []
-            };
-            if (!config.child.list?.length) {
-                config.child.list = [];
-            }
-            config.child.list.push({
-                code: 'bunny',
-                state: {
-                    curDensity: 3
-                }
-            }, {
-                code: 'kitty',
-                state: {
-                    name: 'Kelly'
-                }
-            });
-        }
+        // if (!config.childSet?.length) {
+        //     config.childSet = [
+        //         { type: 'bunny' },
+        //         { type: 'kitty' }
+        //     ];
+        // }
         super({
             ...config,
-            child: {
-                ...config.child,
-                dict: config.child?.dict || {}
-            },
-            state: {
-                progress: 0,
-                ...config.state
+            childMap: {},
+            stateMap: {
+                time: 0,
+                ...config.stateMap
             }
         }, parent);
     }
 
-    @Model.$useDebug()
-    add() {
-        this.$state.progress += 1;
-    }
-
-    @Model.$useDebug()
-    minus() {
-        if (this.$state.progress > 0) {
-            this.$state.progress -= 1;
-        }
+    @Model.useDebug()
+    tick() {
+        this.$rawStateMap.time += 1;
     }
 
     spawn(config: AnimalModel['config']) {
         const {
             config: $config,
             isAbort
-        } = this.$event.base.prevSpawn.emit({
+        } = this.$eventMap.prevSpawn.emit({
             config
         });
         if (isAbort) {
@@ -82,15 +84,14 @@ export class RootModel extends Model<
             return;
         }
         const target: AnimalModel = this.$new($config);
-        this.$child.list.push(target);
-        this.$event.base.postSpawn.emit({
+        this.$childSet.push(target);
+        this.$eventMap.postSpawn.emit({
             target
         });
     }
 
-    activate() {
-        console.log('activate', this, this.$activateAll);
-        this.$activateAll();
+    init() {
+        this.$init();
     }
 
 }

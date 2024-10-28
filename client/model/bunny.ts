@@ -6,7 +6,7 @@ export type BunnyState = {
     curDensity: number;
 }
 
-@Model.$useProduct('bunny')
+@Model.useProduct('bunny')
 export class BunnyModel extends IAnimalModel<
     'bunny',
     BunnyState
@@ -19,56 +19,62 @@ export class BunnyModel extends IAnimalModel<
     ) {
         super({
             ...config,
-            child: {
-                ...config.child,
-                dict: config.child?.dict || {}
-            },
-            state: {
+            childMap: {},
+            stateMap: {
                 curAge: 0,
                 maxAge: 100,
+                isAlive: true,
                 curDensity: 0,
-                ...config.state
+                ...config.stateMap
             }
         }, parent);
     }
 
-    protected $activate(): void {
-        console.log(this.parent.child.list);
-        for (const target of this.parent.child.list) {
-            this.#handleSpawn({ target });
+    @Model.onInit()
+    protected $onInit(): void {
+        console.log('BunnyModel init');
+        for (const target of this.parent.childSet) {
+            this.#onSpawn({ target });
         }
-        this.parent.event.base.postSpawn.on(
+        this.parent.eventMap.postSpawn.bind(
             this,
-            this.#handleSpawn
+            this.#onSpawn
         );
     }
 
-    #handleSpawn(form: {
+    #onSpawn(form: {
         target: Readonly<AnimalModel>;
     }) {
-        console.log('handleSpawn', form.target);
         if (
             form.target !== this &&
             form.target instanceof BunnyModel
         ) {
-            form.target.event.state.edit.curDensity.on(
+            form.target.stateGetEventMap.curDensity.bind(
                 this,
-                (form) => ({
+                form => ({
                     ...form,
-                    next: form.next + 1
+                    cur: form.cur + 1
                 })
             );
         }
     }
 
-    @Model.$useDebug()
+    @Model.onUninit()
+    protected $onUninit() {
+        console.log('BunnyModel uninit');
+    }
+
+    @IAnimalModel.isAlive()
+    @RootModel.useTimeline()
+    @Model.useDebug()
     reproduce() {
         this.parent.spawn({
-            code: 'bunny'
+            type: 'bunny'
         });
     }
 
-    @Model.$useDebug()
+    @RootModel.useTimeline()
+    @Model.useDebug()
     sacrifice() {
         this.$unmount();
     }

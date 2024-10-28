@@ -14,7 +14,8 @@ export type KittyState = {
     gender: Gender;
 }
 
-@Model.$useProduct('kitty')
+@Model.useSingleton
+@Model.useProduct('kitty')
 export class KittyModel extends IAnimalModel<
     'kitty',
     KittyState
@@ -27,20 +28,18 @@ export class KittyModel extends IAnimalModel<
     ) {
         super({
             ...config,
-            child: {
-                ...config.child,
-                dict: config.child?.dict || {}
-            },
-            state: {
+            childMap: {},
+            stateMap: {
                 curAge: 0,
                 maxAge: 100,
+                isAlive: true,
                 gender: Random.type(
                     Gender.Femail,
                     Gender.Male,
                     Gender.Unknown
                 ),
                 name: 'Kitty',
-                ...config.state
+                ...config.stateMap
             }
         }, parent);
     }

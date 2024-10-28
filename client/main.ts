@@ -1,7 +1,7 @@
 import { App } from "./app";
 
 async function main() {
-    const app = new App();
+    const app = App.instance;
     await app.init();
 }
 
