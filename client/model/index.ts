@@ -1,8 +1,9 @@
-import { AppStatus, type App } from "../app";
-import { Base, KeyOf, ValueOf } from "../utils/base";
+import type { App } from "../app";
+import { Base, KeyOf } from "../utils/base";
 import { Event } from "../utils/event";
 import { Delegator } from "../utils/proxy";
 import { ControlledArray, ControlledProxy } from "../utils/proxy/controlled";
+import { RootModel } from "./root";
 
 export namespace Model {
     export type Class<M extends Model = Model> = new (
@@ -169,72 +170,62 @@ export class Model<
     D extends Record<string, Model> = Base.Map,
     L extends Model = any,
 > {
-    static readonly #singletonSet = new Set<Function>();
-    protected static useSingleton<T extends Base.Class>(
-        IConstructor: T
-    ) {
-        return class extends IConstructor {
-            constructor(...config: any) {
-                if (Model.#singletonSet.has(IConstructor)) {
-                    throw new Error();
+    protected static _useRoot() {
+        return function(
+            IConstructor: Model.Class
+        ): any {
+            return class extends IConstructor {
+                constructor(config: Model['config'], parent: App) {
+                    super(config, parent);
+                    this._init();
                 }
-                Model.#singletonSet.add(IConstructor);
-                super(...config);
-            }
+
+            };
         };
     }
 
     // Product
-    static readonly #productReg: Record<string, Model.Class> = {};
-    protected static useProduct<
+    private static readonly _productReg: Record<string, Model.Class> = {};
+    protected static _useProduct<
         T extends string,
         M extends Model<T>
     >(type: T) {
         return function (target: Model.Class<M>) {
-            console.log(
-                'useProduct', 
-                type,
-                target
-            );
-            Model.#productReg[type] = target;
+            Model._productReg[type] = target;
         };
     }
 
     // Debug
-    static readonly #debugReg: Map<Function, string[]> = new Map();
+    static readonly _debugReg: Map<Function, string[]> = new Map();
     protected static useDebug() {
         return function(
             target: Model,
             key: string,
             descriptor: TypedPropertyDescriptor<Base.Function>
         ): TypedPropertyDescriptor<Base.Function> {
-            console.log(
-                'useDebug',
-                target.constructor.name,
-                key
-            );
-            const keys = Model.#debugReg.get(
+            const keys = Model._debugReg.get(
                 target.constructor
             ) || [];
             keys.push(key);
-            Model.#debugReg.set(target.constructor, keys);
+            Model._debugReg.set(target.constructor, keys);
             return descriptor;
         };
     }
 
 
     // Activate
-    static readonly #initReg: Map<Function, string[]> = new Map();
-    static readonly #uninitReg: Map<Function, string[]> = new Map();
+    private static readonly _initReg: Map<Function, string[]> = new Map();
+    private static readonly _uninitReg: Map<Function, string[]> = new Map();
+
     protected static onInit() {
         return function(
             target: Model,
             key: string,
             descriptor: TypedPropertyDescriptor<Base.Function>
         ): TypedPropertyDescriptor<Base.Function> {
-            const keys = Model.#initReg.get(target.constructor) || [];
+            const keys = Model._initReg.get(target.constructor) || [];
             keys.push(key);
-            Model.#initReg.set(target.constructor, keys);
+            Model._initReg.set(target.constructor, keys);
             return descriptor;
         };
     }
@@ -244,37 +235,46 @@ export class Model<
             key: string,
             descriptor: TypedPropertyDescriptor<Base.Function>
         ): TypedPropertyDescriptor<Base.Function> {
-            const keys = Model.#uninitReg.get(target.constructor) || [];
+            const keys = Model._uninitReg.get(target.constructor) || [];
             keys.push(key);
-            Model.#uninitReg.set(target.constructor, keys);
+            Model._uninitReg.set(target.constructor, keys);
             return descriptor;
         };
     }
 
 
     // Ticket 
-    static #timestamp = Date.now(); 
-    static #ticket = 36 ** 2;
+    private static _timestamp = Date.now(); 
+    private static _ticket = 36 ** 2;
+
     static get ticket(): string {
         let now = Date.now();
-        const ticket = Model.#ticket;
-        Model.#ticket += 1;
-        if (Model.#ticket > 36 ** 3 - 1) {
-            Model.#ticket = 36 ** 2;
-            while (now === Model.#timestamp) {
+        const ticket = Model._ticket;
+        Model._ticket += 1;
+        if (Model._ticket > 36 ** 3 - 1) {
+            Model._ticket = 36 ** 2;
+            while (now === Model._timestamp) {
                 now = Date.now();
             }
         }
-        this.#timestamp = now;
+        this._timestamp = now;
         return now.toString(36) + ticket.toString(36);
+    }
+
+    
+    readonly app: App;
+    readonly parent: Model | App;
+    get root(): RootModel {
+        if (!this.app.root) {
+            throw new Error('Root not found');
+        }
+        return this.app.root;
     }
 
 
     // Constructor
     readonly code: string;
     readonly type: T;
-    readonly app: App;
-    readonly parent: Model | App;
     constructor(
         config: Model.Config<T, S, D, L>,
         parent: Model | App
@@ -286,179 +286,174 @@ export class Model<
         this.code = config.code || Model.ticket;
         this.type = config.type ;
 
-        this.$rawStateMap = Delegator.controlledMap(
+        this._rawStateMap = Delegator.controlledMap(
             config.stateMap,
-            this.#onStateMod.bind(this)
+            this._onStateMod.bind(this)
         );
-        this.#curStateMap = { ...this.$rawStateMap };
-        this.curStateMap = Delegator.readonlyMap(this.#curStateMap);
+        this._curStateMap = { ...this._rawStateMap };
+        this.curStateMap = Delegator.readonlyMap(this._curStateMap);
 
         const childMap = {} as D;
         for (const key in config.childMap) {
             const value = config.childMap[key];
             if (value) {
-                childMap[key] = this.$new(value);
+                childMap[key] = this._new(value);
             }
         }
-        this.$childMap = ControlledProxy(
+        this._childMap = ControlledProxy(
             childMap, 
-            this.#onChildMod.bind(this)
+            this._onChildMod.bind(this)
         );
-        this.childMap = Delegator.readonlyMap(this.$childMap);
+        this.childMap = Delegator.readonlyMap(this._childMap);
 
-        this.$childSet = ControlledArray<L>(
-            config.childSet?.map(c => this.$new(c)) || [],
-            this.#onChildMod.bind(this, '')
+        this._childSet = ControlledArray<L>(
+            config.childSet?.map(c => this._new(c)) || [],
+            this._onChildMod.bind(this, '')
         );
-        this.childSet = Delegator.readonlyMap(this.$childSet);
+        this.childSet = Delegator.readonlyMap(this._childSet);
 
-        this.$eventMap = Delegator.automicMap(() => new Event(
-            this,
-            this.#onModelMod.bind(this)
-        ));
-        this.eventMap = Delegator.automicMap(key => this.$eventMap[key].proxy);
-
-        this.$stateModEventMap = Delegator.automicMap(() => new Event(
-            this,
-            this.#onModelMod.bind(this)
-        ));
-        this.stateModEventMap = Delegator.automicMap(key => (
-            this.$stateModEventMap[key].proxy
-        ));
-
-        this.$childSetModEvent = new Event(
-            this,
-            this.#onModelMod.bind(this)
-        );
-        this.childSetModEvent = this.$childSetModEvent.proxy;
-
-        this.$childModEventMap = Delegator.automicMap(() => new Event(
-            this,
-            this.#onModelMod.bind(this)
-        ));
-        this.childModEventMap = Delegator.automicMap(key => (
-            this.$childModEventMap[key].proxy
-        ));
-
-
-        this.#setterSet = [];
-
-        this.#debugMap = {};
         let constructor: any = this.constructor;
         // eslint-disable-next-line @typescript-eslint/no-this-alias
         const instance: any = this;
         while (constructor.__proto__ !== null) {
-            for (const key of Model.#debugReg.get(constructor) || []) {
-                this.#debugMap[key] = instance[key];
+            for (const key of Model._debugReg.get(constructor) || []) {
+                this._debugMap[key] = instance[key];
             }
-            for (const key of Model.#initReg.get(constructor) || []) {
-                this.#initSet.push(instance[key].bind(this));
+            for (const key of Model._initReg.get(constructor) || []) {
+                this._initSet.push(instance[key].bind(this));
             }
-            for (const key of Model.#uninitReg.get(constructor) || []) {
-                this.#uninitSet.push(instance[key].bind(this));
+            for (const key of Model._uninitReg.get(constructor) || []) {
+                this._uninitSet.push(instance[key].bind(this));
             }
             constructor = constructor.__proto__;
         }
     }
 
     // Refer
-    readonly #referSet: Model[] = [];
-    readonly #referMap: Record<string, Model[] | Model> = {};
+    private readonly _referSet: Model[] = [];
+    private readonly _referMap: Record<string, Model[] | Model> = {};
     
     connect(refer: Model) {
-        if (!this.#referSet.includes(refer)) {
-            this.#referSet.push(refer);   
+        if (!this._referSet.includes(refer)) {
+            this._referSet.push(refer);   
         } 
     }
 
-    #unconnect(refer: Model) {
-        const index = this.#referSet.indexOf(refer);
+    private _unconnect(refer: Model) {
+        const index = this._referSet.indexOf(refer);
         if (index < 0) return;
-        this.#referSet.splice(index, 1);
+        this._referSet.splice(index, 1);
         const events = [
-            ...Object.values(this.$eventMap),
-            ...Object.values(this.$stateGetEventMap),
-            ...Object.values(this.$stateModEventMap),
-            ...Object.values(this.$childModEventMap),
-            this.$childSetModEvent
+            ...Object.values(this._eventMap),
+            ...Object.values(this._stateGetEventMap),
+            ...Object.values(this._stateModEventMap),
+            ...Object.values(this._childModEventMap),
+            this._childSetModEvent
         ];
         for (const event of events) {
             event.uninit(refer);
         }
         console.log(
             'unconnect', 
-            this.#referSet
+            this._referSet
         );
     }
 
     // Event
-    protected readonly $eventMap: Model.EventMap<E>;
-    readonly eventMap: Model.EventProxyMap<E>;
+    protected readonly _eventMap: Model.EventMap<E> = 
+        Delegator.automicMap(() => new Event(
+            this,
+            this._onModelMod.bind(this)
+        ));
+    readonly eventMap: Model.EventProxyMap<E> = 
+        Delegator.automicMap(key => (
+            this._eventMap[key].proxy
+        ));
 
-    protected readonly $stateGetEventMap: 
+    protected readonly _stateGetEventMap: 
         Model.StateGetEventMap<typeof this, S> = 
             Delegator.automicMap(key => new Event(
                 this,
-                this.#onStateMod.bind(this, key)
+                this._onStateMod.bind(this, key)
             ));
     readonly stateGetEventMap: 
         Model.StateGetEventProxyMap<typeof this, S> = 
             Delegator.automicMap(key => (
-                this.$stateGetEventMap[key].proxy
+                this._stateGetEventMap[key].proxy
             ));
 
-    protected readonly $stateModEventMap: 
-        Model.StateModEventMap<typeof this, S>;
+    protected readonly _stateModEventMap: 
+        Model.StateModEventMap<typeof this, S> = 
+            Delegator.automicMap(() => new Event(
+                this,
+                this._onModelMod.bind(this)
+            ));
     readonly stateModEventMap: 
-        Model.StateModEventProxyMap<typeof this, S>;
+        Model.StateModEventProxyMap<typeof this, S> =
+            Delegator.automicMap(key => (
+                this._stateModEventMap[key].proxy
+            ));
 
-    protected readonly $childSetModEvent: 
-        Model.ChildSetModEvent<typeof this, L>;
+    protected readonly _childSetModEvent: 
+        Model.ChildSetModEvent<typeof this, L> = 
+            new Event(
+                this,
+                this._onModelMod.bind(this)
+            );
     readonly childSetModEvent: 
-        Model.ChildSetModEventProxy<typeof this, L>;
+        Model.ChildSetModEventProxy<typeof this, L> = 
+            this._childSetModEvent.proxy;
 
-    protected readonly $childModEventMap: 
-        Model.ChildModEventMap<typeof this, D>;
+    protected readonly _childModEventMap: 
+        Model.ChildModEventMap<typeof this, D> = 
+            Delegator.automicMap(() => new Event(
+                this,
+                this._onModelMod.bind(this)
+            ));
     readonly childModEventMap: 
-        Model.ChildModEventProxyMap<typeof this, D>;
+        Model.ChildModEventProxyMap<typeof this, D> = 
+            Delegator.automicMap(key => (
+                this._childModEventMap[key].proxy
+            ));
+
 
     // State
-    readonly #curStateMap: S;
+    protected readonly _rawStateMap: S;
+    private readonly _curStateMap: S;
     readonly curStateMap: Readonly<S>;
-    protected readonly $rawStateMap: S;
 
-    #onStateMod<K extends KeyOf<S>>(
+    private _onStateMod<K extends KeyOf<S>>(
         key: K,
         prev?: S[K]
     ) {
         if (prev === undefined) {
-            prev = this.#curStateMap[key];
+            prev = this._curStateMap[key];
         }
-        const raw = this.$rawStateMap[key];
+        const raw = this._rawStateMap[key];
         console.log('onStateGet', key, raw, prev);
-        const result = this.$stateGetEventMap[key].emit({
+        const result = this._stateGetEventMap[key].emit({
             model: this,
             raw: raw,
             cur: raw
         });
         const next = result.cur;
-        this.#curStateMap[key] = next;
+        this._curStateMap[key] = next;
         if (prev !== next) {
             console.log('onStateMod', key, prev, next);
-            this.$stateModEventMap[key].emit({
+            this._stateModEventMap[key].emit({
                 model: this,
                 prev,
                 next
             });
         }
-        this.#onModelMod();
+        this._onModelMod();
     }
 
     // Serialize
     get config(): Model.RawConfig<T, S, D, L> {
         const childMap = {} as Model.ChildConfigMap<D>;
-        for (const key in this.$childMap) {
-            const value = this.$childMap[key];
+        for (const key in this._childMap) {
+            const value = this._childMap[key];
             if (value) {
                 childMap[key] = value.config;
             }
@@ -466,16 +461,16 @@ export class Model<
         return {
             code: this.code,
             type: this.type,
-            stateMap: this.$rawStateMap,
-            childSet: this.$childSet.map(c => c.config),
+            stateMap: this._rawStateMap,
+            childSet: this._childSet.map(c => c.config),
             childMap: childMap
         };
     }
 
-    protected $new<M extends Model>(
+    protected _new<M extends Model>(
         config: M['config']
     ): M {
-        const Type = Model.#productReg[config.type];
+        const Type = Model._productReg[config.type];
         if (!Type) {
             throw new Error(`Model ${config.type} not found`);
         }
@@ -483,96 +478,95 @@ export class Model<
     }
 
     // child
-    protected readonly $childSet: L[];
-    protected readonly $childMap: D;
+    protected readonly _childSet: L[];
+    protected readonly _childMap: D;
     readonly childSet: Readonly<L[]>;
     readonly childMap: Readonly<D>;
 
-    #onChildMod(
+    private _onChildMod(
         key: string,
         value: Model,
         isNew: boolean
     ) {
         if (!value) return;
-        if (isNew) value.$init();
-        else value.$uninit();
-        this.#onModelMod();
+        if (isNew) value._init();
+        else value._uninit();
+        this._onModelMod();
     }
     
-    protected $unmount() {
+    protected _unmount() {
         if (this.parent instanceof Model) {
-            for (const key in this.parent.$childMap) {
-                if (this.parent.$childMap[key] === this) {
-                    delete this.parent.$childMap[key];
+            for (const key in this.parent._childMap) {
+                if (this.parent._childMap[key] === this) {
+                    delete this.parent._childMap[key];
                     return;
                 }
             }
-            const index = this.parent.$childSet.indexOf(this);
+            const index = this.parent._childSet.indexOf(this);
             if (index >= 0) {
-                this.parent.$childSet.splice(index, 1);
+                this.parent._childSet.splice(index, 1);
                 return;
             }
         }
     }
 
     // Lifecycle
-    #initSet: Base.Function[] = [];
-    #uninitSet: Base.Function[] = [];
-    protected $init() {
-        for (const init of this.#initSet) {
+    private readonly _initSet: Base.Function[] = [];
+    private readonly _uninitSet: Base.Function[] = [];
+    private _init() {
+        for (const init of this._initSet) {
             init();
         }
         for (const child of [
-            ...Object.values(this.$childMap),
-            ...this.$childSet
+            ...Object.values(this._childMap),
+            ...this._childSet
         ]) {
-            child.$init();
+            child._init();
         }
     }
-
-    protected $uninit() {
-        for (const uninit of this.#uninitSet) { 
+    private _uninit() {
+        for (const uninit of this._uninitSet) { 
             uninit();
         }
         for (const child of [
-            ...Object.values(this.$childMap),
-            ...this.$childSet
+            ...Object.values(this._childMap),
+            ...this._childSet
         ]) {
-            child.$uninit();
+            child._uninit();
         }
         for (const refer of [
-            ...this.#referSet
+            ...this._referSet
         ]) {
-            refer.#unconnect(this);
-            this.#unconnect(refer);
+            refer._unconnect(this);
+            this._unconnect(refer);
         }
     }
 
     // inspector
-    readonly #debugMap: Record<string, Base.Function>;
-    readonly #setterSet: Array<React.Dispatch<
+    private readonly _debugMap: Record<string, Base.Function> = {};
+    private readonly _setterSet: Array<React.Dispatch<
         React.SetStateAction<Model.Info<S, E, D, L>>
-    >>;
-    #onModelMod() {
-        for (const setInfo of this.#setterSet) {
+    >> = [];
+    private _onModelMod() {
+        for (const setInfo of this._setterSet) {
             setInfo({
                 stateGetEventMap: {
-                    ...this.$stateGetEventMap
+                    ...this._stateGetEventMap
                 },
                 stateModEventMap: {
-                    ...this.$stateModEventMap
+                    ...this._stateModEventMap
                 },
                 childModEventMap: {
-                    ...this.$childModEventMap
+                    ...this._childModEventMap
                 },
-                childSetModEvent: this.$childSetModEvent,
-                childMap: { ...this.$childMap },
-                childSet: [ ...this.$childSet ],
-                rawStateMap: { ...this.$rawStateMap },
-                curStateMap: { ...this.#curStateMap },
-                eventMap: { ...this.$eventMap },
-                referSet: [ ...this.#referSet ],
-                debugMap: { ...this.#debugMap }
+                childSetModEvent: this._childSetModEvent,
+                childMap: { ...this._childMap },
+                childSet: [ ...this._childSet ],
+                rawStateMap: { ...this._rawStateMap },
+                curStateMap: { ...this._curStateMap },
+                eventMap: { ...this._eventMap },
+                referSet: [ ...this._referSet ],
+                debugMap: { ...this._debugMap }
             });
         }
     }
@@ -581,12 +575,12 @@ export class Model<
             React.SetStateAction<Model.Info<S, E, D, L>>
         >
     ) => {
-        this.#setterSet.push(setter);
-        this.#onModelMod();
+        this._setterSet.push(setter);
+        this._onModelMod();
         return () => {
-            const index = this.#setterSet.indexOf(setter);
+            const index = this._setterSet.indexOf(setter);
             if (index < 0) return;
-            this.#setterSet.splice(index, 1);
+            this._setterSet.splice(index, 1);
         };
     };
 }

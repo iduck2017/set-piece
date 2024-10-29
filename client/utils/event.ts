@@ -9,38 +9,34 @@ export namespace Event {
 }
 
 export class Event<E> {
-    readonly #listener: () => void;
-    readonly #handlerSet: Array<Readonly<[ 
+    private readonly _listener: () => void;
+    private readonly _handlerSet: Array<Readonly<[ 
         Model, 
         Event.Handler<E> 
-    ]>>;
+    ]>> = [];
     get handlerSet() {
-        return [ ... this.#handlerSet ];
+        return [ ... this._handlerSet ];
     }
 
     readonly parent: Model;
-    readonly proxy: Event.Proxy<E>;
+    readonly proxy: Event.Proxy<E> = {
+        bind: this.bind.bind(this),
+        unbind: this.unbind.bind(this)
+    };
     
     constructor(
         parent: Model,
         handleUpdate: () => void
     ) {
-        this.#handlerSet = [];
-        this.#listener = handleUpdate;
-
+        this._listener = handleUpdate;
         this.parent = parent;
-        this.proxy = {
-            bind: this.bind.bind(this),
-            unbind: this.unbind.bind(this)
-        };
     }
 
     bind(refer: Model, handler: Event.Handler<E>) {
-        this.#handlerSet.push([ refer, handler ]);
+        this._handlerSet.push([ refer, handler ]);
         refer.connect(this.parent);
         this.parent.connect(refer);
-        this.#listener();
-        // console.log('bind', this, this.parent, this.#handlerSet);
+        this._listener();
     }
 
     unbind(refer: Model, handler: Event.Handler<E>) {
@@ -48,27 +44,26 @@ export class Event<E> {
     }
 
     emit(form: E): E {
-        // console.log('emit', form, this.parent, this, this.#handlerSet);
-        let $event = form;
-        const handlerSet = [ ...this.#handlerSet ];
+        let _event = form;
+        const handlerSet = [ ...this._handlerSet ];
         for (const [ refer, handler ] of handlerSet) {
-            const result = handler.call(refer, $event);
-            if (result) $event = result;
+            const result = handler.call(refer, _event);
+            if (result) _event = result;
         }
-        return $event;
+        return _event;
     }
 
     uninit(refer?: Model, handler?: Event.Handler<E>) {
         while (true) {
-            const index = this.#handlerSet.findIndex(item => {
-                const [ $refer, $handler ] = item;
-                if (handler && $handler !== handler) return false;
-                if (refer && $refer !== refer) return false;
+            const index = this._handlerSet.findIndex(item => {
+                const [ _refer, _handler ] = item;
+                if (handler && _handler !== handler) return false;
+                if (refer && _refer !== refer) return false;
                 return true;
             });
             if (index < 0) break;
-            this.#handlerSet.splice(index, 1);
+            this._handlerSet.splice(index, 1);
         }
-        this.#listener();
+        this._listener();
     }
 }

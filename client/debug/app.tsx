@@ -1,15 +1,16 @@
 import React, { useEffect, useState } from "react";
-import { App, AppStatus } from "../app";
+import { App } from "../app";
 import { ModelComp } from ".";
-import { ArchieveData } from "../service/file";
+import { FileInfo } from "../service/file";
+import { RootModel } from "../model/root";
 
 export function AppComp(props: {
     app: App
 }) {
     const { app } = props;
-    const [ status, setStatus ] = useState<AppStatus>(app.status);
+    const [ root, setRoot ] = useState<RootModel>();
     const [ archieves, setArchieves ] = useState<
-        Readonly<ArchieveData[]>
+        Readonly<FileInfo[]>
     >(app.fileService.data);
   
     const createArchieve = async () => {
@@ -19,7 +20,7 @@ export function AppComp(props: {
 
     const startGame = async (index: number) => {
         await app.start(index);
-        setStatus(app.status);
+        setRoot(app.root);
     };
 
     const saveArchieve = () => {
@@ -28,7 +29,7 @@ export function AppComp(props: {
 
     const quitGame = async () => {
         await app.quit();
-        setStatus(app.status);
+        setRoot(undefined);
     };
 
     useEffect(() => {
@@ -41,7 +42,7 @@ export function AppComp(props: {
         // })();
     }, []);
 
-    if (status === AppStatus.UNMOUNTED) {
+    if (!root) {
         return <div>
             <button onClick={createArchieve}>
                 new
@@ -55,9 +56,7 @@ export function AppComp(props: {
                 </button>
             ))}
         </div>;
-    }
-
-    if (status === AppStatus.MOUNTED && app.root) {
+    } else {
         return <div>
             <button onClick={saveArchieve}>
                 save
@@ -65,7 +64,7 @@ export function AppComp(props: {
             <button onClick={quitGame}>
                 quit
             </button>
-            <ModelComp model={app.root} />
+            <ModelComp model={root} />
         </div>;
     }
 }

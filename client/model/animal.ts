@@ -2,7 +2,7 @@ import { Model } from ".";
 import { Base } from "../utils/base";
 import { BunnyModel } from "./bunny";
 import { KittyModel } from "./kitty";
-import type { RootModel } from "./root";
+import { RootModel } from "./root";
 
 export type AnimalModel = 
     BunnyModel |
@@ -49,9 +49,10 @@ export abstract class IAnimalModel<
 
     declare parent: RootModel;
     
+    @RootModel.useTime()
     @Model.useDebug()
     growup() {
-        this.$rawStateMap.curAge += 1;
+        this._rawStateMap.curAge += 1;
     }
 }
 

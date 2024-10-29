@@ -1,37 +1,40 @@
-import { Service } from ".";
 import { App } from "../app";
 import { RootModel } from "../model/root";
+import { Global } from "../utils/global";
 import { Delegator } from "../utils/proxy";
 
 export const ARCHIEVE_SAVE_PATH = 'archieve';
 
-export type ArchieveData = {
+export type FileInfo = {
     id: string
     name: string,
     progress: number
 }
 
 
-@Service.useSingleton
-export class FileService extends Service {
+@Global.useSingleton
+export class FileService {
 
-    #index?: number;
-    readonly #data: ArchieveData[];
-    readonly data: Readonly<ArchieveData[]>; 
+    private _index?: number;
+
+    readonly app: App;
+
+    private readonly _data: FileInfo[];
+    readonly data: Readonly<FileInfo[]>; 
 
     constructor(app: App) {
-        super(app);
-        this.#data = [];
-        this.data = Delegator.readonlyMap(this.#data);
+        this.app = app;
+        this._data = [];
+        this.data = Delegator.readonlyMap(this._data);
     }
 
-    init(data: Readonly<ArchieveData[]>) {
-        this.#data.push(...data);     
+    init(data: Readonly<FileInfo[]>) {
+        this._data.push(...data);     
     }
 
     async new(): Promise<RootModel['config']> {
         const id = Date.now().toString(36);
-        this.#data.push({
+        this._data.push({
             id,
             name: 'hello',
             progress: 0
@@ -48,8 +51,8 @@ export class FileService extends Service {
     async load(
         index: number
     ): Promise<RootModel['config']> {
-        this.#index = index;
-        const archieve = this.#data[index];
+        this._index = index;
+        const archieve = this._data[index];
         const path = `${ARCHIEVE_SAVE_PATH}_${archieve.id}`;
         const raw = await localStorage.getItem(path);
         if (!raw) throw new Error();
@@ -57,28 +60,28 @@ export class FileService extends Service {
     }
 
     async remove(index: number) {
-        const slot = this.#data[index];
+        const slot = this._data[index];
         const path = `${ARCHIEVE_SAVE_PATH}_${slot.id}`;
-        this.#data.splice(index, 1);
+        this._data.splice(index, 1);
         await localStorage.removeItem(path);
         await this.app.save();
     }
 
     async unload() {
-        this.#index = undefined;
+        this._index = undefined;
     }
 
     async save() {
-        const index = this.#index;
+        const index = this._index;
         const rootModel = this.app.root;
         if (!rootModel || index === undefined) {
             throw new Error();
         }
-        const slot = this.#data[index];
+        const slot = this._data[index];
         const path = `${ARCHIEVE_SAVE_PATH}_${slot.id}`;
         const record = rootModel.config;
         // 更新档案信息
-        this.#data[index] = {
+        this._data[index] = {
             ...slot,
             progress: rootModel.curStateMap.time
         };

@@ -11,7 +11,7 @@ export type BunnyEvent = {
     reproduce: number;
 }
 
-@Model.useProduct('bunny')
+@Model._useProduct('bunny')
 export class BunnyModel extends IAnimalModel<
     'bunny',
     BunnyState
@@ -36,18 +36,18 @@ export class BunnyModel extends IAnimalModel<
     }
 
     @Model.onInit()
-    protected $onInit(): void {
+    protected _onInit(): void {
         console.log('BunnyModel init');
         for (const target of this.parent.childSet) {
-            this.#onSpawn({ target });
+            this._onSpawn({ target });
         }
         this.parent.eventMap.postSpawn.bind(
             this,
-            this.#onSpawn
+            this._onSpawn
         );
     }
 
-    #onSpawn(form: {
+    private _onSpawn(form: {
         target: Readonly<AnimalModel>;
     }) {
         if (
@@ -66,22 +66,22 @@ export class BunnyModel extends IAnimalModel<
     }
 
     @Model.onUninit()
-    protected $onUninit() {
+    protected _onUninit() {
         console.log('BunnyModel uninit');
     }
 
-    @IAnimalModel.isAlive()
-    @RootModel.useTimeline()
     @Model.useDebug()
+    @IAnimalModel.isAlive()
+    @RootModel.useTime()
     reproduce() {
         this.parent.spawn({
             type: 'bunny'
         });
     }
 
-    @RootModel.useTimeline()
     @Model.useDebug()
+    @RootModel.useTime()
     sacrifice() {
-        this.$unmount();
+        this._rawStateMap.isAlive = false;
     }
 }

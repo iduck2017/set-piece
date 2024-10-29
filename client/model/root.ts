@@ -8,8 +8,9 @@ type RootState = {
     time: number
 }
 
+@Model._useProduct('root')
 @Global.useSingleton
-@Model.useProduct('root')
+@Model._useRoot()
 export class RootModel extends Model<
     'root',
     RootState,
@@ -25,24 +26,18 @@ export class RootModel extends Model<
     Record<never, never>,
     AnimalModel
 > {
-    private static $foo = 3;
-    static useTimeline(duration?: number) {
+    static useTime(duration?: number) {
         return function (
-            target: unknown,
+            target: unknown, 
             key: string,
             descriptor: TypedPropertyDescriptor<Base.Function>
         ): TypedPropertyDescriptor<Base.Function> {
-            console.log(
-                'useTimeline',
-                target,
-                key
-            );
             const original = descriptor.value;
             descriptor.value = function(
                 this: Model, 
                 ...args
             ) {
-                this.app.root.$rawStateMap.time += duration || 1;
+                this.root._rawStateMap.time += duration || 1;
                 return original?.apply(this, args);
             };
             return descriptor;
@@ -71,30 +66,24 @@ export class RootModel extends Model<
 
     @Model.useDebug()
     tick() {
-        this.$rawStateMap.time += 1;
+        this._rawStateMap.time += 1;
     }
 
     spawn(config: AnimalModel['config']) {
         const {
-            config: $config,
+            config: _config,
             isAbort
-        } = this.$eventMap.prevSpawn.emit({
+        } = this._eventMap.prevSpawn.emit({
             config
         });
         if (isAbort) {
             console.log('Aborted spawn');
             return;
         }
-        const target: AnimalModel = this.$new($config);
-        this.$childSet.push(target);
-        console.log('spawn', target.code);
-        this.$eventMap.postSpawn.emit({
+        const target: AnimalModel = this._new(_config);
+        this._childSet.push(target);
+        this._eventMap.postSpawn.emit({
             target
         });
     }
-
-    init() {
-        this.$init();
-    }
-
 }

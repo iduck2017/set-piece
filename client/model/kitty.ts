@@ -1,4 +1,5 @@
 import { Model } from ".";
+import { Global } from "../utils/global";
 import { Random } from "../utils/random";
 import { IAnimalModel } from "./animal";
 import { RootModel } from "./root";
@@ -14,8 +15,8 @@ export type KittyState = {
     gender: Gender;
 }
 
-@Model.useSingleton
-@Model.useProduct('kitty')
+@Model._useProduct('kitty')
+@Global.useSingleton
 export class KittyModel extends IAnimalModel<
     'kitty',
     KittyState
@@ -26,6 +27,7 @@ export class KittyModel extends IAnimalModel<
         config: KittyModel['config'],
         parent: RootModel
     ) {
+        console.log('KittyModel constructor');
         super({
             ...config,
             childMap: {},
