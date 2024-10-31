@@ -1,4 +1,4 @@
-import { Base, KeyOf, ValueOf } from "./base";
+import { Base, KeyOf, ValueOf } from "../type/base";
 
 export namespace Delegator {
     export function automicMap<

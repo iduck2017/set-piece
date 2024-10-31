@@ -4,15 +4,26 @@ const fs = require('fs');
 const HtmlWebpackPlugin=require('html-webpack-plugin');
 const { CleanWebpackPlugin } = require('clean-webpack-plugin');
 
-const dir = fs
-    .readdirSync(path.resolve('client/model'))
-    .map(file => `./client/model/${file}`)
+
+/** 循环遍历model文件夹 */
+function getFileName(dirname) {
+    const pathname = path.resolve(__dirname, dirname)
+    const filenames = fs.readdirSync(pathname);
+    const result = [];
+    filenames.forEach(filename => {
+        const filePath = `${dirname}/${filename}`;
+        const stat = fs.statSync(filePath);
+        if (stat.isFile()) {
+            result.push(filePath);
+        } else if (stat.isDirectory()) {
+            result.push(...getFileName(filePath));
+        }
+    });
+    return result;
+}
 
 module.exports = {
-    entry: [
-        './client/main.ts',
-        ...dir
-    ],
+    entry: getFileName('./client/model'),
     mode: "development",
     output: {
         filename: 'bundle.[hash:4].js',

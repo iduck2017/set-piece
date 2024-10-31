@@ -1,8 +1,9 @@
 /* eslint-disable max-len */
 import React, { ReactNode, useEffect, useState } from "react";
-import "./index.css";
+import "./model.css";
 import { Model } from "../model";
-import { Base } from "../utils/base";
+import { Base } from "../type/base";
+import { ModelDefine } from "../type/define";
 
 export type VisibleInfo = {
     model: boolean;
@@ -49,12 +50,14 @@ const FolderComp = (props: {
     </>;
 };
 
-export function ModelComp(props: {
-    model: Readonly<Model>,
+export function ModelComp<
+    D extends ModelDefine
+>(props: {
+    model: Readonly<Model<D>>,
 }) {
     const { model } = props;
 
-    const [ info, setInfo ] = useState<Model.Info>();
+    const [ info, setInfo ] = useState<Model.Info<D>>();
     const [ visible, setVisible ] = useState<VisibleInfo>({
         model: true,
         state: true,
@@ -65,7 +68,12 @@ export function ModelComp(props: {
     
     const [ refer, setRefer ] = useState<Readonly<Model>>();
 
-    const formatValue = (value: Base.Value) => {
+    const formatValue = (
+        value: Base.Value | Base.Value[]
+    ): string => {
+        if (value instanceof Array) {
+            return value.map(formatValue).join(', ');
+        }
         if (typeof value === 'string') return `"${value}"`;
         return `(${value})`;
     };

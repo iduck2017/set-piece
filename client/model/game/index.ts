@@ -1,30 +1,31 @@
-import { Model } from ".";
-import type { App } from "../app";
-import { Base } from "../utils/base";
-import { Global } from "../utils/global";
-import { AnimalModel } from "./animal";
+import { Model } from "..";
+import { App } from "../app";
+import { Base } from "../../type/base";
+import { Animal } from "./animal";
+import { RawModelDefine } from "../../type/define";
 
-type RootState = {
-    time: number
-}
-
-@Model._useProduct('root')
-@Global.useSingleton
-@Model._useRoot()
-export class RootModel extends Model<
-    'root',
-    RootState,
-    {
-        prevSpawn: {
-            config: AnimalModel['config']
-            isAbort?: boolean
+export type GameDefine = 
+    RawModelDefine<{
+        type: 'game',
+        stateMap: {
+            time: number
         },
-        postSpawn: {
-            target: AnimalModel
-        }
-    },
-    Record<never, never>,
-    AnimalModel
+        eventMap: {
+            prevSpawn: {
+                config: Animal['config']
+                isAbort?: boolean
+            },
+            postSpawn: {
+                target: Animal
+            }
+        },
+        childSet: Animal,
+    }>
+
+
+@Model.useProduct('game')
+export class Game extends Model<
+    GameDefine
 > {
     static useTime(duration?: number) {
         return function (
@@ -37,7 +38,7 @@ export class RootModel extends Model<
                 this: Model, 
                 ...args
             ) {
-                this.root._rawStateMap.time += duration || 1;
+                App.game._rawStateMap.time += duration || 1;
                 return original?.apply(this, args);
             };
             return descriptor;
@@ -45,8 +46,7 @@ export class RootModel extends Model<
     }
 
     constructor(
-        config: RootModel['config'],
-        parent: App
+        config: Game['config']
     ) {
         if (!config.childSet?.length) {
             config.childSet = [
@@ -61,7 +61,7 @@ export class RootModel extends Model<
                 time: 0,
                 ...config.stateMap
             }
-        }, parent);
+        });
     }
 
     @Model.useDebug()
@@ -69,7 +69,7 @@ export class RootModel extends Model<
         this._rawStateMap.time += 1;
     }
 
-    spawn(config: AnimalModel['config']) {
+    spawn(config: Animal['config']) {
         const {
             config: _config,
             isAbort
@@ -80,7 +80,7 @@ export class RootModel extends Model<
             console.log('Aborted spawn');
             return;
         }
-        const target: AnimalModel = this._new(_config);
+        const target: Animal = this._new(_config);
         this._childSet.push(target);
         this._eventMap.postSpawn.emit({
             target

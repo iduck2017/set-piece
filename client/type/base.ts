@@ -3,7 +3,7 @@ export namespace Base {
     export type Value = string | number | boolean
     export type Map = Record<Key, any>
     export type Set = Array<any>
-    export type Data = Record<Key, Value>
+    export type Data = Record<Key, Value | Value[]>
     export type Function = (...args: any) => any
     export type Class = new (...args: any) => any
 }
