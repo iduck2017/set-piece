@@ -1,4 +1,4 @@
-import { Model } from "../model";
+import { IModel } from "../model";
 
 export namespace Event {
     export type Handler<E> = (event: E) => E | void;
@@ -11,35 +11,35 @@ export namespace Event {
 export class Event<E> {
     private readonly _listener: () => void;
     private readonly _handlerSet: Array<Readonly<[ 
-        Model, 
+        IModel, 
         Event.Handler<E> 
     ]>> = [];
     get handlerSet() {
         return [ ... this._handlerSet ];
     }
 
-    readonly parent: Model;
+    readonly parent: IModel;
     readonly proxy: Event.Proxy<E> = {
         bind: this.bind.bind(this),
         unbind: this.unbind.bind(this)
     };
     
     constructor(
-        parent: Model,
+        parent: IModel,
         handleUpdate: () => void
     ) {
         this._listener = handleUpdate;
         this.parent = parent;
     }
 
-    bind(refer: Model, handler: Event.Handler<E>) {
+    bind(refer: IModel, handler: Event.Handler<E>) {
         this._handlerSet.push([ refer, handler ]);
         refer.connect(this.parent);
         this.parent.connect(refer);
         this._listener();
     }
 
-    unbind(refer: Model, handler: Event.Handler<E>) {
+    unbind(refer: IModel, handler: Event.Handler<E>) {
         this.uninit(refer, handler);
     }
 
@@ -53,7 +53,7 @@ export class Event<E> {
         return _event;
     }
 
-    uninit(refer?: Model, handler?: Event.Handler<E>) {
+    uninit(refer?: IModel, handler?: Event.Handler<E>) {
         while (true) {
             const index = this._handlerSet.findIndex(item => {
                 const [ _refer, _handler ] = item;

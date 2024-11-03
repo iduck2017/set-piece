@@ -1,14 +1,14 @@
-import { Model } from "../model";
+import { IModel } from "../model";
 import { Base } from "./base";
 
 export type ModelDefine = {
     type: string;
     stateMap: Base.Map;
     referMap: Base.Map;
-    childMap: Record<string, Model>;
-    childSet: Model;
+    childMap: Record<string, IModel>;
+    childSet: IModel;
     eventMap: Base.Map;
-    parent?: Model;
+    parent?: IModel;
 }
 
 export type RawModelDefine<
@@ -17,7 +17,7 @@ export type RawModelDefine<
     stateMap: Record<never, never>;
     referMap: Record<never, never>;
     childMap: Record<never, never>; 
-    childSet: Model;
+    childSet: IModel;
     eventMap: Record<never, never>;
-    parent: Model;
+    parent: IModel;
 }, keyof D> & D;

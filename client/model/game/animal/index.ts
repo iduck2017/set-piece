@@ -1,4 +1,4 @@
-import { Model } from "../..";
+import { IModel } from "../..";
 import { Bunny } from "./bunny";
 import { Kitty } from "./kitty";
 import { Game } from "..";
@@ -27,19 +27,19 @@ export type Animal =
 
 export abstract class IAnimal<
     D extends ModelDefine = ModelDefine
-> extends Model<
+> extends IModel<
     D & AnimalDefine
 > {
     protected static isAlive() {
-        return Model.useValidator<IAnimal>(
+        return IModel.useValidator<IAnimal>(
             model => model._rawStateMap.isAlive,
             true
         );
     }
 
     constructor(
-        config: Model.Config<D> & Model.RawConfig<AnimalDefine>,
-        parent: Model
+        config: IModel.Config<D> & IModel.RawConfig<AnimalDefine>,
+        parent: IModel
     ) {
         super({
             ...config,
@@ -55,7 +55,7 @@ export abstract class IAnimal<
 
     declare parent: Game;
     
-    @Model.useDebugger()
+    @IModel.useDebugger()
     @IAnimal.isAlive()
     @Game.useTime()
     growup() {

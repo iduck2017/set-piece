@@ -1,4 +1,4 @@
-import { Model } from "..";
+import { IModel } from "..";
 import { Game } from "../game";
 import { Archieve, ARCHIEVE_SAVE_PATH } from "./archieve";
 import { RawModelDefine } from "../../type/define";
@@ -22,8 +22,8 @@ export type DocumentDefine =
     }>
 
 
-@Model.useProduct('document')
-export class Document extends Model<
+@IModel.useProduct('document')
+export class Document extends IModel<
     DocumentDefine
 > {
     constructor(
@@ -46,7 +46,7 @@ export class Document extends Model<
         }, parent);
     }
 
-    @Model.useLoader()
+    @IModel.useLoader()
     private async _onload() {
         this.parent.stateModEventMap.curDocument.bind(this, ({ next }) => {
             this._rawReferMap.isPlaying = Boolean(next);
@@ -54,8 +54,8 @@ export class Document extends Model<
         this._rawReferMap.savePath = `${ARCHIEVE_SAVE_PATH}_${this.code}`;
     }
 
-    @Model.useDebugger()
-    @Model.useValidator(model => !model._rawReferMap.isPlaying)
+    @IModel.useDebugger()
+    @IModel.useValidator(model => !model._rawReferMap.isPlaying)
     async remove() {
         this.parent.remove(this);
         await localStorage.removeItem(this._rawReferMap.savePath);
@@ -63,8 +63,8 @@ export class Document extends Model<
     }
     
 
-    @Model.useDebugger()
-    @Model.useValidator(model => !model._rawReferMap.isPlaying)
+    @IModel.useDebugger()
+    @IModel.useValidator(model => !model._rawReferMap.isPlaying)
     async start() {
         const raw = await localStorage.getItem(this._rawReferMap.savePath);
         if (!raw) {

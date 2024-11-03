@@ -4,10 +4,10 @@ import { Event } from "../util/event";
 import { Delegator } from "../util/proxy";
 import { ControlledArray } from "../util/proxy/controlled";
 
-export namespace Model {
-    export type Class<M extends Model = Model> = new (
+export namespace IModel {
+    export type Class<M extends IModel = IModel> = new (
         config: M['config'], 
-        parent: Model
+        parent: IModel
     ) => M;
 
     export type ChildConfigMap<
@@ -19,7 +19,7 @@ export namespace Model {
     };
 
     export type StateGetEventMap<
-        M extends Model,
+        M extends IModel,
         S extends Base.Map,
     > = {
         [K in KeyOf<S>]: Event<{
@@ -31,7 +31,7 @@ export namespace Model {
     }
 
     export type StateGetEventProxyMap<
-        M extends Model,
+        M extends IModel,
         S extends Base.Map,
     > = {
         [K in KeyOf<S>]: Event.Proxy<{
@@ -43,7 +43,7 @@ export namespace Model {
     }
 
     export type StateModEventMap<
-        M extends Model,
+        M extends IModel,
         S extends Base.Map,
     > = {
         [K in KeyOf<S>]: Event<{
@@ -54,7 +54,7 @@ export namespace Model {
     }
 
     export type StateModEventProxyMap<
-        M extends Model,
+        M extends IModel,
         S extends Base.Map,
     > = {
         [K in KeyOf<S>]: Event.Proxy<{
@@ -80,10 +80,10 @@ export namespace Model {
         rawStateMap: Readonly<D['stateMap']>,
         rawReferMap: Readonly<D['referMap']>
         curStateMap: Readonly<D['stateMap']>,
-        stateModEventMap: Model.StateModEventMap<Model, D['stateMap']>,
-        stateGetEventMap: Model.StateGetEventMap<Model, D['stateMap']>,
-        eventMap: Model.EventMap<D['eventMap']>;
-        referSet: Model[],
+        stateModEventMap: IModel.StateModEventMap<IModel, D['stateMap']>,
+        stateGetEventMap: IModel.StateGetEventMap<IModel, D['stateMap']>,
+        eventMap: IModel.EventMap<D['eventMap']>;
+        referSet: IModel[],
         debugMap: Record<string, Base.Function>
     }>
 
@@ -109,14 +109,14 @@ export namespace Model {
     }
 }
 
-export class Model<
+export class IModel<
     D extends ModelDefine = ModelDefine
 > {
     static readonly _validatorReg: Map<Function, Record<
         string, 
-        Array<(model: Model) => boolean>>
+        Array<(model: IModel) => boolean>>
     > = new Map();
-    static useValidator<M extends Model>(
+    static useValidator<M extends IModel>(
         validator: (model: M) => boolean, 
         strict?: boolean
     ) {
@@ -126,14 +126,14 @@ export class Model<
             descriptor: TypedPropertyDescriptor<Base.Function>
         ): TypedPropertyDescriptor<Base.Function> {
             const handler = descriptor.value;
-            const validatorMap = Model._validatorReg.get(
+            const validatorMap = IModel._validatorReg.get(
                 target.constructor
             ) || {};
             if (!validatorMap[key]) {
                 validatorMap[key] = [];
             }
             validatorMap[key].push(validator);
-            Model._validatorReg.set(
+            IModel._validatorReg.set(
                 target.constructor, 
                 validatorMap
             );
@@ -152,31 +152,31 @@ export class Model<
     }
 
     // Product
-    private static readonly _productReg: Record<string, Model.Class> = {};
+    private static readonly _productReg: Record<string, IModel.Class> = {};
     protected static useProduct<
         T extends string,
-        M extends Model<RawModelDefine<{
+        M extends IModel<RawModelDefine<{
             type: T
         } & ModelDefine>>
     >(type: T) {
-        return function (target: Model.Class<M>) {
-            Model._productReg[type] = target;
+        return function (target: IModel.Class<M>) {
+            IModel._productReg[type] = target;
         };
     }
 
     // Debug
     static readonly _debuggerReg: Map<Function, string[]> = new Map();
-    protected static useDebugger<M extends Model>() {
+    protected static useDebugger<M extends IModel>() {
         return function(
             target: M,
             key: string,
             descriptor: TypedPropertyDescriptor<Base.Function>
         ): TypedPropertyDescriptor<Base.Function> {
-            const debuggerSet = Model._debuggerReg.get(
+            const debuggerSet = IModel._debuggerReg.get(
                 target.constructor
             ) || [];
             debuggerSet.push(key);
-            Model._debuggerReg.set(
+            IModel._debuggerReg.set(
                 target.constructor, 
                 debuggerSet
             );
@@ -188,13 +188,13 @@ export class Model<
     private static readonly _loaderReg: Map<Function, string[]> = new Map();
     protected static useLoader() {
         return function(
-            target: Model,
+            target: IModel,
             key: string,
             descriptor: TypedPropertyDescriptor<Base.Function>
         ): TypedPropertyDescriptor<Base.Function> {
-            const keys = Model._loaderReg.get(target.constructor) || [];
+            const keys = IModel._loaderReg.get(target.constructor) || [];
             keys.push(key);
-            Model._loaderReg.set(target.constructor, keys);
+            IModel._loaderReg.set(target.constructor, keys);
             return descriptor;
         };
     }
@@ -204,11 +204,11 @@ export class Model<
     private static _ticket = 36 ** 2;
     static get ticket(): string {
         let now = Date.now();
-        const ticket = Model._ticket;
-        Model._ticket += 1;
-        if (Model._ticket > 36 ** 3 - 1) {
-            Model._ticket = 36 ** 2;
-            while (now === Model._timestamp) {
+        const ticket = IModel._ticket;
+        IModel._ticket += 1;
+        if (IModel._ticket > 36 ** 3 - 1) {
+            IModel._ticket = 36 ** 2;
+            while (now === IModel._timestamp) {
                 now = Date.now();
             }
         }
@@ -221,11 +221,11 @@ export class Model<
     readonly code: string;
     readonly parent: D['parent'];
     constructor(
-        config: Model.Config<D>,
+        config: IModel.Config<D>,
         parent: D['parent']
     ) { 
         this.parent = parent;
-        this.code = config.code || Model.ticket;
+        this.code = config.code || IModel.ticket;
         this.type = config.type;
 
         this._rawStateMap = Delegator.controlledMap(
@@ -265,21 +265,21 @@ export class Model<
         let constructor: any = this.constructor;
         while (constructor.__proto__ !== null) {
             for (const key of Object.keys(
-                Model._validatorReg.get(constructor) || {}
+                IModel._validatorReg.get(constructor) || {}
             )) {
                 if (!this._validatorMap[key]) {
                     this._validatorMap[key] = [];
                 }
-                const validatorSet = Model._validatorReg.get(constructor)?.[key] || [];
+                const validatorSet = IModel._validatorReg.get(constructor)?.[key] || [];
                 this._validatorMap[key].push(
                     ...validatorSet
                 );
             }
-            for (const key of Model._debuggerReg.get(constructor) || []) {
+            for (const key of IModel._debuggerReg.get(constructor) || []) {
                 const runner: any = Reflect.get(this, key);
                 this._debuggerMap[key] = runner.bind(this);
             }
-            for (const key of Model._loaderReg.get(constructor) || []) {
+            for (const key of IModel._loaderReg.get(constructor) || []) {
                 const loader: any = Reflect.get(this, key);
                 this._loaderSet.push(loader.bind(this));
             }
@@ -288,14 +288,14 @@ export class Model<
     }
 
     // Refer
-    private readonly _referSet: Model[] = [];
-    connect(refer: Model) {
+    private readonly _referSet: IModel[] = [];
+    connect(refer: IModel) {
         if (!this._referSet.includes(refer)) {
             this._referSet.push(refer); 
             this._onModelMod();  
         } 
     }
-    private _unconnect(refer: Model) {
+    private _unconnect(refer: IModel) {
         const index = this._referSet.indexOf(refer);
         if (index < 0) return;
         this._referSet.splice(index, 1);
@@ -316,37 +316,37 @@ export class Model<
         }
     }
     // Event
-    protected readonly _eventMap: Model.EventMap<D['eventMap']> = 
+    protected readonly _eventMap: IModel.EventMap<D['eventMap']> = 
         Delegator.automicMap(() => new Event(
             this,
             this._onModelMod.bind(this)
         ));
-    readonly eventMap: Model.EventProxyMap<D['eventMap']> = 
+    readonly eventMap: IModel.EventProxyMap<D['eventMap']> = 
         Delegator.automicMap(key => (
             this._eventMap[key].proxy
         ));
 
-    protected readonly _stateGetEventMap: Model.StateGetEventMap<
+    protected readonly _stateGetEventMap: IModel.StateGetEventMap<
         typeof this, 
         D['stateMap'] & D['referMap']
     > = Delegator.automicMap(key => new Event(
             this,
             this._onStateMod.bind(this, key)
         ));
-    readonly stateGetEventMap: Model.StateGetEventProxyMap<
+    readonly stateGetEventMap: IModel.StateGetEventProxyMap<
         typeof this, 
         D['stateMap'] & D['referMap']
     > = Delegator.automicMap(key => (
             this._stateGetEventMap[key].proxy
         ));
-    protected readonly _stateModEventMap: Model.StateModEventMap<
+    protected readonly _stateModEventMap: IModel.StateModEventMap<
         typeof this, 
         D['stateMap'] & D['referMap']
     > = Delegator.automicMap(() => new Event(
             this,
             this._onModelMod.bind(this)
         ));
-    readonly stateModEventMap: Model.StateModEventProxyMap<
+    readonly stateModEventMap: IModel.StateModEventProxyMap<
         typeof this, 
         D['stateMap'] & D['referMap']
     > = Delegator.automicMap(key => (
@@ -365,7 +365,7 @@ export class Model<
         prev?: (D['stateMap'] & D['referMap'])[K],
         next?: any
     ) {
-        if (next instanceof Model) {
+        if (next instanceof IModel) {
             next.connect(this);
         }
         const _prev = prev || this._curStateMap[key];
@@ -391,7 +391,7 @@ export class Model<
     }
 
     // Serialize
-    get config(): Model.RawConfig<D> {
+    get config(): IModel.RawConfig<D> {
         return {
             code: this.code,
             type: this.type,
@@ -406,15 +406,15 @@ export class Model<
                         [key]: value.config
                     };
                 },
-                {} as Model.ChildConfigMap<D>
+                {} as IModel.ChildConfigMap<D>
             )
         };
     }
 
-    protected _new<M extends Model>(
+    protected _new<M extends IModel>(
         config: M['config']
     ): M {
-        const Type = Model._productReg[config.type];
+        const Type = IModel._productReg[config.type];
         if (!Type) throw new Error(`Model ${config.type} not found`);
         return new Type(config, this) as M;
     }
@@ -427,7 +427,7 @@ export class Model<
 
     private _onChildMod(
         key: string,
-        value: Model,
+        value: IModel,
         isNew: boolean
     ) {
         if (!value) return;
@@ -437,8 +437,8 @@ export class Model<
     }
     private _onChildSetMod(
         key: string,
-        prev?: Model,
-        next?: Model
+        prev?: IModel,
+        next?: IModel
     ) {
         if (prev) prev._unload();
         if (next) next._load();
@@ -472,10 +472,10 @@ export class Model<
     }
 
     // Inspector
-    private readonly _validatorMap: Record<string, Array<(model: Model) => boolean>> = {};
+    private readonly _validatorMap: Record<string, Array<(model: IModel) => boolean>> = {};
     private readonly _debuggerMap: Record<string, Base.Function> = {};
     private readonly _setterSet: Array<React.Dispatch<
-        React.SetStateAction<Model.Info<D>>
+        React.SetStateAction<IModel.Info<D>>
     >> = [];
     private _onModelMod() {
         for (const setInfo of this._setterSet) {
@@ -507,7 +507,7 @@ export class Model<
     }
     readonly useInfo = (
         setter: React.Dispatch<
-            React.SetStateAction<Model.Info<D>>
+            React.SetStateAction<IModel.Info<D>>
         >
     ) => {
         this._setterSet.push(setter);

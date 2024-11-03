@@ -1,7 +1,7 @@
 /* eslint-disable max-len */
 import React, { ReactNode, useEffect, useState } from "react";
 import "./model.css";
-import { Model } from "../model";
+import { IModel } from "../model";
 import { Base } from "../type/base";
 import { ModelDefine } from "../type/define";
 
@@ -53,7 +53,7 @@ const FolderComp = (props: {
 export function ModelComp<
     D extends ModelDefine
 >(props: {
-    model: Readonly<Model<D>>,
+    model: Readonly<IModel<D>>,
 }) {
     const { model } = props;
 
@@ -66,7 +66,7 @@ export function ModelComp<
         refer: true
     });
     
-    const [ refer, setRefer ] = useState<Readonly<Model>>();
+    const [ refer, setRefer ] = useState<Readonly<IModel>>();
 
     const formatValue = (
         value: Base.Value | Base.Value[]
@@ -75,7 +75,7 @@ export function ModelComp<
             return value.map(formatValue).join(', ');
         }
         const _value: any = value;
-        if (_value instanceof Model) {
+        if (_value instanceof IModel) {
             return `"${_value.code}"`;
         }
         if (typeof value === 'string') return `"${value}"`;

@@ -1,4 +1,4 @@
-import { Model } from "../..";
+import { IModel } from "../..";
 import { Random } from "../../../util/random";
 import { AnimalGender, IAnimal } from ".";
 import { Game } from "..";
@@ -14,7 +14,7 @@ export type KittyDefine =
         referMap: {}
     }>
 
-@Model.useProduct('kitty')
+@IModel.useProduct('kitty')
 export class Kitty extends IAnimal<
     KittyDefine
 > {

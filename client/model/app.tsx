@@ -1,4 +1,4 @@
-import { Model } from ".";
+import { IModel } from ".";
 import { Game } from "./game";
 import { Service } from "./service";
 import { RawModelDefine } from "../type/define";
@@ -21,7 +21,7 @@ export type AppDefine = RawModelDefine<{
     parent: undefined,
 }>
 
-export class App extends Model<AppDefine> {
+export class App extends IModel<AppDefine> {
     private static _main?: App;
     static get main(): App {
         if (!App._main) {
@@ -46,8 +46,8 @@ export class App extends Model<AppDefine> {
         createRoot(document.body).render(<ModelComp model={this} />);
     }
     
-    @Model.useDebugger()
-    @Model.useValidator(model => !model._rawReferMap.isInit)
+    @IModel.useDebugger()
+    @IModel.useValidator(model => !model._rawReferMap.isInit)
     async init() {
         const gameConfig: Service['config'] = {
             type: 'service'

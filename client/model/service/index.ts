@@ -1,4 +1,4 @@
-import { Model } from "..";
+import { IModel } from "..";
 import { RawModelDefine } from "../../type/define";
 import { App } from "../app";
 import { Archieve } from "./archieve";
@@ -13,8 +13,8 @@ export type ServiceDefine =
         parent: App
     }>
 
-@Model.useProduct('service')
-export class Service extends Model<
+@IModel.useProduct('service')
+export class Service extends IModel<
     ServiceDefine
 > { 
     private static _main: Service;
@@ -38,7 +38,7 @@ export class Service extends Model<
         Service._main = this;
     }
 
-    @Model.useDebugger()
+    @IModel.useDebugger()
     async save() {
         await localStorage.setItem(
             'service', 

@@ -1,4 +1,4 @@
-import { Model } from "@/model";
+import { IModel } from "@/model";
 import { IAnimal } from ".";
 import { RawModelDefine } from "@/type/define";
 
@@ -6,12 +6,11 @@ export type DoggyDefine =
     RawModelDefine<{
         type: 'doggy',
         stateMap: {
-            name: string;
         },
         referMap: {}
     }>
 
-@Model.useProduct('doggy')
+@IModel.useProduct('doggy')
 export class Doggy extends IAnimal<
     DoggyDefine
 > {
@@ -23,7 +22,6 @@ export class Doggy extends IAnimal<
             ...config,
             childMap: {},
             stateMap: {
-                name: 'Doggy',
                 ...config.stateMap
             },
             referMap: {}

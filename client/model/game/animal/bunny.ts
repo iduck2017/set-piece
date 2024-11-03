@@ -1,4 +1,4 @@
-import { Model } from "../..";
+import { IModel } from "../..";
 import { Animal, IAnimal } from ".";
 import { Game } from "..";
 import { RawModelDefine } from "../../../type/define";
@@ -17,7 +17,7 @@ export type BunnyDefine =
         type: 'bunny'
     }>
 
-@Model.useProduct('bunny')
+@IModel.useProduct('bunny')
 export class Bunny extends IAnimal<
     BunnyDefine
 > {
@@ -41,7 +41,7 @@ export class Bunny extends IAnimal<
         }, parent);
     }
 
-    @Model.useLoader()
+    @IModel.useLoader()
     protected _onActive(): void {
         if (this._rawStateMap.isAlive) {
             for (const target of this.parent.childSet) {
@@ -69,7 +69,7 @@ export class Bunny extends IAnimal<
         }
     }
 
-    @Model.useDebugger()
+    @IModel.useDebugger()
     @IAnimal.isAlive()
     @Game.useTime()
     reproduce() {
@@ -78,7 +78,7 @@ export class Bunny extends IAnimal<
         });
     }
 
-    @Model.useDebugger()
+    @IModel.useDebugger()
     @IAnimal.isAlive()
     @Game.useTime()
     sacrifice() {

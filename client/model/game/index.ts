@@ -1,4 +1,4 @@
-import { Model } from "..";
+import { IModel } from "..";
 import { App } from "../app";
 import { Base } from "../../type/base";
 import { Animal } from "./animal";
@@ -23,8 +23,8 @@ export type GameDefine =
         parent: App
     }>
 
-@Model.useProduct('game')
-export class Game extends Model<
+@IModel.useProduct('game')
+export class Game extends IModel<
     GameDefine
 > {
     private static _main: Game;
@@ -40,7 +40,7 @@ export class Game extends Model<
         ): TypedPropertyDescriptor<Base.Function> {
             const original = descriptor.value;
             descriptor.value = function(
-                this: Model, 
+                this: IModel, 
                 ...args
             ) {
                 Game.main._rawStateMap.time += duration || 1;
@@ -72,7 +72,7 @@ export class Game extends Model<
         Game._main = this;
     }
 
-    @Model.useDebugger()
+    @IModel.useDebugger()
     tick() {
         this._rawStateMap.time += 1;
     }

@@ -1,5 +1,5 @@
 import { Service } from ".";
-import { Model } from "..";
+import { IModel } from "..";
 import { Document } from "./document";
 import { RawModelDefine } from "../../type/define";
 import { Base } from "../../type/base";
@@ -20,12 +20,12 @@ export type ArchieveDefine =
     }>
 
 
-@Model.useProduct('archieve')
-export class Archieve extends Model<
+@IModel.useProduct('archieve')
+export class Archieve extends IModel<
     ArchieveDefine
 > {
     static isLoaded(strict?: boolean) {
-        return Model.useValidator<Document>(
+        return IModel.useValidator<Document>(
             model => (
                 model.parent._rawReferMap.curDocument === model
             ),
@@ -49,8 +49,8 @@ export class Archieve extends Model<
         }, parent);
     }
     
-    @Model.useDebugger()
-    @Model.useValidator(model => Boolean(model._rawReferMap.curDocument))
+    @IModel.useDebugger()
+    @IModel.useValidator(model => Boolean(model._rawReferMap.curDocument))
     async save() {
         const record = Game.main.config;
         const curDocument = this._rawReferMap.curDocument;
@@ -68,8 +68,8 @@ export class Archieve extends Model<
         this._rawReferMap.curDocument = document;
     }
 
-    @Model.useDebugger()
-    @Model.useValidator(model => Boolean(model._rawReferMap.curDocument))
+    @IModel.useDebugger()
+    @IModel.useValidator(model => Boolean(model._rawReferMap.curDocument))
     async quit() {
         if (this._rawReferMap.curDocument) {
             this._rawReferMap.curDocument = undefined;
@@ -85,7 +85,7 @@ export class Archieve extends Model<
         }
     }
 
-    @Model.useDebugger()
+    @IModel.useDebugger()
     async add() {
         const document: Document = this._new({
             type: 'document',
