@@ -1,26 +1,29 @@
 import { Model } from "@/model";
-import { I{{SUPER_NAME}} } from ".";
+import { IAnimal } from ".";
 import { RawModelDefine } from "@/type/define";
 
-export type {{MODEL_NAME}}Define = 
+export type DoggyDefine = 
     RawModelDefine<{
-        type: '{{MODEL_CODE}}',
-        stateMap: {},
+        type: 'doggy',
+        stateMap: {
+            name: string;
+        },
         referMap: {}
     }>
 
-@Model.useProduct('{{MODEL_CODE}}')
-export class {{MODEL_NAME}} extends I{{SUPER_NAME}}<
-    {{MODEL_NAME}}Define
+@Model.useProduct('doggy')
+export class Doggy extends IAnimal<
+    DoggyDefine
 > {
     constructor(
-        config: {{MODEL_NAME}}['config'],
-        parent: {{MODEL_NAME}}Define['parent']
+        config: Doggy['config'],
+        parent: DoggyDefine['parent']
     ) {
         super({
             ...config,
             childMap: {},
             stateMap: {
+                name: 'Doggy',
                 ...config.stateMap
             },
             referMap: {}

@@ -20,13 +20,18 @@ export type GameDefine =
             }
         },
         childSet: Animal,
+        parent: App
     }>
-
 
 @Model.useProduct('game')
 export class Game extends Model<
     GameDefine
 > {
+    private static _main: Game;
+    static get main() {
+        return this._main;
+    }
+
     static useTime(duration?: number) {
         return function (
             target: unknown, 
@@ -38,7 +43,7 @@ export class Game extends Model<
                 this: Model, 
                 ...args
             ) {
-                App.game._rawStateMap.time += duration || 1;
+                Game.main._rawStateMap.time += duration || 1;
                 return original?.apply(this, args);
             };
             return descriptor;
@@ -46,7 +51,8 @@ export class Game extends Model<
     }
 
     constructor(
-        config: Game['config']
+        config: Game['config'],
+        parent: App
     ) {
         if (!config.childSet?.length) {
             config.childSet = [
@@ -60,11 +66,13 @@ export class Game extends Model<
             stateMap: {
                 time: 0,
                 ...config.stateMap
-            }
-        });
+            },
+            referMap: {}
+        }, parent);
+        Game._main = this;
     }
 
-    @Model.useDebug()
+    @Model.useDebugger()
     tick() {
         this._rawStateMap.time += 1;
     }

@@ -12,6 +12,8 @@ export type BunnyDefine =
             preReproduce: number;
             reproduce: number;
         },
+        referMap: {
+        }
         type: 'bunny'
     }>
 
@@ -34,11 +36,12 @@ export class Bunny extends IAnimal<
                 isAlive: true,
                 curDensity: 0,
                 ...config.stateMap
-            }
+            },
+            referMap: {}
         }, parent);
     }
 
-    @Model.useActivate()
+    @Model.useLoader()
     protected _onActive(): void {
         if (this._rawStateMap.isAlive) {
             for (const target of this.parent.childSet) {
@@ -59,17 +62,14 @@ export class Bunny extends IAnimal<
             form.target instanceof Bunny
         ) {
             console.log('onSpawn', this.code, form.target.code);
-            form.target.stateGetEventMap.curDensity.bind(
-                this,
-                form => ({
-                    ...form,
-                    cur: form.cur + 1
-                })
-            );
+            form.target.stateGetEventMap.curDensity.bind(this, form => ({
+                ...form,
+                cur: form.cur + 1
+            }));
         }
     }
 
-    @Model.useDebug()
+    @Model.useDebugger()
     @IAnimal.isAlive()
     @Game.useTime()
     reproduce() {
@@ -78,10 +78,10 @@ export class Bunny extends IAnimal<
         });
     }
 
-    @Model.useDebug()
+    @Model.useDebugger()
+    @IAnimal.isAlive()
     @Game.useTime()
     sacrifice() {
         this._rawStateMap.isAlive = false;
-        this._reload();
     }
 }

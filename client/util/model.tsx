@@ -74,6 +74,10 @@ export function ModelComp<
         if (value instanceof Array) {
             return value.map(formatValue).join(', ');
         }
+        const _value: any = value;
+        if (_value instanceof Model) {
+            return `"${_value.code}"`;
+        }
         if (typeof value === 'string') return `"${value}"`;
         return `(${value})`;
     };

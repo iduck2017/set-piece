@@ -1,7 +1,7 @@
 import { Model } from "..";
 import { RawModelDefine } from "../../type/define";
+import { App } from "../app";
 import { Archieve } from "./archieve";
-import { Inspector } from "./inspector";
 
 export type ServiceDefine = 
     RawModelDefine<{
@@ -9,29 +9,36 @@ export type ServiceDefine =
         stateMap: {},
         childMap: {
             archieve: Archieve,
-            inspector: Inspector,
-        }
+        },
+        parent: App
     }>
 
 @Model.useProduct('service')
 export class Service extends Model<
     ServiceDefine
 > { 
+    private static _main: Service;
+    public static get main() {
+        return this._main;
+    }
+
     constructor(
-        config: Service['config']
+        config: Service['config'], 
+        parent: App
     ) {
         super({
             ...config,
             stateMap: {},
             childMap: {
                 archieve: { type: 'archieve' },
-                inspector: { type: 'inspector' },
                 ...config.childMap
-            }
-        });
+            },
+            referMap: {}
+        }, parent);
+        Service._main = this;
     }
 
-    @Model.useDebug()
+    @Model.useDebugger()
     async save() {
         await localStorage.setItem(
             'service', 

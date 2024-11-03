@@ -1,8 +1,9 @@
 import { Model } from "..";
 import { Game } from "../game";
-import { ARCHIEVE_SAVE_PATH } from "./archieve";
-import { App } from "../app";
+import { Archieve, ARCHIEVE_SAVE_PATH } from "./archieve";
 import { RawModelDefine } from "../../type/define";
+import { Service } from ".";
+import { App } from "../app";
 
 export type DocumentDefine = 
     RawModelDefine<{
@@ -11,6 +12,12 @@ export type DocumentDefine =
             time: number
             animalCnt: number,
         },
+        referMap: {
+            
+            isPlaying: boolean,
+            savePath: string,
+        }
+        parent: Archieve,
         type: 'document'
     }>
 
@@ -21,7 +28,7 @@ export class Document extends Model<
 > {
     constructor(
         config: Document['config'],
-        parent: Document
+        parent: Archieve
     ) {
         super({
             ...config,
@@ -31,45 +38,45 @@ export class Document extends Model<
                 animalCnt: 0,
                 ...config.stateMap
             },
+            referMap: {
+                isPlaying: false,
+                savePath: ''
+            },
             childMap: {}
         }, parent);
     }
 
-    get savePath() {
-        return `${ARCHIEVE_SAVE_PATH}_${this.code}`;
+    @Model.useLoader()
+    private async _onload() {
+        this.parent.stateModEventMap.curDocument.bind(this, ({ next }) => {
+            this._rawReferMap.isPlaying = Boolean(next);
+        });
+        this._rawReferMap.savePath = `${ARCHIEVE_SAVE_PATH}_${this.code}`;
     }
 
-    @Model.useDebug()
-    async load() {
-        const raw = await localStorage.getItem(this.savePath);
-        if (!raw) throw new Error();
-        const config: Game['config'] = JSON.parse(raw);
-        await App.main.start(config);
-    }
-
-    @Model.useDebug()
+    @Model.useDebugger()
+    @Model.useValidator(model => !model._rawReferMap.isPlaying)
     async remove() {
-        await localStorage.removeItem(this.savePath);
-        this._unmount();
+        this.parent.remove(this);
+        await localStorage.removeItem(this._rawReferMap.savePath);
+        await Service.main.save();
+    }
+    
+
+    @Model.useDebugger()
+    @Model.useValidator(model => !model._rawReferMap.isPlaying)
+    async start() {
+        const raw = await localStorage.getItem(this._rawReferMap.savePath);
+        if (!raw) {
+            throw new Error('Save data not found.');
+        }
+        const config: Game['config'] = JSON.parse(raw);
+        this.parent.start(this);
+        App.main.start(config);
     }
 
     
-    @Model.useDebug()
-    async save() {
-        const record = App.game.config;
-        this._rawStateMap.time = record.stateMap?.time || 0;
-        this._rawStateMap.animalCnt = record.childSet?.length || 0;
-        await localStorage.setItem(
-            this.savePath, 
-            JSON.stringify(record)
-        );
-        await App.service.save();
-    }
-
-
-    @Model.useDebug()
-    async quit() {
-        this.save();
-        App.main.quit();
+    async update() {
+        
     }
 }

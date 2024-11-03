@@ -9,6 +9,9 @@
       "allowSyntheticDefaultImports": true,
       "moduleResolution": "node",
       "strict": true,
+      "paths": {
+        "@/*": ["./client/*"],
+      },
       "strictFunctionTypes": false,
       "experimentalDecorators": true,
     },

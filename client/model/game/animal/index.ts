@@ -1,5 +1,4 @@
 import { Model } from "../..";
-import { Base } from "../../../type/base";
 import { Bunny } from "./bunny";
 import { Kitty } from "./kitty";
 import { Game } from "..";
@@ -13,11 +12,13 @@ export enum AnimalGender {
 
 export type AnimalDefine = 
     RawModelDefine<{
+        type: string;
         stateMap: {
             curAge: number;
             maxAge: number;
             isAlive: boolean;
         },
+        referMap: {}
     }>
 
 export type Animal = 
@@ -25,36 +26,38 @@ export type Animal =
     Kitty
 
 export abstract class IAnimal<
-    D extends ModelDefine = RawModelDefine<{
-        type: string
-    }>
+    D extends ModelDefine = ModelDefine
 > extends Model<
     D & AnimalDefine
 > {
     protected static isAlive() {
-        return function (
-            target: unknown,
-            key: string,
-            descriptor: TypedPropertyDescriptor<Base.Function>
-        ): TypedPropertyDescriptor<Base.Function> {
-            const handler = descriptor.value;
-            descriptor.value = function(
-                this: IAnimal, 
-                ...args
-            ) {
-                if (this.curStateMap.isAlive) {
-                    return handler?.apply(this, args);
-                }
-            };
-            return descriptor;
-        };
+        return Model.useValidator<IAnimal>(
+            model => model._rawStateMap.isAlive,
+            true
+        );
+    }
+
+    constructor(
+        config: Model.Config<D> & Model.RawConfig<AnimalDefine>,
+        parent: Model
+    ) {
+        super({
+            ...config,
+            stateMap: {
+                curAge: 0,
+                maxAge: 100,
+                isAlive: true,
+                ...config.stateMap
+            }
+        }, parent);
     }
 
 
     declare parent: Game;
     
+    @Model.useDebugger()
+    @IAnimal.isAlive()
     @Game.useTime()
-    @Model.useDebug()
     growup() {
         this._rawStateMap.curAge += 1;
     }

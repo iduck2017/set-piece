@@ -1,16 +1,22 @@
 import { Service } from ".";
 import { Model } from "..";
 import { Document } from "./document";
-import { App } from "../app";
 import { RawModelDefine } from "../../type/define";
+import { Base } from "../../type/base";
 import { Game } from "../game";
+import { App } from "../app";
 
 export const ARCHIEVE_SAVE_PATH = 'archieve';
 
 export type ArchieveDefine = 
     RawModelDefine<{
-        childSet: Document
-        type: 'archieve'
+        childSet: Document,
+        stateMap: {
+        },
+        referMap: {
+            curDocument?: Document,
+        }
+        type: 'archieve',
     }>
 
 
@@ -18,22 +24,69 @@ export type ArchieveDefine =
 export class Archieve extends Model<
     ArchieveDefine
 > {
+    static isLoaded(strict?: boolean) {
+        return Model.useValidator<Document>(
+            model => (
+                model.parent._rawReferMap.curDocument === model
+            ),
+            strict  
+        );
+    }
+
     constructor(
         config: Archieve['config'],
         parent: Service
     ) {
-        console.log(config);
         super({
             ...config,
-            stateMap: {},
+            stateMap: {
+                ...config.stateMap
+            },
+            referMap: {
+                curDocument: undefined
+            },
             childMap: {}
         }, parent);
     }
+    
+    @Model.useDebugger()
+    @Model.useValidator(model => Boolean(model._rawReferMap.curDocument))
+    async save() {
+        const record = Game.main.config;
+        const curDocument = this._rawReferMap.curDocument;
+        if (curDocument) {
+            const savePath = curDocument.curStateMap.savePath;
+            await localStorage.setItem(
+                savePath, 
+                JSON.stringify(record)
+            );
+            await Service.main.save();
+        }
+    }
 
-    private _curDocument?: Document;
+    start(document: Document) {
+        this._rawReferMap.curDocument = document;
+    }
 
-    @Model.useDebug()
-    async new() {
+    @Model.useDebugger()
+    @Model.useValidator(model => Boolean(model._rawReferMap.curDocument))
+    async quit() {
+        if (this._rawReferMap.curDocument) {
+            this._rawReferMap.curDocument = undefined;
+            App.main.quit();
+        }
+    }
+
+    remove(document: Document) {
+        const index = this._childSet.indexOf(document);
+        console.log('remove', index);
+        if (index >= 0) {
+            this._childSet.splice(index, 1);
+        }
+    }
+
+    @Model.useDebugger()
+    async add() {
         const document: Document = this._new({
             type: 'document',
             stateMap: {
@@ -43,12 +96,14 @@ export class Archieve extends Model<
             }
         });
         this._childSet.push(document);
+        
+        const gameConfig: Game['config'] = {
+            type: 'game'
+        };
         await localStorage.setItem(
-            document.savePath, 
-            JSON.stringify({
-                type: 'game'
-            })
+            document.curStateMap.savePath, 
+            JSON.stringify(gameConfig)
         );
-        await App.service.save();
+        await Service.main.save();
     }
 }

@@ -51,5 +51,5 @@ export namespace Delegator {
         });
     }
     
-    
+
 }

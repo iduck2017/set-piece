@@ -11,6 +11,7 @@ export type KittyDefine =
             name: string;
             gender: AnimalGender;
         },
+        referMap: {}
     }>
 
 @Model.useProduct('kitty')
@@ -37,7 +38,8 @@ export class Kitty extends IAnimal<
                 ),
                 name: 'Kitty',
                 ...config.stateMap
-            }
+            },
+            referMap: {}
         }, parent);
     }
 }

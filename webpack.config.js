@@ -35,6 +35,9 @@ module.exports = {
         open: false,
     },
     resolve: {
+        alias: {
+            '@': path.resolve(__dirname, 'client'),
+        },
         extensions: ['.js', '.json', '.ts', '.tsx'],
     },
     module: {
