@@ -3,6 +3,7 @@ import { Random } from "../../../util/random";
 import { AnimalGender, IAnimal } from ".";
 import { Game } from "..";
 import { RawModelDefine } from "../../../type/define";
+import { Features } from "./feature/features";
 
 export type KittyDefine = 
     RawModelDefine<{
@@ -11,6 +12,9 @@ export type KittyDefine =
             name: string;
             gender: AnimalGender;
         },
+        childMap: {
+            features: Features
+        }
         referMap: {}
     }>
 
@@ -26,7 +30,10 @@ export class Kitty extends IAnimal<
     ) {
         super({
             ...config,
-            childMap: {},
+            childMap: {
+                features: { type: 'features' },
+                ...config.childMap
+            },
             stateMap: {
                 curAge: 0,
                 maxAge: 100,

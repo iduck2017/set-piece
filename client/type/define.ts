@@ -5,7 +5,7 @@ export type ModelDefine = {
     type: string;
     stateMap: Base.Map;
     referMap: Base.Map;
-    childMap: Record<string, IModel>;
+    childMap: Record<string, IModel | undefined>;
     childSet: IModel;
     eventMap: Base.Map;
     parent?: IModel;
@@ -14,10 +14,10 @@ export type ModelDefine = {
 export type RawModelDefine<
     D extends Partial<ModelDefine>
 > = Omit<{
-    stateMap: Record<never, never>;
-    referMap: Record<never, never>;
-    childMap: Record<never, never>; 
+    stateMap: Record<Base.Key, never>;
+    referMap: Record<Base.Key, never>;
+    childMap: Record<Base.Key, never>; 
     childSet: IModel;
-    eventMap: Record<never, never>;
+    eventMap: Record<Base.Key, never>;
     parent: IModel;
 }, keyof D> & D;

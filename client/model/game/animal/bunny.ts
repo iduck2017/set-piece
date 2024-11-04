@@ -2,10 +2,14 @@ import { IModel } from "../..";
 import { Animal, IAnimal } from ".";
 import { Game } from "..";
 import { RawModelDefine } from "../../../type/define";
+import { Features } from "./feature/features";
 
 export type BunnyDefine = 
     RawModelDefine<{
         stateMap: {
+            curAge: number;
+            maxAge: number;
+            isAlive: boolean;
             curDensity: number;
         },
         eventMap: {
@@ -13,6 +17,9 @@ export type BunnyDefine =
             reproduce: number;
         },
         referMap: {
+        },
+        childMap: {
+            features?: undefined;
         }
         type: 'bunny'
     }>
@@ -29,7 +36,9 @@ export class Bunny extends IAnimal<
     ) {
         super({
             ...config,
-            childMap: {},
+            childMap: {
+                ...config.childMap
+            },
             stateMap: {
                 curAge: 0,
                 maxAge: 100,

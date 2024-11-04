@@ -3,6 +3,8 @@ import { Bunny } from "./bunny";
 import { Kitty } from "./kitty";
 import { Game } from "..";
 import { ModelDefine, RawModelDefine } from "../../../type/define";
+import { Features } from "./feature/features";
+
 
 export enum AnimalGender {
     Male = 'male',
@@ -10,7 +12,11 @@ export enum AnimalGender {
     Unknown = 'unknown'
 }
 
-export type AnimalDefine = 
+export type Animal = 
+    Bunny |
+    Kitty
+
+export type IAnimalDefine = 
     RawModelDefine<{
         type: string;
         stateMap: {
@@ -18,38 +24,23 @@ export type AnimalDefine =
             maxAge: number;
             isAlive: boolean;
         },
+        childMap: {
+            features?: Features;
+        }
         referMap: {}
     }>
 
-export type Animal = 
-    Bunny |
-    Kitty
 
 export abstract class IAnimal<
     D extends ModelDefine = ModelDefine
 > extends IModel<
-    D & AnimalDefine
+    D & IAnimalDefine
 > {
     protected static isAlive() {
         return IModel.useValidator<IAnimal>(
             model => model._rawStateMap.isAlive,
             true
         );
-    }
-
-    constructor(
-        config: IModel.Config<D> & IModel.RawConfig<AnimalDefine>,
-        parent: IModel
-    ) {
-        super({
-            ...config,
-            stateMap: {
-                curAge: 0,
-                maxAge: 100,
-                isAlive: true,
-                ...config.stateMap
-            }
-        }, parent);
     }
 
 

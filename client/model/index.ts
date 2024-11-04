@@ -4,6 +4,11 @@ import { Event } from "../util/event";
 import { Delegator } from "../util/proxy";
 import { ControlledArray } from "../util/proxy/controlled";
 
+type RemoveNeverKeys<T> = {
+    [K in keyof T as T[K] extends never ? never : K]: T[K];
+};
+
+
 export namespace IModel {
     export type Class<M extends IModel = IModel> = new (
         config: M['config'], 
@@ -13,9 +18,12 @@ export namespace IModel {
     export type ChildConfigMap<
         D extends ModelDefine,
     > = {
-        [K in keyof D['childMap']]?: D['childMap'][K] extends Required<D['childMap']>[K] ?
-            Required<D['childMap']>[K]['config'] :
-            Required<D['childMap']>[K]['config'] | undefined
+        [K in keyof D['childMap']]: 
+            // D['childMap'][K] extends never ?
+            //     undefined :
+                D['childMap'][K] extends Required<D['childMap']>[K] ?
+                    NonNullable<Required<D['childMap']>[K]>['config'] :
+                    NonNullable<Required<D['childMap']>[K]>['config'] | undefined
     };
 
     export type StateGetEventMap<
@@ -244,7 +252,7 @@ export class IModel<
         this.curStateMap = Delegator.readonlyMap(this._curStateMap);
 
         this._childMap = Delegator.controlledMap(
-            Object.keys(config.childMap).reduce((acc, key: KeyOf<D['childMap']>) => {
+            Object.keys(config.childMap).reduce((acc, key: KeyOf<IModel.ChildConfigMap<D>>) => {
                 const value = config.childMap[key];
                 if (!value) return acc;
                 return {
@@ -406,7 +414,7 @@ export class IModel<
                         [key]: value.config
                     };
                 },
-                {} as IModel.ChildConfigMap<D>
+                {} as Partial<IModel.ChildConfigMap<D>>
             )
         };
     }
@@ -455,7 +463,7 @@ export class IModel<
             ...Object.values(this._childMap),
             ...this._childSet
         ]) {
-            child._load();
+            child?._load();
         }
     }
     private _unload() {
@@ -463,7 +471,7 @@ export class IModel<
             ...Object.values(this._childMap),
             ...this._childSet
         ]) {
-            child._unload();
+            child?._unload();
         }
         for (const refer of this._referSet) {
             refer._unconnect(this);

@@ -25,7 +25,7 @@ async function newModel() {
         implement.toString()
             .replace(/\{\{MODEL_NAME\}\}/g, modelName)
             .replace(/\{\{MODEL_CODE\}\}/g, modelCode)
-            .replace(/\{\{SUPER_NAME\}\}/g, superName)
+            // .replace(/\{\{SUPER_NAME\}\}/g, superName)
     )
 }
 
