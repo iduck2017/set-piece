@@ -1,0 +1,43 @@
+body {
+    font-size: 12px;
+}
+
+.form {
+    width: 200px;
+    display: flex;
+    flex-direction: column;
+    user-select: none;
+}
+
+.form>div {
+    padding: 0 8px;
+}
+
+.form>div:nth-of-type(odd) {
+    background: #cbe0bb;
+}
+
+.form>div:nth-of-type(even) {
+    background: #d4e1ca;
+}
+
+.form>div.title {
+    display: flex;
+    justify-content: center;
+    font-weight: bold;
+}
+
+.form>div.link {
+    cursor: pointer;
+    text-decoration: underline;
+    color: #4d6aff;
+}
+
+.panel {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px
+}
+.panel.vertical {
+    flex-direction: column;
+}
