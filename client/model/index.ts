@@ -2,19 +2,39 @@ import { Def, Seq } from "../type/define";
 import { Base, KeyOf, PartialOf, RequiredOf, Strict, ValidOf } from "../type/base";
 import { Delegator } from "@/util/proxy";
 import { Event } from "@/util/event";
-import React from "react";
+import React, { Key } from "react";
 
 export namespace Model {
     export type Seq<M extends Model> = M extends never ? undefined : M['seq'];
     export type Parent<M extends Model> = M['parent'];
     export type State<M extends Model> = M['state'];
     export type Child<M extends Model> = M['child'];
+
+    export type BaseEvent<M extends Model> = {
+        stateMod: {
+            model: M, 
+            prev: Model.State<M>,
+            next: Model.State<M>,
+        },
+        stateGet: {
+            model: M,
+            prev: Model.State<M>,
+            next: Model.State<M>,
+            isBreak?: boolean
+        },
+        childMod: {
+            model: M,
+            next: Model.Child<M>,
+        },
+    }
 }
+
 
 export abstract class Model<T extends Partial<Def> = any> {
     static useDebugger<M extends Model>(
         validator?: ((model: M) => boolean) | boolean
     ) {
+        const logger = console.log;
         return function (
             target: M,
             key: string,
@@ -25,22 +45,15 @@ export abstract class Model<T extends Partial<Def> = any> {
                 this: M, 
                 ...args
             ) {
-                const logger = console.log;
                 const flag = typeof validator === 'function' ? validator(this) : validator;
-                if (flag) {
-                    console.log(key, '>', 'function call:', {
-                        target: this,
-                        args
-                    });
-                }
+                const _logger = console.log;
                 console.log = (...args) => {
-                    if (flag) logger(key, '>', ...args);
+                    if (flag) {
+                        logger(key, '>', ...args);
+                    }
                 };
                 const result = handler?.apply(this, args);
-                console.log = logger;
-                if (flag) {
-                    console.log(key, '>', 'function return:', result);
-                }
+                console.log = _logger;
                 return result;
             };
             return descriptor;
@@ -226,7 +239,7 @@ export abstract class Model<T extends Partial<Def> = any> {
         };
     } 
     
-    @Model.useDebugger(true)
+    @Model.useDebugger(false)
     private _onChildMod(
         key: string,
         prev?: Model | Model[],
@@ -274,8 +287,8 @@ export abstract class Model<T extends Partial<Def> = any> {
         });
         if (result && result.isBreak) return;
         const { next } = result;
-        console.log('next', next, this._state);
         let isChanged = false;
+        console.log('isChanged', isChanged);
         for (const key of Object.keys(next)) {
             if (next[key] !== this._state[key]) {
                 isChanged = true;
@@ -283,7 +296,6 @@ export abstract class Model<T extends Partial<Def> = any> {
             } 
         }
         if (isChanged) {
-            console.log('isChanged');
             Object.keys(next).forEach((
                 key: KeyOf<Readonly<Def.State<T> & Def.InitState<T> & Def.TempState<T>>>
             ) => {
@@ -325,11 +337,14 @@ export abstract class Model<T extends Partial<Def> = any> {
             this._refer.push(refer); 
         } 
     }
+    @Model.useDebugger(true)
     private _unconnect(refer: Model) {
-        if (refer === this) return;
-
+        console.log(this.id, refer.id, this._refer);
         const index = this._refer.indexOf(refer);
-        if (index < 0) return;
+        if (index < 0) {
+            console.log('not found', refer.id);
+            return;
+        }
         this._refer.splice(index, 1);
 
         const tempState: Def.TempState<T> = this._tempState;
@@ -346,11 +361,11 @@ export abstract class Model<T extends Partial<Def> = any> {
             }
         }
 
-        for (const key of Object.keys({
+        for (const event of Object.values({
             ...this._event,
             ...this._baseEvent
         })) {
-            this._event[key].unload(refer);
+            event.unload(refer);
         }
     }
 
@@ -358,47 +373,18 @@ export abstract class Model<T extends Partial<Def> = any> {
         [K in KeyOf<Def.Event<T>>]: Event<Def.Event<T>[K]>
     }> = Delegator.Automic(() => new Event(this));
     private readonly _baseEvent: {
-        stateMod: Event<{
-            model: Model<T>,
-            prev: Model.State<Model<T>>,
-            next: Model.State<Model<T>>,
-            isBreak?: boolean
-        }>
-        stateGet: Event<{
-            model: Model<T>,
-            prev: Model.State<Model<T>>,
-            next: Model.State<Model<T>>,
-            isBreak?: boolean
-        }>,
-        childMod: Event<{
-            model: Model<T>,
-            next: Model.Child<Model<T>>,
-        }>
+        [K in KeyOf<Model.BaseEvent<typeof this>>]: Event<Model.BaseEvent<typeof this>[K]>
     } = {
             stateMod: new Event(this),
-            stateGet: new Event(this),
+            stateGet: new Event(this, 'aaa', this._onStateMod.bind(this)),
             childMod: new Event(this)
         };
+
     readonly event: Readonly<{
         [K in KeyOf<Def.Event<T>>]: Event.Proxy<Def.Event<T>[K]>
-    }> & {
-        stateMod: Event.Proxy<{
-            model: Model<T>,
-            prev: Model.State<Model<T>>,
-            next: Model.State<Model<T>>,
-            isBreak?: boolean
-        }>
-        stateGet: Event.Proxy<{
-            model: Model<T>,
-            prev: Model.State<Model<T>>,
-            next: Model.State<Model<T>>,
-            isBreak?: boolean
-        }>,
-        childMod: Event.Proxy<{
-            model: Model<T>,
-            next: Model.Child<Model<T>>,
-        }>
-    } = Delegator.Automic<any>((key) => {
+    } & {
+        [K in KeyOf<Model.BaseEvent<typeof this>>]: Event<Model.BaseEvent<typeof this>[K]>
+    }> = Delegator.Automic<any>((key) => {
         if (
             key === 'stateMod' ||
             key === 'stateGet' ||
@@ -426,6 +412,7 @@ export abstract class Model<T extends Partial<Def> = any> {
             child?._load();
         }
     }
+    @Model.useDebugger(false)
     private _unload() {
         const childDict: Def.ChildDict<T> = this._childDict;
         const childList: Def.ChildList<T> = this._childList;
@@ -438,10 +425,14 @@ export abstract class Model<T extends Partial<Def> = any> {
         ]) {
             model?._unload();
         }
-        for (const refer of this._refer) {
+        console.log(this.id, this._refer.map(model => model.id));
+        for (const refer of [
+            ...this._refer
+        ]) {
             refer._unconnect(this);
             this._unconnect(refer);
         }
+        console.log(this.id, this._refer.map(model => model.id));
     }
     
     get seq(): Seq<T> {

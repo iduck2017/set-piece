@@ -6,6 +6,7 @@ export namespace Event {
 }
 
 export class Event<E> {
+    private readonly _onBind;
     private readonly _handlers: Array<Readonly<[ 
         Model, 
         Event.Handler<E> 
@@ -14,20 +15,24 @@ export class Event<E> {
         return [ ... this._handlers ];
     }
 
+    readonly key: string | undefined;
     readonly parent: Model;
     readonly proxy = {
         on: this.on.bind(this),
         off: this.off.bind(this)
     };
     
-    constructor(parent: Model<any>) {
+    constructor(parent: Model<any>, key?: string, onBind?: () => void) {
         this.parent = parent;
+        this.key = key;
+        this._onBind = onBind;
     }
 
     on(refer: Model, handler: Event.Handler<E>) {
         this._handlers.push([ refer, handler ]);
         refer.connect(this.parent);
         this.parent.connect(refer);
+        this._onBind?.();
         return this.off.bind(this, refer, handler);
     }
 
@@ -56,5 +61,9 @@ export class Event<E> {
             if (index < 0) break;
             this._handlers.splice(index, 1);
         }
+        if (this._onBind) {
+            console.log('unbind event');
+        }
+        this._onBind?.();
     }
 }
