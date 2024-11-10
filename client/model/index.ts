@@ -1,150 +1,70 @@
-import { Base, KeyOf } from "../type/base";
-import { ModelDefine, RawModelDefine } from "../type/define";
-import { Event } from "../util/event";
-import { Delegator } from "../util/proxy";
-import { ControlledArray } from "../util/proxy/controlled";
+import { Def, Seq } from "../type/define";
+import { Base, KeyOf, PartialOf, RequiredOf, Strict, ValidOf } from "../type/base";
+import { Delegator } from "@/util/proxy";
+import { Event } from "@/util/event";
+import React from "react";
 
-type RemoveNeverKeys<T> = {
-    [K in keyof T as T[K] extends never ? never : K]: T[K];
-};
-
-
-export namespace IModel {
-    export type Class<M extends IModel = IModel> = new (
-        config: M['config'], 
-        parent: IModel
-    ) => M;
-
-    export type ChildConfigMap<
-        D extends ModelDefine,
-    > = {
-        [K in keyof D['childMap']]: 
-            // D['childMap'][K] extends never ?
-            //     undefined :
-                D['childMap'][K] extends Required<D['childMap']>[K] ?
-                    NonNullable<Required<D['childMap']>[K]>['config'] :
-                    NonNullable<Required<D['childMap']>[K]>['config'] | undefined
-    };
-
-    export type StateGetEventMap<
-        M extends IModel,
-        S extends Base.Map,
-    > = {
-        [K in KeyOf<S>]: Event<{
-            model: M;
-            raw: S[K];
-            cur: S[K];
-            isBreak?: boolean;
-        }>
-    }
-
-    export type StateGetEventProxyMap<
-        M extends IModel,
-        S extends Base.Map,
-    > = {
-        [K in KeyOf<S>]: Event.Proxy<{
-            model: M;
-            raw: S[K];
-            cur: S[K];
-            isBreak?: boolean;
-        }>
-    }
-
-    export type StateModEventMap<
-        M extends IModel,
-        S extends Base.Map,
-    > = {
-        [K in KeyOf<S>]: Event<{
-            model: M;
-            prev: S[K];
-            next: S[K];
-        }>
-    }
-
-    export type StateModEventProxyMap<
-        M extends IModel,
-        S extends Base.Map,
-    > = {
-        [K in KeyOf<S>]: Event.Proxy<{
-            model: M;
-            prev: S[K];
-            next: S[K];
-        }>
-    }
-
-    export type EventMap<E extends Base.Map> = {
-        [K in KeyOf<E>]: Event<E[K]>
-    }
-
-    export type EventProxyMap<E extends Base.Map> = {
-        [K in KeyOf<E>]: Event.Proxy<E[K]>
-    }
-
-    export type Info<
-        D extends ModelDefine,
-    > = Readonly<{
-        childSet: Readonly<D['childSet'][]>;
-        childMap: Readonly<D['childMap']>
-        rawStateMap: Readonly<D['stateMap']>,
-        rawReferMap: Readonly<D['referMap']>
-        curStateMap: Readonly<D['stateMap']>,
-        stateModEventMap: IModel.StateModEventMap<IModel, D['stateMap']>,
-        stateGetEventMap: IModel.StateGetEventMap<IModel, D['stateMap']>,
-        eventMap: IModel.EventMap<D['eventMap']>;
-        referSet: IModel[],
-        debugMap: Record<string, Base.Function>
-    }>
-
-    export type RawConfig<
-        D extends ModelDefine
-    > = {
-        type: D['type'];
-        code?: string;
-        stateMap?: Partial<D['stateMap']>;
-        childSet?: D['childSet']['config'][],
-        childMap?: Partial<ChildConfigMap<D>>
-    }
-
-    export type Config<
-        D extends ModelDefine
-    > = {
-        code?: string;
-        type: D['type'];
-        stateMap: D['stateMap'];
-        referMap: D['referMap'];
-        childSet?: D['childSet']['config'][];
-        childMap: ChildConfigMap<D>
-    }
+export namespace Model {
+    export type Seq<M extends Model> = M extends never ? undefined : M['seq'];
+    export type Parent<M extends Model> = M['parent'];
+    export type State<M extends Model> = M['state'];
+    export type Child<M extends Model> = M['child'];
 }
 
-export class IModel<
-    D extends ModelDefine = ModelDefine
-> {
-    static readonly _validatorReg: Map<Function, Record<
-        string, 
-        Array<(model: IModel) => boolean>>
+export abstract class Model<T extends Partial<Def> = any> {
+    static useDebugger<M extends Model>(
+        validator?: ((model: M) => boolean) | boolean
+    ) {
+        return function (
+            target: M,
+            key: string,
+            descriptor: TypedPropertyDescriptor<Base.Func>
+        ): TypedPropertyDescriptor<Base.Func> {
+            const handler = descriptor.value;
+            descriptor.value = function(
+                this: M, 
+                ...args
+            ) {
+                const logger = console.log;
+                const flag = typeof validator === 'function' ? validator(this) : validator;
+                if (flag) {
+                    console.log(key, '>', 'function call:', {
+                        target: this,
+                        args
+                    });
+                }
+                console.log = (...args) => {
+                    if (flag) logger(key, '>', ...args);
+                };
+                const result = handler?.apply(this, args);
+                console.log = logger;
+                if (flag) {
+                    console.log(key, '>', 'function return:', result);
+                }
+                return result;
+            };
+            return descriptor;
+        };
+    }
+
+    private readonly _validators: Record<string, Array<(model: Model) => boolean>> = {};
+    static readonly _validators: Map<Function, 
+        Record<string, Array<Base.Func>>
     > = new Map();
-    static useValidator<M extends IModel>(
+    static useValidator<M extends Model>(
         validator: (model: M) => boolean, 
         strict?: boolean
     ) {
         return function (
             target: M,
             key: string,
-            descriptor: TypedPropertyDescriptor<Base.Function>
-        ): TypedPropertyDescriptor<Base.Function> {
+            descriptor: TypedPropertyDescriptor<Base.Func>
+        ): TypedPropertyDescriptor<Base.Func> {
             const handler = descriptor.value;
-            const validatorMap = IModel._validatorReg.get(
-                target.constructor
-            ) || {};
-            if (!validatorMap[key]) {
-                validatorMap[key] = [];
-            }
-            validatorMap[key].push(validator);
-            IModel._validatorReg.set(
-                target.constructor, 
-                validatorMap
-            );
+            const validatorDict = Model._validators.get(target.constructor) || {};
+            if (!validatorDict[key]) validatorDict[key] = [];
+            validatorDict[key].push(validator);
+            Model._validators.set(target.constructor, validatorDict);
             descriptor.value = function(
                 this: M, 
                 ...args
@@ -159,64 +79,40 @@ export class IModel<
         };
     }
 
-    // Product
-    private static readonly _productReg: Record<string, IModel.Class> = {};
+    private static readonly _products: Record<string, Base.Class> = {};
     protected static useProduct<
         T extends string,
-        M extends IModel<RawModelDefine<{
-            type: T
-        } & ModelDefine>>
+        M extends { type: T }
     >(type: T) {
-        return function (target: IModel.Class<M>) {
-            IModel._productReg[type] = target;
+        return function (target: Base.Class<M>) {
+            Model._products[type] = target;
+            console.log('[useProduct]', type, Model._products);
         };
     }
 
-    // Debug
-    static readonly _debuggerReg: Map<Function, string[]> = new Map();
-    protected static useDebugger<M extends IModel>() {
-        return function(
-            target: M,
-            key: string,
-            descriptor: TypedPropertyDescriptor<Base.Function>
-        ): TypedPropertyDescriptor<Base.Function> {
-            const debuggerSet = IModel._debuggerReg.get(
-                target.constructor
-            ) || [];
-            debuggerSet.push(key);
-            IModel._debuggerReg.set(
-                target.constructor, 
-                debuggerSet
-            );
-            return descriptor;
-        };
-    }
-
-    // Mount
-    private static readonly _loaderReg: Map<Function, string[]> = new Map();
+    private static readonly _loaders: Map<Function, string[]> = new Map();
     protected static useLoader() {
         return function(
-            target: IModel,
+            target: Model,
             key: string,
-            descriptor: TypedPropertyDescriptor<Base.Function>
-        ): TypedPropertyDescriptor<Base.Function> {
-            const keys = IModel._loaderReg.get(target.constructor) || [];
+            descriptor: TypedPropertyDescriptor<Base.Func>
+        ): TypedPropertyDescriptor<Base.Func> {
+            const keys = Model._loaders.get(target.constructor) || [];
             keys.push(key);
-            IModel._loaderReg.set(target.constructor, keys);
+            Model._loaders.set(target.constructor, keys);
             return descriptor;
         };
     }
 
-    // Ticket 
     private static _timestamp = Date.now(); 
     private static _ticket = 36 ** 2;
     static get ticket(): string {
         let now = Date.now();
-        const ticket = IModel._ticket;
-        IModel._ticket += 1;
-        if (IModel._ticket > 36 ** 3 - 1) {
-            IModel._ticket = 36 ** 2;
-            while (now === IModel._timestamp) {
+        const ticket = Model._ticket;
+        Model._ticket += 1;
+        if (Model._ticket > 36 ** 3 - 1) {
+            Model._ticket = 36 ** 2;
+            while (now === Model._timestamp) {
                 now = Date.now();
             }
         }
@@ -224,306 +120,373 @@ export class IModel<
         return now.toString(36) + ticket.toString(36);
     }
 
-    // Constructor
-    readonly type: D['type'];
-    readonly code: string;
-    readonly parent: D['parent'];
+    readonly id: string;
+    readonly type: Def.Type<T>;
+    readonly parent: Def.Parent<T>;
+    
     constructor(
-        config: IModel.Config<D>,
-        parent: D['parent']
-    ) { 
+        seq: {
+            id?: string,
+            type: Def.Type<T>,
+            childDict: Readonly<Strict<{
+                [K in KeyOf<ValidOf<RequiredOf<Def.ChildDict<T>>>>]: 
+                    Model.Seq<Def.ChildDict<T>[K]>
+            } & {
+                [K in KeyOf<ValidOf<PartialOf<Def.ChildDict<T>>>>]?: 
+                    Model.Seq<Required<Def.ChildDict<T>>[K]>
+            }>>,
+            childList: Readonly<Strict<{
+                [K in KeyOf<ValidOf<RequiredOf<Def.ChildList<T>>>>]: 
+                    Model.Seq<Def.ChildList<T>[K][number]>[]
+            } & {
+                [K in KeyOf<ValidOf<PartialOf<Def.ChildList<T>>>>]?: 
+                    Model.Seq<Required<Def.ChildList<T>>[K][number]>[]
+            }>>,
+            memoState: Readonly<Strict<Def.State<T> & Def.InitState<T>>>,
+            tempState: Readonly<Strict<Def.TempState<T>>>,
+        },
+        parent: Def.Parent<T>
+    ) {
+        this.type = seq.type;
         this.parent = parent;
-        this.code = config.code || IModel.ticket;
-        this.type = config.type;
+        this.id = seq.id || Model.ticket;
 
-        this._rawStateMap = Delegator.controlledMap(
-            config.stateMap,
+        this._memoState = Delegator.ControlledDict(
+            Delegator.Editable(seq.memoState), 
             this._onStateMod.bind(this)
         );
-        this._rawReferMap = Delegator.controlledMap(
-            config.referMap,
+        this._tempState = Delegator.ControlledDict(
+            Delegator.Editable(seq.tempState), 
             this._onStateMod.bind(this)
         );
-        
-        this._curStateMap = { 
-            ...this._rawStateMap,
-            ...this._rawReferMap
+        this._state = {
+            ...seq.memoState,
+            ...seq.tempState
         };
-        this.curStateMap = Delegator.readonlyMap(this._curStateMap);
+        this.state = Delegator.Readonly(this._state);
 
-        this._childMap = Delegator.controlledMap(
-            Object.keys(config.childMap).reduce((acc, key: KeyOf<IModel.ChildConfigMap<D>>) => {
-                const value = config.childMap[key];
+        this._childDict = Delegator.ControlledDict(
+            Object.keys(seq.childDict).reduce((
+                acc, 
+                key: KeyOf<Def.ChildDict<T>>
+            ) => {
+                const value = seq.childDict[key];
                 if (!value) return acc;
                 return {
                     ...acc,
                     [key]: this._new(value)
                 };
-            }, {} as D['childMap']),
-            this._onChildSetMod.bind(this)
+            }, {} as Def.ChildDict<T>),
+            this._onChildMod.bind(this)
         );
-        this.childMap = Delegator.readonlyMap(this._childMap);
-
-        this._childSet = ControlledArray<D['childSet']>(
-            config.childSet?.map(c => this._new(c)) || [],
-            this._onChildMod.bind(this, '')
-        );
-        this.childSet = Delegator.readonlyMap(this._childSet);
+        this._childList = Delegator.Automic<any>(() => (
+            Delegator.ControlledList([], this._onChildMod.bind(this, ''))
+        ), Object.keys(seq.childList).reduce((
+            acc, 
+            key: KeyOf<Def.ChildList<T>>
+        ) => {
+            const value: Seq<Def>[] = seq.childList[key];
+            if (!value) return acc;
+            return {
+                ...acc,
+                [key]: Delegator.ControlledList(
+                    value.map((seq: Seq<Def>) => this._new(seq)),
+                    this._onChildMod.bind(this, '')
+                )
+            };
+        }, {} as Def.ChildList<T>));
 
         let constructor: any = this.constructor;
         while (constructor.__proto__ !== null) {
             for (const key of Object.keys(
-                IModel._validatorReg.get(constructor) || {}
+                Model._validators.get(constructor) || {}
             )) {
-                if (!this._validatorMap[key]) {
-                    this._validatorMap[key] = [];
+                if (!this._validators[key]) {
+                    this._validators[key] = [];
                 }
-                const validatorSet = IModel._validatorReg.get(constructor)?.[key] || [];
-                this._validatorMap[key].push(
+                const validatorSet = Model._validators.get(constructor)?.[key] || [];
+                this._validators[key].push(
                     ...validatorSet
                 );
             }
-            for (const key of IModel._debuggerReg.get(constructor) || []) {
-                const runner: any = Reflect.get(this, key);
-                this._debuggerMap[key] = runner.bind(this);
-            }
-            for (const key of IModel._loaderReg.get(constructor) || []) {
+            for (const key of Model._loaders.get(constructor) || []) {
                 const loader: any = Reflect.get(this, key);
-                this._loaderSet.push(loader.bind(this));
+                this._loaders.push(loader.bind(this));
             }
             constructor = constructor.__proto__;
         }
     }
 
-    // Refer
-    private readonly _referSet: IModel[] = [];
-    connect(refer: IModel) {
-        if (!this._referSet.includes(refer)) {
-            this._referSet.push(refer); 
-            this._onModelMod();  
-        } 
-    }
-    private _unconnect(refer: IModel) {
-        const index = this._referSet.indexOf(refer);
-        if (index < 0) return;
-        this._referSet.splice(index, 1);
-        for (const key of Object.keys(this._rawReferMap)) {
-            if (this._rawReferMap[key] === refer) {
-                delete this._rawReferMap[key];  
-            }
-        }
-        const events = [
-            ...Object.values(this._eventMap),
-            ...Object.values(this._stateGetEventMap),
-            ...Object.values(this._stateModEventMap)
-            // ...Object.values(this._childModEventMap),
-            // this._childSetModEvent
-        ];
-        for (const event of events) {
-            event.uninit(refer);
-        }
-    }
-    // Event
-    protected readonly _eventMap: IModel.EventMap<D['eventMap']> = 
-        Delegator.automicMap(() => new Event(
-            this,
-            this._onModelMod.bind(this)
-        ));
-    readonly eventMap: IModel.EventProxyMap<D['eventMap']> = 
-        Delegator.automicMap(key => (
-            this._eventMap[key].proxy
-        ));
-
-    protected readonly _stateGetEventMap: IModel.StateGetEventMap<
-        typeof this, 
-        D['stateMap'] & D['referMap']
-    > = Delegator.automicMap(key => new Event(
-            this,
-            this._onStateMod.bind(this, key)
-        ));
-    readonly stateGetEventMap: IModel.StateGetEventProxyMap<
-        typeof this, 
-        D['stateMap'] & D['referMap']
-    > = Delegator.automicMap(key => (
-            this._stateGetEventMap[key].proxy
-        ));
-    protected readonly _stateModEventMap: IModel.StateModEventMap<
-        typeof this, 
-        D['stateMap'] & D['referMap']
-    > = Delegator.automicMap(() => new Event(
-            this,
-            this._onModelMod.bind(this)
-        ));
-    readonly stateModEventMap: IModel.StateModEventProxyMap<
-        typeof this, 
-        D['stateMap'] & D['referMap']
-    > = Delegator.automicMap(key => (
-            this._stateModEventMap[key].proxy
-        ));
-
-
-    // State
-    protected readonly _rawStateMap: D['stateMap'];
-    protected readonly _rawReferMap: D['referMap'];
-    private readonly _curStateMap: D['stateMap'] & D['referMap'];
-    readonly curStateMap: Readonly<D['stateMap'] & D['referMap']>;
-
-    private _onStateMod<K extends KeyOf<D['stateMap'] & D['referMap']>>(
-        key: K,
-        prev?: (D['stateMap'] & D['referMap'])[K],
-        next?: any
-    ) {
-        if (next instanceof IModel) {
-            next.connect(this);
-        }
-        const _prev = prev || this._curStateMap[key];
-        const raw = {
-            ...this._rawStateMap,
-            ...this._rawReferMap
-        }[key];
-        const result = this._stateGetEventMap[key].emit({
-            model: this,
-            raw: raw,
-            cur: raw
-        });
-        const _next = result.cur;
-        this._curStateMap[key] = _next;
-        if (prev !== next) {
-            this._stateModEventMap[key].emit({
-                model: this,
-                prev: _prev,
-                next: _next
-            });
-        }
-        this._onModelMod();
-    }
-
-    // Serialize
-    get config(): IModel.RawConfig<D> {
+    protected readonly _childDict: ValidOf<Def.ChildDict<T>>;
+    protected readonly _childList: Readonly<ValidOf<Required<Def.ChildList<T>>>>;
+    get child(): ValidOf<Def.ChildDict<T>> & Readonly<ValidOf<Def.ChildList<T>>> {
         return {
-            code: this.code,
-            type: this.type,
-            stateMap: { ...this._rawStateMap },
-            childSet: this._childSet.map(c => c.config),
-            childMap: Object.keys(this._childMap).reduce(
-                (acc, key) => {
-                    const value = this._childMap[key];
-                    if (!value) return acc;
-                    return {
-                        ...acc,
-                        [key]: value.config
-                    };
-                },
-                {} as Partial<IModel.ChildConfigMap<D>>
-            )
+            ...this._childDict,
+            ...this._childList
         };
-    }
-
-    protected _new<M extends IModel>(
-        config: M['config']
-    ): M {
-        const Type = IModel._productReg[config.type];
-        if (!Type) throw new Error(`Model ${config.type} not found`);
-        return new Type(config, this) as M;
-    }
-
-    // child
-    protected readonly _childSet: D['childSet'][];
-    protected readonly _childMap: D['childMap'];
-    readonly childSet: Readonly<D['childSet'][]>;
-    readonly childMap: Readonly<D['childMap']>;
-
+    } 
+    
+    @Model.useDebugger(true)
     private _onChildMod(
         key: string,
-        value: IModel,
-        isNew: boolean
+        prev?: Model | Model[],
+        next?: Model | Model[]
     ) {
-        if (!value) return;
-        if (isNew) value._load();
-        else value._unload();
-        this._onModelMod();
+        if (prev) {
+            if (prev instanceof Array) {
+                prev.map(model => model._unload());
+            } else prev._unload();
+        }
+        if (next) {
+            if (next instanceof Array) {
+                next.map(model => model._load());
+            } else next._load(); 
+        }
+        this._baseEvent.childMod.emit({
+            model: this,
+            next: this.child
+        });
     }
-    private _onChildSetMod(
-        key: string,
-        prev?: IModel,
-        next?: IModel
-    ) {
-        if (prev) prev._unload();
-        if (next) next._load();
-        this._onModelMod();
+    public useChild(setter: React.Dispatch<Model.Child<Model<T>>>) {
+        return this._baseEvent.childMod.on(this, data => {
+            setter(data.next);
+        });
     }
+
+    private _stateLock: boolean = false;
+    protected readonly _memoState: Def.State<T> & Def.InitState<T>;
+    protected readonly _tempState: Def.TempState<T>;
+    private readonly _state: Def.State<T> & Def.InitState<T> & Def.TempState<T>;
+    readonly state: Readonly<Def.State<T> & Def.InitState<T> & Def.TempState<T>>;
+
+    @Model.useDebugger(false)
+    private _onStateMod() {
+        if (this._stateLock) return;
+        console.log('execute');
+        const prev = {
+            ...this._memoState,
+            ...this._tempState
+        };
+        const result = this._baseEvent.stateGet.emit({
+            model: this,
+            prev,
+            next: prev
+        });
+        if (result && result.isBreak) return;
+        const { next } = result;
+        console.log('next', next, this._state);
+        let isChanged = false;
+        for (const key of Object.keys(next)) {
+            if (next[key] !== this._state[key]) {
+                isChanged = true;
+                break;
+            } 
+        }
+        if (isChanged) {
+            console.log('isChanged');
+            Object.keys(next).forEach((
+                key: KeyOf<Readonly<Def.State<T> & Def.InitState<T> & Def.TempState<T>>>
+            ) => {
+                this._state[key] = next[key];
+            });
+            this._baseEvent.stateMod.emit({
+                model: this,
+                prev,
+                next
+            });
+        }
+    }
+    protected _setMemoState(next: Readonly<Def.State<T> & Def.InitState<T>>) {
+        this._stateLock = true;
+        Object.keys(next).forEach((key: KeyOf<Def.State<T> & Def.InitState<T>>) => {
+            this._memoState[key] = next[key];
+        });
+        this._onStateMod();
+        this._stateLock = false;
+    }
+    protected _setTempState(next: Readonly<Def.TempState<T>>) {
+        this._stateLock = true;
+        Object.keys(next).forEach((key: KeyOf<Def.TempState<T>>) => {
+            this._tempState[key] = next[key];
+        });
+        this._onStateMod();
+        this._stateLock = false;
+    }
+    public useState(setter: React.Dispatch<Model.State<Model<T>>>) {
+        return this._baseEvent.stateMod.on(this, data => {
+            setter(data.next);
+        });
+    }
+
     
-    // Lifecycle
-    private readonly _loaderSet: Base.Function[] = [];
+    private readonly _refer: Model[] = [];
+    connect(refer: Model) {
+        if (!this._refer.includes(refer)) {
+            this._refer.push(refer); 
+        } 
+    }
+    private _unconnect(refer: Model) {
+        if (refer === this) return;
+
+        const index = this._refer.indexOf(refer);
+        if (index < 0) return;
+        this._refer.splice(index, 1);
+
+        const tempState: Def.TempState<T> = this._tempState;
+        for (const key of Object.keys(tempState)) {
+            if (tempState[key] instanceof Model) {
+                delete tempState[key];  
+            }
+            if (tempState[key] instanceof Array) {
+                for (const index in tempState[key]) {
+                    if (tempState[key][index] instanceof Model) {
+                        delete tempState[key];
+                    }
+                }
+            }
+        }
+
+        for (const key of Object.keys({
+            ...this._event,
+            ...this._baseEvent
+        })) {
+            this._event[key].unload(refer);
+        }
+    }
+
+    protected readonly _event: Readonly<{
+        [K in KeyOf<Def.Event<T>>]: Event<Def.Event<T>[K]>
+    }> = Delegator.Automic(() => new Event(this));
+    private readonly _baseEvent: {
+        stateMod: Event<{
+            model: Model<T>,
+            prev: Model.State<Model<T>>,
+            next: Model.State<Model<T>>,
+            isBreak?: boolean
+        }>
+        stateGet: Event<{
+            model: Model<T>,
+            prev: Model.State<Model<T>>,
+            next: Model.State<Model<T>>,
+            isBreak?: boolean
+        }>,
+        childMod: Event<{
+            model: Model<T>,
+            next: Model.Child<Model<T>>,
+        }>
+    } = {
+            stateMod: new Event(this),
+            stateGet: new Event(this),
+            childMod: new Event(this)
+        };
+    readonly event: Readonly<{
+        [K in KeyOf<Def.Event<T>>]: Event.Proxy<Def.Event<T>[K]>
+    }> & {
+        stateMod: Event.Proxy<{
+            model: Model<T>,
+            prev: Model.State<Model<T>>,
+            next: Model.State<Model<T>>,
+            isBreak?: boolean
+        }>
+        stateGet: Event.Proxy<{
+            model: Model<T>,
+            prev: Model.State<Model<T>>,
+            next: Model.State<Model<T>>,
+            isBreak?: boolean
+        }>,
+        childMod: Event.Proxy<{
+            model: Model<T>,
+            next: Model.Child<Model<T>>,
+        }>
+    } = Delegator.Automic<any>((key) => {
+        if (
+            key === 'stateMod' ||
+            key === 'stateGet' ||
+            key === 'childMod'
+        ) {
+            return this._baseEvent[key].proxy;
+        } else {
+            return this._event[key].proxy;
+        }
+    });
+
+    private readonly _loaders: Base.Func[] = [];
     private _load() {
-        for (const loader of this._loaderSet) {
+        for (const loader of this._loaders) {
             loader();
         }
+        const childDict: Def.ChildDict<T> = this._childDict;
+        const childList: Def.ChildList<T> = this._childList;
         for (const child of [
-            ...Object.values(this._childMap),
-            ...this._childSet
+            ...Object.values(childDict),
+            ...Object.values(childList).reduce((acc, value) => {
+                return [ ...acc, ...value ];
+            }, [])
         ]) {
             child?._load();
         }
     }
     private _unload() {
-        for (const child of [
-            ...Object.values(this._childMap),
-            ...this._childSet
+        const childDict: Def.ChildDict<T> = this._childDict;
+        const childList: Def.ChildList<T> = this._childList;
+        const child: Model[] = [];
+        for (const model of [
+            ...Object.values(childDict),
+            ...Object.values(childList).reduce((acc, value) => {
+                return [ ...acc, ...value ];
+            }, child)
         ]) {
-            child?._unload();
+            model?._unload();
         }
-        for (const refer of this._referSet) {
+        for (const refer of this._refer) {
             refer._unconnect(this);
             this._unconnect(refer);
         }
     }
-
-    // Inspector
-    private readonly _validatorMap: Record<string, Array<(model: IModel) => boolean>> = {};
-    private readonly _debuggerMap: Record<string, Base.Function> = {};
-    private readonly _setterSet: Array<React.Dispatch<
-        React.SetStateAction<IModel.Info<D>>
-    >> = [];
-    private _onModelMod() {
-        for (const setInfo of this._setterSet) {
-            setInfo({
-                stateGetEventMap: { ...this._stateGetEventMap },
-                stateModEventMap: { ...this._stateModEventMap },
-                childMap: { ...this._childMap },
-                childSet: [ ...this._childSet ],
-                rawStateMap: { ...this._rawStateMap },
-                curStateMap: { ...this._curStateMap },
-                eventMap: { ...this._eventMap },
-                referSet: [ ...this._referSet ],
-                rawReferMap: { ...this._rawReferMap },
-                debugMap: Object.keys(this._debuggerMap).reduce((prev, key) => {
-                    const validatorSet = this._validatorMap[key];
-                    if (validatorSet) {
-                        for (const validator of validatorSet) {
-                            if (!validator(this)) {
-                                const next = { ...prev };
-                                delete next[key];
-                                return next;
-                            }
-                        }
-                    }
-                    return prev;
-                }, { ...this._debuggerMap })
-            });
-        }
-    }
-    readonly useInfo = (
-        setter: React.Dispatch<
-            React.SetStateAction<IModel.Info<D>>
-        >
-    ) => {
-        this._setterSet.push(setter);
-        this._onModelMod();
-        return () => {
-            const index = this._setterSet.indexOf(setter);
-            if (index < 0) return;
-            this._setterSet.splice(index, 1);
+    
+    get seq(): Seq<T> {
+        return {
+            id: this.id,
+            type: this.type,
+            memoState: { ...this._memoState },
+            childDict: Object.keys(this._childDict).reduce(
+                (acc, key: KeyOf<Def.ChildDict<T>>) => {
+                    const model = this._childDict[key];
+                    if (!model) return acc;
+                    return {
+                        ...acc,
+                        [key]: model.seq
+                    };
+                },
+                {} as Readonly<Strict<Partial<{
+                    [K in KeyOf<ValidOf<Def.ChildDict<T>>>]?: 
+                        Model.Seq<Required<Def.ChildDict<T>>[K]>
+                }>>>
+            ),
+            childList: Object.keys(this._childList).reduce(
+                (acc, key: KeyOf<Def.ChildList<T>>) => {
+                    const models = this._childList[key];
+                    if (!models) return acc;
+                    return {
+                        ...acc,
+                        [key]: models.map(model => model.seq)
+                    };
+                },
+                {} as Readonly<Strict<Partial<{
+                    [K in KeyOf<ValidOf<Def.ChildList<T>>>]?: 
+                        Model.Seq<Required<Def.ChildList<T>>[K][number]>[]
+                }>>>
+            )
         };
-    };
+    }
+
+    @Model.useDebugger(false)
+    protected _new<M extends Model>(
+        seq: Model.Seq<M>
+    ): M {
+        const Type = Model._products[seq.type];
+        console.log('type', Type?.name, seq, Model._products);
+        if (!Type) throw new Error(`Model ${seq.type} not found`);
+        return new Type(seq, this) as M;
+    }
 }

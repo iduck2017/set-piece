@@ -12,11 +12,11 @@
       "paths": {
         "@/*": ["./client/*"],
       },
-      "strictFunctionTypes": false,
       "experimentalDecorators": true,
+      "strictFunctionTypes": false
     },
     "include": [
       "client/**/*", 
       "client/index.d.ts"
-    ],
+    ]
 }

@@ -23,7 +23,10 @@ function getFileName(dirname) {
 }
 
 module.exports = {
-    entry: getFileName('./client/model'),
+    entry: [
+        ...getFileName('./client/model'),
+        './client/main.tsx',
+    ],
     mode: "development",
     output: {
         filename: 'bundle.[hash:4].js',
