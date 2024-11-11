@@ -73,7 +73,7 @@ export class Bunny extends Model<{
             for (const child of this.parent.child.bunnies) {
                 this._onReproduce(child);
             }
-            this.parent.event.reproduce.on(this, this._onReproduce);
+            this._bind(this.parent.event.reproduce, this._onReproduce);
         }
     }
 
@@ -81,11 +81,11 @@ export class Bunny extends Model<{
     @Bunny.isAlive()
     private _onReproduce(bunny: Bunny) {
         if (bunny !== this && bunny.state.isAlive) {
-            bunny.event.stateGet.on(this, this._onBunnyGet);
+            this._bind(bunny.event.stateGet, this._onBunnyGet);
         }
     }
 
-    @Model.useDebugger(false)
+    @Model.useDebugger(true)
     private _onBunnyGet(event: {
         model: Bunny;
         prev: Model.State<Bunny>;
@@ -105,7 +105,10 @@ export class Bunny extends Model<{
     @Bunny.isAlive()
     die() {
         this._memoState.isAlive = false;
-        this._event.die.emit(this);
+        this._emit(
+            this.event.die,
+            this
+        );
         if (this.parent instanceof Bunny) {
             this.parent.clean(this);
         }
@@ -136,7 +139,10 @@ export class Bunny extends Model<{
             }
         });
         this._childList.bunnies?.push(bunny);
-        this._event.reproduce.emit(bunny);
+        this._emit(
+            this.event.reproduce,
+            bunny
+        );
     }
     
     clean(bunny?: Bunny) {

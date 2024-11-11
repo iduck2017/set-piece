@@ -1,8 +1,6 @@
 import { Def, Seq } from "../type/define";
 import { Base, KeyOf, PartialOf, RequiredOf, Strict, ValidOf } from "../type/base";
 import { Delegator } from "@/util/proxy";
-import { Event } from "@/util/event";
-import React, { Key } from "react";
 
 export namespace Model {
     export type Seq<M extends Model> = M extends never ? undefined : M['seq'];
@@ -29,6 +27,21 @@ export namespace Model {
     }
 }
 
+const symbol = Symbol('Event');
+export class IEvent<E = any> {
+    private [symbol]?: E;
+
+    readonly target: Model;
+    readonly key: string;
+
+    constructor(
+        target: Model,
+        key: string
+    ) {
+        this.target = target;
+        this.key = key;
+    }
+}
 
 export abstract class Model<T extends Partial<Def> = any> {
     static useDebugger<M extends Model>(
@@ -239,12 +252,13 @@ export abstract class Model<T extends Partial<Def> = any> {
         };
     } 
     
-    @Model.useDebugger(false)
+    @Model.useDebugger(true)
     private _onChildMod(
         key: string,
         prev?: Model | Model[],
         next?: Model | Model[]
     ) {
+        console.log(prev, next);
         if (prev) {
             if (prev instanceof Array) {
                 prev.map(model => model._unload());
@@ -255,15 +269,22 @@ export abstract class Model<T extends Partial<Def> = any> {
                 next.map(model => model._load());
             } else next._load(); 
         }
-        this._baseEvent.childMod.emit({
-            model: this,
-            next: this.child
-        });
+        this._emit(
+            this.event.childMod,
+            {
+                model: this,
+                next: this.child
+            }
+        );
     }
-    public useChild(setter: React.Dispatch<Model.Child<Model<T>>>) {
-        return this._baseEvent.childMod.on(this, data => {
-            setter(data.next);
-        });
+    public useChild(setter: (data: {
+        model: Model<T>,
+        next: Model.Child<Model<T>>
+    }) => void) {
+        this._bind(this.event.childMod, setter);
+        return () => {
+            this._unbind(this.event.childMod, setter);
+        };
     }
 
     private _stateLock: boolean = false;
@@ -275,37 +296,42 @@ export abstract class Model<T extends Partial<Def> = any> {
     @Model.useDebugger(false)
     private _onStateMod() {
         if (this._stateLock) return;
-        console.log('execute');
         const prev = {
             ...this._memoState,
             ...this._tempState
         };
-        const result = this._baseEvent.stateGet.emit({
-            model: this,
-            prev,
-            next: prev
-        });
+        const result = this._emit(
+            this.event.stateGet,
+            {
+                model: this,
+                prev,
+                next: prev
+            } as any
+        );
         if (result && result.isBreak) return;
         const { next } = result;
         let isChanged = false;
-        console.log('isChanged', isChanged);
         for (const key of Object.keys(next)) {
             if (next[key] !== this._state[key]) {
                 isChanged = true;
                 break;
             } 
         }
+        console.log('isChanged', next, isChanged);
         if (isChanged) {
             Object.keys(next).forEach((
                 key: KeyOf<Readonly<Def.State<T> & Def.InitState<T> & Def.TempState<T>>>
             ) => {
                 this._state[key] = next[key];
             });
-            this._baseEvent.stateMod.emit({
-                model: this,
-                prev,
-                next
-            });
+            this._emit(
+                this.event.stateMod,
+                {
+                    model: this,
+                    prev,
+                    next
+                } as any
+            );
         }
     }
     protected _setMemoState(next: Readonly<Def.State<T> & Def.InitState<T>>) {
@@ -324,10 +350,15 @@ export abstract class Model<T extends Partial<Def> = any> {
         this._onStateMod();
         this._stateLock = false;
     }
-    public useState(setter: React.Dispatch<Model.State<Model<T>>>) {
-        return this._baseEvent.stateMod.on(this, data => {
-            setter(data.next);
-        });
+    public useState(setter: (data: {
+        model: Model<T>,
+        prev: Model.State<Model<T>>,
+        next: Model.State<Model<T>>
+    }) => void) {
+        this._bind(this.event.stateMod, setter);
+        return () => {
+            this._unbind(this.event.stateMod, setter);
+        };
     }
 
     
@@ -337,7 +368,7 @@ export abstract class Model<T extends Partial<Def> = any> {
             this._refer.push(refer); 
         } 
     }
-    @Model.useDebugger(true)
+    @Model.useDebugger(false)
     private _unconnect(refer: Model) {
         console.log(this.id, refer.id, this._refer);
         const index = this._refer.indexOf(refer);
@@ -361,39 +392,90 @@ export abstract class Model<T extends Partial<Def> = any> {
             }
         }
 
-        for (const event of Object.values({
-            ...this._event,
-            ...this._baseEvent
-        })) {
-            event.unload(refer);
-        }
+        // for (const event of Object.values({
+        //     ...this._event,
+        //     ...this._baseEvent
+        // })) {
+        //     event.unload(refer);
+        // }
     }
 
-    protected readonly _event: Readonly<{
-        [K in KeyOf<Def.Event<T>>]: Event<Def.Event<T>[K]>
-    }> = Delegator.Automic(() => new Event(this));
-    private readonly _baseEvent: {
-        [K in KeyOf<Model.BaseEvent<typeof this>>]: Event<Model.BaseEvent<typeof this>[K]>
-    } = {
-            stateMod: new Event(this),
-            stateGet: new Event(this, 'aaa', this._onStateMod.bind(this)),
-            childMod: new Event(this)
-        };
+    private readonly _handlers: Record<string, [Model, Base.Func][]> = {};
+    private readonly _emitters: Map<Base.Func, IEvent[]> = new Map();
+
+    @Model.useDebugger(false)
+    protected _bind<E>(
+        event: IEvent<E>,
+        handler: Base.Event<E>
+    ) {
+        const { target, key } = event;
+        if (!target._handlers[key]) {
+            target._handlers[key] = [];
+        }
+        target._handlers[key].push([ this, handler.bind(this) ]);
+        if (!this._emitters.has(handler)) {
+            this._emitters.set(handler, []);
+        }
+        this._emitters.get(handler)?.push(event);
+        if (key === 'stateGet') {
+            target._onStateMod();
+        }
+    }
+    protected _unbind<E>(
+        event: IEvent<E>,
+        handler: Base.Event<E>
+    ) {
+        const { target, key } = event;
+        while (true) {
+            const index = target._handlers[key]?.findIndex(
+                item => item[0] === this && item[1] === handler
+            );
+            if (index < 0) break;
+            target._handlers[key]?.splice(index, 1);
+        }
+        const emitters = this._emitters.get(handler);
+        if (emitters) {
+            while (true) {
+                const index = emitters.indexOf(event);
+                if (index < 0) break;
+                emitters.splice(index, 1);
+            }
+        }
+        if (key === 'stateGet') {
+            target._onStateMod();
+        }
+    }
+    @Model.useDebugger(false)
+    protected _emit<E>(
+        event: IEvent<E>,
+        param: E
+    ) {
+        const handlers = this._handlers[event.key]?.map(handler => handler[1]);
+        if (handlers) {
+            for (const handler of handlers) {
+                const result = handler(param);
+                if (result) param = result;
+            }
+        }
+        return param;
+    }
+
+    // protected readonly _event: Readonly<{
+    //     [K in KeyOf<Def.Event<T>>]: Event<Def.Event<T>[K]>
+    // }> = Delegator.Automic(() => new Event(this));
+    // private readonly _baseEvent: {
+    //     [K in KeyOf<Model.BaseEvent<typeof this>>]: Event<Model.BaseEvent<typeof this>[K]>
+    // } = {
+    //         stateMod: new Event(this),
+    //         stateGet: new Event(this, this._onStateMod.bind(this)),
+    //         childMod: new Event(this)
+    //     };
 
     readonly event: Readonly<{
-        [K in KeyOf<Def.Event<T>>]: Event.Proxy<Def.Event<T>[K]>
-    } & {
-        [K in KeyOf<Model.BaseEvent<typeof this>>]: Event<Model.BaseEvent<typeof this>[K]>
+        [K in KeyOf<Def.Event<T> & Model.BaseEvent<typeof this>>]: 
+            IEvent<(Def.Event<T>  & Model.BaseEvent<typeof this>)[K]>
     }> = Delegator.Automic<any>((key) => {
-        if (
-            key === 'stateMod' ||
-            key === 'stateGet' ||
-            key === 'childMod'
-        ) {
-            return this._baseEvent[key].proxy;
-        } else {
-            return this._event[key].proxy;
-        }
+        return new IEvent(this, key);
     });
 
     private readonly _loaders: Base.Func[] = [];
