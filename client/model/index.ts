@@ -165,18 +165,17 @@ export abstract class Model<T extends Partial<Def> = any> {
         this.id = seq.id || Model.ticket;
 
         this._memoState = Delegator.ControlledDict(
-            Delegator.Editable(seq.memoState), 
-            this._onStateMod.bind(this)
+            { ...seq.memoState }, 
+            this._onStateReset.bind(this)
         );
         this._tempState = Delegator.ControlledDict(
-            Delegator.Editable(seq.tempState), 
-            this._onStateMod.bind(this)
+            { ... seq.tempState }, 
+            this._onStateReset.bind(this)
         );
         this._state = {
             ...seq.memoState,
             ...seq.tempState
         };
-        this.state = Delegator.Readonly(this._state);
 
         const childDict: any = {};
         for (const key in seq.childDict) {
@@ -187,7 +186,7 @@ export abstract class Model<T extends Partial<Def> = any> {
         }
         this._childDict = Delegator.ControlledDict(
             childDict,
-            this._onChildMod.bind(this)
+            this._onChildUpdate.bind(this)
         );
         
         const childList: any = {};
@@ -197,11 +196,11 @@ export abstract class Model<T extends Partial<Def> = any> {
             if (!value) continue;
             childList[_key] = Delegator.ControlledList(
                 value.map(seq => this._new(seq)),
-                this._onChildMod.bind(this, '')
+                this._onChildUpdate.bind(this, '')
             );
         }
         this._childList = Delegator.Automic(
-            () => Delegator.ControlledList([], this._onChildMod.bind(this, '')), 
+            () => Delegator.ControlledList([], this._onChildUpdate.bind(this, '')), 
             childList
         );
 
@@ -234,28 +233,28 @@ export abstract class Model<T extends Partial<Def> = any> {
     }
     
     @Model.useDebugger(false)
-    private _onChildMod(
+    private _onChildUpdate(
         key: string,
         prev?: Model | Model[],
         next?: Model | Model[]
     ) {
         console.log(prev, next);
-        if (prev instanceof Array) prev.map(model => model._unload());
+        if (prev instanceof Array) prev.map(target => target._unload());
         else prev?._unload();
-        if (next instanceof Array) next.map(model => model._load());
+        if (next instanceof Array) next.map(target => target._load());
         else next?._load(); 
-        this._emit(this.event.childMod, {
-            model: this,
+        this._emit(this.event.childUpdate, {
+            target: this,
             next: this.child
         });
     }
     public useChild(setter: (data: {
-        model: Model<T>,
+        target: Model<T>,
         next: Model.Child<Model<T>>
     }) => void) {
-        this._bind(this.event.childMod, setter);
+        this._bind(this.event.childUpdate, setter);
         return () => {
-            this._unbind(this.event.childMod, setter);
+            this._unbind(this.event.childUpdate, setter);
         };
     }
 
@@ -265,17 +264,21 @@ export abstract class Model<T extends Partial<Def> = any> {
     protected readonly _tempState: Def.TempState<T>;
 
     private readonly _state: Def.State<T> & Def.InitState<T> & Def.TempState<T>;
-    readonly state: Readonly<Def.State<T> & Def.InitState<T> & Def.TempState<T>>;
+    get state(): Readonly<Def.State<T> & Def.InitState<T> & Def.TempState<T>> {
+        return {
+            ...this._state
+        };
+    }
 
-    @Model.useDebugger(false)
-    private _onStateMod() {
+    @Model.useDebugger(true)
+    private _onStateReset() {
         if (this._stateLock) return;
         const prev = {
             ...this._memoState,
             ...this._tempState
         };
-        const result = this._emit(this.event.stateGet, {
-            model: this,
+        const result = this._emit(this.event.stateCheck, {
+            target: this,
             prev,
             next: prev
         });
@@ -295,8 +298,8 @@ export abstract class Model<T extends Partial<Def> = any> {
                 const _key: KeyOf<Def.State<T> & Def.InitState<T> & Def.TempState<T>> = key;
                 this._state[_key] = next[key];
             }
-            this._emit(this.event.stateMod, {
-                model: this,
+            this._emit(this.event.stateUpdate, {
+                target: this,
                 prev,
                 next
             });
@@ -308,7 +311,7 @@ export abstract class Model<T extends Partial<Def> = any> {
             const _key: KeyOf<Def.State<T> & Def.InitState<T>> = key;
             this._memoState[_key] = next[_key];
         }
-        this._onStateMod();
+        this._onStateReset();
         this._stateLock = false;
     }
 
@@ -318,18 +321,18 @@ export abstract class Model<T extends Partial<Def> = any> {
             const _key: KeyOf<Def.TempState<T>> = key;
             this._state[_key] = this._memoState[_key];
         }
-        this._onStateMod();
+        this._onStateReset();
         this._stateLock = false;
     }
 
     public useState(setter: (data: {
-        model: Model<T>,
+        target: Model<T>,
         prev: Model.State<Model<T>>,
         next: Model.State<Model<T>>
     }) => void) {
-        this._bind(this.event.stateMod, setter);
+        this._bind(this.event.stateUpdate, setter);
         return () => {
-            this._unbind(this.event.stateMod, setter);
+            this._unbind(this.event.stateUpdate, setter);
         };
     }
 
@@ -343,13 +346,11 @@ export abstract class Model<T extends Partial<Def> = any> {
     private readonly _handlers: Record<string, [Model, Base.Func][]> = {};
     private readonly _emitters: Map<Base.Func, IEvent<any>[]> = new Map();
 
-    @Model.useDebugger(false)
+    @Model.useDebugger(true)
     protected _bind<E>(
         event: IEvent<E>,
         handler: Base.Event<E>
     ) {
-        handler = handler.bind(this);
-
         const { target, key } = event;
         if (!target._handlers[key]) {
             target._handlers[key] = [];
@@ -364,8 +365,9 @@ export abstract class Model<T extends Partial<Def> = any> {
         }
         this._emitters.get(handler)?.push(event);
 
-        if (key === target.event.stateGet.key) {
-            target._onStateMod();
+        console.log(event.key, handler);
+        if (key === target.event.stateCheck.key) {
+            target._onStateReset();
         }
     }
 
@@ -395,8 +397,8 @@ export abstract class Model<T extends Partial<Def> = any> {
             }
             this._emitters.set(handler, emitters);
         }
-        if (key === target.event.stateGet.key) {
-            target._onStateMod();
+        if (key === target.event.stateCheck.key) {
+            target._onStateReset();
         }
     }
 
@@ -405,6 +407,7 @@ export abstract class Model<T extends Partial<Def> = any> {
         handler: Base.Event<E>
     ) {
         const emitters = this._emitters.get(handler);
+        console.log(emitters);
         for (const event of [ ...emitters || [] ]) {
             this._unbind(event, handler);
         }
@@ -415,9 +418,9 @@ export abstract class Model<T extends Partial<Def> = any> {
         event: IEvent<E>,
         param: E
     ) {
-        const handlers = this._handlers[event.key]?.map(handler => handler[1]);
-        for (const handler of [ ...handlers || [] ]) {
-            const result = handler(param);
+        const handlers = this._handlers[event.key];
+        for (const [ target, handler ] of [ ...handlers || [] ]) {
+            const result = handler.call(target, param);
             if (result) param = result;
         }
         return param;
@@ -426,19 +429,19 @@ export abstract class Model<T extends Partial<Def> = any> {
     readonly event: Readonly<{
         [K in KeyOf<Def.Event<T>>]: IEvent<Def.Event<T>[K]>
     }> & {
-        stateMod: IEvent<{
-            model: Model<T>, 
+        stateUpdate: IEvent<{
+            target: Model<T>, 
             prev: Model.State<Model<T>>,
             next: Model.State<Model<T>>,
         }>,
-        stateGet: IEvent<{
-            model: Model<T>,
+        stateCheck: IEvent<{
+            target: Model<T>,
             prev: Model.State<Model<T>>,
             next: Model.State<Model<T>>,
             isBreak?: boolean
         }>,
-        childMod: IEvent<{
-            model: Model<T>,
+        childUpdate: IEvent<{
+            target: Model<T>,
             next: Model.Child<Model<T>>,
         }>,
     } = Delegator.Automic<any>((key) => {
@@ -462,8 +465,8 @@ export abstract class Model<T extends Partial<Def> = any> {
             if (!value) continue;
             child.push(...value);
         }
-        for (const model of child) {
-            model._load();
+        for (const target of child) {
+            target._load();
         }
     }
 
@@ -522,7 +525,7 @@ export abstract class Model<T extends Partial<Def> = any> {
             const _key: KeyOf<Def.ChildList<T>> = key;
             const value = this._childList[_key];
             if (!value) continue;
-            childList[_key] = value.map(model => model.seq);
+            childList[_key] = value.map(target => target.seq);
         }
 
         return {
@@ -547,5 +550,7 @@ export abstract class Model<T extends Partial<Def> = any> {
     @Model.useDebugger(true)
     public debug() {
         console.log(this._handlers);
+        console.log({ ...this.state });
+        console.log({ ...this._state });
     }
 }

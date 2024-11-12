@@ -1,4 +1,4 @@
-import { Base, Editable, KeyOf, ValueOf } from "../type/base";
+import { Base, KeyOf, ValueOf } from "../type/base";
 
 export namespace Delegator {
     export function Automic<
@@ -17,17 +17,6 @@ export namespace Delegator {
             set: () => false,
             deleteProperty: () => false
         });
-    }
-
-    export function Readonly<T extends Base.Dict>(origin: T): Readonly<T> {
-        return new Proxy(origin, {
-            set: () => false,
-            deleteProperty: () => false
-        });
-    }
-
-    export function Editable<T extends Base.Dict>(origin: T): Editable<T> {
-        return { ...origin };
     }
 
     export function ControlledDict<T extends Record<string, any>>(
@@ -138,6 +127,4 @@ export namespace Delegator {
 
         return result;
     }
-
-
 }

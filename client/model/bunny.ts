@@ -15,10 +15,10 @@ export class Bunny extends Model<{
         maxAge: number;
         gender: Gender;
         isAlive: boolean;
-        warm: number;
-        readonly matureAge: number;
     },
     tempState: {
+        readonly warm: number;
+        readonly matureAge: number
     },
     initState: {
         readonly name: string
@@ -54,12 +54,12 @@ export class Bunny extends Model<{
                 age: 0,
                 maxAge: 10,
                 isAlive: true,
-                warm: 5,
-                matureAge: 5,
                 gender: Gender.Unknown,
                 ...seq.memoState
             },
             tempState: {
+                warm: 0,
+                matureAge: 3
             }
         }, parent);
     }
@@ -71,23 +71,34 @@ export class Bunny extends Model<{
         if (this.parent instanceof Bunny) {
             console.log(this.parent.event.reproduce);
             for (const child of this.parent.child.bunnies) {
-                this._onReproduce(child);
+                this._onSpawn(child);
             }
-            this._bind(this.parent.event.reproduce, this._onReproduce);
+            this._bind(this.parent.event.reproduce, this._onSpawn);
+        } else {
+            this._onSpawn(this);
         }
+    }
+
+    @Model.useDebugger(true)
+    private _onDie(bunny: Bunny) {
+        console.log(bunny);
+        this._unbind(bunny.event.stateCheck, this._onBunnyCheck);
+        this._unbind(bunny.event.reproduce, this._onSpawn);
+        this._unbind(bunny.event.die, this._onDie);
     }
 
     @Model.useDebugger(false)
     @Bunny.isAlive()
-    private _onReproduce(bunny: Bunny) {
-        if (bunny !== this && bunny.state.isAlive) {
-            this._bind(bunny.event.stateGet, this._onBunnyGet);
+    private _onSpawn(bunny: Bunny) {
+        if (bunny.state.isAlive) {
+            this._bind(bunny.event.stateCheck, this._onBunnyCheck);
+            this._bind(bunny.event.die, this._onDie);
         }
     }
 
     @Model.useDebugger(false)
-    private _onBunnyGet(event: {
-        model: Bunny;
+    private _onBunnyCheck(event: {
+        target: Bunny;
         prev: Model.State<Bunny>;
         next: Model.State<Bunny>;
         isBreak?: boolean
@@ -96,7 +107,7 @@ export class Bunny extends Model<{
             ...event,
             next: {
                 ...event.next,
-                warm: event.next.warm + 1
+                warm: event.next.warm + (event.target === this ? 5 : 1)
             }
         };
     }
@@ -104,13 +115,9 @@ export class Bunny extends Model<{
     @Bunny.isAlive()
     die() {
         this._memoState.isAlive = false;
-        this._emit(
-            this.event.die,
-            this
-        );
-        if (this.parent instanceof Bunny) {
-            this.parent.clean(this);
-        }
+        this._unlisten(this._onSpawn);
+        this._unlisten(this._onBunnyCheck);
+        this._emit(this.event.die, this);
     }
 
 
@@ -118,10 +125,7 @@ export class Bunny extends Model<{
     growup() {
         this._memoState.age ++;
         if (this.state.age > this.state.matureAge && this._memoState.gender === Gender.Unknown) {
-            this._memoState.gender = Random.type(
-                Gender.Male,
-                Gender.Female
-            );
+            this._memoState.gender = Random.type(Gender.Male, Gender.Female);
         }
         if (this.state.age >= this.state.maxAge) {
             this.die();
@@ -147,12 +151,9 @@ export class Bunny extends Model<{
     clean(bunny?: Bunny) {
         if (bunny) {
             const index = this._childList.bunnies.indexOf(bunny);
-            if (index >= 0) {
-                this._childList.bunnies.splice(index, 1);
-            }
+            if (index >= 0) this._childList.bunnies.splice(index, 1);
         } else {
             this._childList.bunnies.splice(0, this._childList.bunnies.length);
         }
-        
     }
 }
