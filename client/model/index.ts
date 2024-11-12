@@ -391,7 +391,7 @@ export abstract class Model<T extends Partial<Def> = any> {
                 }
             }
         }
-
+        
         // for (const event of Object.values({
         //     ...this._event,
         //     ...this._baseEvent
@@ -421,6 +421,7 @@ export abstract class Model<T extends Partial<Def> = any> {
             target._onStateMod();
         }
     }
+    @Model.useDebugger(true)
     protected _unbind<E>(
         event: IEvent<E>,
         handler: Base.Event<E>
@@ -430,6 +431,7 @@ export abstract class Model<T extends Partial<Def> = any> {
             const index = target._handlers[key]?.findIndex(
                 item => item[0] === this && item[1] === handler
             );
+            console.log(index);
             if (index < 0) break;
             target._handlers[key]?.splice(index, 1);
         }
@@ -437,9 +439,11 @@ export abstract class Model<T extends Partial<Def> = any> {
         if (emitters) {
             while (true) {
                 const index = emitters.indexOf(event);
+                console.log(index);
                 if (index < 0) break;
                 emitters.splice(index, 1);
             }
+            this._emitters.set(handler, emitters);
         }
         if (key === 'stateGet') {
             target._onStateMod();
@@ -459,17 +463,6 @@ export abstract class Model<T extends Partial<Def> = any> {
         }
         return param;
     }
-
-    // protected readonly _event: Readonly<{
-    //     [K in KeyOf<Def.Event<T>>]: Event<Def.Event<T>[K]>
-    // }> = Delegator.Automic(() => new Event(this));
-    // private readonly _baseEvent: {
-    //     [K in KeyOf<Model.BaseEvent<typeof this>>]: Event<Model.BaseEvent<typeof this>[K]>
-    // } = {
-    //         stateMod: new Event(this),
-    //         stateGet: new Event(this, this._onStateMod.bind(this)),
-    //         childMod: new Event(this)
-    //     };
 
     readonly event: Readonly<{
         [K in KeyOf<Def.Event<T> & Model.BaseEvent<typeof this>>]: 
@@ -494,7 +487,7 @@ export abstract class Model<T extends Partial<Def> = any> {
             child?._load();
         }
     }
-    @Model.useDebugger(false)
+    @Model.useDebugger(true)
     private _unload() {
         const childDict: Def.ChildDict<T> = this._childDict;
         const childList: Def.ChildList<T> = this._childList;
@@ -508,12 +501,23 @@ export abstract class Model<T extends Partial<Def> = any> {
             model?._unload();
         }
         console.log(this.id, this._refer.map(model => model.id));
-        for (const refer of [
-            ...this._refer
-        ]) {
-            refer._unconnect(this);
-            this._unconnect(refer);
-        }
+
+        // for (const key in this._handlers) {
+        //     const handlers = this._handlers[key];
+        //     for (const [ model, handler ] of [ ...handlers ]) {
+        //         this._unbind(model.event[key], handler);
+        //     }
+        // }
+        // for (const handler of this._emitters.keys()) {
+        //     const emitters = this._emitters.get(handler);
+        //     if (emitters) {
+        //         for (const event of emitters) {
+        //             const { target, key } = event;
+        //             target._unbind(this.event[key], handler);
+        //         }
+        //     }
+        // }
+  
         console.log(this.id, this._refer.map(model => model.id));
     }
     
