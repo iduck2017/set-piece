@@ -7,7 +7,7 @@
     "distDir": "../dist"
   },
   "package": {
-    "productName": "create-my-world",
+    "productName": "set-piece",
     "version": "0.1.0"
   },
   "tauri": {
@@ -58,7 +58,7 @@
         "fullscreen": false,
         "height": 900,
         "resizable": true,
-        "title": "create-my-world",
+        "title": "set-piece",
         "width": 1200
       }
     ]
