@@ -7,30 +7,9 @@ export namespace Model {
     export type Parent<M extends Model> = M['parent'];
     export type State<M extends Model> = M['state'];
     export type Child<M extends Model> = M['child'];
-
-    export type BaseEvent<M extends Model> = {
-        stateMod: {
-            model: M, 
-            prev: Model.State<M>,
-            next: Model.State<M>,
-        },
-        stateGet: {
-            model: M,
-            prev: Model.State<M>,
-            next: Model.State<M>,
-            isBreak?: boolean
-        },
-        childMod: {
-            model: M,
-            next: Model.Child<M>,
-        },
-    }
 }
 
-const symbol = Symbol('Event');
-export class IEvent<E = any> {
-    private [symbol]?: E;
-
+export class IEvent<E> {
     readonly target: Model;
     readonly key: string;
 
@@ -54,16 +33,11 @@ export abstract class Model<T extends Partial<Def> = any> {
             descriptor: TypedPropertyDescriptor<Base.Func>
         ): TypedPropertyDescriptor<Base.Func> {
             const handler = descriptor.value;
-            descriptor.value = function(
-                this: M, 
-                ...args
-            ) {
+            descriptor.value = function(this: M, ...args) {
                 const flag = typeof validator === 'function' ? validator(this) : validator;
                 const _logger = console.log;
                 console.log = (...args) => {
-                    if (flag) {
-                        logger(key, '>', ...args);
-                    }
+                    if (flag) logger(key, '>', ...args);
                 };
                 const result = handler?.apply(this, args);
                 console.log = _logger;
@@ -91,10 +65,7 @@ export abstract class Model<T extends Partial<Def> = any> {
             if (!validatorDict[key]) validatorDict[key] = [];
             validatorDict[key].push(validator);
             Model._validators.set(target.constructor, validatorDict);
-            descriptor.value = function(
-                this: M, 
-                ...args
-            ) {
+            descriptor.value = function(this: M, ...args) {
                 if (validator(this)) {
                     return handler?.apply(this, args);
                 } else if (strict) {
@@ -108,11 +79,13 @@ export abstract class Model<T extends Partial<Def> = any> {
     private static readonly _products: Record<string, Base.Class> = {};
     protected static useProduct<
         T extends string,
-        M extends { type: T }
+        M extends Model
     >(type: T) {
-        return function (target: Base.Class<M>) {
+        return function (target: new (
+            seq: Model.Seq<M>, 
+            parent: Model.Parent<M>
+        ) => M & { type: T }) {
             Model._products[type] = target;
-            console.log('[useProduct]', type, Model._products);
         };
     }
 
@@ -130,6 +103,21 @@ export abstract class Model<T extends Partial<Def> = any> {
         };
     }
 
+    
+    private static readonly _unloaders: Map<Function, string[]> = new Map();
+    protected static useUnloader() {
+        return function(
+            target: Model,
+            key: string,
+            descriptor: TypedPropertyDescriptor<Base.Func>
+        ): TypedPropertyDescriptor<Base.Func> {
+            const keys = Model._unloaders.get(target.constructor) || [];
+            keys.push(key);
+            Model._unloaders.set(target.constructor, keys);
+            return descriptor;
+        };
+    }
+
     private static _timestamp = Date.now(); 
     private static _ticket = 36 ** 2;
     static get ticket(): string {
@@ -143,13 +131,12 @@ export abstract class Model<T extends Partial<Def> = any> {
             }
         }
         this._timestamp = now;
-        return now.toString(36) + ticket.toString(36);
+        return ticket.toString(36) + now.toString(36);
     }
 
     readonly id: string;
     readonly type: Def.Type<T>;
     readonly parent: Def.Parent<T>;
-    
     constructor(
         seq: {
             id?: string,
@@ -191,53 +178,47 @@ export abstract class Model<T extends Partial<Def> = any> {
         };
         this.state = Delegator.Readonly(this._state);
 
+        const childDict: any = {};
+        for (const key in seq.childDict) {
+            const _key: KeyOf<Def.ChildDict<T>> = key;
+            const value = seq.childDict[key];
+            if (!value) continue;
+            childDict[_key] = this._new(value);
+        }
         this._childDict = Delegator.ControlledDict(
-            Object.keys(seq.childDict).reduce((
-                acc, 
-                key: KeyOf<Def.ChildDict<T>>
-            ) => {
-                const value = seq.childDict[key];
-                if (!value) return acc;
-                return {
-                    ...acc,
-                    [key]: this._new(value)
-                };
-            }, {} as Def.ChildDict<T>),
+            childDict,
             this._onChildMod.bind(this)
         );
-        this._childList = Delegator.Automic<any>(() => (
-            Delegator.ControlledList([], this._onChildMod.bind(this, ''))
-        ), Object.keys(seq.childList).reduce((
-            acc, 
-            key: KeyOf<Def.ChildList<T>>
-        ) => {
-            const value: Seq<Def>[] = seq.childList[key];
-            if (!value) return acc;
-            return {
-                ...acc,
-                [key]: Delegator.ControlledList(
-                    value.map((seq: Seq<Def>) => this._new(seq)),
-                    this._onChildMod.bind(this, '')
-                )
-            };
-        }, {} as Def.ChildList<T>));
+        
+        const childList: any = {};
+        for (const key in seq.childList) {
+            const _key: KeyOf<Def.ChildList<T>> = key;
+            const value = seq.childList[key];
+            if (!value) continue;
+            childList[_key] = Delegator.ControlledList(
+                value.map(seq => this._new(seq)),
+                this._onChildMod.bind(this, '')
+            );
+        }
+        this._childList = Delegator.Automic(
+            () => Delegator.ControlledList([], this._onChildMod.bind(this, '')), 
+            childList
+        );
 
         let constructor: any = this.constructor;
         while (constructor.__proto__ !== null) {
-            for (const key of Object.keys(
-                Model._validators.get(constructor) || {}
-            )) {
-                if (!this._validators[key]) {
-                    this._validators[key] = [];
-                }
+            for (const key in Model._validators.get(constructor)) {
+                if (!this._validators[key]) this._validators[key] = [];
                 const validatorSet = Model._validators.get(constructor)?.[key] || [];
-                this._validators[key].push(
-                    ...validatorSet
-                );
+                this._validators[key].push(...validatorSet);
             }
             for (const key of Model._loaders.get(constructor) || []) {
                 const loader: any = Reflect.get(this, key);
                 this._loaders.push(loader.bind(this));
+            }
+            for (const key of Model._unloaders.get(constructor) || []) {
+                const unloader: any = Reflect.get(this, key);
+                this._unloaders.push(unloader.bind(this));
             }
             constructor = constructor.__proto__;
         }
@@ -245,37 +226,28 @@ export abstract class Model<T extends Partial<Def> = any> {
 
     protected readonly _childDict: ValidOf<Def.ChildDict<T>>;
     protected readonly _childList: Readonly<ValidOf<Required<Def.ChildList<T>>>>;
-    get child(): ValidOf<Def.ChildDict<T>> & Readonly<ValidOf<Def.ChildList<T>>> {
+    get child(): Readonly<Def.ChildDict<T> & Def.ChildList<T>> {
         return {
-            ...this._childDict,
+            ...this._childDict, 
             ...this._childList
         };
-    } 
+    }
     
-    @Model.useDebugger(true)
+    @Model.useDebugger(false)
     private _onChildMod(
         key: string,
         prev?: Model | Model[],
         next?: Model | Model[]
     ) {
         console.log(prev, next);
-        if (prev) {
-            if (prev instanceof Array) {
-                prev.map(model => model._unload());
-            } else prev._unload();
-        }
-        if (next) {
-            if (next instanceof Array) {
-                next.map(model => model._load());
-            } else next._load(); 
-        }
-        this._emit(
-            this.event.childMod,
-            {
-                model: this,
-                next: this.child
-            }
-        );
+        if (prev instanceof Array) prev.map(model => model._unload());
+        else prev?._unload();
+        if (next instanceof Array) next.map(model => model._load());
+        else next?._load(); 
+        this._emit(this.event.childMod, {
+            model: this,
+            next: this.child
+        });
     }
     public useChild(setter: (data: {
         model: Model<T>,
@@ -288,8 +260,10 @@ export abstract class Model<T extends Partial<Def> = any> {
     }
 
     private _stateLock: boolean = false;
+    
     protected readonly _memoState: Def.State<T> & Def.InitState<T>;
     protected readonly _tempState: Def.TempState<T>;
+
     private readonly _state: Def.State<T> & Def.InitState<T> & Def.TempState<T>;
     readonly state: Readonly<Def.State<T> & Def.InitState<T> & Def.TempState<T>>;
 
@@ -300,18 +274,16 @@ export abstract class Model<T extends Partial<Def> = any> {
             ...this._memoState,
             ...this._tempState
         };
-        const result = this._emit(
-            this.event.stateGet,
-            {
-                model: this,
-                prev,
-                next: prev
-            } as any
-        );
+        const result = this._emit(this.event.stateGet, {
+            model: this,
+            prev,
+            next: prev
+        });
         if (result && result.isBreak) return;
         const { next } = result;
+
         let isChanged = false;
-        for (const key of Object.keys(next)) {
+        for (const key in next) {
             if (next[key] !== this._state[key]) {
                 isChanged = true;
                 break;
@@ -319,37 +291,37 @@ export abstract class Model<T extends Partial<Def> = any> {
         }
         console.log('isChanged', next, isChanged);
         if (isChanged) {
-            Object.keys(next).forEach((
-                key: KeyOf<Readonly<Def.State<T> & Def.InitState<T> & Def.TempState<T>>>
-            ) => {
-                this._state[key] = next[key];
+            for (const key in next) {
+                const _key: KeyOf<Def.State<T> & Def.InitState<T> & Def.TempState<T>> = key;
+                this._state[_key] = next[key];
+            }
+            this._emit(this.event.stateMod, {
+                model: this,
+                prev,
+                next
             });
-            this._emit(
-                this.event.stateMod,
-                {
-                    model: this,
-                    prev,
-                    next
-                } as any
-            );
         }
     }
     protected _setMemoState(next: Readonly<Def.State<T> & Def.InitState<T>>) {
         this._stateLock = true;
-        Object.keys(next).forEach((key: KeyOf<Def.State<T> & Def.InitState<T>>) => {
-            this._memoState[key] = next[key];
-        });
+        for (const key in next) {
+            const _key: KeyOf<Def.State<T> & Def.InitState<T>> = key;
+            this._memoState[_key] = next[_key];
+        }
         this._onStateMod();
         this._stateLock = false;
     }
+
     protected _setTempState(next: Readonly<Def.TempState<T>>) {
         this._stateLock = true;
-        Object.keys(next).forEach((key: KeyOf<Def.TempState<T>>) => {
-            this._tempState[key] = next[key];
-        });
+        for (const key in next) {
+            const _key: KeyOf<Def.TempState<T>> = key;
+            this._state[_key] = this._memoState[_key];
+        }
         this._onStateMod();
         this._stateLock = false;
     }
+
     public useState(setter: (data: {
         model: Model<T>,
         prev: Model.State<Model<T>>,
@@ -361,199 +333,204 @@ export abstract class Model<T extends Partial<Def> = any> {
         };
     }
 
-    
     private readonly _refer: Model[] = [];
     connect(refer: Model) {
         if (!this._refer.includes(refer)) {
             this._refer.push(refer); 
         } 
     }
-    @Model.useDebugger(false)
-    private _unconnect(refer: Model) {
-        console.log(this.id, refer.id, this._refer);
-        const index = this._refer.indexOf(refer);
-        if (index < 0) {
-            console.log('not found', refer.id);
-            return;
-        }
-        this._refer.splice(index, 1);
-
-        const tempState: Def.TempState<T> = this._tempState;
-        for (const key of Object.keys(tempState)) {
-            if (tempState[key] instanceof Model) {
-                delete tempState[key];  
-            }
-            if (tempState[key] instanceof Array) {
-                for (const index in tempState[key]) {
-                    if (tempState[key][index] instanceof Model) {
-                        delete tempState[key];
-                    }
-                }
-            }
-        }
-        
-        // for (const event of Object.values({
-        //     ...this._event,
-        //     ...this._baseEvent
-        // })) {
-        //     event.unload(refer);
-        // }
-    }
 
     private readonly _handlers: Record<string, [Model, Base.Func][]> = {};
-    private readonly _emitters: Map<Base.Func, IEvent[]> = new Map();
+    private readonly _emitters: Map<Base.Func, IEvent<any>[]> = new Map();
 
     @Model.useDebugger(false)
     protected _bind<E>(
         event: IEvent<E>,
         handler: Base.Event<E>
     ) {
+        handler = handler.bind(this);
+
         const { target, key } = event;
         if (!target._handlers[key]) {
             target._handlers[key] = [];
         }
-        target._handlers[key].push([ this, handler.bind(this) ]);
+        target._handlers[key].push([ 
+            this, 
+            handler
+        ]);
+        
         if (!this._emitters.has(handler)) {
             this._emitters.set(handler, []);
         }
         this._emitters.get(handler)?.push(event);
-        if (key === 'stateGet') {
+
+        if (key === target.event.stateGet.key) {
             target._onStateMod();
         }
     }
-    @Model.useDebugger(true)
+
+    @Model.useDebugger(false)
     protected _unbind<E>(
         event: IEvent<E>,
         handler: Base.Event<E>
     ) {
         const { target, key } = event;
-        while (true) {
-            const index = target._handlers[key]?.findIndex(
-                item => item[0] === this && item[1] === handler
-            );
-            console.log(index);
-            if (index < 0) break;
-            target._handlers[key]?.splice(index, 1);
+        const handlers = target._handlers[key];
+        if (handlers) {
+            while (true) {
+                const index = handlers.findIndex(
+                    item => item[0] === this && item[1] === handler
+                );
+                if (index < 0) break;
+                handlers?.splice(index, 1);
+            }
         }
         const emitters = this._emitters.get(handler);
+        console.log(this.id, event.key, emitters);
         if (emitters) {
             while (true) {
                 const index = emitters.indexOf(event);
-                console.log(index);
                 if (index < 0) break;
                 emitters.splice(index, 1);
             }
             this._emitters.set(handler, emitters);
         }
-        if (key === 'stateGet') {
+        if (key === target.event.stateGet.key) {
             target._onStateMod();
         }
     }
+
+    @Model.useDebugger(true)
+    protected _unlisten<E>(
+        handler: Base.Event<E>
+    ) {
+        const emitters = this._emitters.get(handler);
+        for (const event of [ ...emitters || [] ]) {
+            this._unbind(event, handler);
+        }
+    }
+
     @Model.useDebugger(false)
     protected _emit<E>(
         event: IEvent<E>,
         param: E
     ) {
         const handlers = this._handlers[event.key]?.map(handler => handler[1]);
-        if (handlers) {
-            for (const handler of handlers) {
-                const result = handler(param);
-                if (result) param = result;
-            }
+        for (const handler of [ ...handlers || [] ]) {
+            const result = handler(param);
+            if (result) param = result;
         }
         return param;
     }
 
     readonly event: Readonly<{
-        [K in KeyOf<Def.Event<T> & Model.BaseEvent<typeof this>>]: 
-            IEvent<(Def.Event<T>  & Model.BaseEvent<typeof this>)[K]>
-    }> = Delegator.Automic<any>((key) => {
+        [K in KeyOf<Def.Event<T>>]: IEvent<Def.Event<T>[K]>
+    }> & {
+        stateMod: IEvent<{
+            model: Model<T>, 
+            prev: Model.State<Model<T>>,
+            next: Model.State<Model<T>>,
+        }>,
+        stateGet: IEvent<{
+            model: Model<T>,
+            prev: Model.State<Model<T>>,
+            next: Model.State<Model<T>>,
+            isBreak?: boolean
+        }>,
+        childMod: IEvent<{
+            model: Model<T>,
+            next: Model.Child<Model<T>>,
+        }>,
+    } = Delegator.Automic<any>((key) => {
         return new IEvent(this, key);
     });
 
     private readonly _loaders: Base.Func[] = [];
     private _load() {
-        for (const loader of this._loaders) {
-            loader();
+        for (const loader of [ ...this._loaders ]) loader();
+      
+        const child: Model[] = [];
+        for (const key in this._childDict) {
+            const _key: KeyOf<Def.ChildDict<T>> = key;
+            const value = this._childDict[_key];
+            if (!value) continue;
+            child.push(value);
         }
-        const childDict: Def.ChildDict<T> = this._childDict;
-        const childList: Def.ChildList<T> = this._childList;
-        for (const child of [
-            ...Object.values(childDict),
-            ...Object.values(childList).reduce((acc, value) => {
-                return [ ...acc, ...value ];
-            }, [])
-        ]) {
-            child?._load();
+        for (const key in this._childList) {
+            const _key: KeyOf<Def.ChildList<T>> = key;
+            const value = this._childList[_key];
+            if (!value) continue;
+            child.push(...value);
+        }
+        for (const model of child) {
+            model._load();
         }
     }
-    @Model.useDebugger(true)
-    private _unload() {
-        const childDict: Def.ChildDict<T> = this._childDict;
-        const childList: Def.ChildList<T> = this._childList;
-        const child: Model[] = [];
-        for (const model of [
-            ...Object.values(childDict),
-            ...Object.values(childList).reduce((acc, value) => {
-                return [ ...acc, ...value ];
-            }, child)
-        ]) {
-            model?._unload();
-        }
-        console.log(this.id, this._refer.map(model => model.id));
 
-        // for (const key in this._handlers) {
-        //     const handlers = this._handlers[key];
-        //     for (const [ model, handler ] of [ ...handlers ]) {
-        //         this._unbind(model.event[key], handler);
-        //     }
-        // }
-        // for (const handler of this._emitters.keys()) {
-        //     const emitters = this._emitters.get(handler);
-        //     if (emitters) {
-        //         for (const event of emitters) {
-        //             const { target, key } = event;
-        //             target._unbind(this.event[key], handler);
-        //         }
-        //     }
-        // }
-  
-        console.log(this.id, this._refer.map(model => model.id));
+    private readonly _unloaders: Base.Func[] = [];
+    @Model.useDebugger(false)
+    private _unload() {
+        console.log(this);
+        for (const unloader of [ ...this._unloaders ]) unloader();
+
+        const child: Model[] = [];
+        for (const key in this._childDict) {
+            const _key: KeyOf<Def.ChildDict<T>> = key;
+            const value = this._childDict[_key];
+            if (!value) continue;
+            child.push(value);
+        }
+        for (const key in this._childList) {
+            const _key: KeyOf<Def.ChildList<T>> = key;
+            const value = this._childList[_key];
+            if (!value) continue;
+            child.push(...value);
+        }
+        for (const target of child) {
+            target._unload();
+        }
+
+        for (const key in this._handlers) {
+            const handlers = this._handlers[key];
+            for (const [ target, handler ] of [ ...handlers || [] ]) {
+                target._unbind(this.event[key], handler);
+            }
+        }
+        for (const handler of [ ...this._emitters.keys() ]) {
+            const emitters = this._emitters.get(handler);
+            for (const event of [ ...emitters || [] ]) {
+                if (event.key === 'stateGet') {
+                    console.log(event.target.id);
+                }
+                this._unbind(event, handler);
+            }
+        }
+
+        this.debug();
     }
     
     get seq(): Seq<T> {
+        const childDict: any = {};
+        const childList: any = {};
+        for (const key in this._childDict) {
+            const _key: KeyOf<Def.ChildDict<T>> = key;
+            const value = this._childDict[_key];
+            if (!value) continue;
+            childDict[_key] = value.seq;
+        }
+        for (const key in this._childList) {
+            const _key: KeyOf<Def.ChildList<T>> = key;
+            const value = this._childList[_key];
+            if (!value) continue;
+            childList[_key] = value.map(model => model.seq);
+        }
+
         return {
             id: this.id,
             type: this.type,
             memoState: { ...this._memoState },
-            childDict: Object.keys(this._childDict).reduce(
-                (acc, key: KeyOf<Def.ChildDict<T>>) => {
-                    const model = this._childDict[key];
-                    if (!model) return acc;
-                    return {
-                        ...acc,
-                        [key]: model.seq
-                    };
-                },
-                {} as Readonly<Strict<Partial<{
-                    [K in KeyOf<ValidOf<Def.ChildDict<T>>>]?: 
-                        Model.Seq<Required<Def.ChildDict<T>>[K]>
-                }>>>
-            ),
-            childList: Object.keys(this._childList).reduce(
-                (acc, key: KeyOf<Def.ChildList<T>>) => {
-                    const models = this._childList[key];
-                    if (!models) return acc;
-                    return {
-                        ...acc,
-                        [key]: models.map(model => model.seq)
-                    };
-                },
-                {} as Readonly<Strict<Partial<{
-                    [K in KeyOf<ValidOf<Def.ChildList<T>>>]?: 
-                        Model.Seq<Required<Def.ChildList<T>>[K][number]>[]
-                }>>>
-            )
+            childDict,
+            childList
         };
     }
 
@@ -565,5 +542,10 @@ export abstract class Model<T extends Partial<Def> = any> {
         console.log('type', Type?.name, seq, Model._products);
         if (!Type) throw new Error(`Model ${seq.type} not found`);
         return new Type(seq, this) as M;
+    }
+
+    @Model.useDebugger(true)
+    public debug() {
+        console.log(this._handlers);
     }
 }

@@ -18,6 +18,7 @@ export function BunnyComp(props: {
             <div>gender: {state.gender}</div>
             <div>warm: {state.warm}</div>
             <div>isAlive: {state.isAlive.toString()}</div>
+            <div className="link" onClick={() => bunny.debug()}>debug</div>
             {Boolean(child.bunnies.length) && <>
                 <div className="link" onClick={() => bunny.clean()}>clean</div>
             </>}

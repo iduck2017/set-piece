@@ -85,14 +85,13 @@ export class Bunny extends Model<{
         }
     }
 
-    @Model.useDebugger(true)
+    @Model.useDebugger(false)
     private _onBunnyGet(event: {
         model: Bunny;
         prev: Model.State<Bunny>;
         next: Model.State<Bunny>;
         isBreak?: boolean
     }) {
-        console.log('pipe', event);
         return {
             ...event,
             next: {

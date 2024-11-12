@@ -11,7 +11,7 @@ export function AppComp(props: {
     const [ state, child ] = useModel(app);
 
     useEffect(() => {
-        // app.init();
+        app.init();
     }, []);
 
     console.log({ ...child });
