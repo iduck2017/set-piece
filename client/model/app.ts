@@ -3,7 +3,7 @@ import { Bunny, Gender } from "./bunny";
 
 export class App extends Model<{
     type: 'app';
-    state: {
+    memoState: {
         version: [number, number, number];
         count: number;
     },

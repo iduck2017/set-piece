@@ -10,7 +10,8 @@ export enum Gender {
 @Model.useProduct('bunny')
 export class Bunny extends Model<{
     type: 'bunny';
-    state: {
+    memoState: {
+        readonly name: string
         age: number;
         maxAge: number;
         gender: Gender;
@@ -19,9 +20,6 @@ export class Bunny extends Model<{
     tempState: {
         readonly warm: number;
         readonly matureAge: number
-    },
-    initState: {
-        readonly name: string
     },
     childDict: {
     }
@@ -55,6 +53,7 @@ export class Bunny extends Model<{
                 maxAge: 10,
                 isAlive: true,
                 gender: Gender.Unknown,
+                name: 'Lucy',
                 ...seq.memoState
             },
             tempState: {

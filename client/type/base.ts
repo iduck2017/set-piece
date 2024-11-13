@@ -1,3 +1,5 @@
+import { } from 'utility-types';
+
 export namespace Base {
     export type Key = string | number | symbol
     export type Value = string | number | boolean | undefined

@@ -1,6 +1,7 @@
 import { Def, Seq } from "../type/define";
 import { Base, KeyOf, PartialOf, RequiredOf, Strict, ValidOf } from "../type/base";
 import { Delegator } from "@/util/proxy";
+import { Assign } from "utility-types";
 
 export namespace Model {
     export type Seq<M extends Model> = M extends never ? undefined : M['seq'];
@@ -141,21 +142,21 @@ export abstract class Model<T extends Partial<Def> = any> {
         seq: {
             id?: string,
             type: Def.Type<T>,
-            childDict: Readonly<Strict<{
+            childDict: Readonly<Strict<Assign<{
                 [K in KeyOf<ValidOf<RequiredOf<Def.ChildDict<T>>>>]: 
                     Model.Seq<Def.ChildDict<T>[K]>
-            } & {
+            }, {
                 [K in KeyOf<ValidOf<PartialOf<Def.ChildDict<T>>>>]?: 
                     Model.Seq<Required<Def.ChildDict<T>>[K]>
-            }>>,
-            childList: Readonly<Strict<{
+            }>>>,
+            childList: Readonly<Strict<Assign<{
                 [K in KeyOf<ValidOf<RequiredOf<Def.ChildList<T>>>>]: 
                     Model.Seq<Def.ChildList<T>[K][number]>[]
-            } & {
+            }, {
                 [K in KeyOf<ValidOf<PartialOf<Def.ChildList<T>>>>]?: 
                     Model.Seq<Required<Def.ChildList<T>>[K][number]>[]
-            }>>,
-            memoState: Readonly<Strict<Def.State<T> & Def.InitState<T>>>,
+            }>>>,
+            memoState: Readonly<Strict<Def.MemoState<T>>>,
             tempState: Readonly<Strict<Def.TempState<T>>>,
         },
         parent: Def.Parent<T>
@@ -225,7 +226,7 @@ export abstract class Model<T extends Partial<Def> = any> {
 
     protected readonly _childDict: ValidOf<Def.ChildDict<T>>;
     protected readonly _childList: Readonly<ValidOf<Required<Def.ChildList<T>>>>;
-    get child(): Readonly<Def.ChildDict<T> & Def.ChildList<T>> {
+    get child(): Readonly<Assign<Def.ChildDict<T>, Def.ChildList<T>>> {
         return {
             ...this._childDict, 
             ...this._childList
@@ -260,11 +261,11 @@ export abstract class Model<T extends Partial<Def> = any> {
 
     private _stateLock: boolean = false;
     
-    protected readonly _memoState: Def.State<T> & Def.InitState<T>;
+    protected readonly _memoState: Def.MemoState<T>;
     protected readonly _tempState: Def.TempState<T>;
 
-    private readonly _state: Def.State<T> & Def.InitState<T> & Def.TempState<T>;
-    get state(): Readonly<Def.State<T> & Def.InitState<T> & Def.TempState<T>> {
+    private readonly _state: Def.MemoState<T> & Def.TempState<T>;
+    get state(): Readonly<Def.MemoState<T> & Def.TempState<T>> {
         return {
             ...this._state
         };
@@ -295,7 +296,7 @@ export abstract class Model<T extends Partial<Def> = any> {
         console.log('isChanged', next, isChanged);
         if (isChanged) {
             for (const key in next) {
-                const _key: KeyOf<Def.State<T> & Def.InitState<T> & Def.TempState<T>> = key;
+                const _key: KeyOf<Def.MemoState<T> & Def.TempState<T>> = key;
                 this._state[_key] = next[key];
             }
             this._emit(this.event.stateUpdate, {
@@ -305,10 +306,10 @@ export abstract class Model<T extends Partial<Def> = any> {
             });
         }
     }
-    protected _setMemoState(next: Readonly<Def.State<T> & Def.InitState<T>>) {
+    protected _setMemoState(next: Readonly<Def.MemoState<T>>) {
         this._stateLock = true;
         for (const key in next) {
-            const _key: KeyOf<Def.State<T> & Def.InitState<T>> = key;
+            const _key: KeyOf<Def.MemoState<T>> = key;
             this._memoState[_key] = next[_key];
         }
         this._onStateReset();
