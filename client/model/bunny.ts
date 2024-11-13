@@ -45,7 +45,7 @@ export class Bunny extends Model<{
                 ...seq.childDict
             },
             childList: {
-                bunnies: [],
+                bunnies: [ { type: 'bunny' } ],
                 ...seq.childList
             },
             memoState: {

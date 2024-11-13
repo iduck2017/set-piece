@@ -10,6 +10,7 @@ export namespace Model {
     export type Child<M extends Model> = M['child'];
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export class IEvent<E> {
     readonly target: Model;
     readonly key: string;
