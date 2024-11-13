@@ -24,7 +24,7 @@ export class Bunny extends Model<{
     childDict: {
     }
     childList: {
-        bunnies: Bunny[]
+        bunnies: Bunny[],
     },
     event: {
         reproduce: Bunny;

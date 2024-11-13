@@ -39,12 +39,13 @@ export type Seq<T extends Partial<Def>> = Readonly<{
     id?: string,
     type: Def.Type<T>,
     childDict?: Readonly<Strict<Partial<{
-        [K in KeyOf<ValidOf<Def.ChildDict<T>>>]?: Model.Seq<Required<Def.ChildDict<T>>[K]>
+        [K in KeyOf<ValidOf<Def.ChildDict<T>>>]?: 
+            Model.Seq<Required<Def.ChildDict<T>>[K]>
     }>>>,
     childList?: Readonly<Strict<Partial<{
         [K in KeyOf<ValidOf<Def.ChildList<T>>>]?: 
             Model.Seq<Required<Def.ChildList<T>>[K][number]>[]
     }>>>,
-    memoState: Readonly<Partial<ValidOf<Def.MemoState<T>>>>
+    memoState?: Readonly<Partial<ValidOf<Def.MemoState<T>>>>
 }>
 

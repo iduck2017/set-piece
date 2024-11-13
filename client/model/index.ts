@@ -1,7 +1,7 @@
 import { Def, Seq } from "../type/define";
-import { Base, KeyOf, PartialOf, RequiredOf, Strict, ValidOf } from "../type/base";
+import { Base, KeyOf, Strict, ValidOf } from "../type/base";
 import { Delegator } from "@/util/proxy";
-import { Assign } from "utility-types";
+import { OptionalKeys, RequiredKeys } from "utility-types";
 
 export namespace Model {
     export type Seq<M extends Model> = M extends never ? undefined : M['seq'];
@@ -142,20 +142,20 @@ export abstract class Model<T extends Partial<Def> = any> {
         seq: {
             id?: string,
             type: Def.Type<T>,
-            childDict: Readonly<Strict<Assign<{
-                [K in KeyOf<ValidOf<RequiredOf<Def.ChildDict<T>>>>]: 
+            childDict: Readonly<Strict<{
+                [K in RequiredKeys<ValidOf<Def.ChildDict<T>>>]: 
                     Model.Seq<Def.ChildDict<T>[K]>
-            }, {
-                [K in KeyOf<ValidOf<PartialOf<Def.ChildDict<T>>>>]?: 
+            } & {
+                [K in OptionalKeys<ValidOf<Def.ChildDict<T>>>]?: 
                     Model.Seq<Required<Def.ChildDict<T>>[K]>
-            }>>>,
-            childList: Readonly<Strict<Assign<{
-                [K in KeyOf<ValidOf<RequiredOf<Def.ChildList<T>>>>]: 
+            }>>,
+            childList: Readonly<Strict<{
+                [K in RequiredKeys<ValidOf<Def.ChildList<T>>>]: 
                     Model.Seq<Def.ChildList<T>[K][number]>[]
-            }, {
-                [K in KeyOf<ValidOf<PartialOf<Def.ChildList<T>>>>]?: 
+            } & {
+                [K in OptionalKeys<ValidOf<Def.ChildList<T>>>]?: 
                     Model.Seq<Required<Def.ChildList<T>>[K][number]>[]
-            }>>>,
+            }>>,
             memoState: Readonly<Strict<Def.MemoState<T>>>,
             tempState: Readonly<Strict<Def.TempState<T>>>,
         },
@@ -226,7 +226,7 @@ export abstract class Model<T extends Partial<Def> = any> {
 
     protected readonly _childDict: ValidOf<Def.ChildDict<T>>;
     protected readonly _childList: Readonly<ValidOf<Required<Def.ChildList<T>>>>;
-    get child(): Readonly<Assign<Def.ChildDict<T>, Def.ChildList<T>>> {
+    get child(): Readonly<Def.ChildDict<T> & Def.ChildList<T>> {
         return {
             ...this._childDict, 
             ...this._childList
