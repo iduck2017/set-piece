@@ -41,7 +41,7 @@ export class Edible extends Feat<{
     }
 }
 
-interface PetableInfo {
+type PetableInfo = {
     readonly rawObedience: number;
     readonly rawIntelligence: number;
 }

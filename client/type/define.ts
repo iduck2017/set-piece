@@ -1,3 +1,4 @@
+import { Version } from "@/model/app";
 import { Model } from "../model";
 import { Base, KeyOf, Strict, ValidOf } from "./base";
 
@@ -6,10 +7,9 @@ export type Def = {
     childList: Record<string, Model[]>,
     childDict: Record<string, Model>,
     memoState: Base.Data,
-    tempState: Record<string, any>,
+    tempState: Record<string, Base.Value | Readonly<Base.Value[]> | Model | Readonly<Model[]>>,
     event: Record<string, any>,
     parent: Model,
-    refer: Record<string, Model | Model[]>
 }
 
 type PureDef = {
@@ -19,7 +19,6 @@ type PureDef = {
     memoState: {},
     tempState: {},
     event: {},
-    refer: {}
 }
 
 export namespace Def {
@@ -34,10 +33,10 @@ export namespace Def {
             T['parent'] extends Model ? T['parent'] : Model;
 }
 
-
 export type Seq<T extends Partial<Def>> = Readonly<{
     id?: string,
     type: Def.Type<T>,
+    rule?: Version,
     childDict?: Readonly<Strict<Partial<{
         [K in KeyOf<ValidOf<Def.ChildDict<T>>>]?: 
             Model.Seq<Required<Def.ChildDict<T>>[K]>

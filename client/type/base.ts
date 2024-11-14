@@ -3,9 +3,9 @@ import { OptionalKeys, RequiredKeys } from "utility-types";
 export namespace Base {
     export type Key = string | number | symbol
     export type Value = string | number | boolean | undefined
-    export type Dict = Record<Key, any>
     export type List = Array<any>
-    export type Data = Record<Key, Value | Value[]>
+    export type Dict = Record<string, any>
+    export type Data = Record<string, Value | Readonly<Value[]>>
     export type Func<R = any> = (...args: any) => R
     export type Class<T = any> = new (...args: any) => T
     export type Event<E = any> = (event: E) => E | void

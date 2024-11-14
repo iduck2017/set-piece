@@ -25,6 +25,11 @@ export class IEvent<E> {
 }
 
 export abstract class Model<T extends Partial<Def> = any> {
+    private static _plugins: Map<Function, Record<string, Function>> = new Map();
+    static usePlugin() {
+        // todo 
+    }
+
     static useDebugger<M extends Model>(
         validator?: ((model: M) => boolean) | boolean
     ) {
@@ -122,6 +127,10 @@ export abstract class Model<T extends Partial<Def> = any> {
 
     private static _timestamp = Date.now(); 
     private static _ticket = 36 ** 2;
+    private static _registry: Record<string, Model> = {};
+    static query(id: string) {
+        return Model._registry[id];
+    }
     static get ticket(): string {
         let now = Date.now();
         const ticket = Model._ticket;
@@ -165,6 +174,7 @@ export abstract class Model<T extends Partial<Def> = any> {
         this.type = seq.type;
         this.parent = parent;
         this.id = seq.id || Model.ticket;
+        Model._registry[this.id] = this;
 
         this._memoState = Delegator.ControlledDict(
             { ...seq.memoState }, 
@@ -224,6 +234,7 @@ export abstract class Model<T extends Partial<Def> = any> {
             constructor = constructor.__proto__;
         }
     }
+    
 
     protected readonly _childDict: ValidOf<Def.ChildDict<T>>;
     protected readonly _childList: Readonly<ValidOf<Required<Def.ChildList<T>>>>;
@@ -249,6 +260,7 @@ export abstract class Model<T extends Partial<Def> = any> {
             target: this,
             next: this.child
         });
+        delete Model._registry[this.id];
     }
     public useChild(setter: (data: {
         target: Model<T>,
@@ -274,6 +286,7 @@ export abstract class Model<T extends Partial<Def> = any> {
 
     @Model.useDebugger(true)
     private _onStateReset() {
+        // todo add refer
         if (this._stateLock) return;
         const prev = {
             ...this._memoState,
@@ -338,11 +351,18 @@ export abstract class Model<T extends Partial<Def> = any> {
         };
     }
 
-    private readonly _refer: Model[] = [];
-    connect(refer: Model) {
-        if (!this._refer.includes(refer)) {
-            this._refer.push(refer); 
-        } 
+    private readonly _refers: Model[] = [];
+    _unconnect(refer: Model) {
+        for (const key in this._tempState) {
+            let value: any = this._tempState[key];
+            if (value === refer) {
+                delete this._tempState[key];
+            }
+            if (value instanceof Array) {
+                value = value.filter(target => target !== refer);
+                this._tempState[key] = value;
+            }
+        }
     }
 
     private readonly _handlers: Record<string, [Model, Base.Func][]> = {};
@@ -405,7 +425,7 @@ export abstract class Model<T extends Partial<Def> = any> {
     }
 
     @Model.useDebugger(true)
-    protected _unlisten<E>(
+    protected _unbindHandler<E>(
         handler: Base.Event<E>
     ) {
         const emitters = this._emitters.get(handler);
@@ -413,6 +433,9 @@ export abstract class Model<T extends Partial<Def> = any> {
         for (const event of [ ...emitters || [] ]) {
             this._unbind(event, handler);
         }
+    }
+    protected _unbindModel() {
+        // todo 
     }
 
     @Model.useDebugger(false)
@@ -475,8 +498,11 @@ export abstract class Model<T extends Partial<Def> = any> {
     private readonly _unloaders: Base.Func[] = [];
     @Model.useDebugger(false)
     private _unload() {
-        console.log(this);
         for (const unloader of [ ...this._unloaders ]) unloader();
+
+        for (const refer of this._refers) {
+            this._unconnect(refer);
+        }
 
         const child: Model[] = [];
         for (const key in this._childDict) {

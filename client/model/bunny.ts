@@ -1,5 +1,6 @@
 import { Random } from "@/util/random";
 import { Model } from ".";
+import { SyncService } from "@/service/sync";
 
 export enum Gender {
     Male = 'male',
@@ -45,7 +46,7 @@ export class Bunny extends Model<{
                 ...seq.childDict
             },
             childList: {
-                bunnies: [ { type: 'bunny' } ],
+                bunnies: [ ],
                 ...seq.childList
             },
             memoState: {
@@ -112,14 +113,14 @@ export class Bunny extends Model<{
     }
 
     @Bunny.isAlive()
-    die() {
+    private _die() {
         this._memoState.isAlive = false;
-        this._unlisten(this._onSpawn);
-        this._unlisten(this._onBunnyCheck);
+        this._unbindHandler(this._onSpawn);
+        this._unbindHandler(this._onBunnyCheck);
         this._emit(this.event.die, this);
     }
 
-
+    @SyncService.useAction()
     @Bunny.isAlive()
     growup() {
         this._memoState.age ++;
@@ -127,10 +128,11 @@ export class Bunny extends Model<{
             this._memoState.gender = Random.type(Gender.Male, Gender.Female);
         }
         if (this.state.age >= this.state.maxAge) {
-            this.die();
+            this._die();
         }
     }
 
+    @SyncService.useAction()
     @Bunny.isAlive()
     @Model.useValidator(model => model.state.gender === Gender.Female)
     reproduce() {

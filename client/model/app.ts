@@ -1,6 +1,12 @@
 import { Model } from ".";
 import { Bunny, Gender } from "./bunny";
 
+export enum Version {
+    Major,
+    Minor,
+    Patch,
+}
+
 export class App extends Model<{
     type: 'app';
     memoState: {
