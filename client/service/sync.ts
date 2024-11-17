@@ -28,7 +28,7 @@ export class SyncService {
         ): TypedPropertyDescriptor<Base.Func> {
             const handler = descriptor.value;
             descriptor.value = function(this: Model, ...params) {
-                if (SyncService.main._lock) {
+                if (!SyncService.main._isApply) {
                     const id = this.id;
                     SyncService.main.send({ 
                         id,
@@ -45,7 +45,8 @@ export class SyncService {
         };
     }
 
-    private _lock: boolean = false;
+    private _isApply: boolean = false;
+    private _isFlush: boolean = false;
     private readonly _actions: Array<{
         id: string;
         key: string;
@@ -60,18 +61,20 @@ export class SyncService {
     async _onActionChange() {
         console.log('flush');
         if (!this._actions.length) return;
-        if (this._lock) return;
-        this._lock = true;
+        if (this._isFlush) return;
+        this._isFlush = true;
         for (const action of [ ...this._actions ]) {
             await this._run(action);
         }
-        this._lock = false;
+        this._isFlush = false;
         this._onActionChange();
     }
 
     _run(action: Action) {
         const { id, key, params } = action;
         const model: any = Model.query(id);
+        this._isApply = true;
         model[key].call(model, ...params);
+        this._isApply = false;
     }
 }
