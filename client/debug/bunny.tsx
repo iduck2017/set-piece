@@ -4,12 +4,12 @@ import './index.css';
 import { useModel } from "./useModel";
 
 export function BunnyComp(props: {
-    bunny: Bunny
+    target: Bunny
 }) {
-    const { bunny } = props;
+    const { target: bunny } = props;
     const [ state, child ] = useModel(bunny);
 
-    return <div className="panel">
+    return <div className="menu">
         <div className="form">
             <div className="title">{bunny.type}</div>
             <div>id: {bunny.id}</div>
@@ -29,9 +29,9 @@ export function BunnyComp(props: {
                 </>}
             </>}
         </div>
-        <div className="panel vertical">
+        <div className="menu">
             {child.bunnies && (
-                child.bunnies.map(bunny => <BunnyComp key={bunny.id} bunny={bunny} />)
+                child.bunnies.map(bunny => <BunnyComp key={bunny.id} target={bunny} />)
             )}
         </div>
     </div>;

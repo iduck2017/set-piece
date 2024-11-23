@@ -25,11 +25,6 @@ export class IEvent<E> {
 }
 
 export abstract class Model<T extends Partial<Def> = any> {
-    private static _plugins: Map<Function, Record<string, Function>> = new Map();
-    static usePlugin() {
-        // todo 
-    }
-
     static useDebugger<M extends Model>(
         validator?: ((model: M) => boolean) | boolean
     ) {
@@ -88,11 +83,11 @@ export abstract class Model<T extends Partial<Def> = any> {
         T extends string,
         M extends Model
     >(type: T) {
-        return function (target: new (
+        return function (Type: new (
             seq: Model.Seq<M>, 
             parent: Model.Parent<M>
         ) => M & { type: T }) {
-            Model._products[type] = target;
+            Model._products[type] = Type;
         };
     }
 
@@ -208,11 +203,11 @@ export abstract class Model<T extends Partial<Def> = any> {
             if (!value) continue;
             childList[_key] = Delegator.ControlledList(
                 value.map(seq => this._new(seq)),
-                this._onChildUpdate.bind(this, '')
+                this._onChildUpdate.bind(this)
             );
         }
         this._childList = Delegator.Automic(
-            () => Delegator.ControlledList([], this._onChildUpdate.bind(this, '')), 
+            () => Delegator.ControlledList([], this._onChildUpdate.bind(this)), 
             childList
         );
 
@@ -246,12 +241,12 @@ export abstract class Model<T extends Partial<Def> = any> {
     }
     
     @Model.useDebugger(false)
-    private _onChildUpdate(
+    private _onChildUpdate(event: {
         key: string,
         prev?: Model | Model[],
         next?: Model | Model[]
-    ) {
-        console.log(prev, next);
+    }) {
+        const { key, prev, next } = event;
         if (prev instanceof Array) prev.map(target => target._unload());
         else prev?._unload();
         if (next instanceof Array) next.map(target => target._load());
@@ -285,7 +280,25 @@ export abstract class Model<T extends Partial<Def> = any> {
     }
 
     @Model.useDebugger(true)
-    private _onStateReset() {
+    private _onStateReset<
+        K extends KeyOf<T>,
+        T extends Base.Dict
+    >(event?: {
+        key: K,
+        prev?: T[K],
+        next?: T[K]
+    }) {
+        const assigned: any = event?.key;
+        if (assigned instanceof Model) {
+            assigned._refers.push(this);
+        }
+        if (assigned instanceof Array) {
+            assigned.forEach(target => {
+                if (target instanceof Model) {
+                    target._refers.push(this);
+                }
+            });
+        }
         // todo add refer
         if (this._stateLock) return;
         const prev = {
@@ -320,25 +333,25 @@ export abstract class Model<T extends Partial<Def> = any> {
             });
         }
     }
-    protected _setMemoState(next: Readonly<Def.MemoState<T>>) {
-        this._stateLock = true;
-        for (const key in next) {
-            const _key: KeyOf<Def.MemoState<T>> = key;
-            this._memoState[_key] = next[_key];
-        }
-        this._onStateReset();
-        this._stateLock = false;
-    }
+    // protected _setMemoState(next: Readonly<Def.MemoState<T>>) {
+    //     this._stateLock = true;
+    //     for (const key in next) {
+    //         const _key: KeyOf<Def.MemoState<T>> = key;
+    //         this._memoState[_key] = next[_key];
+    //     }
+    //     this._onStateReset();
+    //     this._stateLock = false;
+    // }
 
-    protected _setTempState(next: Readonly<Def.TempState<T>>) {
-        this._stateLock = true;
-        for (const key in next) {
-            const _key: KeyOf<Def.TempState<T>> = key;
-            this._state[_key] = this._memoState[_key];
-        }
-        this._onStateReset();
-        this._stateLock = false;
-    }
+    // protected _setTempState(next: Readonly<Def.TempState<T>>) {
+    //     this._stateLock = true;
+    //     for (const key in next) {
+    //         const _key: KeyOf<Def.TempState<T>> = key;
+    //         this._state[_key] = this._memoState[_key];
+    //     }
+    //     this._onStateReset();
+    //     this._stateLock = false;
+    // }
 
     public useState(setter: (data: {
         target: Model<T>,
@@ -351,8 +364,9 @@ export abstract class Model<T extends Partial<Def> = any> {
         };
     }
 
-    private readonly _refers: Model[] = [];
+    private _refers: Model[] = [];
     _unconnect(refer: Model) {
+        this._refers = this._refers.filter(target => target !== refer);
         for (const key in this._tempState) {
             let value: any = this._tempState[key];
             if (value === refer) {
@@ -500,8 +514,8 @@ export abstract class Model<T extends Partial<Def> = any> {
     private _unload() {
         for (const unloader of [ ...this._unloaders ]) unloader();
 
-        for (const refer of this._refers) {
-            this._unconnect(refer);
+        for (const refer of [ ...this._refers ]) {
+            refer._unconnect(this);
         }
 
         const child: Model[] = [];

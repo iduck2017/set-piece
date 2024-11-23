@@ -33,11 +33,14 @@ body {
     color: #4d6aff;
 }
 
-.panel {
+.menu {
     display: flex;
     flex-wrap: wrap;
-    gap: 4px
-}
-.panel.vertical {
+    gap: 4px;
     flex-direction: column;
+}
+.sider {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
 }

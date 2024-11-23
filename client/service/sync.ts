@@ -54,12 +54,10 @@ export class SyncService {
     }> = Delegator.ControlledList([], this._onActionChange.bind(this));
 
     async send(action: Action) {
-        console.log('send');
         this._actions.push(action);
     }
 
     async _onActionChange() {
-        console.log('flush');
         if (!this._actions.length) return;
         if (this._isFlush) return;
         this._isFlush = true;

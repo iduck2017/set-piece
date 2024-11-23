@@ -21,25 +21,33 @@ export namespace Delegator {
 
     export function ControlledDict<T extends Record<string, any>>(
         origin: T,
-        onChange: (
+        onChange: (event: {
             key: KeyOf<T>,
             prev?: ValueOf<T>,
             next?: ValueOf<T>
-        ) => void
+        }) => void
     ): T {
         return new Proxy(origin, {
             set: (target, key: KeyOf<T>, value) => {
                 const prev = target[key];
                 const next = target[key] = value;
                 if (prev === next) return false;
-                onChange(key, prev, next);
+                onChange({ 
+                    key,
+                    prev,
+                    next 
+                });
                 return true;
             },
             deleteProperty: (target, key: KeyOf<T>) => {
                 const value = target[key];
                 delete target[key];
                 if (value === undefined) return false;
-                onChange(key, value, undefined);
+                onChange({
+                    key,
+                    prev: value,
+                    next: undefined
+                });
                 return true;
             }
         });
@@ -47,10 +55,10 @@ export namespace Delegator {
         
     export function ControlledList<T>(
         origin: T[] | undefined,
-        handleUpdate: (
+        handleUpdate: (event: {
             prev?: T[] | T,
             next?: T[] | T
-        ) => void
+        }) => void
     ): T[] {
         let _lock: boolean = false;
         const useLock = <T extends Base.Func>(run: T) => {
@@ -68,21 +76,32 @@ export namespace Delegator {
                 target[key] = value;
                 if (_lock) return true;
                 if (isNaN(Number(key))) return true;
-                handleUpdate(prev, value);
+                handleUpdate({
+                    prev,
+                    next: value
+                });
                 return true;
             },
             deleteProperty: (target, key: any) => {
                 const value = target[key];
                 delete target[key];
                 if (_lock) return true;
-                handleUpdate(value, undefined);
+                handleUpdate({
+                    prev: value,
+                    next: undefined
+                });
                 return true;
             }
         });
 
         result.pop = useLock(() => {
             const value = Array.prototype.pop.call(result);
-            if (value) handleUpdate(value, undefined);
+            if (value) {
+                handleUpdate({
+                    prev: value,
+                    next: undefined
+                });
+            }
             return value;
         });
 
@@ -91,13 +110,21 @@ export namespace Delegator {
                 result, 
                 ...addList
             );
-            handleUpdate(undefined, addList);
+            handleUpdate({
+                prev: undefined,
+                next: addList
+            });
             return index;
         });
 
         result.shift = useLock(() => {
             const value = Array.prototype.shift.call(result);
-            if (value) handleUpdate(value, undefined);
+            if (value) {
+                handleUpdate({
+                    prev: value,
+                    next: undefined
+                });
+            }
             return value;
         });
 
@@ -106,7 +133,10 @@ export namespace Delegator {
                 result, 
                 ...addList
             );
-            handleUpdate(undefined, addList);
+            handleUpdate({
+                prev: undefined,
+                next: addList
+            });
             return index;
         });
 
@@ -121,7 +151,10 @@ export namespace Delegator {
                 removeCnt,
                 ...addList
             );
-            handleUpdate(removeList, addList);
+            handleUpdate({
+                prev: removeList,
+                next: addList
+            });
             return removeList;
         });
 

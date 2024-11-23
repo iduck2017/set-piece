@@ -1,0 +1,31 @@
+import { Model } from "@//model";
+{{SUPER_IMPORT}}
+
+@Model.useProduct("{{MODEL_TYPE}}")
+export class {{MODEL_NAME}} extends {{SUPER_NAME}}<{
+    type: "{{MODEL_TYPE}}";
+    memoState: {},
+    tempState: {},
+    childDict: {},
+    childList: {}
+}> {
+    constructor(
+        seq: Model.Seq<{{MODEL_NAME}}>,
+        parent: Model.Parent<{{MODEL_NAME}}>
+    ) {
+        super({
+            ...seq,
+            childDict: {
+                ...seq.childDict
+            },
+            childList: {
+                ...seq.childList
+            },
+            memoState: {
+                ...seq.memoState
+            },
+            tempState: {
+            }
+        }, parent);
+    }
+}

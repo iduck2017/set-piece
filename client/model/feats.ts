@@ -52,10 +52,10 @@ export class Petable extends Feat<{
     },                
     tempState: PetableInfo,
 }> {
-    private static readonly _rules: Map<Function, PetableInfo> = new Map();
+    private static readonly _rule: Map<Function, PetableInfo> = new Map();
     static useRule(info: PetableInfo) {
         return function (target: Base.Class<Model>) {
-            Petable._rules.set(target, info);
+            Petable._rule.set(target, info);
         };
     }
 
@@ -63,7 +63,7 @@ export class Petable extends Feat<{
         seq: Model.Seq<Petable>,
         parent: Model.Parent<Petable>
     ) {
-        const rule = Petable._rules.get(parent.constructor);
+        const rule = Petable._rule.get(parent.constructor);
         super({
             ...seq,
             childDict: {},
