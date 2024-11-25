@@ -1,37 +1,34 @@
-import { Model } from "@/model";
+import { Node } from "@/model/node";
 import { Base } from "@/type/base";
 import { Delegator } from "@/util/proxy";
 
 export type Action = {
-    id: string;
+    uuid: string;
     key: string;
     params: any[]
 }
 
-export class SyncService {
-    private static _main: SyncService;
+export class Sync {
+    private static _main: Sync;
     static get main() {
-        if (!SyncService._main) {
-            SyncService._main = new SyncService();
+        if (!Sync._main) {
+            Sync._main = new Sync();
         }
-        return SyncService._main;
-    }
-    private constructor() {
-        
+        return Sync._main;
     }
 
     static useAction() {
         return function (
-            target: Model,
+            target: Node,
             key: string,
             descriptor: TypedPropertyDescriptor<Base.Func>
         ): TypedPropertyDescriptor<Base.Func> {
             const handler = descriptor.value;
-            descriptor.value = function(this: Model, ...params) {
-                if (!SyncService.main._isApply) {
-                    const id = this.id;
-                    SyncService.main.send({ 
-                        id,
+            descriptor.value = function(this: Node, ...params) {
+                if (!Sync.main._isApply) {
+                    const uuid = this.uuid;
+                    Sync.main.send({ 
+                        uuid: uuid,
                         key,
                         params 
                     });
@@ -47,11 +44,9 @@ export class SyncService {
 
     private _isApply: boolean = false;
     private _isFlush: boolean = false;
-    private readonly _actions: Array<{
-        id: string;
-        key: string;
-        params: any[]
-    }> = Delegator.ControlledList([], this._onActionChange.bind(this));
+    private readonly _actions: Array<Action> = Delegator.Controlled(
+        [], this._onActionChange.bind(this)
+    );
 
     async send(action: Action) {
         this._actions.push(action);
@@ -69,10 +64,6 @@ export class SyncService {
     }
 
     _run(action: Action) {
-        const { id, key, params } = action;
-        const model: any = Model.query(id);
-        this._isApply = true;
-        model[key].call(model, ...params);
-        this._isApply = false;
+        
     }
 }

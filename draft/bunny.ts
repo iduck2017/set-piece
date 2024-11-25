@@ -1,6 +1,6 @@
 import { Random } from "@/util/random";
 import { Model } from ".";
-import { SyncService } from "@/service/sync";
+import { Sync } from "@/service/sync";
 
 export enum Gender {
     Male = 'male',
@@ -120,7 +120,7 @@ export class Bunny extends Model<{
         this._emit(this.event.die, this);
     }
 
-    @SyncService.useAction()
+    @Sync.useAction()
     @Bunny.isAlive()
     growup() {
         this._memoState.age ++;
@@ -132,7 +132,7 @@ export class Bunny extends Model<{
         }
     }
 
-    @SyncService.useAction()
+    @Sync.useAction()
     @Bunny.isAlive()
     @Model.useValidator(model => model.state.gender === Gender.Female)
     reproduce() {

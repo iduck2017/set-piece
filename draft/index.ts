@@ -1,5 +1,5 @@
-import { Def, Seq } from "../type/define";
-import { Base, KeyOf, Strict, ValidOf } from "../type/base";
+import { Def, Seq } from "../client/type/define";
+import { Base, KeyOf, Strict, ValidOf } from "../client/type/base";
 import { Delegator } from "@/util/proxy";
 import { OptionalKeys, RequiredKeys } from "utility-types";
 
@@ -171,11 +171,11 @@ export abstract class Model<T extends Partial<Def> = any> {
         this.id = seq.id || Model.ticket;
         Model._registry[this.id] = this;
 
-        this._memoState = Delegator.ControlledDict(
+        this._memoState = Delegator.Controlled(
             { ...seq.memoState }, 
             this._onStateReset.bind(this)
         );
-        this._tempState = Delegator.ControlledDict(
+        this._tempState = Delegator.Controlled(
             { ... seq.tempState }, 
             this._onStateReset.bind(this)
         );
@@ -191,7 +191,7 @@ export abstract class Model<T extends Partial<Def> = any> {
             if (!value) continue;
             childDict[_key] = this._new(value);
         }
-        this._childDict = Delegator.ControlledDict(
+        this._childDict = Delegator.Controlled(
             childDict,
             this._onChildUpdate.bind(this)
         );
@@ -447,9 +447,6 @@ export abstract class Model<T extends Partial<Def> = any> {
         for (const event of [ ...emitters || [] ]) {
             this._unbind(event, handler);
         }
-    }
-    protected _unbindModel() {
-        // todo 
     }
 
     @Model.useDebugger(false)

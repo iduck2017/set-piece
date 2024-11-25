@@ -16,7 +16,9 @@
       "strictFunctionTypes": false
     },
     "include": [
-      "client/**/*", 
-      "client/index.d.ts"
+      "client/**/*"
+    ],
+    "exclude": [
+      "draft/**/*"
     ]
 }

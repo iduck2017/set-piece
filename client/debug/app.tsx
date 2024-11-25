@@ -1,13 +1,11 @@
 import React, { useEffect } from "react";
-import { App } from "@/model/app";
 import './index.css';
-import { useModel } from "./useModel";
-import { GameComp } from "./game";
+import { App } from "@/model/app";
 
 export function AppComp(props: {
-    model: App
+    app: App
 }) {
-    const { model: app } = props;
+    const { app } = props;
     const [ state, child ] = useModel(app);
 
     useEffect(() => {
@@ -22,13 +20,10 @@ export function AppComp(props: {
             {!state.isInit && <div className="link" onClick={() => app.init()}>init</div>}
             {state.isInit && <> 
                 <div className="link" onClick={() => app.count()}>count</div>
-                <div className="link" onClick={() => app.save()}>save</div>
                 <div className="link" onClick={() => app.quit()}>quit</div>
             </>}
         </div>
         <div className="menu">
-            {/* {child.bunny && <BunnyComp bunny={child.bunny} />} */}
-            {child.game && <GameComp model={child.game} />}
         </div>
     </div>;
 }

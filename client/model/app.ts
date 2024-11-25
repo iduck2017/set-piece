@@ -1,7 +1,6 @@
 import { Base } from "@/type/base";
-import { Model } from ".";
-import { Bunny, Gender } from "./bunny";
-import { Game } from "./game";
+import { Node } from "./node";
+import { Validator } from "@/service/validator";
 
 export enum Version {
     Major,
@@ -9,21 +8,19 @@ export enum Version {
     Patch,
 }
 
-export class App extends Model<{
-    type: 'app';
-    memoState: {
-        version: [number, number, number];
-        count: number;
-    },
-    tempState: {
-        isInit: boolean;
-    },
-    childDict: {
-        bunny?: Bunny;
-        game?: Game;
-    },
-    parent: undefined
-}> {
+type AppState = {
+    version: string,
+    count: number,
+}
+type AppEvent = {}
+type AppChild = {}
+
+export class App extends Node<
+    'app',
+    AppState,
+    AppChild,
+    AppEvent    
+> {
     private static _singleton: Map<Function, boolean> = new Map();
     static useSingleton() {
         return function (Type: Base.Class) {
@@ -47,74 +44,42 @@ export class App extends Model<{
         return App._main;
     }
 
+
     constructor() {
         super({
             type: 'app',
-            id: Date.now().toString(36),
-            memoState: {
-                version: [ 0, 1, 0 ],
+            state: {
+                version: '0.1.0',
                 count: 0
             },
-            tempState: {
-                isInit: false
-            },
-            childDict: {},
-            childList: {}
-        }, undefined);
+            child: {},
+            event: {}
+        });
         window.app = this;
     }
+
+    private _isInited: boolean = false;
+    get state() {
+        const result = super.state;
+        return {
+            ...result,
+            isInited: this._isInited
+        };
+    }
     
-    @Model.useValidator(model => !model._tempState.isInit)
+    @Validator.useCondition(node => !node.state.isInited)
     async init() {
-        this._tempState.isInit = true;
-        const raw = localStorage.getItem('game');
-        if (raw) {
-            const seq: Model.Seq<Game> = JSON.parse(raw);
-            this._childDict.game = this._new<Game>(seq);
-        } else {
-            this._childDict.game = this._new<Game>({
-                type: 'game'
-            });
-        }
-        // const raw = localStorage.getItem('bunny');
-        // if (raw) {
-        //     const seq: Model.Seq<Bunny> = JSON.parse(raw);
-        //     this._childDict.bunny = this._new<Bunny>(seq);
-        // } else {
-        //     this._childDict.bunny = this._new<Bunny>({
-        //         type: 'bunny',
-        //         memoState: {
-        //             name: 'Tom',
-        //             gender: Gender.Female
-        //         }
-        //     });
-        // }
+        this._isInited = true;
     }
 
-
-    @Model.useValidator(model => model._tempState.isInit, true)
+    @Validator.useCondition(node =>  node.state.isInited)
     count() {
-        this._memoState.count ++;
+        this.state.count ++;
     }
 
-    @Model.useDebugger(true)
-    @Model.useValidator(model => model._tempState.isInit, true)
-    async save() {
-        // const seq: Model.Seq<Bunny> | undefined = this.child.bunny?.seq;
-        // if (seq) {
-        //     localStorage.setItem('bunny', JSON.stringify(seq));
-        // }
-        const seq = this.child.game?.seq;
-        if (seq) {
-            localStorage.setItem('game', JSON.stringify(seq));
-        }
-        return this.child.bunny?.seq;
-    }
-
-    @Model.useValidator(model => model._tempState.isInit, true)
+    @Validator.useCondition(node => node.state.isInited)
     quit() {
-        delete this._childDict.game;
-        this._tempState.isInit = false;
+        this._isInited = false;
         App._singleton = new Map();
     }
 }
