@@ -2,7 +2,7 @@ import { Base } from "@/type/base";
 
 export class Logger {
     static useDebug<T extends any[]>(
-        condition: (target: any, ...args: T) => boolean 
+        condition?: ((target: any, ...args: T) => boolean) | boolean
     ) {
         const logger = console.log;
         return function (

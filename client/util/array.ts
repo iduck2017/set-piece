@@ -94,7 +94,7 @@ export class FormattedArray<A = any, B = any> extends SafeArray<any> {
 }
 
 
-export class ControlledArray<T = any> extends SafeArray<T> {
+export class ObservedArray<T = any> extends SafeArray<T> {
     private _lock: boolean = false;
 
     private _listener: (event: {
@@ -104,12 +104,12 @@ export class ControlledArray<T = any> extends SafeArray<T> {
 
     private static useLock() {
         return function (
-            target: ControlledArray,
+            target: ObservedArray,
             key: string,
             descriptor: TypedPropertyDescriptor<Base.Func>
         ): TypedPropertyDescriptor<Base.Func> {
             const handler = descriptor.value;
-            descriptor.value = function(this: ControlledArray, ...args: any[]) {
+            descriptor.value = function(this: ObservedArray, ...args: any[]) {
                 this._lock = true;
                 const result = handler?.apply(this, args);
                 this._lock = false;
@@ -155,35 +155,35 @@ export class ControlledArray<T = any> extends SafeArray<T> {
         });
     }
     
-    @ControlledArray.useLock()
+    @ObservedArray.useLock()
     pop() {
         const prev = super.pop();
         this._listener({  prev });
         return prev;
     }
 
-    @ControlledArray.useLock()
+    @ObservedArray.useLock()
     push(...next: T[]) {
         const result = super.push(...next);
         this._listener({ next });
         return result;
     }
 
-    @ControlledArray.useLock()
+    @ObservedArray.useLock()
     shift() {
         const prev = super.shift();
         this._listener({  prev });
         return prev;
     }
 
-    @ControlledArray.useLock()
+    @ObservedArray.useLock()
     unshift(...next: T[]) {
         const result = super.unshift(...next);
         this._listener({ next });
         return result;
     }
 
-    @ControlledArray.useLock()
+    @ObservedArray.useLock()
     splice(index: number, count: number, ...next: T[]) {
         const prev = super.splice(index, count, ...next);
         this._listener({ 

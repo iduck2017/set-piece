@@ -1,6 +1,7 @@
 import { Base } from "@/type/base";
-import { Node } from "./node";
+import { Node, NodeEvent } from "./node";
 import { Validator } from "@/service/validator";
+import { Logger } from "@/service/logger";
 
 export enum Version {
     Major,
@@ -12,7 +13,7 @@ type AppState = {
     version: string,
     count: number,
 }
-type AppEvent = {}
+type AppEvent = NodeEvent
 type AppChild = {}
 
 export class App extends Node<
@@ -67,19 +68,25 @@ export class App extends Node<
         };
     }
     
-    @Validator.useCondition(node => !node.state.isInited)
+    @Logger.useDebug()
+    @Validator.useCondition(node => !node._isInited)
     async init() {
+        console.log('init');
         this._isInited = true;
+        this._onNodeAlter();
     }
 
-    @Validator.useCondition(node =>  node.state.isInited)
+    @Logger.useDebug(true)
+    @Validator.useCondition(node => node._isInited)
     count() {
-        this.state.count ++;
+        console.log('count');
+        this._state.count ++;
     }
 
-    @Validator.useCondition(node => node.state.isInited)
+    @Validator.useCondition(node => node._isInited)
     quit() {
         this._isInited = false;
         App._singleton = new Map();
+        this._onNodeAlter();
     }
 }

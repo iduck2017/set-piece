@@ -1,5 +1,5 @@
 import { Base, KeyOf, ValueOf } from "../type/base";
-import { ControlledArray, FormattedArray } from "./array";
+import { ObservedArray, FormattedArray } from "./array";
 
 export namespace Delegator {
     export function Automic<T extends Base.Dict>(
@@ -51,7 +51,7 @@ export namespace Delegator {
         }
     }
 
-    export function Controlled<T extends Base.Dict>(
+    export function Observed<T extends Base.Dict>(
         origin: T,
         listener: (event: {
             key?: string | number,
@@ -60,7 +60,7 @@ export namespace Delegator {
         }) => void
     ): any {
         if (origin instanceof Array) {
-            return new ControlledArray(listener, ...origin);
+            return new ObservedArray(listener, ...origin);
         } else {
             return new Proxy(origin, {
                 set: (target, key: KeyOf<T>, value) => {

@@ -26,7 +26,7 @@ export class Sync {
             const handler = descriptor.value;
             descriptor.value = function(this: Node, ...params) {
                 if (!Sync.main._isApply) {
-                    const uuid = this.uuid;
+                    const uuid = this.refer;
                     Sync.main.send({ 
                         uuid: uuid,
                         key,
@@ -44,7 +44,7 @@ export class Sync {
 
     private _isApply: boolean = false;
     private _isFlush: boolean = false;
-    private readonly _actions: Array<Action> = Delegator.Controlled(
+    private readonly _actions: Array<Action> = Delegator.Observed(
         [], this._onActionChange.bind(this)
     );
 

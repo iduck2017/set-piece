@@ -29,7 +29,8 @@ export class Validator {
             Validator._setCondition(condition, target.constructor, key);
             const handler = descriptor.value;
             descriptor.value = function(this: N, ...args: T) {
-                if (condition(this, ...args)) {
+                const result = condition(this, ...args);
+                if (result) {
                     return handler?.apply(this, args);
                 } else {
                     console.error('InvalidState:', {
