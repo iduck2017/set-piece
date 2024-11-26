@@ -1,3 +1,4 @@
+import { Decor } from "@/service/decor";
 import { Factory } from "@/service/factory";
 import { Lifecycle } from "@/service/lifecycle";
 import { Logger } from "@/service/logger";
@@ -104,15 +105,7 @@ export abstract class Node<
         this._prevState = { ...this._state };
 
         this._event = Delegator.Automic({}, (key: any) => {
-            const _key: KeyOf<ValidOf<E>> = key;
-            const result: any = (...args: any[]) => {
-                const event = this.event[_key];
-                const { target } = event;
-                const reacts = target._consumers.get(event) || [];
-                for (const react of reacts) {
-                    react.handler.apply(react.target, args);
-                }
-            };
+            const result: any = this._emit.bind(this, key);
             return result;
         });
         this.event = Delegator.Automic(chunk.event || {}, () => {
@@ -145,6 +138,16 @@ export abstract class Node<
 
     }
 
+    @Logger.useDebug(true)
+    private _emit(key: KeyOf<ValidOf<E>>, ...args: any[]) {
+        const event = this.event[key];
+        const { target } = event;
+        const reacts = target._consumers.get(event) || [];
+        for (const react of reacts) {
+            react.handler.apply(react.target, args);
+        }
+    }
+
     private _prevState: S;
     protected _onNodeAlter(recursive?: boolean) {
         const prevState = { ...this._prevState };
@@ -153,7 +156,10 @@ export abstract class Node<
             prev: prevState,
             next: nextState
         });
-        this._prevState = { ...nextState };
+        this._prevState = { 
+            ...this._state,
+            ...Decor.getDecors(this, nextState)
+        };
         this._event.onNodeAlter(this, {
             prev: prevState,
             next: nextState
