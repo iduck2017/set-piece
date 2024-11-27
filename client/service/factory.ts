@@ -1,4 +1,4 @@
-import { IModel } from "@/model";
+import { IModel, Model } from "@/model";
 import { Base } from "@/type/base";
 import { Chunk } from "@/type/model";
 
@@ -27,8 +27,8 @@ export class Factory {
     static useProduct<T extends string>(type: T) {
         return function (Type: new (
             chunk: Chunk<T>, 
-            parent: IModel
-        ) => IModel<T>) {
+            parent: Model
+        ) => Model<T>) {
             Factory._products[type] = Type;
         };
     }

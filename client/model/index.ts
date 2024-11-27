@@ -22,12 +22,12 @@ type ModelEvent<
     onNodeSpawn: <N extends Model>(target: N) => void;
 } & E;
 
-export type Model = IModel<
-    string,
-    Base.Data,
-    Model | Record<string, Model>,
-    Record<string, Base.Func>
->;
+export type Model<
+    T extends string = string,
+    S extends Base.Data = Base.Data,
+    C extends Model | Record<string, Model> = Record<string, any>,
+    E extends Record<string, Base.Func> = Record<string, Base.Func>
+> = IModel<T, S, C, E>;
 
 export abstract class IModel<
     T extends string,
@@ -54,7 +54,7 @@ export abstract class IModel<
 
     protected _child: 
         C extends Model ? ChunkOf<C>[] : 
-        C extends Record<string, Model>? Strict<{
+        C extends Base.Dict ? Strict<{
             [K in RequiredKeys<ValidOf<C>>]: ChunkOf<C[K]>;
         } & {
             [K in OptionalKeys<ValidOf<C>>]?: ChunkOf<Required<C>[K]>; 
@@ -68,7 +68,7 @@ export abstract class IModel<
             state: S;
             child: 
                 C extends Model ? ChunkOf<C>[] : 
-                C extends Record<string, Model>? Strict<{
+                C extends Base.Dict ? Strict<{
                     [K in RequiredKeys<ValidOf<C>>]: ChunkOf<C[K]>;
                 } & {
                     [K in OptionalKeys<ValidOf<C>>]?: ChunkOf<Required<C>[K]>; 

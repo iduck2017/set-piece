@@ -17,7 +17,9 @@ export class App extends IModel<
         version: string,
         count: number,
     },
-    IngSoc,
+    {
+        ingSoc: IngSoc
+    },
     {}
 > {
     private static _singleton: Map<Function, boolean> = new Map();
@@ -50,7 +52,9 @@ export class App extends IModel<
                 version: '0.1.0',
                 count: 0
             },
-            child: [ { templ: 'a' } ],
+            child: {
+                ingSoc: { templ: 'ing-soc' }
+            },
             event: {}
         }, undefined);
         window.app = this;
