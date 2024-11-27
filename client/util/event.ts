@@ -1,21 +1,21 @@
-import { Node } from "@/model/node";
+import { IModel } from "@/model";
 
 export class Event<E = any> {
-    readonly target: Node;
+    readonly target: IModel;
 
     constructor(
-        target: Node
+        target: IModel
     ) {
         this.target = target;
     }
 }
 
 export class React<E = any> {
-    readonly target: Node;
+    readonly target: IModel;
     readonly handler: E;
 
     constructor(
-        target: Node,
+        target: IModel,
         handler: E
     ) {
         this.target = target;

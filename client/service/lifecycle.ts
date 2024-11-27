@@ -1,11 +1,11 @@
-import { Node } from "@/model/node";
+import { Model } from "@/model";
 import { Base } from "@/type/base";
 
 export class Lifecycle {
     private static readonly _loaders: Map<Function, string[]> = new Map();
     private static readonly _unloaders: Map<Function, string[]> = new Map();
 
-    static getLoaders(target: Node) {
+    static getLoaders(target: Model) {
         const result = [];
         let constructor: any = target.constructor;
         while (constructor.__proto__ !== null) {
@@ -19,7 +19,7 @@ export class Lifecycle {
     }
     static useLoader() {
         return function(
-            target: Node,
+            target: Model,
             key: string,
             descriptor: TypedPropertyDescriptor<Base.Func>
         ): TypedPropertyDescriptor<Base.Func> {
@@ -30,7 +30,7 @@ export class Lifecycle {
         };
     }
 
-    static getUnloaders(target: Node) {
+    static getUnloaders(target: Model) {
         const result = [];
         let constructor: any = target.constructor;
         while (constructor.__proto__ !== null) {
@@ -44,7 +44,7 @@ export class Lifecycle {
     }
     static useUnloader() {
         return function(
-            target: Node,
+            target: Model,
             key: string,
             descriptor: TypedPropertyDescriptor<Base.Func>
         ): TypedPropertyDescriptor<Base.Func> {

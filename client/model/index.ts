@@ -3,84 +3,72 @@ import { Factory } from "@/service/factory";
 import { Lifecycle } from "@/service/lifecycle";
 import { Logger } from "@/service/logger";
 import { Base, KeyOf, Strict, ValidOf } from "@/type/base";
+import { Chunk, ChunkOf, StateOf } from "@/type/model";
 import { Event, React } from "@/util/event";
 import { Delegator } from "@/util/proxy";
 import { OptionalKeys, RequiredKeys } from "utility-types";
 
-export type ChunkOf<N extends Node> = N['chunk'] 
-export type StateOf<N extends Node> = N['state'] 
-export type ChildOf<N extends Node> = N['child'] 
-
-
-export interface Chunk<
-    T extends string = string,
-    S extends Base.Data = any,
-    C extends Node | Record<string, Node> = any
-> {
-    type: T;
-    uuid?: string;
-    state?: Partial<S>;  
-    child?: 
-        C extends Node ? ChunkOf<C>[] : 
-        C extends Record<string, Node>? Strict<{
-            [K in KeyOf<ValidOf<C>>]?: ChunkOf<Required<C>[K]>;
-        }> : never
-}
-
-export type NodeEvent<
+type ModelEvent<
     E extends Record<string, Base.Func> = Record<string, Base.Func>
 > = {
-    onNodeAlter: <N extends Node>(target: N, form: {
+    onNodeAlter: <N extends Model>(target: N, form: {
         prev: Readonly<StateOf<N>>,
         next: Readonly<StateOf<N>>,
     }) => void;
-    onNodeCheck: <N extends Node>(target: N, form: {
+    onNodeCheck: <N extends Model>(target: N, form: {
         prev: Readonly<StateOf<N>>,
         next: StateOf<N>,
     }) => void;
-    onNodeSpawn: <N extends Node>(target: N) => void;
+    onNodeSpawn: <N extends Model>(target: N) => void;
 } & E;
 
-export abstract class Node<
-    T extends string = string,
-    S extends Base.Data = Base.Data,
-    C extends Node | Record<string, Node> = any,
-    E extends NodeEvent = NodeEvent
+export type Model = IModel<
+    string,
+    Base.Data,
+    any,
+    Record<string, Base.Func>
+>;
+
+export abstract class IModel<
+    T extends string,
+    S extends Base.Data,
+    C extends Model | Record<string, Model>,
+    E extends Record<string, Base.Func>
 > {
-    public readonly type: T;
+    public readonly templ: T;
     
     public readonly refer: string;
-    private readonly _refer: Record<string, Node> = {};
+    private readonly _refer: Record<string, Model> = {};
 
-    public readonly parent?: Node;
+    public readonly parent?: Model;
 
     protected _state: S;
     public get state(): Readonly<S> {
         return { ...this._prevState };
     }
     
-    protected _event: E;
+    protected _event: ModelEvent<E>;
     public readonly event: Readonly<Strict<{
-        [K in KeyOf<ValidOf<E>>]: Event<E[K]>;
+        [K in KeyOf<ValidOf<ModelEvent<E>>>]: Event<ModelEvent<E>[K]>;
     }>>;
 
     protected _child: 
-        C extends Node ? ChunkOf<C>[] : 
-        C extends Record<string, Node>? Strict<{
+        C extends Model ? ChunkOf<C>[] : 
+        C extends Record<string, Model>? Strict<{
             [K in RequiredKeys<ValidOf<C>>]: ChunkOf<C[K]>;
         } & {
             [K in OptionalKeys<ValidOf<C>>]?: ChunkOf<Required<C>[K]>; 
         }> : never;
-    public readonly child: Readonly<C extends Node ? C[] : C>;
+    public readonly child: Readonly<C extends Model ? C[] : C>;
 
     constructor(
         chunk: {
-            type: T;
-            uuid?: string;
+            templ: T;
+            refer?: string;
             state: S;
             child: 
-                C extends Node ? ChunkOf<C>[] : 
-                C extends Record<string, Node>? Strict<{
+                C extends Model ? ChunkOf<C>[] : 
+                C extends Record<string, Model>? Strict<{
                     [K in RequiredKeys<ValidOf<C>>]: ChunkOf<C[K]>;
                 } & {
                     [K in OptionalKeys<ValidOf<C>>]?: ChunkOf<Required<C>[K]>; 
@@ -89,10 +77,10 @@ export abstract class Node<
                 [K in KeyOf<ValidOf<E>>]?: Event<E[K]>;
             }
         },
-        parent?: Node
+        parent?: Model
     ) {
-        this.type = chunk.type;
-        this.refer = chunk.uuid || Factory.uuid;
+        this.templ = chunk.templ;
+        this.refer = chunk.refer || Factory.refer;
         this.parent = parent;
         if (parent) {
             parent._refer[this.refer] = this;
@@ -120,7 +108,7 @@ export abstract class Node<
             child = {};
             for (const key in chunk.child) {
                 const value = chunk.child[key];
-                if (value instanceof Node) {
+                if (value instanceof IModel) {
                     child[key] = this._create(value);
                 }
             }
@@ -132,14 +120,14 @@ export abstract class Node<
         this.child = Delegator.Readonly(child);
         this._child = Delegator.Formatted(
             child,
-            (node: Node) => node.chunk,
+            (model: Model) => model.chunk,
             (chunk: Chunk) => this._create(chunk) 
         );
 
     }
 
     @Logger.useDebug(true)
-    private _emit(key: KeyOf<ValidOf<E>>, ...args: any[]) {
+    private _emit(key: KeyOf<ValidOf<ModelEvent<E>>>, ...args: any[]) {
         const event = this.event[key];
         const { target } = event;
         const reacts = target._consumers.get(event) || [];
@@ -166,16 +154,16 @@ export abstract class Node<
         });
         if (recursive) {
             if (this.child instanceof Array) {
-                for (const node of this.child) node._onNodeAlter(recursive);
+                for (const target of this.child) target._onNodeAlter(recursive);
             } else {
                 for (const key in this.child) {
-                    const node = this.child[key];
-                    if (node instanceof Node) node._onNodeAlter(recursive);
+                    const target = this.child[key];
+                    if (target instanceof IModel) target._onNodeAlter(recursive);
                 }
             }
         }
     }
-    public useState<N extends Node>(setter: (target: N) => void){
+    public useState<N extends Model>(setter: (target: N) => void){
         const event: any = this.event;
         this.bind(event.onNodeAlter, setter);
         return () => {
@@ -185,17 +173,17 @@ export abstract class Node<
 
     private _onNodeSpawn(event: {
         key: string,
-        prev?: Node | Node[],
-        next?: Node | Node[]
+        prev?: Model | Model[],
+        next?: Model | Model[]
     }) {
         const { prev, next } = event;
         if (next instanceof Array) next.map(target => target._load());
         if (prev instanceof Array) prev.map(target => target._unload());
-        if (next instanceof Node) next._load();
-        if (prev instanceof Node) prev._unload();
+        if (next instanceof IModel) next._load();
+        if (prev instanceof IModel) prev._unload();
         this._event.onNodeSpawn(this);
     }
-    public useChild<N extends Node>(setter: (target: N) => void) {
+    public useChild<N extends Model>(setter: (target: N) => void) {
         const event: any = this.event;
         this.bind(event.onNodeSpawn, setter);
         return () => {
@@ -203,10 +191,10 @@ export abstract class Node<
         };
     }
 
-    private _create<N extends Node>(
+    private _create<N extends Model>(
         chunk: ChunkOf<N>
     ): N {
-        const Type = Factory.products[chunk.type];
+        const Type = Factory.products[chunk.templ];
         if (!Type) {
             console.error('ModelNotFound:', {
                 chunk
@@ -268,14 +256,14 @@ export abstract class Node<
     
     public get path(): string[] {
         const result: string[] = [ this.refer ];
-        let temp: Node | undefined = this.parent;
+        let temp: Model | undefined = this.parent;
         while (temp) {
             result.unshift(temp.refer);
             temp = temp.parent;
         }
         return result;
     }
-    public query(path: string[]): Node | undefined {
+    public query(path: string[]): Model | undefined {
         for (const segment of path) {
             if (this._refer[segment]) {
                 return this._refer[segment].query(path.slice(
@@ -291,22 +279,22 @@ export abstract class Node<
     private _load() {
         for (const loader of this._loaders) loader();
         if (this.child instanceof Array) {
-            for (const node of this.child) node._load();
+            for (const target of this.child) target._load();
         } else {
             for (const key in this.child) {
-                const node = this.child[key];
-                if (node instanceof Node) node._load();
+                const target = this.child[key];
+                if (target instanceof IModel) target._load();
             }
         }
     }
     private _unload() {
         for (const unloader of this._unloaders) unloader();
         if (this.child instanceof Array) {
-            for (const node of this.child) node._unload();
+            for (const target of this.child) target._unload();
         } else {
             for (const key in this.child) {
-                const node = this.child[key];
-                if (node instanceof Node) node._unload();
+                const target = this.child[key];
+                if (target instanceof IModel) target._unload();
             }
         }
         for (const [ event, reacts ] of this._consumers) {
@@ -331,19 +319,19 @@ export abstract class Node<
     get chunk(): Chunk<T, S, C> {
         let child: any;
         if (this.child instanceof Array) {
-            child = this.child.map(node => node.chunk);
+            child = this.child.map(target => target.chunk);
         } else {
             child = {};
             for (const key in this.child) {
                 const value = this.child[key];
-                if (value instanceof Node) {
+                if (value instanceof IModel) {
                     child[key] = value.chunk; 
                 }
             }
         }
         return {
-            type: this.type,
-            uuid: this.refer,
+            templ: this.templ,
+            refer: this.refer,
             state: { ...this._state },
             child
         };

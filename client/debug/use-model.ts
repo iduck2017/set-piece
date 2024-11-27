@@ -1,7 +1,8 @@
-import { ChildOf, Node, StateOf } from "@/model/node";
+import { Model } from "@/model";
+import { ChildOf, StateOf } from "@/type/model";
 import { useEffect, useState } from "react";
 
-export function useNode<N extends Node>(model: N): [
+export function useModel<N extends Model>(model: N): [
     StateOf<N>, 
     ChildOf<N>
 ] {

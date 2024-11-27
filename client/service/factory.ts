@@ -1,16 +1,16 @@
-import { Node, Chunk } from "@/model/node";
+import { IModel } from "@/model";
 import { Base } from "@/type/base";
+import { Chunk } from "@/type/model";
 
 export class Factory {
     private static _timestamp = Date.now(); 
-    private static _uuid = 36 ** 2;
-    
-    static get uuid(): string {
+    private static _refer = 36 ** 2;
+    static get refer(): string {
         let now = Date.now();
-        const ticket = Factory._uuid;
-        Factory._uuid += 1;
-        if (Factory._uuid > 36 ** 3 - 1) {
-            Factory._uuid = 36 ** 2;
+        const ticket = Factory._refer;
+        Factory._refer += 1;
+        if (Factory._refer > 36 ** 3 - 1) {
+            Factory._refer = 36 ** 2;
             while (now === Factory._timestamp) {
                 now = Date.now();
             }
@@ -27,8 +27,8 @@ export class Factory {
     static useProduct<T extends string>(type: T) {
         return function (Type: new (
             chunk: Chunk<T>, 
-            parent: Node
-        ) => Node<T>) {
+            parent: IModel
+        ) => IModel<T>) {
             Factory._products[type] = Type;
         };
     }

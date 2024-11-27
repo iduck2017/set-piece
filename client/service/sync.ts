@@ -1,10 +1,10 @@
-import { Node } from "@/model/node";
+import { Model } from "@/model";
 import { Base } from "@/type/base";
 import { Delegator } from "@/util/proxy";
 
 export type Action = {
-    uuid: string;
     key: string;
+    refer: string;
     params: any[]
 }
 
@@ -19,16 +19,16 @@ export class Sync {
 
     static useAction() {
         return function (
-            target: Node,
+            target: Model,
             key: string,
             descriptor: TypedPropertyDescriptor<Base.Func>
         ): TypedPropertyDescriptor<Base.Func> {
             const handler = descriptor.value;
-            descriptor.value = function(this: Node, ...params) {
+            descriptor.value = function(this: Model, ...params) {
                 if (!Sync.main._isApply) {
-                    const uuid = this.refer;
+                    const refer = this.refer;
                     Sync.main.send({ 
-                        uuid: uuid,
+                        refer,
                         key,
                         params 
                     });

@@ -1,9 +1,9 @@
-import { Node, StateOf } from "@/model/node";
+import { IModel, StateOf } from "@/model";
 import { Base, KeyOf } from "@/type/base";
 
 export class Decor {
     private static _decors: Map<Function, Record<string, boolean>> = new Map();
-    static getDecors<S extends Base.Data>(target: Node, prev: S): Partial<S> {
+    static getDecors<S extends Base.Data>(target: IModel, prev: S): Partial<S> {
         const mask = Decor._decors.get(target.constructor) || {};
         const result: any = {};
         for (const key in mask) {
@@ -14,7 +14,7 @@ export class Decor {
         return result;
     }
 
-    static useDecor<N extends Node>(state: {
+    static useDecor<N extends IModel>(state: {
         [K in KeyOf<StateOf<N>>]: boolean
     }) {
         return function (Type: new (...args: any[]) => N) {

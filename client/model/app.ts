@@ -1,5 +1,5 @@
 import { Base } from "@/type/base";
-import { Node, NodeEvent } from "./node";
+import { IModel } from ".";
 import { Validator } from "@/service/validator";
 import { Logger } from "@/service/logger";
 
@@ -9,18 +9,14 @@ export enum Version {
     Patch,
 }
 
-type AppState = {
-    version: string,
-    count: number,
-}
-type AppEvent = NodeEvent
-type AppChild = {}
-
-export class App extends Node<
+export class App extends IModel<
     'app',
-    AppState,
-    AppChild,
-    AppEvent    
+    {
+        version: string,
+        count: number,
+    },
+    {},
+    {}
 > {
     private static _singleton: Map<Function, boolean> = new Map();
     static useSingleton() {
@@ -45,10 +41,9 @@ export class App extends Node<
         return App._main;
     }
 
-
     constructor() {
         super({
-            type: 'app',
+            templ: 'app',
             state: {
                 version: '0.1.0',
                 count: 0
@@ -69,7 +64,7 @@ export class App extends Node<
     }
     
     @Logger.useDebug()
-    @Validator.useCondition(node => !node._isInited)
+    @Validator.useCondition(target => !target._isInited)
     async init() {
         console.log('init');
         this._isInited = true;
@@ -77,13 +72,13 @@ export class App extends Node<
     }
 
     @Logger.useDebug(true)
-    @Validator.useCondition(node => node._isInited)
+    @Validator.useCondition(target => target._isInited)
     count() {
         console.log('count');
         this._state.count ++;
     }
 
-    @Validator.useCondition(node => node._isInited)
+    @Validator.useCondition(target => target._isInited)
     quit() {
         this._isInited = false;
         App._singleton = new Map();

@@ -1,13 +1,13 @@
 import React, { useEffect } from "react";
 import './index.css';
 import { App } from "@/model/app";
-import { useNode } from "./use-node";
+import { useModel } from "./use-model";
 
 export function AppComp(props: {
     app: App
 }) {
     const { app } = props;
-    const [ state, child ] = useNode(app);
+    const [ state, child ] = useModel(app);
     console.log(state, child);
 
     useEffect(() => {
@@ -16,7 +16,7 @@ export function AppComp(props: {
 
     return <div className="menu">
         <div className="form">
-            <div className="title">{app.type}</div>
+            <div className="title">{app.templ}</div>
             <div>init: {state.isInited.toString()}</div>
             <div>count: {state.count.toString()}</div>
             {!state.isInited && <div className="link" onClick={() => app.init()}>init</div>}
