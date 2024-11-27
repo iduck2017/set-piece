@@ -282,7 +282,7 @@ export abstract class Model<T extends Partial<Def> = any> {
     @Model.useDebugger(true)
     private _onStateReset<
         K extends KeyOf<T>,
-        T extends Base.Dict
+        T extends Record<string, any>
     >(event?: {
         key: K,
         prev?: T[K],

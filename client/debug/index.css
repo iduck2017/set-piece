@@ -39,7 +39,7 @@ body {
     gap: 4px;
     flex-direction: column;
 }
-.sider {
+.tree {
     display: flex;
     flex-wrap: wrap;
     gap: 4px;

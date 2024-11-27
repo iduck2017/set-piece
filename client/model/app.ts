@@ -1,15 +1,8 @@
-import { Base } from "@/type/base";
 import { IModel } from ".";
-import { Validator } from "@/service/validator";
 import { Logger } from "@/service/logger";
-import { BigBrother } from "./big-brother";
-import { IngSoc } from "./ing-soc";
-
-export enum Version {
-    Major,
-    Minor,
-    Patch,
-}
+import { Demo } from "./demo";
+import { Validator } from "@/service/validator";
+import { Class } from "@/type/base";
 
 export class App extends IModel<
     'app',
@@ -18,13 +11,13 @@ export class App extends IModel<
         count: number,
     },
     {
-        ingSoc: IngSoc
+        demo?: Demo
     },
     {}
 > {
     private static _singleton: Map<Function, boolean> = new Map();
     static useSingleton() {
-        return function (Type: Base.Class) {
+        return function (Type: Class) {
             App._singleton.set(Type, false);
             const constructor = Type.constructor;
             Type.constructor = function (...args: any[]) {
@@ -47,48 +40,34 @@ export class App extends IModel<
 
     constructor() {
         super({
-            templ: 'app',
+            code: 'app',
             state: {
                 version: '0.1.0',
                 count: 0
             },
             child: {
-                ingSoc: { templ: 'ing-soc' }
             },
             event: {}
         }, undefined);
         window.app = this;
     }
 
-    private _isInited: boolean = false;
     get state() {
         const result = super.state;
         return {
-            ...result,
-            isInited: this._isInited
+            ...result
         };
     }
     
-    @Logger.useDebug()
-    @Validator.useCondition(target => !target._isInited)
-    async init() {
-        console.log('init');
-        this._isInited = true;
-        this._child;
-        this._onNodeAlter();
-    }
-
     @Logger.useDebug(true)
-    @Validator.useCondition(target => target._isInited)
-    count() {
-        console.log('count');
-        this._state.count ++;
+    @Validator.useCondition(app => !app.child.demo)
+    async start() {
+        this._child.demo = { code: 'demo' };
     }
 
-    @Validator.useCondition(target => target._isInited)
+    @Validator.useCondition(app => Boolean(app.child.demo))
     quit() {
-        this._isInited = false;
+        delete this._child.demo;
         App._singleton = new Map();
-        this._onNodeAlter();
     }
 }

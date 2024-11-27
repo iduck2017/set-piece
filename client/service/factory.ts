@@ -1,16 +1,17 @@
-import { IModel, Model } from "@/model";
-import { Base } from "@/type/base";
+import { Model } from "@/model";
+import { Class } from "@/type/base";
 import { Chunk } from "@/type/model";
+import { Logger } from "./logger";
 
 export class Factory {
     private static _timestamp = Date.now(); 
-    private static _refer = 36 ** 2;
-    static get refer(): string {
+    private static _uuid = 36 ** 2;
+    static get uuid(): string {
         let now = Date.now();
-        const ticket = Factory._refer;
-        Factory._refer += 1;
-        if (Factory._refer > 36 ** 3 - 1) {
-            Factory._refer = 36 ** 2;
+        const ticket = Factory._uuid;
+        Factory._uuid += 1;
+        if (Factory._uuid > 36 ** 3 - 1) {
+            Factory._uuid = 36 ** 2;
             while (now === Factory._timestamp) {
                 now = Date.now();
             }
@@ -19,7 +20,7 @@ export class Factory {
         return ticket.toString(36) + now.toString(36);
     }
 
-    private static _products: Record<string, Base.Class> = {};
+    private static _products: Record<string, Class> = {};
     static get products() {
         return { ...Factory._products };
     }
@@ -29,6 +30,7 @@ export class Factory {
             chunk: Chunk<T>, 
             parent: Model
         ) => Model<T>) {
+            console.log('UseProduct:', type);
             Factory._products[type] = Type;
         };
     }

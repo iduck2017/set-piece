@@ -1,4 +1,4 @@
-import { IModel, Model } from "@/model";
+import { Model } from "@/model";
 
 export class Event<E = any> {
     readonly target: Model;

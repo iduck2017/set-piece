@@ -1,8 +1,8 @@
-import { Base, KeyOf, ValueOf } from "../type/base";
+import { KeyOf, ValueOf } from "../type/base";
 import { ObservedArray, FormattedArray } from "./array";
 
 export namespace Delegator {
-    export function Automic<T extends Base.Dict>(
+    export function Automic<T extends Record<string, any>>(
         origin: any,
         getter: (key: KeyOf<T>) => T[KeyOf<T>]
     ): T {
@@ -18,7 +18,7 @@ export namespace Delegator {
         });
     }
     
-    export function Readonly<T extends Base.Dict>(
+    export function Readonly<T extends Record<string, any>>(
         origin: T
     ): Readonly<T> {
         return new Proxy(origin, {
@@ -51,7 +51,7 @@ export namespace Delegator {
         }
     }
 
-    export function Observed<T extends Base.Dict>(
+    export function Observed<T extends Record<string, any>>(
         origin: T,
         listener: (event: {
             key?: string | number,

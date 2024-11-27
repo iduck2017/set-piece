@@ -1,5 +1,5 @@
 import { Model } from "@/model";
-import { Base } from "@/type/base";
+import { Method } from "@/type/base";
 
 export class Lifecycle {
     private static readonly _loaders: Map<Function, string[]> = new Map();
@@ -21,8 +21,8 @@ export class Lifecycle {
         return function(
             target: Model,
             key: string,
-            descriptor: TypedPropertyDescriptor<Base.Func>
-        ): TypedPropertyDescriptor<Base.Func> {
+            descriptor: TypedPropertyDescriptor<Method>
+        ): TypedPropertyDescriptor<Method> {
             const keys = Lifecycle._loaders.get(target.constructor) || [];
             keys.push(key);
             Lifecycle._loaders.set(target.constructor, keys);
@@ -46,8 +46,8 @@ export class Lifecycle {
         return function(
             target: Model,
             key: string,
-            descriptor: TypedPropertyDescriptor<Base.Func>
-        ): TypedPropertyDescriptor<Base.Func> {
+            descriptor: TypedPropertyDescriptor<Method>
+        ): TypedPropertyDescriptor<Method> {
             const keys = Lifecycle._unloaders.get(target.constructor) || [];
             keys.push(key);
             Lifecycle._unloaders.set(target.constructor, keys);

@@ -1,4 +1,4 @@
-import { Base } from "@/type/base";
+import { Method } from "@/type/base";
 
 export class SafeArray<T> extends Array<T> {
     map(handler: any) {
@@ -22,8 +22,8 @@ export class FormattedArray<A = any, B = any> extends SafeArray<any> {
         return function (
             target: FormattedArray,
             key: string,
-            descriptor: TypedPropertyDescriptor<Base.Func>
-        ): TypedPropertyDescriptor<Base.Func> {
+            descriptor: TypedPropertyDescriptor<Method>
+        ): TypedPropertyDescriptor<Method> {
             const handler = descriptor.value;
             descriptor.value = function(this: FormattedArray, ...args: any[]) {
                 this._lock = true;
@@ -106,8 +106,8 @@ export class ObservedArray<T = any> extends SafeArray<T> {
         return function (
             target: ObservedArray,
             key: string,
-            descriptor: TypedPropertyDescriptor<Base.Func>
-        ): TypedPropertyDescriptor<Base.Func> {
+            descriptor: TypedPropertyDescriptor<Method>
+        ): TypedPropertyDescriptor<Method> {
             const handler = descriptor.value;
             descriptor.value = function(this: ObservedArray, ...args: any[]) {
                 this._lock = true;

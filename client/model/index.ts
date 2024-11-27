@@ -2,14 +2,14 @@ import { Decor } from "@/service/decor";
 import { Factory } from "@/service/factory";
 import { Lifecycle } from "@/service/lifecycle";
 import { Logger } from "@/service/logger";
-import { Base, KeyOf, Strict, ValidOf } from "@/type/base";
+import { KeyOf, Method, Strict, ValidOf, Value } from "@/type/base";
 import { Chunk, ChunkOf, StateOf } from "@/type/model";
 import { Event, React } from "@/util/event";
 import { Delegator } from "@/util/proxy";
 import { OptionalKeys, RequiredKeys } from "utility-types";
 
 type ModelEvent<
-    E extends Record<string, Base.Func> = Record<string, Base.Func>
+    E extends Record<string, Method> = Record<string, Method>
 > = {
     onNodeAlter: <N extends Model>(target: N, form: {
         prev: Readonly<StateOf<N>>,
@@ -24,21 +24,19 @@ type ModelEvent<
 
 export type Model<
     T extends string = string,
-    S extends Base.Data = Base.Data,
-    C extends Model | Record<string, Model> = Record<string, any>,
-    E extends Record<string, Base.Func> = Record<string, Base.Func>
+    S extends Record<string, Value> = Record<string, Value>,
+    C extends Record<string, Model> | Model[] = Record<string, any>,
+    E extends Record<string, Method> = Record<string, Method>
 > = IModel<T, S, C, E>;
 
 export abstract class IModel<
     T extends string,
-    S extends Base.Data,
-    C extends Model | Record<string, Model>,
-    E extends Record<string, Base.Func>
+    S extends Record<string, Value>,
+    C extends Record<string, Model> | Model[],
+    E extends Record<string, Method>
 > {
-    public readonly templ: T;
-    
-    public readonly refer: string;
-    private readonly _refer: Record<string, Model> = {};
+    public readonly code: T;
+    public readonly uuid: string;
 
     public readonly parent?: Model;
 
@@ -53,22 +51,22 @@ export abstract class IModel<
     }>>;
 
     protected _child: 
-        C extends Model ? ChunkOf<C>[] : 
-        C extends Base.Dict ? Strict<{
+        C extends Array<any> ? ChunkOf<C[number]>[] : 
+        C extends Record<string, any> ? Strict<{
             [K in RequiredKeys<ValidOf<C>>]: ChunkOf<C[K]>;
         } & {
             [K in OptionalKeys<ValidOf<C>>]?: ChunkOf<Required<C>[K]>; 
         }> : never;
-    public readonly child: Readonly<C extends Model ? C[] : C>;
+    public readonly child: C;
 
     constructor(
         chunk: {
-            templ: T;
-            refer?: string;
-            state: S;
+            code: T;
+            uuid?: string;
+            state: Strict<S>;
             child: 
-                C extends Model ? ChunkOf<C>[] : 
-                C extends Base.Dict ? Strict<{
+                C extends Array<any> ? ChunkOf<C[number]>[] : 
+                C extends Record<string, any> ? Strict<{
                     [K in RequiredKeys<ValidOf<C>>]: ChunkOf<C[K]>;
                 } & {
                     [K in OptionalKeys<ValidOf<C>>]?: ChunkOf<Required<C>[K]>; 
@@ -79,11 +77,11 @@ export abstract class IModel<
         },
         parent: Model | undefined
     ) {
-        this.templ = chunk.templ;
-        this.refer = chunk.refer || Factory.refer;
+        this.code = chunk.code;
+        this.uuid = chunk.uuid || Factory.uuid;
         this.parent = parent;
         if (parent) {
-            parent._refer[this.refer] = this;
+            parent._refer[this.uuid] = this;
         }
 
         this._state = Delegator.Observed(
@@ -107,12 +105,11 @@ export abstract class IModel<
         } else {
             child = {};
             for (const key in chunk.child) {
-                const value = chunk.child[key];
-                if (value instanceof IModel) {
-                    child[key] = this._create(value);
-                }
+                const value: any = chunk.child[key];
+                child[key] = this._create(value);
             }
         }
+        console.log(child, chunk);
         child = Delegator.Observed(
             child,
             this._onNodeSpawn.bind(this)
@@ -146,7 +143,7 @@ export abstract class IModel<
         });
         this._prevState = { 
             ...this._state,
-            ...Decor.getDecors(this, nextState)
+            ...Decor.GetMutators(this, nextState)
         };
         this._event.onNodeAlter(this, {
             prev: prevState,
@@ -194,7 +191,7 @@ export abstract class IModel<
     private _create<N extends Model>(
         chunk: ChunkOf<N>
     ): N {
-        const Type = Factory.products[chunk.templ];
+        const Type = Factory.products[chunk.code];
         if (!Type) {
             console.error('ModelNotFound:', {
                 chunk
@@ -204,12 +201,12 @@ export abstract class IModel<
         return new Type(chunk, this) as N;
     }
 
-    private readonly _react: Map<Base.Func, React> = new Map();
+    private readonly _react: Map<Method, React> = new Map();
     private readonly _consumers: Map<Event, Array<React>> = new Map();
     private readonly _producers: Map<React, Array<Event>> = new Map();
 
     @Logger.useDebug(true)
-    protected bind<E extends Base.Func>(
+    protected bind<E extends Method>(
         event: Event<E>,
         handler: E
     ) {
@@ -228,7 +225,7 @@ export abstract class IModel<
         }
     }
 
-    protected unbind<E extends Base.Func>(
+    protected unbind<E extends Method>(
         event: Event<E> | undefined,
         handler: E
     ) {
@@ -253,29 +250,29 @@ export abstract class IModel<
         }
     }
 
-    
-    public get path(): string[] {
-        const result: string[] = [ this.refer ];
+    private readonly _refer: Record<string, Model> = {};
+    public get refer(): string[] {
+        const result: string[] = [ this.uuid ];
         let temp: Model | undefined = this.parent;
         while (temp) {
-            result.unshift(temp.refer);
+            result.unshift(temp.uuid);
             temp = temp.parent;
         }
         return result;
     }
-    public query(path: string[]): Model | undefined {
-        for (const segment of path) {
-            if (this._refer[segment]) {
-                return this._refer[segment].query(path.slice(
-                    path.indexOf(segment) + 1
+    public query(refer: string[]): Model | undefined {
+        for (const uuid of refer) {
+            if (this._refer[uuid]) {
+                return this._refer[uuid].query(refer.slice(
+                    refer.indexOf(uuid) + 1
                 ));
             }
         }
         return undefined;
     }
 
-    private readonly _loaders: Base.Func[] = Lifecycle.getLoaders(this);
-    private readonly _unloaders: Base.Func[] = Lifecycle.getUnloaders(this);
+    private readonly _loaders: Method[] = Lifecycle.getLoaders(this);
+    private readonly _unloaders: Method[] = Lifecycle.getUnloaders(this);
     private _load() {
         for (const loader of this._loaders) loader();
         if (this.child instanceof Array) {
@@ -307,12 +304,16 @@ export abstract class IModel<
             this.unbind(undefined, react.handler);
         }
         if (this.parent) {
-            delete this.parent._refer[this.refer];
+            delete this.parent._refer[this.uuid];
         }
     }
 
     public debug() {
-        console.log(this._consumers);
+        if (this.child instanceof Array) {
+            console.log([ ...this.child ]);
+        } else {
+            console.log({ ...this.child });
+        }
         console.log({ ...this._state });
     }
 
@@ -330,8 +331,8 @@ export abstract class IModel<
             }
         }
         return {
-            templ: this.templ,
-            refer: this.refer,
+            code: this.code,
+            uuid: this.uuid,
             state: { ...this._state },
             child
         };

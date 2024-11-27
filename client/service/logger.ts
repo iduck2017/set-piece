@@ -1,4 +1,4 @@
-import { Base } from "@/type/base";
+import { Method } from "@/type/base";
 
 export class Logger {
     static useDebug<T extends any[]>(
@@ -8,8 +8,8 @@ export class Logger {
         return function (
             target: unknown,
             key: string,
-            descriptor: TypedPropertyDescriptor<Base.Func>
-        ): TypedPropertyDescriptor<Base.Func> {
+            descriptor: TypedPropertyDescriptor<Method>
+        ): TypedPropertyDescriptor<Method> {
             const handler = descriptor.value;
             descriptor.value = function(this: unknown, ...args: T) {
                 const flag = 
