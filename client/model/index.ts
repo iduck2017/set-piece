@@ -25,7 +25,7 @@ type ModelEvent<
 export type Model = IModel<
     string,
     Base.Data,
-    any,
+    Model | Record<string, Model>,
     Record<string, Base.Func>
 >;
 
@@ -77,7 +77,7 @@ export abstract class IModel<
                 [K in KeyOf<ValidOf<E>>]?: Event<E[K]>;
             }
         },
-        parent?: Model
+        parent: Model | undefined
     ) {
         this.templ = chunk.templ;
         this.refer = chunk.refer || Factory.refer;

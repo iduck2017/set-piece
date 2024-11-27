@@ -2,6 +2,8 @@ import { Base } from "@/type/base";
 import { IModel } from ".";
 import { Validator } from "@/service/validator";
 import { Logger } from "@/service/logger";
+import { BigBrother } from "./big-brother";
+import { IngSoc } from "./ing-soc";
 
 export enum Version {
     Major,
@@ -15,7 +17,7 @@ export class App extends IModel<
         version: string,
         count: number,
     },
-    {},
+    IngSoc,
     {}
 > {
     private static _singleton: Map<Function, boolean> = new Map();
@@ -48,9 +50,9 @@ export class App extends IModel<
                 version: '0.1.0',
                 count: 0
             },
-            child: {},
+            child: [ { templ: 'a' } ],
             event: {}
-        });
+        }, undefined);
         window.app = this;
     }
 
@@ -68,6 +70,7 @@ export class App extends IModel<
     async init() {
         console.log('init');
         this._isInited = true;
+        this._child;
         this._onNodeAlter();
     }
 
