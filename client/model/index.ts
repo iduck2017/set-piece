@@ -165,7 +165,7 @@ export abstract class IModel<
             }
         }
     }
-    public useState<N extends Model>(setter: (target: N) => void){
+    public useState(setter: (detail: OnModelAlter<typeof this>) => void){
         const event: any = this.event;
         this.bind(event.onModelAlter, setter);
         return () => {
@@ -189,7 +189,7 @@ export abstract class IModel<
             next: this.child
         });
     }
-    public useChild<N extends Model>(setter: (target: N) => void) {
+    public useChild(setter: (detail: OnModelSpawn<typeof this>) => void) {
         const event: any = this.event;
         this.bind(event.onModelSpawn, setter);
         return () => {

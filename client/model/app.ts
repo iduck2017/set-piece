@@ -64,6 +64,7 @@ export class App extends IModel<
     @Validator.useCondition(app => !app.child.demo)
     async start() {
         const chunk = await File.load();
+        console.log(chunk);
         this._child.demo = chunk;
     }
 

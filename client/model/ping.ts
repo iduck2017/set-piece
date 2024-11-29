@@ -2,7 +2,6 @@ import { IModel, Model } from ".";
 import { Factory } from "@/service/factory";
 import { ChunkOf, OnModelCheck } from "@/type/model";
 
-
 @Factory.useProduct('pings')
 export class Pings extends IModel<
     'pings',
@@ -49,39 +48,6 @@ export class Pings extends IModel<
 }
 
 
-@Factory.useProduct('pongs')
-export class Pongs<
-    C extends Model = Model
-> extends IModel<
-    'pongs',
-    {},
-    C[],
-    {}
-> {
-    constructor(
-        chunk: ChunkOf<Pongs>,
-        parent: Model
-    ) {
-        const child: any = [];
-        super({
-            child,
-            ...chunk,
-            state: {}
-        }, parent);
-    }
-
-    append(chunk: ChunkOf<C>) {
-        console.log('append', chunk);
-        this._child.push(chunk);
-    }
-
-    remove(target: C) {
-        const index = this.child.indexOf(target);
-        if (index < 0) return;
-        this._child.splice(index, 1);
-    }
-}
-
 @Factory.useProduct('ping')
 export class Ping extends IModel<
     'ping',
@@ -93,30 +59,6 @@ export class Ping extends IModel<
 > {
     constructor(
         chunk: ChunkOf<Ping>,
-        parent: Model
-    ) {
-        super({
-            ...chunk,
-            child: {},
-            state: {
-                count: 0,
-                ...chunk.state
-            }
-        }, parent);
-    }
-}
-
-@Factory.useProduct('pong')
-export class Pong extends IModel<
-    'pong',
-    {
-        count: number;
-    },
-    {},
-    {}
-> {
-    constructor(
-        chunk: ChunkOf<Pong>,
         parent: Model
     ) {
         super({

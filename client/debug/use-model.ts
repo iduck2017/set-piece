@@ -16,19 +16,19 @@ export function useModel<N extends Model>(model: N): [
     });
 
     useEffect(() => {
-        return model.useState(target => {
-            console.log(target);
-            setState({ ...target.state });
+        return model.useState(detail => {
+            setState({ ...detail.next });
         });
     }, [ model ]);
     
     useEffect(() => {
-        return model.useChild(target => {
-            if (target.child instanceof Array) {
-                setChild([ ...target.child ]);
-            } else {
-                setChild({ ...target.child });
-            }
+        return model.useChild(detail => {
+            console.log(detail.next, detail.next instanceof Array);
+            setChild(
+                detail.next instanceof Array?
+                    [ ...detail.next ] : 
+                    { ...detail.next }
+            );
         });
     }, [ model ]);
 

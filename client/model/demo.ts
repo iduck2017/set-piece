@@ -4,7 +4,8 @@ import { ChunkOf } from "@/type/model";
 import { App } from "./app";
 import { Bunny } from "./bunny";
 import { Gender } from "@/type/common";
-import { Pings, Pongs } from "./ping-pong";
+import { Pings } from "./ping";
+import { Pongs } from "./pong";
 
 @Factory.useProduct('demo')
 export class Demo extends IModel<
