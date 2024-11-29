@@ -3,6 +3,7 @@ import { Logger } from "@/service/logger";
 import { Demo } from "./demo";
 import { Validator } from "@/service/validator";
 import { Class } from "@/type/base";
+import { File } from "@/service/file";
 
 export class App extends IModel<
     'app',
@@ -62,7 +63,16 @@ export class App extends IModel<
     @Logger.useDebug(true)
     @Validator.useCondition(app => !app.child.demo)
     async start() {
-        this._child.demo = { code: 'demo' };
+        const chunk = await File.load();
+        this._child.demo = chunk;
+    }
+
+    @Validator.useCondition(app => Boolean(app.child.demo))
+    async save() {
+        const chunk = this._child.demo;
+        if (chunk) {
+            await File.save(chunk);
+        }
     }
 
     @Validator.useCondition(app => Boolean(app.child.demo))

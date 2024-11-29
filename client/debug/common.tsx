@@ -1,22 +1,26 @@
 import React from "react";
 import { Model } from "@/model";
 import './index.css';
-import { KeyOf } from "@/type/base";
+import { KeyOf, Method } from "@/type/base";
 import { Validator } from "@/service/validator";
 
-export function Link<M extends Model>(props: {
+export function Link<
+    M extends Model,
+    K extends KeyOf<M>
+>(props: {
     model: M,
-    name: KeyOf<M>
+    name: K,
+    args?: M[K] extends Method ? Parameters<M[K]> : undefined
 }) {
-    const { model, name } = props;
+    const { model, name, args = [] } = props;
     
-    const visible = Validator.preCheck(model, name);
+    const visible = Validator.preCheck(model, name, ...args);
     if (!visible) return null;
 
     const emit = () => {
         const method: any = model[name];
-        if (typeof method === "function" && method.length === 0) {
-            method.apply(model);
+        if (typeof method === "function") {
+            method.apply(model, args);
         }
     };
 

@@ -1,5 +1,4 @@
-import { KeyOf, ValueOf } from "../type/base";
-import { ObservedArray, FormattedArray } from "./array";
+import { KeyOf, Method, ValueOf } from "../type/base";
 
 export namespace Delegator {
     export function Automic<T extends Record<string, any>>(
@@ -28,16 +27,87 @@ export namespace Delegator {
     }
 
     export function Formatted<A, B>(
-        origin: any,
+        origin: Record<string, any>,
         getter: (value: A) => B,
         setter: (value: B) => A
     ): any {
         if (origin instanceof Array) {
-            return new FormattedArray(
-                getter, 
-                setter,
-                ...origin
-            );
+            let lock = false;
+            const {
+                push,
+                pop,
+                unshift,
+                shift,
+                splice
+            } = origin;
+            const useLock = function (handler: Method) {
+                return (...args: any[]) => {
+                    lock = true;
+                    const result = handler(...args);
+                    lock = false;
+                    return result;
+                };
+            };
+            const result = new Proxy(origin, {
+                get: (target, key: any) => {
+                    if (
+                        lock || 
+                        typeof key === "symbol" || 
+                        isNaN(Number(key))
+                    ) {
+                        return target[key];
+                    }
+                    return getter(target[key]);
+                },
+                set: (target, key: any, value: any) => {
+                    if (
+                        lock || 
+                        typeof key === "symbol" || 
+                        isNaN(Number(key))
+                    ) {
+                        target[key] = value;
+                        return true;
+                    }
+                    target[key] = setter(value);
+                    return true;
+                }
+            });
+            result.push = useLock((...next) => {  
+                const index = push.apply(
+                    origin, 
+                    next.map(setter)
+                );
+                return index;
+            });
+            result.pop = useLock(() => {
+                const prev = pop.apply(origin);
+                return getter(prev);
+            });
+            result.unshift = useLock((...next) => {
+                const index = unshift.apply(
+                    origin, 
+                    next.map(setter)
+                );
+                return index;
+            });
+            result.shift = useLock(() => {
+                const prev = shift.apply(origin);
+                return getter(prev);
+            });
+            result.splice = useLock((
+                start: number, 
+                count: number, 
+                ...next
+            ) => {
+                const prev = splice.call(
+                    origin, 
+                    start,
+                    count,
+                    ...next.map(setter)
+                );
+                return prev.map(getter);
+            });
+            return result;
         } else {
             return new Proxy(origin, {
                 get: (origin, key: string) => {
@@ -58,9 +128,86 @@ export namespace Delegator {
             prev?: ValueOf<T> | ValueOf<T>[],
             next?: ValueOf<T> | ValueOf<T>[],
         }) => void
-    ): any {
+    ): T {
         if (origin instanceof Array) {
-            return new ObservedArray(listener, ...origin);
+            let lock = false;
+            const {
+                push,
+                pop,
+                unshift,
+                shift,
+                splice
+            } = origin;
+            const useLock = function (handler: Method) {
+                return (...args: any[]) => {
+                    lock = true;
+                    const result = handler(...args);
+                    lock = false;
+                    return result;
+                };
+            };
+            const result = new Proxy(origin, {
+                set: (target, key: any, value: any) => {
+                    const prev = target[key];
+                    target[key] = value;
+                    if (
+                        lock || 
+                        typeof key === "symbol" || 
+                        isNaN(Number(key))
+                    ) {
+                        return true;
+                    }
+                    listener({ 
+                        prev,
+                        next: value 
+                    });
+                    return true;
+                },
+                deleteProperty: (target, key: any) => {
+                    const value = target[key];
+                    delete target[key];
+                    if (lock) return true;
+                    listener({ 
+                        prev: value,
+                        next: undefined 
+                    });
+                    return true;
+                }
+            });
+            result.push = useLock((...next: ValueOf<T>[]) => {  
+                const index = push.apply(origin, next);
+                listener({ next });
+                return index;
+            });
+            result.pop = useLock(() => {
+                const prev = pop.apply(origin);
+                listener({ prev });
+                return prev;
+            });
+            result.unshift = useLock((...next: ValueOf<T>[]) => {
+                const index = unshift.apply(origin, next);
+                listener({ next });
+                return index;
+            });
+            result.shift = useLock(() => {
+                const prev = shift.apply(origin);
+                listener({ prev });
+                return prev;
+            });
+            result.splice = useLock((start: number, count: number, ...next: ValueOf<T>[]) => {
+                const prev = splice.call(
+                    origin, 
+                    start,
+                    count,
+                    ...next
+                );
+                listener({ 
+                    prev,
+                    next 
+                });
+                return prev;
+            });
+            return result;
         } else {
             return new Proxy(origin, {
                 set: (target, key: KeyOf<T>, value) => {

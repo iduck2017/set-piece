@@ -3,6 +3,8 @@ import { Factory } from "@/service/factory";
 import { ChunkOf } from "@/type/model";
 import { App } from "./app";
 import { Bunny } from "./bunny";
+import { Gender } from "@/type/common";
+import { Pings, Pongs } from "./ping-pong";
 
 @Factory.useProduct('demo')
 export class Demo extends IModel<
@@ -12,6 +14,8 @@ export class Demo extends IModel<
     },
     {
         bunny: Bunny;  
+        pings: Pings;
+        pongs: Pongs;
     },
     {}
 > {
@@ -24,7 +28,14 @@ export class Demo extends IModel<
         super({
             ...chunk,
             child: {
-                bunny: { code: 'bunny' },
+                bunny: { 
+                    code: 'bunny',
+                    state: {
+                        gender: Gender.Female
+                    }
+                },
+                pings: { code: 'pings' },
+                pongs: { code: 'pongs' },
                 ...chunk.child
             },
             state: {

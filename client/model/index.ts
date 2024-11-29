@@ -3,51 +3,50 @@ import { Factory } from "@/service/factory";
 import { Lifecycle } from "@/service/lifecycle";
 import { Logger } from "@/service/logger";
 import { KeyOf, Method, Strict, ValidOf, Value } from "@/type/base";
-import { Chunk, ChunkOf, StateOf } from "@/type/model";
+import { Chunk, ChunkOf, OnModelAlter, OnModelCheck, OnModelSpawn } from "@/type/model";
 import { Event, React } from "@/util/event";
 import { Delegator } from "@/util/proxy";
 import { OptionalKeys, RequiredKeys } from "utility-types";
 
 type ModelEvent<
+    M extends Model,
     E extends Record<string, Method> = Record<string, Method>
 > = {
-    onNodeAlter: <N extends Model>(target: N, form: {
-        prev: Readonly<StateOf<N>>,
-        next: Readonly<StateOf<N>>,
-    }) => void;
-    onNodeCheck: <N extends Model>(target: N, form: {
-        prev: Readonly<StateOf<N>>,
-        next: StateOf<N>,
-    }) => void;
-    onNodeSpawn: <N extends Model>(target: N) => void;
+    onModelAlter: OnModelAlter<M>
+    onModelCheck: OnModelCheck<M>
+    onModelSpawn: OnModelSpawn<M>
 } & E;
 
 export type Model<
     T extends string = string,
     S extends Record<string, Value> = Record<string, Value>,
     C extends Record<string, Model> | Model[] = Record<string, any>,
-    E extends Record<string, Method> = Record<string, Method>
+    E extends Record<string, any> = Record<string, any>
 > = IModel<T, S, C, E>;
 
 export abstract class IModel<
     T extends string,
     S extends Record<string, Value>,
     C extends Record<string, Model> | Model[],
-    E extends Record<string, Method>
+    E extends Record<string, any>
 > {
     public readonly code: T;
     public readonly uuid: string;
 
     public readonly parent?: Model;
 
-    protected _state: S;
-    public get state(): Readonly<S> {
+    protected _state: Strict<S>;
+    public get state(): Readonly<Strict<S>> {
         return { ...this._prevState };
     }
     
-    protected _event: ModelEvent<E>;
+    protected _event: Readonly<Strict<{
+        [K in KeyOf<ValidOf<ModelEvent<typeof this, E>>>]: 
+            (event: ModelEvent<typeof this, E>[K]) => void;
+    }>>;
     public readonly event: Readonly<Strict<{
-        [K in KeyOf<ValidOf<ModelEvent<E>>>]: Event<ModelEvent<E>[K]>;
+        [K in KeyOf<ValidOf<ModelEvent<typeof this, E>>>]: 
+            Event<ModelEvent<typeof this, E>[K]>;
     }>>;
 
     protected _child: 
@@ -57,7 +56,7 @@ export abstract class IModel<
         } & {
             [K in OptionalKeys<ValidOf<C>>]?: ChunkOf<Required<C>[K]>; 
         }> : never;
-    public readonly child: C;
+    public readonly child: Readonly<Strict<C>>;
 
     constructor(
         chunk: {
@@ -72,7 +71,8 @@ export abstract class IModel<
                     [K in OptionalKeys<ValidOf<C>>]?: ChunkOf<Required<C>[K]>; 
                 }> : never,
             event?: {
-                [K in KeyOf<ValidOf<E>>]?: Event<E[K]>;
+                [K in KeyOf<ValidOf<ModelEvent<Model<T, S, C, E>, E>>>]?: 
+                    Event<ModelEvent<Model<T, S, C, E>, E>[K]>[];
             }
         },
         parent: Model | undefined
@@ -81,12 +81,12 @@ export abstract class IModel<
         this.uuid = chunk.uuid || Factory.uuid;
         this.parent = parent;
         if (parent) {
-            parent._refer[this.uuid] = this;
+            parent._refers[this.uuid] = this;
         }
 
         this._state = Delegator.Observed(
             chunk.state,
-            this._onNodeAlter.bind(this, false)
+            this._onModelAlter.bind(this, false)
         );
         this._prevState = { ...this._state };
 
@@ -94,8 +94,8 @@ export abstract class IModel<
             const result: any = this._emit.bind(this, key);
             return result;
         });
-        this.event = Delegator.Automic(chunk.event || {}, () => {
-            const result: any = new Event(this);
+        this.event = Delegator.Automic(chunk.event || {}, (key) => {
+            const result: any = new Event(this, key);
             return result;  
         });
 
@@ -109,10 +109,9 @@ export abstract class IModel<
                 child[key] = this._create(value);
             }
         }
-        console.log(child, chunk);
         child = Delegator.Observed(
             child,
-            this._onNodeSpawn.bind(this)
+            this._onModelSpawn.bind(this)
         );
         this.child = Delegator.Readonly(child);
         this._child = Delegator.Formatted(
@@ -124,7 +123,10 @@ export abstract class IModel<
     }
 
     @Logger.useDebug(true)
-    private _emit(key: KeyOf<ValidOf<ModelEvent<E>>>, ...args: any[]) {
+    private _emit(
+        key: KeyOf<ValidOf<ModelEvent<typeof this, E>>>, 
+        ...args: any[]
+    ) {
         const event = this.event[key];
         const { target } = event;
         const reacts = target._consumers.get(event) || [];
@@ -133,11 +135,13 @@ export abstract class IModel<
         }
     }
 
-    private _prevState: S;
-    protected _onNodeAlter(recursive?: boolean) {
+    private _prevState: Strict<S>;
+    protected _onModelAlter(recursive?: boolean) {
         const prevState = { ...this._prevState };
         const nextState = { ...this._state };
-        this._event.onNodeCheck(this, {
+        const event: any = this._event;
+        event.onModelCheck({
+            target: this,
             prev: prevState,
             next: nextState
         });
@@ -145,46 +149,51 @@ export abstract class IModel<
             ...this._state,
             ...Decor.GetMutators(this, nextState)
         };
-        this._event.onNodeAlter(this, {
+        event.onModelAlter({
+            target: this,
             prev: prevState,
             next: nextState
         });
         if (recursive) {
             if (this.child instanceof Array) {
-                for (const target of this.child) target._onNodeAlter(recursive);
+                for (const target of this.child) target._onModelAlter(recursive);
             } else {
                 for (const key in this.child) {
                     const target = this.child[key];
-                    if (target instanceof IModel) target._onNodeAlter(recursive);
+                    if (target instanceof IModel) target._onModelAlter(recursive);
                 }
             }
         }
     }
     public useState<N extends Model>(setter: (target: N) => void){
         const event: any = this.event;
-        this.bind(event.onNodeAlter, setter);
+        this.bind(event.onModelAlter, setter);
         return () => {
-            this.unbind(event.onNodeAlter, setter);
+            this.unbind(event.onModelAlter, setter);
         };
     }
 
-    private _onNodeSpawn(event: {
+    private _onModelSpawn(detail: {
         key: string,
         prev?: Model | Model[],
         next?: Model | Model[]
     }) {
-        const { prev, next } = event;
+        const { prev, next } = detail;
         if (next instanceof Array) next.map(target => target._load());
         if (prev instanceof Array) prev.map(target => target._unload());
         if (next instanceof IModel) next._load();
         if (prev instanceof IModel) prev._unload();
-        this._event.onNodeSpawn(this);
+        const event: any = this._event;
+        event.onModelSpawn({
+            target: this,
+            next: this.child
+        });
     }
     public useChild<N extends Model>(setter: (target: N) => void) {
         const event: any = this.event;
-        this.bind(event.onNodeSpawn, setter);
+        this.bind(event.onModelSpawn, setter);
         return () => {
-            this.unbind(event.onNodeSpawn, setter);
+            this.unbind(event.onModelSpawn, setter);
         };
     }
 
@@ -220,8 +229,8 @@ export abstract class IModel<
         const events = this._producers.get(react) || [];
         events.push(event);
         this._producers.set(react, events);
-        if (event === target.event.onNodeCheck) {
-            target._onNodeAlter(true);
+        if (event === target.event.onModelCheck) {
+            target._onModelAlter(true);
         }
     }
 
@@ -242,15 +251,15 @@ export abstract class IModel<
                     reacts.splice(index, 1);
                 }
                 target._consumers.set(_event, reacts);
-                if (_event === target.event.onNodeCheck) {
-                    target._onNodeAlter(true);  
+                if (_event === target.event.onModelCheck) {
+                    target._onModelAlter(true);  
                 }
             }
             this._producers.delete(react);
         }
     }
 
-    private readonly _refer: Record<string, Model> = {};
+    private readonly _refers: Record<string, Model> = {};
     public get refer(): string[] {
         const result: string[] = [ this.uuid ];
         let temp: Model | undefined = this.parent;
@@ -262,8 +271,8 @@ export abstract class IModel<
     }
     public query(refer: string[]): Model | undefined {
         for (const uuid of refer) {
-            if (this._refer[uuid]) {
-                return this._refer[uuid].query(refer.slice(
+            if (this._refers[uuid]) {
+                return this._refers[uuid].query(refer.slice(
                     refer.indexOf(uuid) + 1
                 ));
             }
@@ -304,15 +313,21 @@ export abstract class IModel<
             this.unbind(undefined, react.handler);
         }
         if (this.parent) {
-            delete this.parent._refer[this.uuid];
+            delete this.parent._refers[this.uuid];
         }
     }
 
+    @Logger.useDebug(true)
     public debug() {
-        if (this.child instanceof Array) {
-            console.log([ ...this.child ]);
+        if (this.child instanceof Array) { 
+            console.log([ ...this.child ]); 
         } else {
             console.log({ ...this.child });
+        }
+        if (this._child instanceof Array) {
+            console.log([ ...this._child ]);
+        } else {
+            console.log({ ...this._child });
         }
         console.log({ ...this._state });
     }

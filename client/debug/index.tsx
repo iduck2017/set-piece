@@ -9,15 +9,8 @@ export function ModelComp(props: {
     menu?: ReactNode | ReactNode[],
     form?: ReactNode | ReactNode[]
 }) {
-    const { model, form } = props;
-    const [ state, child ] = useModel(model);
-    let { menu } = props;
-
-    if (!menu) {
-        menu = (child instanceof Array ? child : Object.values(child)).map((item) => (
-            <ModelComp key={item.refer} model={item} />
-        ));
-    }
+    const { model, form, menu } = props;
+    const [ state ] = useModel(model);
 
     return <div className="tree">
         <div className="form">

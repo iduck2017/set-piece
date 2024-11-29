@@ -12,10 +12,29 @@ export interface Chunk<
 > {
     code: T;
     uuid?: string;
-    state?: Partial<S>;  
+    state?: Partial<Strict<S>>;  
     child?: 
         C extends Array<any> ? ChunkOf<C[number]>[] : 
         C extends Record<string, Model>? Strict<{
             [K in KeyOf<ValidOf<C>>]?: ChunkOf<Required<C>[K]>;
         }> : never
 }
+
+
+export type OnModelAlter<M extends Model> = {
+    target: M;
+    prev: Readonly<StateOf<M>>;
+    next: Readonly<StateOf<M>>;
+}
+
+export type OnModelSpawn<M extends Model> = {
+    target: M;
+    next: Readonly<ChildOf<M>>;
+}
+
+export type OnModelCheck<M extends Model> = {
+    target: M;
+    prev: Readonly<StateOf<M>>;
+    next: StateOf<M>;
+}
+
