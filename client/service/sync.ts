@@ -1,5 +1,5 @@
 import { Model } from "@/model";
-import { Method } from "@/type/base";
+import { Func } from "@/type/base";
 import { Delegator } from "@/util/proxy";
 
 export type Action = {
@@ -21,12 +21,12 @@ export class Sync {
         return function (
             target: Model,
             key: string,
-            descriptor: TypedPropertyDescriptor<Method>
-        ): TypedPropertyDescriptor<Method> {
+            descriptor: TypedPropertyDescriptor<Func>
+        ): TypedPropertyDescriptor<Func> {
             const handler = descriptor.value;
             descriptor.value = function(this: Model, ...params) {
                 if (!Sync.main._isApply) {
-                    const refer = this.refer;
+                    const refer = this.path;
                     Sync.main.send({ 
                         refer,
                         key,

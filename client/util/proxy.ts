@@ -1,11 +1,12 @@
-import { KeyOf, Method, ValueOf } from "../type/base";
+import { KeyOf, Func, ValueOf, Dict, List } from "../type/base";
 
 export namespace Delegator {
-    export function Automic<T extends Record<string, any>>(
-        origin: any,
+    export function Automic<T extends Dict>(
+        origin: Partial<T>,
         getter: (key: KeyOf<T>) => T[KeyOf<T>]
     ): T {
-        return new Proxy(origin, {
+        const _origin: any = origin;
+        return new Proxy(_origin, {
             get: (origin, key: KeyOf<T>) => {
                 if (!origin[key]) {
                     origin[key] = getter(key);
@@ -17,7 +18,7 @@ export namespace Delegator {
         });
     }
     
-    export function Readonly<T extends Record<string, any>>(
+    export function Readonly<T extends Dict>(
         origin: T
     ): Readonly<T> {
         return new Proxy(origin, {
@@ -27,7 +28,7 @@ export namespace Delegator {
     }
 
     export function Formatted<A, B>(
-        origin: Record<string, any>,
+        origin: Dict,
         getter: (value: A) => B,
         setter: (value: B) => A
     ): any {
@@ -40,8 +41,8 @@ export namespace Delegator {
                 shift,
                 splice
             } = origin;
-            const useLock = function (handler: Method) {
-                return (...args: any[]) => {
+            const useLock = function (handler: Func) {
+                return (...args: List) => {
                     lock = true;
                     const result = handler(...args);
                     lock = false;
@@ -59,7 +60,7 @@ export namespace Delegator {
                     }
                     return getter(target[key]);
                 },
-                set: (target, key: any, value: any) => {
+                set: (target, key: any, value) => {
                     if (
                         lock || 
                         typeof key === "symbol" || 
@@ -121,7 +122,7 @@ export namespace Delegator {
         }
     }
 
-    export function Observed<T extends Record<string, any>>(
+    export function Observed<T extends Dict>(
         origin: T,
         listener: (event: {
             key?: string | number,
@@ -138,8 +139,8 @@ export namespace Delegator {
                 shift,
                 splice
             } = origin;
-            const useLock = function (handler: Method) {
-                return (...args: any[]) => {
+            const useLock = function (handler: Func) {
+                return (...args: List) => {
                     lock = true;
                     const result = handler(...args);
                     lock = false;
@@ -147,7 +148,7 @@ export namespace Delegator {
                 };
             };
             const result = new Proxy(origin, {
-                set: (target, key: any, value: any) => {
+                set: (target, key: any, value) => {
                     const prev = target[key];
                     target[key] = value;
                     if (

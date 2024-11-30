@@ -1,5 +1,6 @@
 import { Model } from "@/model";
 import { Factory } from "@/service/factory";
+import { Handler } from "@/type/event";
 
 export class Event<E = any> {
     readonly target: Model;
@@ -18,12 +19,12 @@ export class Event<E = any> {
 
 export class React<E = any> {
     readonly target: Model;
-    readonly handler: E;
+    readonly handler: Handler<E>;
     public readonly uuid: string;
 
     constructor(
         target: Model,
-        handler: E
+        handler: Handler<E>
     ) {
         this.target = target;
         this.handler = handler;

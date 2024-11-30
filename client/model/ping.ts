@@ -1,6 +1,7 @@
 import { IModel, Model } from ".";
 import { Factory } from "@/service/factory";
-import { ChunkOf, OnModelCheck } from "@/type/model";
+import { OnModelCheck } from "@/type/event";
+import { ChunkOf } from "@/type/model";
 
 @Factory.useProduct('pings')
 export class Pings extends IModel<
@@ -9,12 +10,8 @@ export class Pings extends IModel<
     Ping[],
     {
         onPingCheck: OnModelCheck<Ping>,
-        onPingAppend: {
-            target: Ping, 
-        }
-        onPingRemove: {
-            target: Ping
-        }
+        onPingAppend: Ping
+        onPingRemove: Ping
     }
 > {
     constructor(
@@ -32,18 +29,14 @@ export class Pings extends IModel<
     append() {
         this._child.push({ code: 'ping' });
         const ping = this.child[this._child.length - 1];
-        this._event.onPingAppend({
-            target: ping
-        });
+        this._event.onPingAppend(ping);
     }
 
     remove(target: Ping) {
         const index = this.child.indexOf(target);
         if (index < 0) return;
         this._child.splice(index, 1);
-        this._event.onPingRemove({
-            target
-        });
+        this._event.onPingRemove(target);
     }
 }
 
@@ -69,5 +62,9 @@ export class Ping extends IModel<
                 ...chunk.state
             }
         }, parent);
+    }
+
+    ping() {
+
     }
 }

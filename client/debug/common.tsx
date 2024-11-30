@@ -1,7 +1,7 @@
 import React from "react";
 import { Model } from "@/model";
 import './index.css';
-import { KeyOf, Method } from "@/type/base";
+import { KeyOf, Func } from "@/type/base";
 import { Validator } from "@/service/validator";
 
 export function Link<
@@ -10,7 +10,7 @@ export function Link<
 >(props: {
     model: M,
     name: K,
-    args?: M[K] extends Method ? Parameters<M[K]> : undefined
+    args?: M[K] extends Func ? Parameters<M[K]> : undefined
 }) {
     const { model, name, args = [] } = props;
     

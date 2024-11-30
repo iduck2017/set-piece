@@ -1,40 +1,24 @@
 import { Model } from "@/model";
-import { KeyOf, Strict, ValidOf, Value } from "./base";
+import { HarshOf, ValidOf, Value, List, Dict } from "./base";
+import { OptionalKeys, RequiredKeys } from "utility-types";
 
 export type ChunkOf<N extends Model> = N['chunk'] 
 export type StateOf<N extends Model> = N['state'] 
 export type ChildOf<N extends Model> = N['child'] 
 
-export interface Chunk<
+export type Chunk<
     T extends string = string,
-    S extends Record<string, Value> = any,
-    C extends Record<string, Model> | Model[] = any
-> {
+    S extends Dict<Value> = Dict<Value>,
+    C extends Dict<Model> | List<Model> = Dict<Model> | List<Model>
+> = Readonly<{
     code: T;
     uuid?: string;
-    state?: Partial<Strict<S>>;  
+    state?: Partial<HarshOf<S>>;  
     child?: 
-        C extends Array<any> ? ChunkOf<C[number]>[] : 
-        C extends Record<string, Model>? Strict<{
-            [K in KeyOf<ValidOf<C>>]?: ChunkOf<Required<C>[K]>;
-        }> : never
-}
-
-
-export type OnModelAlter<M extends Model> = {
-    target: M;
-    prev: Readonly<StateOf<M>>;
-    next: Readonly<StateOf<M>>;
-}
-
-export type OnModelSpawn<M extends Model> = {
-    target: M;
-    next: Readonly<ChildOf<M>>;
-}
-
-export type OnModelCheck<M extends Model> = {
-    target: M;
-    prev: Readonly<StateOf<M>>;
-    next: StateOf<M>;
-}
-
+        C extends List ? ChunkOf<C[number]>[] : 
+        C extends Dict ? HarshOf<{
+            [K in RequiredKeys<ValidOf<C>>]?: ChunkOf<C[K]>;
+        } & {
+            [K in OptionalKeys<ValidOf<C>>]?: ChunkOf<Required<C>[K]>; 
+        }> : never;
+}>

@@ -1,6 +1,7 @@
 import { Factory } from "@/service/factory";
 import { IModel, Model } from ".";
-import { ChunkOf, OnModelCheck } from "@/type/model";
+import { ChunkOf } from "@/type/model";
+import { OnModelCheck } from "@/type/event";
 
 @Factory.useProduct('pongs')
 export class Pongs extends IModel<
@@ -9,12 +10,8 @@ export class Pongs extends IModel<
     Pong[],
     {
         onPongCheck: OnModelCheck<Pong>,
-        onPongAppend: {
-            target: Pong, 
-        }
-        onPongRemove: {
-            target: Pong
-        }
+        onPongAppend: Pong
+        onPongRemove: Pong
     }
 > {
     constructor(
@@ -32,18 +29,14 @@ export class Pongs extends IModel<
     append() {
         this._child.push({ code: 'pong' });
         const pong = this.child[this._child.length - 1];
-        this._event.onPongAppend({
-            target: pong
-        });
+        this._event.onPongAppend(pong);
     }
 
     remove(target: Pong) {
         const index = this.child.indexOf(target);
         if (index < 0) return;
         this._child.splice(index, 1);
-        this._event.onPongRemove({
-            target
-        });
+        this._event.onPongRemove(target);
     }
 }
 

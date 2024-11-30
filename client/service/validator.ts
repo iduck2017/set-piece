@@ -1,11 +1,11 @@
 import { Model } from "@/model";
-import { Method } from "@/type/base";
+import { Func } from "@/type/base";
 import { Logger } from "./logger";
 
 export class Validator {
     private static _conditions: Map<
         Function, 
-        Record<string, Method[]>
+        Record<string, Func[]>
     > = new Map();
 
     @Logger.useDebug()
@@ -25,7 +25,7 @@ export class Validator {
 
     @Logger.useDebug()
     private static _setCondition(
-        condition: Method,
+        condition: Func,
         target: Record<string, any>,
         key: string
     ) {
@@ -43,8 +43,8 @@ export class Validator {
         return function (
             target: N,
             key: string,
-            descriptor: TypedPropertyDescriptor<Method>
-        ): TypedPropertyDescriptor<Method> {
+            descriptor: TypedPropertyDescriptor<Func>
+        ): TypedPropertyDescriptor<Func> {
             Validator._setCondition(condition, target, key);
             const handler = descriptor.value;
             descriptor.value = function(this: N, ...args: T) {

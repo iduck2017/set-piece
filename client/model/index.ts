@@ -2,77 +2,86 @@ import { Decor } from "@/service/decor";
 import { Factory } from "@/service/factory";
 import { Lifecycle } from "@/service/lifecycle";
 import { Logger } from "@/service/logger";
-import { KeyOf, Method, Strict, ValidOf, Value } from "@/type/base";
-import { Chunk, ChunkOf, OnModelAlter, OnModelCheck, OnModelSpawn } from "@/type/model";
+import { KeyOf, Func, HarshOf, ValidOf, Value, Dict, List } from "@/type/base";
+import { Emitter, Handler, OnModelAlter, OnModelCheck, OnModelSpawn } from "@/type/event";
+import { Chunk, ChunkOf } from "@/type/model";
 import { Event, React } from "@/util/event";
 import { Delegator } from "@/util/proxy";
 import { OptionalKeys, RequiredKeys } from "utility-types";
 
-type ModelEvent<
-    M extends Model,
-    E extends Record<string, Method> = Record<string, Method>
-> = {
+type ModelEvent<M extends Model> = {
     onModelAlter: OnModelAlter<M>
     onModelCheck: OnModelCheck<M>
     onModelSpawn: OnModelSpawn<M>
-} & E;
+}
 
 export type Model<
     T extends string = string,
-    S extends Record<string, Value> = Record<string, Value>,
-    C extends Record<string, Model> | Model[] = Record<string, any>,
-    E extends Record<string, any> = Record<string, any>
+    S extends Dict<Value> = Dict<Value>,
+    C extends Dict<Model> | List<Model> = any,
+    E extends Dict = Dict
 > = IModel<T, S, C, E>;
 
 export abstract class IModel<
     T extends string,
-    S extends Record<string, Value>,
-    C extends Record<string, Model> | Model[],
-    E extends Record<string, any>
+    S extends Dict<Value>,
+    C extends Dict<Model> | List<Model>,
+    E extends Dict
 > {
     public readonly code: T;
     public readonly uuid: string;
 
     public readonly parent?: Model;
 
-    protected _state: Strict<S>;
-    public get state(): Readonly<Strict<S>> {
+    protected _state: HarshOf<S>;
+    public get state(): Readonly<HarshOf<S>> {
         return { ...this._prevState };
     }
-    
-    protected _event: Readonly<Strict<{
-        [K in KeyOf<ValidOf<ModelEvent<typeof this, E>>>]: 
-            (event: ModelEvent<typeof this, E>[K]) => void;
+    private _prevState: HarshOf<S>;
+
+    protected _event: Readonly<HarshOf<{
+        [K in KeyOf<E>]: Emitter<Required<E>[K]>
     }>>;
-    public readonly event: Readonly<Strict<{
-        [K in KeyOf<ValidOf<ModelEvent<typeof this, E>>>]: 
-            Event<ModelEvent<typeof this, E>[K]>;
+    public readonly event: Readonly<HarshOf<{
+        [K in KeyOf<ModelEvent<typeof this> & E>]: 
+            Event<(ModelEvent<typeof this> & E)[K]>;
     }>>;
+    private _baseEvent: Readonly<{
+        [K in KeyOf<ModelEvent<typeof this>>]: 
+            Emitter<ModelEvent<typeof this>[K]>
+    }>;
 
     protected _child: 
-        C extends Array<any> ? ChunkOf<C[number]>[] : 
-        C extends Record<string, any> ? Strict<{
+        C extends List ? ChunkOf<C[number]>[] : 
+        C extends Dict ? HarshOf<{
             [K in RequiredKeys<ValidOf<C>>]: ChunkOf<C[K]>;
         } & {
             [K in OptionalKeys<ValidOf<C>>]?: ChunkOf<Required<C>[K]>; 
         }> : never;
-    public readonly child: Readonly<Strict<C>>;
+    public readonly child: Readonly<HarshOf<C>>;
+    public get flatChild(): Readonly<Array<Model | undefined>> {
+        if (this.child instanceof Array) {
+            return [ ...this.child ];
+        } else {
+            return Object.values(this.child);
+        }
+    }
 
     constructor(
         chunk: {
             code: T;
             uuid?: string;
-            state: Strict<S>;
+            state: HarshOf<S>;
             child: 
-                C extends Array<any> ? ChunkOf<C[number]>[] : 
-                C extends Record<string, any> ? Strict<{
+                C extends List ? ChunkOf<C[number]>[] : 
+                C extends Dict ? HarshOf<{
                     [K in RequiredKeys<ValidOf<C>>]: ChunkOf<C[K]>;
                 } & {
                     [K in OptionalKeys<ValidOf<C>>]?: ChunkOf<Required<C>[K]>; 
                 }> : never,
             event?: {
-                [K in KeyOf<ValidOf<ModelEvent<Model<T, S, C, E>, E>>>]?: 
-                    Event<ModelEvent<Model<T, S, C, E>, E>[K]>[];
+                [K in KeyOf<ValidOf<ModelEvent<Model<T, S, C, E>> & E>>]?: 
+                    Event<(ModelEvent<Model<T, S, C, E>> & E)[K]>[];
             }
         },
         parent: Model | undefined
@@ -90,11 +99,14 @@ export abstract class IModel<
         );
         this._prevState = { ...this._state };
 
-        this._event = Delegator.Automic({}, (key: any) => {
+        this._event = Delegator.Automic({}, (key) => {
             const result: any = this._emit.bind(this, key);
             return result;
         });
-        this.event = Delegator.Automic(chunk.event || {}, (key) => {
+        this._baseEvent = Delegator.Automic({}, key => {
+            return this._emit.bind(this, key);
+        });
+        this.event = Delegator.Automic({}, (key) => {
             const result: any = new Event(this, key);
             return result;  
         });
@@ -123,24 +135,21 @@ export abstract class IModel<
     }
 
     @Logger.useDebug(true)
-    private _emit(
-        key: KeyOf<ValidOf<ModelEvent<typeof this, E>>>, 
-        ...args: any[]
+    private _emit<K extends KeyOf<ModelEvent<typeof this> & E>>(
+        key: K, 
+        data: (ModelEvent<typeof this> & E)[K]
     ) {
         const event = this.event[key];
         const { target } = event;
         const reacts = target._consumers.get(event) || [];
         for (const react of reacts) {
-            react.handler.apply(react.target, args);
+            react.handler.call(react.target, this, data);
         }
     }
-
-    private _prevState: Strict<S>;
     protected _onModelAlter(recursive?: boolean) {
         const prevState = { ...this._prevState };
         const nextState = { ...this._state };
-        const event: any = this._event;
-        event.onModelCheck({
+        this._baseEvent.onModelCheck({
             target: this,
             prev: prevState,
             next: nextState
@@ -149,24 +158,31 @@ export abstract class IModel<
             ...this._state,
             ...Decor.GetMutators(this, nextState)
         };
-        event.onModelAlter({
+        this._baseEvent.onModelAlter({
             target: this,
             prev: prevState,
             next: nextState
         });
         if (recursive) {
             if (this.child instanceof Array) {
-                for (const target of this.child) target._onModelAlter(recursive);
+                for (const target of this.child) {
+                    target._onModelAlter(recursive);
+                }
             } else {
                 for (const key in this.child) {
                     const target = this.child[key];
-                    if (target instanceof IModel) target._onModelAlter(recursive);
+                    if (target instanceof IModel) {
+                        target._onModelAlter(recursive);
+                    }
                 }
             }
         }
     }
-    public useState(setter: (detail: OnModelAlter<typeof this>) => void){
-        const event: any = this.event;
+    public useState(setter: Handler<OnModelAlter<typeof this>>){
+        const event: {
+            [K in KeyOf<ModelEvent<typeof this>>]: 
+                Event<ModelEvent<typeof this>[K]>
+        } = this.event;
         this.bind(event.onModelAlter, setter);
         return () => {
             this.unbind(event.onModelAlter, setter);
@@ -183,14 +199,16 @@ export abstract class IModel<
         if (prev instanceof Array) prev.map(target => target._unload());
         if (next instanceof IModel) next._load();
         if (prev instanceof IModel) prev._unload();
-        const event: any = this._event;
-        event.onModelSpawn({
+        this._baseEvent.onModelSpawn({
             target: this,
             next: this.child
         });
     }
-    public useChild(setter: (detail: OnModelSpawn<typeof this>) => void) {
-        const event: any = this.event;
+    public useChild(setter: Handler<OnModelSpawn<typeof this>>) {
+        const event: {
+            [K in KeyOf<ModelEvent<typeof this>>]: 
+                Event<ModelEvent<typeof this>[K]>
+        } = this.event;
         this.bind(event.onModelSpawn, setter);
         return () => {
             this.unbind(event.onModelSpawn, setter);
@@ -207,15 +225,16 @@ export abstract class IModel<
             });
             throw new Error();
         }
-        return new Type(chunk, this) as N;
+        const instance: N = new Type(chunk, this);
+        return instance;
     }
 
-    private readonly _react: Map<Method, React> = new Map();
+    private readonly _react: Map<Func, React> = new Map();
     private readonly _consumers: Map<Event, Array<React>> = new Map();
     private readonly _producers: Map<React, Array<Event>> = new Map();
 
     @Logger.useDebug(true)
-    protected bind<E extends Method>(
+    protected bind<E extends Func>(
         event: Event<E>,
         handler: E
     ) {
@@ -234,7 +253,7 @@ export abstract class IModel<
         }
     }
 
-    protected unbind<E extends Method>(
+    protected unbind<E extends Func>(
         event: Event<E> | undefined,
         handler: E
     ) {
@@ -260,7 +279,7 @@ export abstract class IModel<
     }
 
     private readonly _refers: Record<string, Model> = {};
-    public get refer(): string[] {
+    public get path(): string[] {
         const result: string[] = [ this.uuid ];
         let temp: Model | undefined = this.parent;
         while (temp) {
@@ -280,28 +299,19 @@ export abstract class IModel<
         return undefined;
     }
 
-    private readonly _loaders: Method[] = Lifecycle.getLoaders(this);
-    private readonly _unloaders: Method[] = Lifecycle.getUnloaders(this);
+    private readonly _loaders: Func[] = Lifecycle.getLoaders(this);
+    private readonly _unloaders: Func[] = Lifecycle.getUnloaders(this);
     private _load() {
-        for (const loader of this._loaders) loader();
-        if (this.child instanceof Array) {
-            for (const target of this.child) target._load();
-        } else {
-            for (const key in this.child) {
-                const target = this.child[key];
-                if (target instanceof IModel) target._load();
-            }
+        for (const loader of this._loaders) {
+            loader();
+        }
+        for (const child of this.flatChild) {
+            child?._load();
         }
     }
     private _unload() {
-        for (const unloader of this._unloaders) unloader();
-        if (this.child instanceof Array) {
-            for (const target of this.child) target._unload();
-        } else {
-            for (const key in this.child) {
-                const target = this.child[key];
-                if (target instanceof IModel) target._unload();
-            }
+        for (const unloader of this._unloaders) {
+            unloader();
         }
         for (const [ event, reacts ] of this._consumers) {
             for (const react of reacts) {
@@ -312,6 +322,9 @@ export abstract class IModel<
         for (const [ react ] of this._producers) {
             this.unbind(undefined, react.handler);
         }
+        for (const child of this.flatChild) {
+            child?._unload();
+        }
         if (this.parent) {
             delete this.parent._refers[this.uuid];
         }
@@ -319,37 +332,16 @@ export abstract class IModel<
 
     @Logger.useDebug(true)
     public debug() {
-        if (this.child instanceof Array) { 
-            console.log([ ...this.child ]); 
-        } else {
-            console.log({ ...this.child });
-        }
-        if (this._child instanceof Array) {
-            console.log([ ...this._child ]);
-        } else {
-            console.log({ ...this._child });
-        }
+        console.log([ ...this.flatChild ]);
         console.log({ ...this._state });
     }
 
     get chunk(): Chunk<T, S, C> {
-        let child: any;
-        if (this.child instanceof Array) {
-            child = this.child.map(target => target.chunk);
-        } else {
-            child = {};
-            for (const key in this.child) {
-                const value = this.child[key];
-                if (value instanceof IModel) {
-                    child[key] = value.chunk; 
-                }
-            }
-        }
         return {
             code: this.code,
             uuid: this.uuid,
             state: { ...this._state },
-            child
+            child: this._child
         };
     }
 }
