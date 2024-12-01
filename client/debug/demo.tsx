@@ -14,10 +14,6 @@ export function DemoComp(props: {
     const { demo } = props;
     const [ state, child ] = useModel(demo);
 
-    useEffect(() => {
-        // app.init();
-    }, []);
-
     return <ModelComp 
         model={demo}
         form={

@@ -2,6 +2,9 @@ import { IModel, Model } from ".";
 import { Factory } from "@/service/factory";
 import { OnModelCheck } from "@/type/event";
 import { ChunkOf } from "@/type/model";
+import { Demo } from "./demo";
+import { Lifecycle } from "@/service/lifecycle";
+import { Decor } from "@/service/decor";
 
 @Factory.useProduct('pings')
 export class Pings extends IModel<
@@ -9,9 +12,10 @@ export class Pings extends IModel<
     {},
     Ping[],
     {
-        onPingCheck: OnModelCheck<Ping>,
-        onPingAppend: Ping
-        onPingRemove: Ping
+        onChildCheck: OnModelCheck<Ping>,
+        onAppend: Ping
+        onRemove: Ping
+        onChildTrigger: Ping
     }
 > {
     constructor(
@@ -29,42 +33,78 @@ export class Pings extends IModel<
     append() {
         this._child.push({ code: 'ping' });
         const ping = this.child[this._child.length - 1];
-        this._event.onPingAppend(ping);
+        this._event.onAppend(ping);
     }
 
-    remove(target: Ping) {
+    remove(target?: Ping) {
+        if (!target) target = this.child[0];
         const index = this.child.indexOf(target);
         if (index < 0) return;
         this._child.splice(index, 1);
-        this._event.onPingRemove(target);
+        this._event.onRemove(target);
     }
 }
 
 
 @Factory.useProduct('ping')
+@Decor.useMutators({
+    count: true
+})
 export class Ping extends IModel<
     'ping',
     {
-        count: number;
+        value: number;
+        readonly count: number;
     },
     {},
-    {}
+    {
+        onTrigger: Ping 
+    }
 > {
+    declare parent: Pings;
+
     constructor(
         chunk: ChunkOf<Ping>,
-        parent: Model
+        parent: Pings
     ) {
         super({
             ...chunk,
             child: {},
             state: {
                 count: 0,
+                value: 0,
                 ...chunk.state
+            },
+            event: {
+                onTrigger: [ parent.event.onChildTrigger ],
+                onModelCheck: [ parent.event.onChildCheck ]
             }
         }, parent);
     }
 
-    ping() {
+    trigger() {
+        this._event.onTrigger(this);
+    }
 
+    @Lifecycle.useLoader()    
+    private _onLoad() {
+        this.bind(
+            Demo.main.child.pings.event.onChildTrigger,
+            () => {
+                this._state.value += 1;
+            }
+        );
+        this.bind(
+            Demo.main.child.pings.event.onChildCheck,
+            (target, data) => {
+                return {
+                    ...data,
+                    next: {
+                        ...data.next,
+                        count: data.next.count + 1
+                    }
+                };
+            }
+        );
     }
 }

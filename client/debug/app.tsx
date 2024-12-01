@@ -11,6 +11,7 @@ export function AppComp(props: {
 }) {
     const { app } = props;
     const [ state, child ] = useModel(app);
+    console.log({ ...state }, { ...child }, child.demo);
 
     useEffect(() => {
         app.start();

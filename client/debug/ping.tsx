@@ -36,6 +36,7 @@ export function PingComp(props: {
         model={ping}
         form={
             <>
+                <Link model={ping} name="trigger" />
             </>
         }
     />;

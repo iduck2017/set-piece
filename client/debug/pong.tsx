@@ -36,6 +36,7 @@ export function PongComp(props: {
         model={pong}
         form={
             <>
+                <Link model={pong} name="trigger" />
             </>
         }
     />;

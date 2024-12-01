@@ -2,6 +2,10 @@ import { Factory } from "@/service/factory";
 import { IModel, Model } from ".";
 import { ChunkOf } from "@/type/model";
 import { OnModelCheck } from "@/type/event";
+import { Lifecycle } from "@/service/lifecycle";
+import { App } from "./app";
+import { Demo } from "./demo";
+import { Decor } from "@/service/decor";
 
 @Factory.useProduct('pongs')
 export class Pongs extends IModel<
@@ -9,9 +13,10 @@ export class Pongs extends IModel<
     {},
     Pong[],
     {
-        onPongCheck: OnModelCheck<Pong>,
-        onPongAppend: Pong
-        onPongRemove: Pong
+        onChildCheck: OnModelCheck<Pong>,
+        onAppend: Pong
+        onRemove: Pong
+        onChildTrigger: Pong
     }
 > {
     constructor(
@@ -29,14 +34,15 @@ export class Pongs extends IModel<
     append() {
         this._child.push({ code: 'pong' });
         const pong = this.child[this._child.length - 1];
-        this._event.onPongAppend(pong);
+        this._event.onAppend(pong);
     }
 
-    remove(target: Pong) {
+    remove(target?: Pong) {
+        if (!target) target = this.child[0];
         const index = this.child.indexOf(target);
         if (index < 0) return;
         this._child.splice(index, 1);
-        this._event.onPongRemove(target);
+        this._event.onRemove(target);
     }
 }
 
@@ -45,22 +51,44 @@ export class Pongs extends IModel<
 export class Pong extends IModel<
     'pong',
     {
-        count: number;
+        value: number;
     },
     {},
-    {}
+    {
+        onTrigger: Pong
+    }
 > {
+    declare parent: Pongs;
+
     constructor(
         chunk: ChunkOf<Pong>,
-        parent: Model
+        parent: Pongs
     ) {
         super({
             ...chunk,
             child: {},
             state: {
-                count: 0,
+                value: 0,
                 ...chunk.state
+            },
+            event: {
+                onTrigger: [ parent.event.onChildTrigger ]
             }
         }, parent);
     }
+
+    trigger() {
+        this._event.onTrigger(this); 
+    }
+
+    @Lifecycle.useLoader()    
+    private _onLoad() {
+        this.bind(
+            Demo.main.child.pings.event.onChildTrigger,
+            () => {
+                this._state.value += 1;
+            }
+        );
+    }
+
 }

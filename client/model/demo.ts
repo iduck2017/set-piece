@@ -6,6 +6,7 @@ import { Bunny } from "./bunny";
 import { Gender } from "@/type/common";
 import { Pings } from "./ping";
 import { Pongs } from "./pong";
+import { Lifecycle } from "@/service/lifecycle";
 
 @Factory.useProduct('demo')
 export class Demo extends IModel<
@@ -20,6 +21,15 @@ export class Demo extends IModel<
     },
     {}
 > {
+    private static _main?: Demo;
+    static get main(): Demo {
+        if (!Demo._main) {
+            console.error('DemoUninited');
+            throw new Error();
+        }
+        return Demo._main;
+    }
+
     declare parent: App;
 
     constructor(
@@ -45,6 +55,15 @@ export class Demo extends IModel<
             }
         }, parent);
     }
-     
+
+    @Lifecycle.useLoader()
+    private _onLoad() {
+        Demo._main = this;
+    }
+
+    @Lifecycle.useUnloader()
+    private _onUnload() {
+        delete Demo._main;
+    }
 }
 

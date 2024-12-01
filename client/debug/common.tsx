@@ -10,17 +10,16 @@ export function Link<
 >(props: {
     model: M,
     name: K,
-    args?: M[K] extends Func ? Parameters<M[K]> : undefined
 }) {
-    const { model, name, args = [] } = props;
+    const { model, name } = props;
     
-    const visible = Validator.preCheck(model, name, ...args);
+    const visible = Validator.preCheck(model, name);
     if (!visible) return null;
 
     const emit = () => {
         const method: any = model[name];
         if (typeof method === "function") {
-            method.apply(model, args);
+            method.apply(model);
         }
     };
 

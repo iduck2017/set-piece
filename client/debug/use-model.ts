@@ -23,7 +23,11 @@ export function useModel<N extends Model>(model: N): [
     
     useEffect(() => {
         return model.useChild((target) => {
-            setChild(target.flatChild);
+            if (target.child instanceof Array) {
+                setChild([ ...target.child ]);
+            } else {
+                setChild({ ...target.child });
+            }
         });
     }, [ model ]);
 

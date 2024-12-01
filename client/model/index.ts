@@ -3,9 +3,9 @@ import { Factory } from "@/service/factory";
 import { Lifecycle } from "@/service/lifecycle";
 import { Logger } from "@/service/logger";
 import { KeyOf, Func, HarshOf, ValidOf, Value, Dict, List } from "@/type/base";
-import { Emitter, Handler, OnModelAlter, OnModelCheck, OnModelSpawn } from "@/type/event";
+import { Emitter, Event, React, Handler, 
+    OnModelAlter, OnModelCheck, OnModelSpawn } from "@/type/event";
 import { Chunk, ChunkOf } from "@/type/model";
-import { Event, React } from "@/util/event";
 import { Delegator } from "@/util/proxy";
 import { OptionalKeys, RequiredKeys } from "utility-types";
 
@@ -59,13 +59,6 @@ export abstract class IModel<
             [K in OptionalKeys<ValidOf<C>>]?: ChunkOf<Required<C>[K]>; 
         }> : never;
     public readonly child: Readonly<HarshOf<C>>;
-    public get flatChild(): Readonly<Array<Model | undefined>> {
-        if (this.child instanceof Array) {
-            return [ ...this.child ];
-        } else {
-            return Object.values(this.child);
-        }
-    }
 
     constructor(
         chunk: {
@@ -107,9 +100,20 @@ export abstract class IModel<
             return this._emit.bind(this, key);
         });
         this.event = Delegator.Automic({}, (key) => {
-            const result: any = new Event(this, key);
+            const _result: Event = { 
+                target: this,
+                uuid: Factory.uuid,
+                key,
+                alias: []
+            };
+            const result: any = _result;
             return result;  
         });
+        for (const key in chunk.event) {
+            const event: any = chunk.event;
+            const value = event[key];
+            this.event[key].alias = value;
+        }
 
         let child: any;
         if (chunk.child instanceof Array) {
@@ -134,34 +138,49 @@ export abstract class IModel<
 
     }
 
-    @Logger.useDebug(true)
     private _emit<K extends KeyOf<ModelEvent<typeof this> & E>>(
         key: K, 
         data: (ModelEvent<typeof this> & E)[K]
     ) {
-        const event = this.event[key];
-        const { target } = event;
-        const reacts = target._consumers.get(event) || [];
-        for (const react of reacts) {
-            react.handler.call(react.target, this, data);
+        const events = [
+            this.event[key],
+            ...this.event[key].alias
+        ];
+        let temp = data;
+        for (const event of events) {
+            const { target } = event;
+            const reacts = target._consumers.get(event) || [];
+            for (const react of reacts) {
+                const result = react.handler.call(react.target, this, temp);
+                if (result !== undefined) {
+                    temp = result;
+                }
+            }
         }
+        return temp;
     }
+    @Logger.useDebug(true)
     protected _onModelAlter(recursive?: boolean) {
-        const prevState = { ...this._prevState };
-        const nextState = { ...this._state };
-        this._baseEvent.onModelCheck({
+        const prevData = {
             target: this,
-            prev: prevState,
-            next: nextState
-        });
+            prev: { ...this._prevState },
+            next: { ...this._state }
+        };
+        const nextData = this._baseEvent.onModelCheck(prevData);
+        // console.log(
+        //     this, 
+        //     { ...prevData.prev },
+        //     { ...nextData.next },
+        //     Decor.GetMutators(this, nextData.next)
+        // );
         this._prevState = { 
             ...this._state,
-            ...Decor.GetMutators(this, nextState)
+            ...Decor.GetMutators(this, nextData.next)
         };
         this._baseEvent.onModelAlter({
             target: this,
-            prev: prevState,
-            next: nextState
+            prev: nextData.prev,
+            next: nextData.next
         });
         if (recursive) {
             if (this.child instanceof Array) {
@@ -234,12 +253,16 @@ export abstract class IModel<
     private readonly _producers: Map<React, Array<Event>> = new Map();
 
     @Logger.useDebug(true)
-    protected bind<E extends Func>(
+    protected bind<E>(
         event: Event<E>,
-        handler: E
+        handler: Handler<E>
     ) {
         const { target } = event;
-        const react = this._react.get(handler) || new React(this, handler);
+        const react: React = this._react.get(handler) || {
+            target: this,
+            uuid: Factory.uuid,
+            handler
+        };
         this._react.set(handler, react);
 
         const reacts = target._consumers.get(event) || [];
@@ -248,14 +271,15 @@ export abstract class IModel<
         const events = this._producers.get(react) || [];
         events.push(event);
         this._producers.set(react, events);
-        if (event === target.event.onModelCheck) {
+        if (event.key.endsWith('Check')) {
+            console.log(event.key, event);
             target._onModelAlter(true);
         }
     }
 
-    protected unbind<E extends Func>(
+    protected unbind<E>(
         event: Event<E> | undefined,
-        handler: E
+        handler: Handler<E>
     ) {
         const react = this._react.get(handler);
         if (react) {
@@ -270,8 +294,8 @@ export abstract class IModel<
                     reacts.splice(index, 1);
                 }
                 target._consumers.set(_event, reacts);
-                if (_event === target.event.onModelCheck) {
-                    target._onModelAlter(true);  
+                if (_event.key.endsWith('Check')) {
+                    target._onModelAlter(true);
                 }
             }
             this._producers.delete(react);
@@ -303,16 +327,22 @@ export abstract class IModel<
     private readonly _unloaders: Func[] = Lifecycle.getUnloaders(this);
     private _load() {
         for (const loader of this._loaders) {
-            loader();
+            loader.call(this);
         }
-        for (const child of this.flatChild) {
-            child?._load();
+        if (this.child instanceof Array) {
+            for (const child of this.child) {
+                child?._load();
+            }
+        } else {
+            for (const key in this.child) {
+                const child = this.child[key];
+                if (child instanceof IModel) {
+                    child._load();
+                }
+            }
         }
     }
     private _unload() {
-        for (const unloader of this._unloaders) {
-            unloader();
-        }
         for (const [ event, reacts ] of this._consumers) {
             for (const react of reacts) {
                 const { target, handler } = react;
@@ -322,8 +352,20 @@ export abstract class IModel<
         for (const [ react ] of this._producers) {
             this.unbind(undefined, react.handler);
         }
-        for (const child of this.flatChild) {
-            child?._unload();
+        for (const unloader of this._unloaders) {
+            unloader.call(this);
+        }
+        if (this.child instanceof Array) {
+            for (const child of this.child) {
+                child?._unload();
+            }
+        } else {
+            for (const key in this.child) {
+                const child = this.child[key];
+                if (child instanceof IModel) {
+                    child._unload();
+                }
+            }
         }
         if (this.parent) {
             delete this.parent._refers[this.uuid];
@@ -332,16 +374,25 @@ export abstract class IModel<
 
     @Logger.useDebug(true)
     public debug() {
-        console.log([ ...this.flatChild ]);
+        if (this.child instanceof Array) {
+            console.log([ ...this.child ]);
+        } else {
+            console.log({ ...this.child });
+        }
         console.log({ ...this._state });
+        console.log({ ...this.event });
     }
 
     get chunk(): Chunk<T, S, C> {
+        const child: any = 
+            this._child instanceof Array ?
+                [ ...this._child ] :
+                { ...this._child };
         return {
             code: this.code,
             uuid: this.uuid,
             state: { ...this._state },
-            child: this._child
+            child
         };
     }
 }
