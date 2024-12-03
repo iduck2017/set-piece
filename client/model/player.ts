@@ -1,22 +1,26 @@
 import { Factory } from "@/service/factory";
 import { IModel, Model } from "@/model";
 import { ChunkOf } from "@/type/model";
-{{SUPER_IMPORT}}
+import { Deck } from "./deck";
 
-@Factory.useProduct('{{MODEL_CODE}}')
-export class {{MODEL_NAME}} extends {{SUPER_NAME}}<
-    '{{MODEL_CODE}}',
+@Factory.useProduct('player')
+export class Player extends IModel<
+    'player',
     {},
-    {},
+    {
+        deck: Deck,
+    },
     {}
 > {
     constructor(
-        chunk: ChunkOf<{{MODEL_NAME}}>,
+        chunk: ChunkOf<Player>,
         parent: Model
     ) {
         super({
             ...chunk,
-            child: {},
+            child: {
+                deck: { code: 'deck' }
+            },
             state: {}
         }, parent);
     }

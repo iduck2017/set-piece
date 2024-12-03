@@ -1,8 +1,9 @@
 import { Model } from "@/model";
 import { ChildOf, StateOf } from "./model";
+import { Mutable } from "utility-types";
 
-export type Handler<D> = (target: Model, data: D) => D | void; 
-export type Emitter<D> = (data: D) => D;
+export type Handler<D> = (target: Model, data: D) => void; 
+export type Emitter<D> = (data: D) => void;
 
 export type Event<E = any> = {
     target: Model;
@@ -29,5 +30,5 @@ export type OnModelSpawn<M extends Model> = {
 export type OnModelCheck<M extends Model> = {
     target: M;
     prev: Readonly<StateOf<M>>;
-    next: Readonly<StateOf<M>>;
+    next: Mutable<StateOf<M>>;
 }

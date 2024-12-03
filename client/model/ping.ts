@@ -88,8 +88,9 @@ export class Ping extends IModel<
 
     @Lifecycle.useLoader()    
     private _onLoad() {
+        console.log('load2', this.uuid);
         this.bind(
-            Demo.main.child.pings.event.onChildTrigger,
+            Demo.main.child.pongs.event.onChildTrigger,
             () => {
                 this._state.value += 1;
             }
@@ -97,14 +98,9 @@ export class Ping extends IModel<
         this.bind(
             Demo.main.child.pings.event.onChildCheck,
             (target, data) => {
-                return {
-                    ...data,
-                    next: {
-                        ...data.next,
-                        count: data.next.count + 1
-                    }
-                };
+                data.next.count += 1;
             }
         );
     }
+
 }

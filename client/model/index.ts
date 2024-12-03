@@ -8,6 +8,7 @@ import { Emitter, Event, React, Handler,
 import { Chunk, ChunkOf } from "@/type/model";
 import { Delegator } from "@/util/proxy";
 import { OptionalKeys, RequiredKeys } from "utility-types";
+import { Pings } from "./ping";
 
 type ModelEvent<M extends Model> = {
     onModelAlter: OnModelAlter<M>
@@ -146,41 +147,32 @@ export abstract class IModel<
             this.event[key],
             ...this.event[key].alias
         ];
-        let temp = data;
         for (const event of events) {
             const { target } = event;
             const reacts = target._consumers.get(event) || [];
             for (const react of reacts) {
-                const result = react.handler.call(react.target, this, temp);
-                if (result !== undefined) {
-                    temp = result;
-                }
+                react.handler.call(react.target, this, data);
             }
         }
-        return temp;
     }
     @Logger.useDebug(true)
     protected _onModelAlter(recursive?: boolean) {
-        const prevData = {
+        const prevState = { ...this._prevState };
+        const tempState = { ...this._state };
+        this._baseEvent.onModelCheck({
             target: this,
-            prev: { ...this._prevState },
-            next: { ...this._state }
-        };
-        const nextData = this._baseEvent.onModelCheck(prevData);
-        // console.log(
-        //     this, 
-        //     { ...prevData.prev },
-        //     { ...nextData.next },
-        //     Decor.GetMutators(this, nextData.next)
-        // );
-        this._prevState = { 
+            prev: prevState,
+            next: tempState
+        });
+        const nextState = { 
             ...this._state,
-            ...Decor.GetMutators(this, nextData.next)
+            ...Decor.GetMutators(this, tempState)
         };
+        this._prevState = { ...nextState };
         this._baseEvent.onModelAlter({
             target: this,
-            prev: nextData.prev,
-            next: nextData.next
+            prev: prevState,
+            next: nextState
         });
         if (recursive) {
             if (this.child instanceof Array) {
@@ -252,7 +244,6 @@ export abstract class IModel<
     private readonly _consumers: Map<Event, Array<React>> = new Map();
     private readonly _producers: Map<React, Array<Event>> = new Map();
 
-    @Logger.useDebug(true)
     protected bind<E>(
         event: Event<E>,
         handler: Handler<E>
@@ -272,7 +263,6 @@ export abstract class IModel<
         events.push(event);
         this._producers.set(react, events);
         if (event.key.endsWith('Check')) {
-            console.log(event.key, event);
             target._onModelAlter(true);
         }
     }
@@ -296,6 +286,9 @@ export abstract class IModel<
                 target._consumers.set(_event, reacts);
                 if (_event.key.endsWith('Check')) {
                     target._onModelAlter(true);
+                }
+                if (target.code === 'pings') {
+                    console.log(target._consumers.values());
                 }
             }
             this._producers.delete(react);
@@ -379,8 +372,9 @@ export abstract class IModel<
         } else {
             console.log({ ...this.child });
         }
-        console.log({ ...this._state });
-        console.log({ ...this.event });
+        // console.log({ ...this._state });
+        // console.log({ ...this.event });
+        console.log(this._consumers.values());
     }
 
     get chunk(): Chunk<T, S, C> {

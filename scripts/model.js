@@ -6,11 +6,11 @@ const superPathName = process.argv[3];
 const superFileName = superPathName?.split('/').pop()
 
 const superName = 
-    superFileName ? 
     'I' + 
+    (superFileName ? 
     superFileName.charAt(0).toUpperCase() +
     superFileName.slice(1).replace(/-([a-z])/g, (match) => match[1].toUpperCase()) :
-    'Model'
+    'Model')
 const superImport = 
     superFileName ? 
     `import { ${superName} } from '.';` :
@@ -32,7 +32,7 @@ async function newModel() {
         path.resolve(__dirname, '../client/model', superPathName || '', `${modelFileName}.ts`),
         implement.toString()
             .replace(/\{\{MODEL_NAME\}\}/g, modelName)
-            .replace(/\{\{MODEL_TYPE\}\}/g, modelCode)
+            .replace(/\{\{MODEL_CODE\}\}/g, modelCode)
             .replace(/\{\{SUPER_NAME\}\}/g, superName)
             .replace(/\{\{SUPER_IMPORT\}\}/g, superImport)
     )

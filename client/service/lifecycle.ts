@@ -34,7 +34,7 @@ export class Lifecycle {
         const result = [];
         let constructor: any = target.constructor;
         while (constructor.__proto__ !== null) {
-            const keys = Lifecycle._loaders.get(constructor) || [];
+            const keys = Lifecycle._unloaders.get(constructor) || [];
             for (const key of keys) {
                 result.push(Reflect.get(target, key));
             }

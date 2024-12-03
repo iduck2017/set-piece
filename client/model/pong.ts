@@ -3,9 +3,7 @@ import { IModel, Model } from ".";
 import { ChunkOf } from "@/type/model";
 import { OnModelCheck } from "@/type/event";
 import { Lifecycle } from "@/service/lifecycle";
-import { App } from "./app";
 import { Demo } from "./demo";
-import { Decor } from "@/service/decor";
 
 @Factory.useProduct('pongs')
 export class Pongs extends IModel<

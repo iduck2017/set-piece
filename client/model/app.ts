@@ -23,7 +23,7 @@ export class App extends IModel<
             const constructor = Type.constructor;
             Type.constructor = function (...args: any[]) {
                 if (App._singleton.get(Type)) {
-                    throw new Error('Only one instance of App can be created');
+                    throw new Error();
                 }
                 App._singleton.set(Type, true);
                 constructor(...args); 
