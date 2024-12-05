@@ -88,7 +88,6 @@ export class Ping extends IModel<
 
     @Lifecycle.useLoader()    
     private _onLoad() {
-        console.log('load2', this.uuid);
         this.bind(
             Demo.main.child.pongs.event.onChildTrigger,
             () => {

@@ -1,20 +1,28 @@
+import { Model } from "@/model";
 import { Demo } from "@/model/demo";
-import { ChunkOf } from "@/type/model";
+import { ChunkOf, CodeOf } from "@/type/model";
 
 export class File {
-    static async load(): Promise<ChunkOf<Demo>> {
-        const result = await localStorage.getItem("demo");
+    private static _isSaving = false; 
+    static get isSaving() {
+        return File._isSaving;
+    }
+
+    static async load<T extends Model>(code: CodeOf<T>): Promise<ChunkOf<T>> {
+        const result = await localStorage.getItem(code);
         if (result) {
             return JSON.parse(result);
         }
-        return { code: 'demo' };
+        return { code };
     }
 
-    static async save(data: ChunkOf<Demo>): Promise<void> {
+    static async save<T extends Model>(target: T): Promise<void> {
+        File._isSaving = true;
         await localStorage.setItem(
-            "demo", 
-            JSON.stringify(data)
+            target.code, 
+            JSON.stringify(target.chunk)
         );
+        File._isSaving = false;
     }
 
     private constructor() {}

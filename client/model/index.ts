@@ -9,6 +9,7 @@ import { Chunk, ChunkOf } from "@/type/model";
 import { Delegator } from "@/util/proxy";
 import { OptionalKeys, RequiredKeys } from "utility-types";
 import { Pings } from "./ping";
+import { File } from "@/service/file";
 
 type ModelEvent<M extends Model> = {
     onModelAlter: OnModelAlter<M>
@@ -40,6 +41,10 @@ export abstract class IModel<
     }
     private _prevState: HarshOf<S>;
 
+    private _baseEvent: Readonly<{
+        [K in KeyOf<ModelEvent<typeof this>>]: 
+            Emitter<ModelEvent<typeof this>[K]>
+    }>;
     protected _event: Readonly<HarshOf<{
         [K in KeyOf<E>]: Emitter<Required<E>[K]>
     }>>;
@@ -47,10 +52,6 @@ export abstract class IModel<
         [K in KeyOf<ModelEvent<typeof this> & E>]: 
             Event<(ModelEvent<typeof this> & E)[K]>;
     }>>;
-    private _baseEvent: Readonly<{
-        [K in KeyOf<ModelEvent<typeof this>>]: 
-            Emitter<ModelEvent<typeof this>[K]>
-    }>;
 
     protected _child: 
         C extends List ? ChunkOf<C[number]>[] : 
@@ -133,10 +134,9 @@ export abstract class IModel<
         this.child = Delegator.Readonly(child);
         this._child = Delegator.Formatted(
             child,
-            (model: Model) => model.chunk,
+            (model: Model) => model?.chunk,
             (chunk: Chunk) => this._create(chunk) 
         );
-
     }
 
     private _emit<K extends KeyOf<ModelEvent<typeof this> & E>>(
@@ -287,9 +287,6 @@ export abstract class IModel<
                 if (_event.key.endsWith('Check')) {
                     target._onModelAlter(true);
                 }
-                if (target.code === 'pings') {
-                    console.log(target._consumers.values());
-                }
             }
             this._producers.delete(react);
         }
@@ -372,9 +369,27 @@ export abstract class IModel<
         } else {
             console.log({ ...this.child });
         }
-        // console.log({ ...this._state });
-        // console.log({ ...this.event });
         console.log(this._consumers.values());
+    }
+
+    get rawChunk(): Chunk<T, S, C> {
+        let child: any;
+        if (this.child instanceof Array) {
+            child = this.child.map(model => model?.copy);
+        } else {
+            child = {};
+            for (const key in this.child) {
+                const value: any = this.child[key];
+                if (value instanceof IModel) {
+                    child[key] = value?.rawChunk;
+                }
+            }
+        }
+        return {
+            code: this.code,
+            state: { ...this._state },
+            child
+        };
     }
 
     get chunk(): Chunk<T, S, C> {
@@ -382,9 +397,10 @@ export abstract class IModel<
             this._child instanceof Array ?
                 [ ...this._child ] :
                 { ...this._child };
+        const uuid = File.isSaving ? this.uuid : undefined;
         return {
+            uuid,
             code: this.code,
-            uuid: this.uuid,
             state: { ...this._state },
             child
         };

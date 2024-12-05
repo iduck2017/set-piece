@@ -14,8 +14,8 @@ export function BunnyComp(props: {
         model={bunny}
         form={
             <>
-                <Link model={bunny} name="reproduce" />
-                <Link model={bunny} name="growup" />
+                <Link model={bunny} action="reproduce" />
+                <Link model={bunny} action="growup" />
             </>
         }
         menu={

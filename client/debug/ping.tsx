@@ -14,8 +14,8 @@ export function PingsComp(props: {
         model={pings}
         form={
             <>
-                <Link model={pings} name="append" />
-                <Link model={pings} name="remove" />
+                <Link model={pings} action="append" />
+                <Link model={pings} action="remove" />
             </>
         }
         menu={
@@ -36,7 +36,7 @@ export function PingComp(props: {
         model={ping}
         form={
             <>
-                <Link model={ping} name="trigger" />
+                <Link model={ping} action="trigger" />
             </>
         }
     />;

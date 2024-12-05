@@ -1,7 +1,8 @@
 import { Model } from "@/model";
 import { Class } from "@/type/base";
-import { Chunk } from "@/type/model";
+import { Chunk, ChunkOf } from "@/type/model";
 import { Logger } from "./logger";
+import { Mutable } from "utility-types";
 
 export class Factory {
     private static _timestamp = Date.now(); 

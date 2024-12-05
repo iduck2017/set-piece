@@ -9,19 +9,19 @@ export function Link<
     K extends KeyOf<M>
 >(props: {
     model: M,
-    name: K,
+    action: K,
 }) {
-    const { model, name } = props;
+    const { model, action } = props;
     
-    const visible = Validator.preCheck(model, name);
+    const visible = Validator.preCheck(model, action);
     if (!visible) return null;
 
     const emit = () => {
-        const method: any = model[name];
+        const method: any = model[action];
         if (typeof method === "function") {
             method.apply(model);
         }
     };
 
-    return <div className="link" onClick={emit}>{name}</div>;
+    return <div className="link" onClick={emit}>{action}</div>;
 }

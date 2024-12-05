@@ -4,6 +4,7 @@ import { Demo } from "./demo";
 import { Validator } from "@/service/validator";
 import { Class } from "@/type/base";
 import { File } from "@/service/file";
+import { Game } from "./game";
 
 export class App extends IModel<
     'app',
@@ -12,7 +13,8 @@ export class App extends IModel<
         count: number,
     },
     {
-        demo?: Demo
+        demo?: Demo,
+        game?: Game
     },
     {}
 > {
@@ -59,26 +61,32 @@ export class App extends IModel<
             ...result
         };
     }
+
+    @Validator.useCondition(app => !app.child.game)
+    async start() {
+        const chunk = await File.load<Game>('game');
+        this._child.game = chunk;
+    }
     
     @Logger.useDebug(true)
     @Validator.useCondition(app => !app.child.demo)
-    async start() {
-        const chunk = await File.load();
+    async test() {
+        const chunk = await File.load<Demo>('demo');
         console.log(chunk);
         this._child.demo = chunk;
     }
 
-    @Validator.useCondition(app => Boolean(app.child.demo))
+    @Validator.useCondition(app => Boolean(app.child.game))
     async save() {
-        const chunk = this._child.demo;
-        if (chunk) {
-            await File.save(chunk);
+        if (this.child.game) {
+            await File.save<Game>(this.child.game);
         }
     }
 
-    @Validator.useCondition(app => Boolean(app.child.demo))
+    @Validator.useCondition(app => Boolean(app.child.demo || app.child.game))
     quit() {
-        delete this._child.demo;
+        if (this._child.demo) delete this._child.demo;
+        if (this._child.game) delete this._child.game;
         App._singleton = new Map();
     }
 }

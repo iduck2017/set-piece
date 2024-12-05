@@ -14,8 +14,8 @@ export function PongsComp(props: {
         model={pongs}
         form={
             <>
-                <Link model={pongs} name="append" />
-                <Link model={pongs} name="remove" />
+                <Link model={pongs} action="append" />
+                <Link model={pongs} action="remove" />
             </>
         }
         menu={
@@ -36,7 +36,7 @@ export function PongComp(props: {
         model={pong}
         form={
             <>
-                <Link model={pong} name="trigger" />
+                <Link model={pong} action="trigger" />
             </>
         }
     />;

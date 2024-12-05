@@ -7,25 +7,27 @@ import './index.css';
 import { BunnyComp } from "./bunny";
 import { PingsComp } from "./ping";
 import { PongsComp } from "./pong";
+import { Game } from "@/model/game";
+import { PlayerComp } from "./player";
 
-export function DemoComp(props: {
-    demo: Demo
+export function GameComp(props: {
+    game: Game
 }) {
-    const { demo } = props;
-    const [ state, child ] = useModel(demo);
+    const { game } = props;
+    const [ state, child ] = useModel(game);
 
     return <ModelComp 
-        model={demo}
+        model={game}
         form={
             <>
             </>
         }
         menu={
             <>
-                {child.pings && <PingsComp pings={child.pings} />}
-                {child.pongs && <PongsComp pongs={child.pongs} />}
-                {child.bunny && <BunnyComp bunny={child.bunny} />}
+                <PlayerComp player={child.redPlayer} />
+                <PlayerComp player={child.bluePlayer} />
             </>
         }
     />;
 }
+

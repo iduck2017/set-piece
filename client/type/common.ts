@@ -4,10 +4,6 @@ export enum Version {
     Patch,
 }
 
-export enum Scene {
-    Demo = 'demo'
-}
-
 export enum Gender {
     Male = 'male',
     Female = 'female',

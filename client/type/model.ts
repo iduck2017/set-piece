@@ -5,6 +5,7 @@ import { OptionalKeys, RequiredKeys } from "utility-types";
 export type ChunkOf<N extends Model> = N['chunk'] 
 export type StateOf<N extends Model> = N['state'] 
 export type ChildOf<N extends Model> = N['child'] 
+export type CodeOf<N extends Model> = N['code']
 
 export type Chunk<
     T extends string = string,

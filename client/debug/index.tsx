@@ -4,6 +4,21 @@ import { useModel } from "./use-model";
 import { Model } from "@/model";
 import { Link } from "./common";
 
+export function StateForm(props: {
+    model: Model
+}) {
+    const { model } = props;
+    const [ state ] = useModel(model);
+
+    console.log(state);
+
+    return Object
+        .entries(state)
+        .map(([ key, value ], index) => (
+            <div key={index}>{key}: {value}</div>
+        ));
+}
+
 export function ModelComp(props: {
     model: Model,
     menu?: ReactNode | ReactNode[],
@@ -17,7 +32,7 @@ export function ModelComp(props: {
             <div className="title">{model.constructor.name}</div>
             <div>code: {model.code}</div>
             <div>uuid: {model.uuid}</div>
-            <Link model={model} name="debug" />
+            <Link model={model} action="debug" />
             {form}
             {Object
                 .entries(state)

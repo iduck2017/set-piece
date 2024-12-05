@@ -1,14 +1,13 @@
 import { Factory } from "@/service/factory";
 import { IModel, Model } from "@/model";
 import { ChunkOf } from "@/type/model";
-import { ICard } from "./card";
-import { Dict, Value } from "@/type/base";
 import { Player } from "./player";
+import { ICard } from "./card";
 
 
-@Factory.useProduct('deck')
-export class Deck extends IModel<
-    'deck',
+@Factory.useProduct('tomb')
+export class Tomb extends IModel<
+    'tomb',
     {},
     ICard[],
     {}
@@ -16,7 +15,7 @@ export class Deck extends IModel<
     declare parent: Player;
 
     constructor(
-        chunk: ChunkOf<Deck>,
+        chunk: ChunkOf<Tomb>,
         parent: Player
     ) {
         super({
@@ -25,15 +24,9 @@ export class Deck extends IModel<
             state: {}
         }, parent);
     }
-
-    append() {
-        this._child.push({
-            code: 'wisp'
-        });
+        
+    append(chunk: ChunkOf<ICard>) {
+        this._child.push(chunk);
     }
 
-    shift(): ChunkOf<ICard> | undefined {
-        const chunk = this._child.shift();
-        return chunk;
-    }
 }
