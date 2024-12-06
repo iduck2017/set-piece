@@ -31,7 +31,11 @@ export class IMinion extends IModel<
     },
     {
     },
-    {}
+    {
+        onBattlecry: IMinion;
+
+        onSummon: IMinion;
+    }
 > {
     private static _rules: Map<Function, MinionRule> = new Map();
     static useFeature(rule: MinionRule) {
@@ -107,6 +111,11 @@ export class IMinion extends IModel<
         if (chunk) {
             team.append(chunk);
         }
+    }
+
+    @Lifecycle.useLoader()
+    private _onSummon() {
+        
     }
 
     @Lifecycle.useLoader()
