@@ -1,7 +1,7 @@
 import { Factory } from "@/service/factory";
 import { IModel, Model } from "@/model";
 import { ChunkOf } from "@/type/model";
-import { ICard } from "./card";
+import { Card, ICard } from "./card";
 import { Player } from "./player";
 
 
@@ -9,8 +9,10 @@ import { Player } from "./player";
 export class Hand extends IModel<
     'hand',
     {},
-    ICard[],
-    {}
+    Card[],
+    {
+        onPlay: Card
+    }
 > {
     declare parent: Player;
 
@@ -25,15 +27,19 @@ export class Hand extends IModel<
         }, parent);
     }
 
-    append(chunk: ChunkOf<ICard>) {
+    append(chunk: ChunkOf<Card>): Card | undefined {
+        const uuid = chunk.uuid;
         this._child.push(chunk);
+        const card = this.child.find(c => c.uuid === uuid);
+        return card;
     }
 
-    remove(card?: ICard): ChunkOf<ICard> | undefined {
+    play(card?: Card): ChunkOf<Card> | undefined {
         if (!card) card = this.child[0];
         const index = this.child.indexOf(card);
         if (index >= 0) {
             this._child.splice(index, 1);
+            this._event.onPlay(card);
             const chunk = card.chunk;
             return chunk;
         }

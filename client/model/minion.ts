@@ -2,7 +2,7 @@ import { Factory } from "@/service/factory";
 import { IModel, Model } from "@/model";
 import { ChunkOf } from "@/type/model";
 import { Class } from "@/type/base";
-import { ICard } from "./card";
+import { Card, ICard } from "./card";
 import { Decor } from "@/service/decor";
 import { Player } from "./player";
 import { Validator } from "@/service/validator";
@@ -25,21 +25,19 @@ export class IMinion extends IModel<
     {
         curHealth: number;
         readonly curAttack: number;
-        readonly fixAttack?: number;
-        readonly fixHealth?: number;
+        readonly rawAttack?: number;
+        readonly rawHealth?: number;
         readonly maxHealth: number;
     },
     {
     },
     {
-        onBattlecry: IMinion;
-
-        onSummon: IMinion;
+        onBattlecry: void;
     }
 > {
     private static _rules: Map<Function, MinionRule> = new Map();
-    static useFeature(rule: MinionRule) {
-        return function (Type: Class<ICard>) {
+    static useFeat(rule: MinionRule) {
+        return function (Type: Class<Card>) {
             IMinion._rules.set(Type, rule);
         };
     }
@@ -60,20 +58,11 @@ export class IMinion extends IModel<
         chunk: ChunkOf<IMinion>,
         parent: Model
     ) {
-        const defaultRule: MinionRule = {
-            rawHealth: 1,
-            rawAttack: 1
+        let rule = IMinion._rules.get(parent.constructor);
+        rule = {
+            rawHealth: chunk.state?.rawHealth || rule?.rawHealth || 1,
+            rawAttack: chunk.state?.rawAttack || rule?.rawAttack || 1
         };
-        // const overrideRule: Partial<MinionRule> = {
-        //     rawHealth: chunk.state?.fixHealth,
-        //     rawAttack: chunk.state?.fixAttack
-        // };
-        const rule = {
-            ...defaultRule,
-            ...IMinion._rules.get(parent.constructor)
-            // ...overrideRule
-        };
-        console.log(rule);
         super({
             ...chunk,
             child: {},
@@ -94,7 +83,7 @@ export class IMinion extends IModel<
     attack(target?: IMinion) {
         if (!target) {
             const team = this.opponent.child.team;
-            target = team.child[0].child.minion;
+            target = team.child[0]?.child.minion;
         }
         if (target) {
             target.hurt(this.state.curAttack);
@@ -107,15 +96,11 @@ export class IMinion extends IModel<
         const card = this.parent;
         const team = this.player.child.team;
         const hand = this.player.child.hand;
-        const chunk = hand.remove(card);
+        const chunk = hand.play(card);
+        this._event.onBattlecry();
         if (chunk) {
-            team.append(chunk);
+            team.summon(chunk);
         }
-    }
-
-    @Lifecycle.useLoader()
-    private _onSummon() {
-        
     }
 
     @Lifecycle.useLoader()

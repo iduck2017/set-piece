@@ -5,6 +5,7 @@ import { Deck } from "./deck";
 import { Hand } from "./hand";
 import { Team } from "./team";
 import { Tomb } from "./tomb";
+import { Card } from "./card";
 
 @Factory.useProduct('player')
 export class Player extends IModel<
@@ -18,7 +19,9 @@ export class Player extends IModel<
         team: Team,
         tomb: Tomb
     },
-    {}
+    {
+        onDraw: Card
+    }
 > {
     constructor(
         chunk: ChunkOf<Player>,
@@ -40,10 +43,15 @@ export class Player extends IModel<
         }, parent);
     }
 
-    draw() {
-        const chunk = this.child.deck.shift();
-        if (chunk) {
-            this.child.hand.append(chunk);
+    draw(count: number) {
+        for (let index = 0; index < count; index += 1) {
+            const chunk = this.child.deck.shift();
+            if (chunk) {
+                const card = this.child.hand.append(chunk);
+                if (card) {
+                    this._event.onDraw(card)
+                }
+            }
         }
     }
 }

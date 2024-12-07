@@ -49,8 +49,8 @@ export abstract class IModel<
         [K in KeyOf<E>]: Emitter<Required<E>[K]>
     }>>;
     public readonly event: Readonly<HarshOf<{
-        [K in KeyOf<ModelEvent<typeof this> & E>]: 
-            Event<(ModelEvent<typeof this> & E)[K]>;
+        [K in KeyOf<ModelEvent<typeof this> & ValidOf<E>>]: 
+            Event<(ModelEvent<typeof this> & ValidOf<E>)[K]>;
     }>>;
 
     protected _child: 
@@ -114,7 +114,7 @@ export abstract class IModel<
         for (const key in chunk.event) {
             const event: any = chunk.event;
             const value = event[key];
-            this.event[key].alias = value;
+            Reflect.get(this.event, key).alias = value;
         }
 
         let child: any;
@@ -144,8 +144,8 @@ export abstract class IModel<
         data: (ModelEvent<typeof this> & E)[K]
     ) {
         const events = [
-            this.event[key],
-            ...this.event[key].alias
+            Reflect.get(this.event, key),
+            ...Reflect.get(this.event, key).alias
         ];
         for (const event of events) {
             const { target } = event;
@@ -397,9 +397,8 @@ export abstract class IModel<
             this._child instanceof Array ?
                 [ ...this._child ] :
                 { ...this._child };
-        const uuid = File.isSaving ? this.uuid : undefined;
         return {
-            uuid,
+            uuid: this.uuid,
             code: this.code,
             state: { ...this._state },
             child

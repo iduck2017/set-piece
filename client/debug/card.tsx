@@ -2,12 +2,11 @@ import React from "react";
 import { useModel } from "./use-model";
 import { ModelComp, StateForm } from ".";
 import './index.css';
-import { ICard } from "@/model/card";
-import { IMinion } from "@/model/minion";
+import { Card } from "@/model/card";
 import { Link } from "./common";
 
 export function CardComp(props: {
-    card: ICard
+    card: Card
 }) {
     const { card } = props;
     const [ state, child ] = useModel(card);

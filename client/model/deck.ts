@@ -1,7 +1,7 @@
 import { Factory } from "@/service/factory";
 import { IModel, Model } from "@/model";
 import { ChunkOf } from "@/type/model";
-import { ICard } from "./card";
+import { Card, ICard } from "./card";
 import { Dict, Value } from "@/type/base";
 import { Player } from "./player";
 
@@ -10,7 +10,7 @@ import { Player } from "./player";
 export class Deck extends IModel<
     'deck',
     {},
-    ICard[],
+    Card[],
     {}
 > {
     declare parent: Player;
@@ -32,7 +32,7 @@ export class Deck extends IModel<
         });
     }
 
-    shift(): ChunkOf<ICard> | undefined {
+    shift(): ChunkOf<Card> | undefined {
         const chunk = this._child.shift();
         return chunk;
     }

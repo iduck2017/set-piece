@@ -1,12 +1,14 @@
 import { IModel, Model } from "@/model";
 import { Dict, Value } from "@/type/base";
-import { IMinion } from "./minion";
-import { Player } from "./player";
-import { Hand } from "./hand";
-import { Deck } from "./deck";
-import { Team } from "./team";
-import { Tomb } from "./tomb";
-import { Game } from "./game";
+import { IMinion } from "../minion";
+import { Player } from "../player";
+import { Hand } from "../hand";
+import { Deck } from "../deck";
+import { Team } from "../team";
+import { Tomb } from "../tomb";
+import { Game } from "../game";
+import { Feats, IFeat } from "../feat";
+import { BattlecryDrawCard } from "../feat/battlecry-draw-card";
 
 // export type Minion<
 //     T extends string = string,
@@ -17,11 +19,18 @@ import { Game } from "./game";
 //     minion: IMinion
 // }, E>
 
-export abstract class ICard<
+export type Card<
     T extends string = string,
     S extends Dict<Value> = Dict,
     C extends Dict<Model> = Dict,
     E extends Dict = Dict
+> = ICard<T, S, C, E>
+
+export abstract class ICard<
+    T extends string = string,
+    S extends Dict<Value> = Dict<never>,
+    C extends Dict<Model> = Dict<never>,
+    E extends Dict = Dict<never>
 > extends IModel<
     T,
     S & {
@@ -30,6 +39,8 @@ export abstract class ICard<
     },
     C & {
         minion?: IMinion
+        baseFeats: Feats<IFeat, ICard>
+        tempFeats: Feats<IFeat, ICard>
     },
     E
 > {

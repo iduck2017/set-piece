@@ -1,25 +1,24 @@
 import { Factory } from "@/service/factory";
 import { IModel, Model } from "@/model";
 import { ChunkOf } from "@/type/model";
-import { ICard } from "./card";
-import { IMinion } from "./minion";
-import { Hand } from "./hand";
-import { Deck } from "./deck";
-import { Team } from "./team";
-import { Tomb } from "./tomb";
-import { Player } from "./player";
+import { ICard } from '.';
+import { IMinion } from "../minion";
 
-@Factory.useProduct('wisp')
-export class Wisp extends ICard<
-    'wisp',
+@Factory.useProduct('novice-engineer')
+@IMinion.useFeat({
+    rawAttack: 1,
+    rawHealth: 1
+})
+export class NoviceEngineer extends ICard<
+    'novice-engineer',
     {},
     {
-        minion: IMinion
+        minion: IMinion,
     },
     {}
 > {
     constructor(
-        chunk: ChunkOf<Wisp>,
+        chunk: ChunkOf<NoviceEngineer>,
         parent: Model
     ) {
         super({
@@ -30,8 +29,9 @@ export class Wisp extends ICard<
             },
             state: {
                 ...chunk.state,
-                name: 'wisp',
+                name: 'Novice Engineer',
                 desc: ''
+                
             }
         }, parent);
     }

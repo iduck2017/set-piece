@@ -2,14 +2,14 @@ import { Factory } from "@/service/factory";
 import { IModel, Model } from "@/model";
 import { ChunkOf } from "@/type/model";
 import { Player } from "./player";
-import { ICard } from "./card";
+import { ICard, Card } from "./card";
 
 
 @Factory.useProduct('tomb')
 export class Tomb extends IModel<
     'tomb',
     {},
-    ICard[],
+    Card[],
     {}
 > {
     declare parent: Player;
@@ -25,7 +25,7 @@ export class Tomb extends IModel<
         }, parent);
     }
         
-    append(chunk: ChunkOf<ICard>) {
+    append(chunk: ChunkOf<Card>) {
         this._child.push(chunk);
     }
 
