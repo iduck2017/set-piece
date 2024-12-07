@@ -8,8 +8,6 @@ import { Emitter, Event, React, Handler,
 import { Chunk, ChunkOf } from "@/type/model";
 import { Delegator } from "@/util/proxy";
 import { OptionalKeys, RequiredKeys } from "utility-types";
-import { Pings } from "./ping";
-import { File } from "@/service/file";
 
 type ModelEvent<M extends Model> = {
     onModelAlter: OnModelAlter<M>
