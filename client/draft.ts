@@ -72,7 +72,7 @@ class NodeModel<T extends Partial<NodeDef> = NodeDef> {
         chunk: BaseNodeChunk<T>,
         parent: NodeDef.Parent<T>
     ) {
-
+        
     }
 }
 
