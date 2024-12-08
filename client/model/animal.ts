@@ -1,16 +1,16 @@
 import { NodeDef } from "@/type/define";
 import { DictModel } from "./dict";
-import { FeatureModel } from "./feature";
+import { MetabolicModel } from "./metabolic";
 import { BaseDictProps } from "@/type/props";
 
 export type AnimalDef = {
-    code: never;
+    code: string;
     state: {
         isAlive: boolean;
     },
     event: {},
     child: {
-        feature: FeatureModel
+        metabolic: MetabolicModel
     }
 }
 
@@ -25,7 +25,7 @@ export abstract class AnimalModel<
                 ...props.state
             },
             child: {
-                feature: { code: 'feature' },
+                metabolic: { code: 'metabolic' },
                 ...props.child
             }
         });

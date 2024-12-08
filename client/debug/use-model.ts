@@ -7,11 +7,8 @@ export function useModel<N extends NodeModel>(model: N): [
 ] {
     const [ state, setState ] = useState<Model.State<N>>({ ...model.state });
     const [ child, setChild ] = useState<Model.Child<N>>(() => {
-        if (model.child instanceof Array) {
-            return [ ...model.child ];
-        } else {
-            return { ...model.child };
-        }
+        if (model.child instanceof Array) return [ ...model.child ];
+        else return { ...model.child };
     });
 
     useEffect(() => {
@@ -22,11 +19,8 @@ export function useModel<N extends NodeModel>(model: N): [
     
     useEffect(() => {
         return model.useChild((target) => {
-            if (target.child instanceof Array) {
-                setChild([ ...target.child ]);
-            } else {
-                setChild({ ...target.child });
-            }
+            if (target.child instanceof Array) setChild([ ...target.child ]);
+            else setChild({ ...target.child });
         });
     }, [ model ]);
 

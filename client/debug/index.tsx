@@ -4,18 +4,6 @@ import { useModel } from "./use-model";
 import { Link } from "./common";
 import { NodeModel } from "@/model/node";
 
-export function StateForm(props: {
-    model: NodeModel
-}) {
-    const { model } = props;
-    const [ state ] = useModel(model);
-
-    return Object
-        .entries(state)
-        .map(([ key, value ], index) => (
-            <div key={index}>{key}: {value}</div>
-        ));
-}
 
 export function ModelComp(props: {
     model: NodeModel,
@@ -35,7 +23,7 @@ export function ModelComp(props: {
             {Object
                 .entries(state)
                 .map(([ key, value ], index) => (
-                    <div key={index}>{key}: {value}</div>
+                    <div key={index}>{key}: {String(value)}</div>
                 ))}
         </div>
         <div className="menu">

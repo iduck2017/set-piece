@@ -5,7 +5,7 @@ export type NodeDef = {
     code: string,
     state: Base.Dict<Base.Value>
     event: Base.Dict<Base.List> 
-    child: Base.Dict<NodeModel>
+    child: unknown
     parent?: NodeModel
 }
 export type ListDef = NodeDef & {
@@ -13,7 +13,7 @@ export type ListDef = NodeDef & {
 }
 
 type PureDef = {
-    code: never;
+    code: string;
     state: Base.Dict<never>
     event: Base.Dict<never> 
     child: Base.Dict<never>

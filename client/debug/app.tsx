@@ -4,6 +4,8 @@ import { useModel } from "./use-model";
 import { ModelComp } from ".";
 import { Link } from "./common";
 import { AppModel } from "@/model/app";
+import { DemoComp } from "./demo";
+import { GameComp } from "./game";
 
 export function AppComp(props: {
     model: AppModel
@@ -20,17 +22,17 @@ export function AppComp(props: {
         model={model}
         form={
             <>
-                {/* <Link model={model} action="start" />
-                <Link model={model} action="test" />
-                <Link model={model} action="quit" />
-                <Link model={model} action="save" /> */}
                 <Link model={model} action="count" />
+                <Link model={model} action="test" />
+                <Link model={model} action="save" />
+                <Link model={model} action="quit" />
+                <Link model={model} action="start" />
             </>
         }
         menu={
             <>
-                {/* {child.demo && <DemoComp demo={child.demo} />}
-                {child.game && <GameComp game={child.game} />} */}
+                {child.demo && <DemoComp model={child.demo} />}
+                {child.game && <GameComp model={child.game} />}
             </>
         }
     />;

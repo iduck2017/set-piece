@@ -2,13 +2,19 @@ import { Validator } from "@/service/validator";
 import { Base } from "@/type/base";
 import { DictModel } from "./dict";
 import { File } from "@/service/file";
+import { DemoModel } from "./demo";
+import { GameModel } from "./game";
 
 type AppDef = {
     code: 'app',
     state: {
         version: string,
         count: number
-    }
+    },
+    child: {
+        demo?: DemoModel
+        game?: GameModel
+    },
     parent: undefined,
 }
 
@@ -28,12 +34,12 @@ export class AppModel extends DictModel<AppDef> {
         };
     }
 
-    private static _cur?: AppModel;
-    static get cur(): AppModel {
-        if (!AppModel._cur) {
-            AppModel._cur = new AppModel();
+    private static _core?: AppModel;
+    static get core(): AppModel {
+        if (!AppModel._core) {
+            AppModel._core = new AppModel();
         }
-        return AppModel._cur;
+        return AppModel._core;
     }
 
     constructor() {
@@ -43,8 +49,7 @@ export class AppModel extends DictModel<AppDef> {
                 version: '0.1.0',
                 count: 0
             },
-            child: {
-            },
+            child: {},
             event: {},
             parent: undefined
         });
@@ -55,30 +60,28 @@ export class AppModel extends DictModel<AppDef> {
         this.rawState.count++;
     }
 
-    // @Validator.useCondition(app => !app.child.game)
-    // async start() {
-    //     const chunk = await File.load<Game>('game');
-    //     this._child.game = chunk;
-    // }
+    @Validator.useCondition(app => !app.child.game)
+    async start() {
+        const chunk = await File.load<GameModel>('game');
+        this.rawChild.game = chunk;
+    }
     
-    // @Validator.useCondition(app => !app.child.demo)
-    // async test() {
-    //     const chunk = await File.load<Demo>('demo');
-    //     console.log(chunk);
-    //     this._child.demo = chunk;
-    // }
+    @Validator.useCondition(app => !app.child.demo)
+    async test() {
+        const chunk = await File.load<DemoModel>('demo');
+        this.rawChild.demo = chunk;
+    }
 
-    // @Validator.useCondition(app => Boolean(app.child.game))
-    // async save() {
-    //     if (this.child.game) {
-    //         await File.save<Game>(this.child.game);
-    //     }
-    // }
+    @Validator.useCondition(app => Boolean(app.child.game || app.child.demo))
+    async save() {
+        if (this.child.demo) await File.save<DemoModel>(this.child.demo);
+        if (this.child.game) await File.save<GameModel>(this.child.game);
+    }
 
-    // @Validator.useCondition(app => Boolean(app.child.demo || app.child.game))
-    // quit() {
-    //     if (this._child.demo) delete this._child.demo;
-    //     if (this._child.game) delete this._child.game;
-    //     App._singleton = new Map();
-    // }
+    @Validator.useCondition(app => Boolean(app.child.demo || app.child.game))
+    quit() {
+        if (this.rawChild.demo) delete this.rawChild.demo;
+        if (this.rawChild.game) delete this.rawChild.game;
+        AppModel._singleton = new Map();
+    }
 }

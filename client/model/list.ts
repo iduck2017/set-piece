@@ -28,7 +28,7 @@ export abstract class ListModel<
     get chunk(): ListChunk<T> {
         return {
             ...super.chunk,
-            child: this.child
+            child: this.rawChild
         };
     }
 }

@@ -13,11 +13,9 @@ export class Validator {
         ...args: any[]
     ) {
         const conditions = Validator._conditions.get(target.constructor)?.[key] || [];
-        console.log(conditions);
         for (const condition of conditions) {
             if (!condition(target, ...args)) return false;
         }
-        console.log(target.constructor, key, true);
         return true;
     }
 
@@ -30,7 +28,6 @@ export class Validator {
         const conditions = Validator._conditions.get(constructor) || {};
         conditions[key] = conditions[key] || [];
         conditions[key].push(condition);
-        console.log(conditions);
         Validator._conditions.set(constructor, conditions);
     }
 

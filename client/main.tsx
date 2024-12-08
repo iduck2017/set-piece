@@ -8,7 +8,7 @@ async function main() {
     if (!element) {
         throw new Error("Could not find app element");
     }
-    createRoot(element).render(<AppComp model={AppModel.cur} />);
+    createRoot(element).render(<AppComp model={AppModel.core} />);
 }
 
 main();

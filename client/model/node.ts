@@ -39,8 +39,8 @@ export abstract class NodeModel<
 
     
     readonly uuid: string;
-    private readonly _uuidDict: Record<string, NodeModel> = {};
-    get uuidList() {
+    private readonly _uuids: Record<string, NodeModel> = {};
+    get uuids() {
         const result: string[] = [];
         let target: NodeModel | undefined = this;
         while (target) {
@@ -50,11 +50,11 @@ export abstract class NodeModel<
         return result;
     }
     
-    public query(uuidList: string[]): NodeModel | undefined {
-        for (const uuid of uuidList) {
-            if (this._uuidDict[uuid]) {
-                return this._uuidDict[uuid].query(
-                    uuidList.slice(uuidList.indexOf(uuid) + 1)
+    public query(uuids: string[]): NodeModel | undefined {
+        for (const uuid of uuids) {
+            if (this._uuids[uuid]) {
+                return this._uuids[uuid].query(
+                    uuids.slice(uuids.indexOf(uuid) + 1)
                 );
             }
         }
@@ -76,9 +76,9 @@ export abstract class NodeModel<
     }
 
     public useChild(setter: Event<NodeEvent.OnSpawn<typeof this>>){
-        this.bind(this.eventReq.onAlter, setter);
+        this.bind(this.eventReq.onSpawn, setter);
         return () => {
-            this.unbind(this.eventReq.onAlter, setter);
+            this.unbind(this.eventReq.onSpawn, setter);
         };
     }
 
@@ -95,9 +95,15 @@ export abstract class NodeModel<
         this._state = nextState;
         this._event.onAlter(this, prevState);
         if (recursive) {
-            for (const key in this.child) {
-                const child: NodeModel | undefined = this.child[key];
-                child?._unload();
+            if (this.child instanceof Array) {
+                this.child.map((child: NodeModel) => {
+                    child._onAlter(recursive);
+                });
+            } else {
+                for (const key in this.child) {
+                    const child: NodeModel | undefined = this.child[key];
+                    child?._onAlter(recursive);
+                }
             }
         }
     }
@@ -130,14 +136,14 @@ export abstract class NodeModel<
         key: K, 
         data: NodeEvent<typeof this, T>[K]
     ) {
-        const eventReqList = [
+        const eventReqs = [
             this.eventReq[key],
             ...this.eventReq[key].alias
         ];
-        for (const eventReq of eventReqList) {
+        for (const eventReq of eventReqs) {
             const { target } = eventReq;
-            const eventResList = target._eventDep.get(eventReq) || [];
-            for (const eventRes of eventResList) {
+            const eventReses = target._eventDep.get(eventReq) || [];
+            for (const eventRes of eventReses) {
                 eventRes.handler.call(eventRes.target, data);
             }
         }
@@ -153,13 +159,13 @@ export abstract class NodeModel<
             new EventRes(target, handler);
         this._eventRes.set(handler, eventRes);
 
-        const eventResList = target._eventDep.get(eventReq) || [];
-        eventResList.push(eventRes);
-        target._eventDep.set(eventReq, eventResList);
+        const eventReses = target._eventDep.get(eventReq) || [];
+        eventReses.push(eventRes);
+        target._eventDep.set(eventReq, eventReses);
 
-        const eventReqList = this._eventDep.get(eventRes) || [];
-        eventReqList.push(eventReq);
-        this._eventDep.set(eventRes, eventReqList);
+        const eventReqs = this._eventDep.get(eventRes) || [];
+        eventReqs.push(eventReq);
+        this._eventDep.set(eventRes, eventReqs);
 
         if (eventReq.key.endsWith('Check')) {
             target._onAlter(true);
@@ -172,14 +178,14 @@ export abstract class NodeModel<
     ) {
         const eventRes = this._eventRes.get(handler);
         if (eventRes) {
-            const eventReqList = this._eventDep.get(eventRes) || [];
-            for (const curEventReq of eventReqList) {
+            const eventReqs = this._eventDep.get(eventRes) || [];
+            for (const curEventReq of eventReqs) {
                 if (eventReq && curEventReq !== eventReq) continue;
                 const { target } = curEventReq;
-                const eventResList = target._eventDep.get(curEventReq) || [];
+                const eventReses = target._eventDep.get(curEventReq) || [];
                 target._eventDep.set(
                     curEventReq, 
-                    eventResList.filter(target => target !== eventRes)
+                    eventReses.filter(target => target !== eventRes)
                 );
                 if (curEventReq.key.endsWith('Check')) {
                     target._onAlter(true);
@@ -198,9 +204,15 @@ export abstract class NodeModel<
         for (const loader of this._loaders) {
             loader.call(this);
         }
-        for (const key in this.child) {
-            const child: NodeModel | undefined = this.child[key];
-            child?._load();
+        if (this.child instanceof Array) {
+            this.child.map((child: NodeModel) => {
+                child._load();
+            });
+        } else {
+            for (const key in this.child) {
+                const child: NodeModel | undefined = this.child[key];
+                child?._load();
+            }
         }
     }
 
@@ -208,8 +220,8 @@ export abstract class NodeModel<
         for (const eventPair of this._eventDep) {
             const eventReqOrRes = eventPair[0];
             if (eventReqOrRes instanceof EventReq) {
-                const [ eventReq, eventResList ] = eventPair;
-                for (const eventRes of eventResList) {
+                const [ eventReq, eventReses ] = eventPair;
+                for (const eventRes of eventReses) {
                     eventRes.target.unbind(
                         eventReq,
                         eventRes.handler
@@ -221,15 +233,21 @@ export abstract class NodeModel<
                 this.unbind(undefined, eventRes.handler);
             }
         }
-        for (const key in this.child) {
-            const child: NodeModel | undefined = this.child[key];
-            child?._unload();
+        if (this.child instanceof Array) {
+            this.child.map((child: NodeModel) => {
+                child._unload();
+            });
+        } else {
+            for (const key in this.child) {
+                const child: NodeModel | undefined = this.child[key];
+                child?._unload();
+            }
         }
         for (const unloader of this._unloaders) {
             unloader.call(this);
         }
         if (this.parent) {
-            delete this.parent._uuidDict[this.uuid];
+            delete this.parent._uuids[this.uuid];
         }
     }
     
@@ -249,12 +267,15 @@ export abstract class NodeModel<
             console.error('ModelNotFound:', { chunk });
             throw new Error();
         }
-        const instance: M = new Type(chunk, this);
+        const instance: M = new Type({
+            ...chunk,
+            parent: this
+        });
         return instance;
     }
 
     public debug() {
-        console.log(this._eventDep.values());
+        console.log(this.state);
     }
 }
 
