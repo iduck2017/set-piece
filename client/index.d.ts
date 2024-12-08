@@ -1,7 +1,7 @@
-import { App } from "./model.bk/app";
+import { AppModel } from "@/model/app";
 
 declare global {
     interface Window { 
-        app: App;        
+        app: AppModel;        
     }
 }

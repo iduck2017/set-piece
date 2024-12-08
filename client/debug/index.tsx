@@ -1,16 +1,14 @@
 import React, { ReactNode } from "react";
 import './index.css';
 import { useModel } from "./use-model";
-import { Model } from "@/model.bk";
 import { Link } from "./common";
+import { NodeModel } from "@/model/node";
 
 export function StateForm(props: {
-    model: Model
+    model: NodeModel
 }) {
     const { model } = props;
     const [ state ] = useModel(model);
-
-    console.log(state);
 
     return Object
         .entries(state)
@@ -20,7 +18,7 @@ export function StateForm(props: {
 }
 
 export function ModelComp(props: {
-    model: Model,
+    model: NodeModel,
     menu?: ReactNode | ReactNode[],
     form?: ReactNode | ReactNode[]
 }) {

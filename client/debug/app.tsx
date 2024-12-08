@@ -1,37 +1,36 @@
 import React, { useEffect } from "react";
 import './index.css';
-import { App } from "@/model.bk/app";
 import { useModel } from "./use-model";
 import { ModelComp } from ".";
 import { Link } from "./common";
-import { DemoComp } from "./demo";
-import { GameComp } from "./game";
+import { AppModel } from "@/model/app";
 
 export function AppComp(props: {
-    app: App
+    model: AppModel
 }) {
-    const { app } = props;
-    const [ state, child ] = useModel(app);
+    const { model } = props;
+    const [ state, child ] = useModel(model);
     console.log({ ...state }, { ...child }, child.demo);
 
     useEffect(() => {
-        app.start();
+        // model.start();
     }, []);
 
     return <ModelComp 
-        model={app}
+        model={model}
         form={
             <>
-                <Link model={app} action="start" />
-                <Link model={app} action="test" />
-                <Link model={app} action="quit" />
-                <Link model={app} action="save" />
+                {/* <Link model={model} action="start" />
+                <Link model={model} action="test" />
+                <Link model={model} action="quit" />
+                <Link model={model} action="save" /> */}
+                <Link model={model} action="count" />
             </>
         }
         menu={
             <>
-                {child.demo && <DemoComp demo={child.demo} />}
-                {child.game && <GameComp game={child.game} />}
+                {/* {child.demo && <DemoComp demo={child.demo} />}
+                {child.game && <GameComp game={child.game} />} */}
             </>
         }
     />;

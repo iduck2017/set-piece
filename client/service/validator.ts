@@ -1,15 +1,13 @@
-import { Model } from "@/model.bk";
-import { Func } from "@/type/base";
-import { Logger } from "./logger";
+import { NodeModel } from "@/model/node";
+import { Base } from "@/type/base";
 
 export class Validator {
     private static _conditions: Map<
         Function, 
-        Record<string, Func[]>
+        Record<string, Base.Func[]>
     > = new Map();
 
-    @Logger.useDebug()
-    static preCheck<M extends Model>(
+    static preCheck<M extends NodeModel>(
         target: M,
         key: string,
         ...args: any[]
@@ -23,9 +21,8 @@ export class Validator {
         return true;
     }
 
-    @Logger.useDebug()
     private static _setCondition(
-        condition: Func,
+        condition: Base.Func,
         target: Record<string, any>,
         key: string
     ) {
@@ -43,8 +40,8 @@ export class Validator {
         return function (
             target: N,
             key: string,
-            descriptor: TypedPropertyDescriptor<Func>
-        ): TypedPropertyDescriptor<Func> {
+            descriptor: TypedPropertyDescriptor<Base.Func>
+        ): TypedPropertyDescriptor<Base.Func> {
             Validator._setCondition(condition, target, key);
             const handler = descriptor.value;
             descriptor.value = function(this: N, ...args: T) {

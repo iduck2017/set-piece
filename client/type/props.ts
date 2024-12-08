@@ -1,11 +1,14 @@
 import { Model, NodeModel } from "@/model/node";
 import { Base, Strict } from "./base";
 import { NodeChunkDict, NodeChunk } from "./chunk";
-import { Def, DictDef, ListDef, NodeDef } from "./define";
+import { Def, ListDef, NodeDef } from "./define";
+import { EventReqList, NodeEvent } from "./event";
 
 export type BaseNodeProps<T extends Partial<NodeDef>> = {
+    uuid?: string;
     code: Def.Code<T>;
     state: Def.State<T>;
+    event?: Partial<EventReqList<NodeEvent<NodeModel, T>>>
     parent: Def.Parent<T>;
 }
 export type BaseListProps<T extends Partial<ListDef>> = BaseNodeProps<T> & {
@@ -13,14 +16,15 @@ export type BaseListProps<T extends Partial<ListDef>> = BaseNodeProps<T> & {
 }
 
 export type BaseDictProps<
-    A extends Partial<DictDef>,
-    B extends DictDef
+    A extends Partial<NodeDef>,
+    B extends NodeDef
 > = {
     code: Def.Code<A>;
     state: Strict<Def.State<A> & Partial<Def.State<B>>>;
     child: 
         Strict<NodeChunkDict<Def.Child<A>> & 
         Partial<NodeChunkDict<Def.Child<B>>>>,
+    event?: Partial<EventReqList<NodeEvent<NodeModel, A & B>>>
     parent: Def.Parent<A>;
 }
 

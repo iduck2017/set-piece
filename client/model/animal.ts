@@ -1,4 +1,4 @@
-import { DictDef } from "@/type/define";
+import { NodeDef } from "@/type/define";
 import { DictModel } from "./dict";
 import { FeatureModel } from "./feature";
 import { BaseDictProps } from "@/type/props";
@@ -15,20 +15,18 @@ export type AnimalDef = {
 }
 
 export abstract class AnimalModel<
-    T extends Partial<DictDef> = DictDef
+    T extends Partial<NodeDef> = NodeDef
 > extends DictModel<T & AnimalDef> {
-    constructor(
-        chunk: BaseDictProps<T, AnimalDef>
-    ) {
+    constructor(props: BaseDictProps<T, AnimalDef>) {
         super({
-            ...chunk,
+            ...props,
             state: {
                 isAlive: true,
-                ...chunk.state
+                ...props.state
             },
             child: {
                 feature: { code: 'feature' },
-                ...chunk.child
+                ...props.child
             }
         });
     }

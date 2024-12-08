@@ -9,9 +9,7 @@ type FeatureDef = {
 }
 
 export class FeatureModel extends DictModel<FeatureDef> {
-    constructor(
-        props: NodeProps<FeatureDef>
-    ) {
+    constructor(props: NodeProps<FeatureDef>) {
         super({
             ...props,
             state: {},

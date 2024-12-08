@@ -1,7 +1,7 @@
-import { KeyOf, Func, ValOf, Dict, List } from "../type/base";
+import { Base, KeyOf, ValOf } from "../type/base";
 
 export namespace Delegator {
-    export function Automic<T extends Dict>(
+    export function Automic<T extends Base.Dict>(
         origin: any,
         getter: (key: KeyOf<T>) => T[KeyOf<T>]
     ): T {
@@ -18,7 +18,7 @@ export namespace Delegator {
         });
     }
     
-    export function Readonly<T extends Dict>(
+    export function Readonly<T extends Base.Dict>(
         origin: T
     ): Readonly<T> {
         return new Proxy(origin, {
@@ -28,7 +28,7 @@ export namespace Delegator {
     }
 
     export function Formatted<A, B>(
-        origin: Dict,
+        origin: Base.Dict,
         getter: (value: A) => B,
         setter: (value: B) => A
     ): any {
@@ -41,8 +41,8 @@ export namespace Delegator {
                 shift,
                 splice
             } = origin;
-            const useLock = function (handler: Func) {
-                return (...args: List) => {
+            const useLock = function (handler: Base.Func) {
+                return (...args: Base.List) => {
                     lock = true;
                     const result = handler(...args);
                     lock = false;
@@ -122,9 +122,9 @@ export namespace Delegator {
         }
     }
 
-    export function Observed<T extends Dict>(
+    export function Observed<T extends Base.Dict>(
         origin: T,
-        listener: (event: {
+        listener: (data: {
             key?: string | number,
             prev?: ValOf<T> | ValOf<T>[],
             next?: ValOf<T> | ValOf<T>[],
@@ -139,8 +139,8 @@ export namespace Delegator {
                 shift,
                 splice
             } = origin;
-            const useLock = function (handler: Func) {
-                return (...args: List) => {
+            const useLock = function (handler: Base.Func) {
+                return (...args: Base.List) => {
                     lock = true;
                     const result = handler(...args);
                     lock = false;

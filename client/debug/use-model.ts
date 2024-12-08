@@ -1,13 +1,12 @@
-import { Model } from "@/model.bk";
-import { ChildOf, StateOf } from "@/type/define";
+import { Model, NodeModel } from "@/model/node";
 import { useEffect, useState } from "react";
 
-export function useModel<N extends Model>(model: N): [
-    StateOf<N>, 
-    ChildOf<N>
+export function useModel<N extends NodeModel>(model: N): [
+    Model.State<N>, 
+    Model.Child<N>
 ] {
-    const [ state, setState ] = useState<StateOf<N>>({ ...model.state });
-    const [ child, setChild ] = useState<ChildOf<N>>(() => {
+    const [ state, setState ] = useState<Model.State<N>>({ ...model.state });
+    const [ child, setChild ] = useState<Model.Child<N>>(() => {
         if (model.child instanceof Array) {
             return [ ...model.child ];
         } else {
@@ -16,8 +15,8 @@ export function useModel<N extends Model>(model: N): [
     });
 
     useEffect(() => {
-        return model.useState((target, data) => {
-            setState({ ...data.next });
+        return model.useState((target) => {
+            setState({ ...target.state });
         });
     }, [ model ]);
     

@@ -11,17 +11,15 @@ type BunnyDef = {
 }
 
 export class BunnyModel extends AnimalModel<BunnyDef> {
-    constructor(
-        chunk: NodeProps<BunnyDef>
-    ) {
+    constructor(props: NodeProps<BunnyDef>) {
         super({
-            ...chunk,
+            ...props,
             child: {
-                ...chunk.child
+                ...props.child
             },
             state: {
                 name: 'bunny',
-                ...chunk.state
+                ...props.state
             }
         });
     }

@@ -1,11 +1,11 @@
 import React from "react";
-import { Model } from "@/model.bk";
 import './index.css';
-import { KeyOf, Func } from "@/type/base";
+import { KeyOf } from "@/type/base";
 import { Validator } from "@/service/validator";
+import { NodeModel } from "@/model/node";
 
 export function Link<
-    M extends Model,
+    M extends NodeModel,
     K extends KeyOf<M>
 >(props: {
     model: M,

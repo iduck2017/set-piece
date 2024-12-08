@@ -5,11 +5,8 @@ export type NodeDef = {
     code: string,
     state: Base.Dict<Base.Value>
     event: Base.Dict<Base.List> 
-    child: unknown
-    parent?: NodeModel
-}
-export type DictDef = NodeDef & {
     child: Base.Dict<NodeModel>
+    parent?: NodeModel
 }
 export type ListDef = NodeDef & {
     child: NodeModel[]

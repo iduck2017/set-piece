@@ -1,9 +1,9 @@
-import { Model } from "@/model.bk";
-import { Demo } from "@/model.bk/demo";
-import { ChunkOf, CodeOf } from "@/type/define";
+import { Model, NodeModel } from "@/model/node";
 
 export class File {
-    static async load<T extends Model>(code: CodeOf<T>): Promise<ChunkOf<T>> {
+    static async load<T extends NodeModel>(
+        code: Model.Code<T>
+    ): Promise<Model.Chunk<T>> {
         const result = await localStorage.getItem(code);
         if (result) {
             return JSON.parse(result);
@@ -11,7 +11,9 @@ export class File {
         return { code };
     }
 
-    static async save<T extends Model>(target: T): Promise<void> {
+    static async save<T extends NodeModel>(
+        target: T
+    ): Promise<void> {
         await localStorage.setItem(
             target.code, 
             JSON.stringify(target.chunk)
