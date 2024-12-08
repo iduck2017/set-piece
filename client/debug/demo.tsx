@@ -1,8 +1,8 @@
 import React, { useEffect } from "react";
 import { useModel } from "./use-model";
 import { ModelComp } from ".";
-import { Demo } from "@/model/demo";
-import { Ping } from "@/model/ping";
+import { Demo } from "@/model.bk/demo";
+import { Ping } from "@/model.bk/ping";
 import './index.css';
 import { BunnyComp } from "./bunny";
 import { PingsComp } from "./ping";

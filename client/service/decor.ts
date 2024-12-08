@@ -1,6 +1,6 @@
-import { Model } from "@/model";
+import { Model } from "@/model.bk";
 import { KeyOf, Value } from "@/type/base";
-import { StateOf } from "@/type/model";
+import { StateOf } from "@/type/define";
 
 export class Decor {
     private static _mutators: Map<Function, Record<string, boolean | undefined>> = new Map();

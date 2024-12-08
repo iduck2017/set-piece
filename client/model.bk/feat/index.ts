@@ -1,7 +1,7 @@
-import { IModel, Model } from "@/model";
+import { IModel, Model } from "@/model.bk";
 import { Factory } from "@/service/factory";
 import { Dict, Value } from "@/type/base";
-import { ChunkOf } from "@/type/model";
+import { ChunkOf } from "@/type/define";
 import { ICard } from "../card";
 
 export class IFeat<

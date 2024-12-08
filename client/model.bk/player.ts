@@ -1,6 +1,6 @@
 import { Factory } from "@/service/factory";
-import { IModel, Model } from "@/model";
-import { ChunkOf } from "@/type/model";
+import { IModel, Model } from "@/model.bk";
+import { ChunkOf } from "@/type/define";
 import { Deck } from "./deck";
 import { Hand } from "./hand";
 import { Team } from "./team";
@@ -49,7 +49,7 @@ export class Player extends IModel<
             if (chunk) {
                 const card = this.child.hand.append(chunk);
                 if (card) {
-                    this._event.onDraw(card)
+                    this._event.onDraw(card);
                 }
             }
         }

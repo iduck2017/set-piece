@@ -1,6 +1,6 @@
 import { IModel } from ".";
 import { Factory } from "@/service/factory";
-import { ChunkOf } from "@/type/model";
+import { ChunkOf } from "@/type/define";
 import { App } from "./app";
 import { Bunny } from "./bunny";
 import { Gender } from "@/type/common";

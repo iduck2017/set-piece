@@ -1,6 +1,6 @@
 import { Factory } from "@/service/factory";
 import { IModel, Model } from ".";
-import { ChunkOf } from "@/type/model";
+import { ChunkOf } from "@/type/define";
 import { OnModelCheck } from "@/type/event";
 import { Lifecycle } from "@/service/lifecycle";
 import { Demo } from "./demo";

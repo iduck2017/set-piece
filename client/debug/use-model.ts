@@ -1,5 +1,5 @@
-import { Model } from "@/model";
-import { ChildOf, StateOf } from "@/type/model";
+import { Model } from "@/model.bk";
+import { ChildOf, StateOf } from "@/type/define";
 import { useEffect, useState } from "react";
 
 export function useModel<N extends Model>(model: N): [

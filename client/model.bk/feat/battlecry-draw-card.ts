@@ -1,5 +1,5 @@
 import { Factory } from "@/service/factory";
-import { ChunkOf } from "@/type/model";
+import { ChunkOf } from "@/type/define";
 import { Feats, IFeat } from '.';
 import { Lifecycle } from "@/service/lifecycle";
 import { Class } from "utility-types";

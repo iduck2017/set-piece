@@ -2,7 +2,7 @@ import React from "react";
 import { useModel } from "./use-model";
 import { ModelComp } from ".";
 import './index.css';
-import { Deck } from "@/model/deck";
+import { Deck } from "@/model.bk/deck";
 import { CardComp } from "./card";
 import { Link } from "./common";
 

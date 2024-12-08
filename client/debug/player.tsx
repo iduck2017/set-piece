@@ -1,7 +1,7 @@
 import React from "react";
 import { useModel } from "./use-model";
 import { ModelComp } from ".";
-import { Player } from "@/model/player";
+import { Player } from "@/model.bk/player";
 import './index.css';
 import { DeckComp } from "./deck";
 import { HandComp } from "./hand";

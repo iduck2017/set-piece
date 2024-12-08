@@ -1,7 +1,7 @@
 import React, { ReactNode } from "react";
 import './index.css';
 import { useModel } from "./use-model";
-import { Model } from "@/model";
+import { Model } from "@/model.bk";
 import { Link } from "./common";
 
 export function StateForm(props: {

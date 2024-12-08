@@ -2,7 +2,7 @@ import React from "react";
 import { useModel } from "./use-model";
 import { ModelComp } from ".";
 import './index.css';
-import { Tomb } from "@/model/tomb";
+import { Tomb } from "@/model.bk/tomb";
 import { CardComp } from "./card";
 import { Link } from "./common";
 

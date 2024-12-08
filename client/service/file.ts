@@ -1,6 +1,6 @@
-import { Model } from "@/model";
-import { Demo } from "@/model/demo";
-import { ChunkOf, CodeOf } from "@/type/model";
+import { Model } from "@/model.bk";
+import { Demo } from "@/model.bk/demo";
+import { ChunkOf, CodeOf } from "@/type/define";
 
 export class File {
     static async load<T extends Model>(code: CodeOf<T>): Promise<ChunkOf<T>> {

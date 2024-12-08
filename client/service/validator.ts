@@ -1,4 +1,4 @@
-import { Model } from "@/model";
+import { Model } from "@/model.bk";
 import { Func } from "@/type/base";
 import { Logger } from "./logger";
 

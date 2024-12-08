@@ -1,4 +1,4 @@
-import { IModel, Model } from "@/model";
+import { IModel, Model } from "@/model.bk";
 import { Dict, Value } from "@/type/base";
 import { IMinion } from "../minion";
 import { Player } from "../player";

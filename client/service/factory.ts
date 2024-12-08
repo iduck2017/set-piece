@@ -1,6 +1,6 @@
-import { Model } from "@/model";
+import { Model } from "@/model.bk";
 import { Class } from "@/type/base";
-import { Chunk, ChunkOf } from "@/type/model";
+import { Chunk, ChunkOf } from "@/type/define";
 import { Logger } from "./logger";
 import { Mutable } from "utility-types";
 

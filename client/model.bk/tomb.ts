@@ -1,6 +1,6 @@
 import { Factory } from "@/service/factory";
-import { IModel, Model } from "@/model";
-import { ChunkOf } from "@/type/model";
+import { IModel, Model } from "@/model.bk";
+import { ChunkOf } from "@/type/define";
 import { Player } from "./player";
 import { ICard, Card } from "./card";
 

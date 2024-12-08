@@ -1,5 +1,5 @@
 import React from "react";
-import { Bunny } from "@/model/bunny";
+import { Bunny } from "@/model.bk/bunny";
 import { ModelComp } from ".";
 import { Link } from "./common";
 import { useModel } from "./use-model";

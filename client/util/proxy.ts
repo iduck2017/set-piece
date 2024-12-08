@@ -1,8 +1,8 @@
-import { KeyOf, Func, ValueOf, Dict, List } from "../type/base";
+import { KeyOf, Func, ValOf, Dict, List } from "../type/base";
 
 export namespace Delegator {
     export function Automic<T extends Dict>(
-        origin: Partial<T>,
+        origin: any,
         getter: (key: KeyOf<T>) => T[KeyOf<T>]
     ): T {
         const _origin: any = origin;
@@ -126,8 +126,8 @@ export namespace Delegator {
         origin: T,
         listener: (event: {
             key?: string | number,
-            prev?: ValueOf<T> | ValueOf<T>[],
-            next?: ValueOf<T> | ValueOf<T>[],
+            prev?: ValOf<T> | ValOf<T>[],
+            next?: ValOf<T> | ValOf<T>[],
         }) => void
     ): T {
         if (origin instanceof Array) {
@@ -175,7 +175,7 @@ export namespace Delegator {
                     return true;
                 }
             });
-            result.push = useLock((...next: ValueOf<T>[]) => {  
+            result.push = useLock((...next: ValOf<T>[]) => {  
                 const index = push.apply(origin, next);
                 listener({ next });
                 return index;
@@ -185,7 +185,7 @@ export namespace Delegator {
                 listener({ prev });
                 return prev;
             });
-            result.unshift = useLock((...next: ValueOf<T>[]) => {
+            result.unshift = useLock((...next: ValOf<T>[]) => {
                 const index = unshift.apply(origin, next);
                 listener({ next });
                 return index;
@@ -195,7 +195,7 @@ export namespace Delegator {
                 listener({ prev });
                 return prev;
             });
-            result.splice = useLock((start: number, count: number, ...next: ValueOf<T>[]) => {
+            result.splice = useLock((start: number, count: number, ...next: ValOf<T>[]) => {
                 const prev = splice.call(
                     origin, 
                     start,

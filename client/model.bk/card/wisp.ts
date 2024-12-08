@@ -1,6 +1,6 @@
 import { Factory } from "@/service/factory";
-import { Model } from "@/model";
-import { ChunkOf } from "@/type/model";
+import { Model } from "@/model.bk";
+import { ChunkOf } from "@/type/define";
 import { ICard } from ".";
 import { IMinion } from "../minion";
 import { BattlecryDrawCard } from "../feat/battlecry-draw-card";

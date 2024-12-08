@@ -1,6 +1,6 @@
 import React, { useEffect } from "react";
 import './index.css';
-import { App } from "@/model/app";
+import { App } from "@/model.bk/app";
 import { useModel } from "./use-model";
 import { ModelComp } from ".";
 import { Link } from "./common";

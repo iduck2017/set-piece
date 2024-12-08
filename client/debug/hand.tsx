@@ -2,7 +2,7 @@ import React from "react";
 import { useModel } from "./use-model";
 import { ModelComp } from ".";
 import './index.css';
-import { Hand } from "@/model/hand";
+import { Hand } from "@/model.bk/hand";
 import { CardComp } from "./card";
 import { Link } from "./common";
 

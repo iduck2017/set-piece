@@ -2,7 +2,7 @@ import React from "react";
 import { ModelComp } from ".";
 import { Link } from "./common";
 import { useModel } from "./use-model";
-import { Pong, Pongs } from "@/model/pong";
+import { Pong, Pongs } from "@/model.bk/pong";
 
 export function PongsComp(props: {
     pongs: Pongs

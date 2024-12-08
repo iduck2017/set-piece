@@ -1,5 +1,5 @@
 import React from "react";
-import { Model } from "@/model";
+import { Model } from "@/model.bk";
 import './index.css';
 import { KeyOf, Func } from "@/type/base";
 import { Validator } from "@/service/validator";

@@ -2,7 +2,7 @@ import React from "react";
 import { useModel } from "./use-model";
 import { ModelComp, StateForm } from ".";
 import './index.css';
-import { Card } from "@/model/card";
+import { Card } from "@/model.bk/card";
 import { Link } from "./common";
 
 export function CardComp(props: {

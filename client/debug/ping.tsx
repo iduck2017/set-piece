@@ -2,7 +2,7 @@ import React from "react";
 import { ModelComp } from ".";
 import { Link } from "./common";
 import { useModel } from "./use-model";
-import { Ping, Pings } from "@/model/ping";
+import { Ping, Pings } from "@/model.bk/ping";
 
 export function PingsComp(props: {
     pings: Pings

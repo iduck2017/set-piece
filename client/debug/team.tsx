@@ -2,7 +2,7 @@ import React from "react";
 import { useModel } from "./use-model";
 import { ModelComp } from ".";
 import './index.css';
-import { Team } from "@/model/team";
+import { Team } from "@/model.bk/team";
 import { CardComp } from "./card";
 import { Link } from "./common";
 

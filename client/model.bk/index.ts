@@ -2,10 +2,10 @@ import { Decor } from "@/service/decor";
 import { Factory } from "@/service/factory";
 import { Lifecycle } from "@/service/lifecycle";
 import { Logger } from "@/service/logger";
-import { KeyOf, Func, HarshOf, ValidOf, Value, Dict, List } from "@/type/base";
-import { Emitter, Event, React, Handler, 
+import { KeyOf, Func, Strict, Valid, Value, Dict, List } from "@/type/base";
+import { Emitter, EventReq, EventRes, Event, 
     OnModelAlter, OnModelCheck, OnModelSpawn } from "@/type/event";
-import { Chunk, ChunkOf } from "@/type/model";
+import { Chunk, ChunkOf } from "@/type/define";
 import { Delegator } from "@/util/proxy";
 import { OptionalKeys, RequiredKeys } from "utility-types";
 
@@ -33,48 +33,48 @@ export abstract class IModel<
 
     public readonly parent?: Model;
 
-    protected _state: HarshOf<S>;
-    public get state(): Readonly<HarshOf<S>> {
+    protected _state: Strict<S>;
+    public get state(): Readonly<Strict<S>> {
         return { ...this._prevState };
     }
-    private _prevState: HarshOf<S>;
+    private _prevState: Strict<S>;
 
     private _baseEvent: Readonly<{
         [K in KeyOf<ModelEvent<typeof this>>]: 
             Emitter<ModelEvent<typeof this>[K]>
     }>;
-    protected _event: Readonly<HarshOf<{
+    protected _event: Readonly<Strict<{
         [K in KeyOf<E>]: Emitter<Required<E>[K]>
     }>>;
-    public readonly event: Readonly<HarshOf<{
-        [K in KeyOf<ModelEvent<typeof this> & ValidOf<E>>]: 
-            Event<(ModelEvent<typeof this> & ValidOf<E>)[K]>;
+    public readonly event: Readonly<Strict<{
+        [K in KeyOf<ModelEvent<typeof this> & Valid<E>>]: 
+            EventReq<(ModelEvent<typeof this> & Valid<E>)[K]>;
     }>>;
 
     protected _child: 
         C extends List ? ChunkOf<C[number]>[] : 
-        C extends Dict ? HarshOf<{
-            [K in RequiredKeys<ValidOf<C>>]: ChunkOf<C[K]>;
+        C extends Dict ? Strict<{
+            [K in RequiredKeys<Valid<C>>]: ChunkOf<C[K]>;
         } & {
-            [K in OptionalKeys<ValidOf<C>>]?: ChunkOf<Required<C>[K]>; 
+            [K in OptionalKeys<Valid<C>>]?: ChunkOf<Required<C>[K]>; 
         }> : never;
-    public readonly child: Readonly<HarshOf<C>>;
+    public readonly child: Readonly<Strict<C>>;
 
     constructor(
         chunk: {
             code: T;
             uuid?: string;
-            state: HarshOf<S>;
+            state: Strict<S>;
             child: 
                 C extends List ? ChunkOf<C[number]>[] : 
-                C extends Dict ? HarshOf<{
-                    [K in RequiredKeys<ValidOf<C>>]: ChunkOf<C[K]>;
+                C extends Dict ? Strict<{
+                    [K in RequiredKeys<Valid<C>>]: ChunkOf<C[K]>;
                 } & {
-                    [K in OptionalKeys<ValidOf<C>>]?: ChunkOf<Required<C>[K]>; 
+                    [K in OptionalKeys<Valid<C>>]?: ChunkOf<Required<C>[K]>; 
                 }> : never,
             event?: {
-                [K in KeyOf<ValidOf<ModelEvent<Model<T, S, C, E>> & E>>]?: 
-                    Event<(ModelEvent<Model<T, S, C, E>> & E)[K]>[];
+                [K in KeyOf<Valid<ModelEvent<Model<T, S, C, E>> & E>>]?: 
+                    EventReq<(ModelEvent<Model<T, S, C, E>> & E)[K]>[];
             }
         },
         parent: Model | undefined
@@ -100,7 +100,7 @@ export abstract class IModel<
             return this._emit.bind(this, key);
         });
         this.event = Delegator.Automic({}, (key) => {
-            const _result: Event = { 
+            const _result: EventReq = { 
                 target: this,
                 uuid: Factory.uuid,
                 key,
@@ -187,10 +187,10 @@ export abstract class IModel<
             }
         }
     }
-    public useState(setter: Handler<OnModelAlter<typeof this>>){
+    public useState(setter: Event<OnModelAlter<typeof this>>){
         const event: {
             [K in KeyOf<ModelEvent<typeof this>>]: 
-                Event<ModelEvent<typeof this>[K]>
+                EventReq<ModelEvent<typeof this>[K]>
         } = this.event;
         this.bind(event.onModelAlter, setter);
         return () => {
@@ -213,10 +213,10 @@ export abstract class IModel<
             next: this.child
         });
     }
-    public useChild(setter: Handler<OnModelSpawn<typeof this>>) {
+    public useChild(setter: Event<OnModelSpawn<typeof this>>) {
         const event: {
             [K in KeyOf<ModelEvent<typeof this>>]: 
-                Event<ModelEvent<typeof this>[K]>
+                EventReq<ModelEvent<typeof this>[K]>
         } = this.event;
         this.bind(event.onModelSpawn, setter);
         return () => {
@@ -238,16 +238,16 @@ export abstract class IModel<
         return instance;
     }
 
-    private readonly _react: Map<Func, React> = new Map();
-    private readonly _consumers: Map<Event, Array<React>> = new Map();
-    private readonly _producers: Map<React, Array<Event>> = new Map();
+    private readonly _react: Map<Func, EventRes> = new Map();
+    private readonly _consumers: Map<EventReq, Array<EventRes>> = new Map();
+    private readonly _producers: Map<EventRes, Array<EventReq>> = new Map();
 
     protected bind<E>(
-        event: Event<E>,
-        handler: Handler<E>
+        event: EventReq<E>,
+        handler: Event<E>
     ) {
         const { target } = event;
-        const react: React = this._react.get(handler) || {
+        const react: EventRes = this._react.get(handler) || {
             target: this,
             uuid: Factory.uuid,
             handler
@@ -266,8 +266,8 @@ export abstract class IModel<
     }
 
     protected unbind<E>(
-        event: Event<E> | undefined,
-        handler: Handler<E>
+        event: EventReq<E> | undefined,
+        handler: Event<E>
     ) {
         const react = this._react.get(handler);
         if (react) {

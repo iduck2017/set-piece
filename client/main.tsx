@@ -1,7 +1,7 @@
 import React from "react";
 import { createRoot } from "react-dom/client";
 import { AppComp } from "./debug/app";
-import { App } from "./model/app";
+import { App } from "./model.bk/app";
 
 async function main() {
     const element = document.getElementById("root");

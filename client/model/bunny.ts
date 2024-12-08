@@ -1,50 +1,32 @@
-import { IModel } from ".";
-import { Factory } from "@/service/factory";
-import { ChunkOf } from "@/type/model";
-import { App } from "./app";
-import { Gender } from "@/type/common";
-import { Random } from "@/util/random";
-import { Validator } from "@/service/validator";
-import { Logger } from "@/service/logger";
+import { AnimalModel } from "./animal";
+import { NodeProps } from "@/type/props";
 
-
-@Factory.useProduct('bunny')
-export class Bunny extends IModel<
-    'bunny',
-    {
-        age: number;
-        gender: Gender
+type BunnyDef = {
+    code: 'bunny',
+    state: {
+        name: string,
     },
-    Bunny[],
-    {}
-> {
-    declare parent: Bunny | App;
+    child: {},
+    event: {}
+}
 
+export class BunnyModel extends AnimalModel<BunnyDef> {
     constructor(
-        chunk: ChunkOf<Bunny>,
-        parent: Bunny | App
+        chunk: NodeProps<BunnyDef>
     ) {
         super({
-            child: [],
             ...chunk,
+            child: {
+                ...chunk.child
+            },
             state: {
-                age: 0,
-                gender: Random.type(Gender),
+                name: 'bunny',
                 ...chunk.state
             }
-        }, parent);
-    }
-
-    @Logger.useDebug(true)
-    @Validator.useCondition(bunny => bunny.state.gender === Gender.Female)
-    reproduce() {
-        this._child.push({
-            code: "bunny"
         });
     }
 
-    growup() {
-        this._state.age += 1;
+    debug() {
+        this.state.name;
     }
 }
-
