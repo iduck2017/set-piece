@@ -1,15 +1,15 @@
-import { NodeModel } from "@/model/node";
 import { Base } from "@/type/base";
+import { Model } from "@/type/model";
 
 export class Lifecycle {
-    private static readonly _loaders: Map<Function, string[]> = new Map();
-    private static readonly _unloaders: Map<Function, string[]> = new Map();
+    private static readonly _loaderList: Map<Function, string[]> = new Map();
+    private static readonly _unloaderList: Map<Function, string[]> = new Map();
 
-    static getLoaders(target: NodeModel) {
+    static getLoaderList(target: Model) {
         const result = [];
         let constructor: any = target.constructor;
         while (constructor.__proto__ !== null) {
-            const keys = Lifecycle._loaders.get(constructor) || [];
+            const keys = Lifecycle._loaderList.get(constructor) || [];
             for (const key of keys) {
                 result.push(Reflect.get(target, key));
             }
@@ -19,22 +19,22 @@ export class Lifecycle {
     }
     static useLoader() {
         return function(
-            target: NodeModel,
+            target: Model,
             key: string,
             descriptor: TypedPropertyDescriptor<Base.Func>
         ): TypedPropertyDescriptor<Base.Func> {
-            const keys = Lifecycle._loaders.get(target.constructor) || [];
+            const keys = Lifecycle._loaderList.get(target.constructor) || [];
             keys.push(key);
-            Lifecycle._loaders.set(target.constructor, keys);
+            Lifecycle._loaderList.set(target.constructor, keys);
             return descriptor;
         };
     }
 
-    static getUnloaders(target: NodeModel) {
+    static getUnloaderList(target: Model) {
         const result = [];
         let constructor: any = target.constructor;
         while (constructor.__proto__ !== null) {
-            const keys = Lifecycle._unloaders.get(constructor) || [];
+            const keys = Lifecycle._unloaderList.get(constructor) || [];
             for (const key of keys) {
                 result.push(Reflect.get(target, key));
             }
@@ -44,13 +44,13 @@ export class Lifecycle {
     }
     static useUnloader() {
         return function(
-            target: NodeModel,
+            target: Model,
             key: string,
             descriptor: TypedPropertyDescriptor<Base.Func>
         ): TypedPropertyDescriptor<Base.Func> {
-            const keys = Lifecycle._unloaders.get(target.constructor) || [];
+            const keys = Lifecycle._unloaderList.get(target.constructor) || [];
             keys.push(key);
-            Lifecycle._unloaders.set(target.constructor, keys);
+            Lifecycle._unloaderList.set(target.constructor, keys);
             return descriptor;
         };
     }

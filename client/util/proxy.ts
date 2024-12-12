@@ -1,13 +1,13 @@
-import { Base, KeyOf, ValOf } from "../type/base";
+import { Base } from "../type/base";
 
 export namespace Delegator {
-    export function Automic<T extends Base.Dict>(
+    export function Automic(
         origin: any,
-        getter: (key: KeyOf<T>) => T[KeyOf<T>]
-    ): T {
+        getter: Base.Func
+    ) {
         const _origin: any = origin;
         return new Proxy(_origin, {
-            get: (origin, key: KeyOf<T>) => {
+            get: (origin, key) => {
                 if (!origin[key]) {
                     origin[key] = getter(key);
                 }
@@ -27,10 +27,10 @@ export namespace Delegator {
         });
     }
 
-    export function Formatted<A, B>(
+    export function Formatted(
         origin: Base.Dict,
-        getter: (value: A) => B,
-        setter: (value: B) => A
+        getter: Base.Func,
+        setter: Base.Func
     ): any {
         if (origin instanceof Array) {
             let lock = false;
@@ -114,7 +114,7 @@ export namespace Delegator {
                 get: (origin, key: string) => {
                     return getter(origin[key]);
                 },
-                set: (origin, key: string, value: B) => {
+                set: (origin, key: string, value: any) => {
                     origin[key] = setter(value);
                     return true;
                 }
@@ -122,14 +122,14 @@ export namespace Delegator {
         }
     }
 
-    export function Observed<T extends Base.Dict>(
-        origin: T,
+    export function Observed(
+        origin: any,
         listener: (data: {
-            key?: string | number,
-            prev?: ValOf<T> | ValOf<T>[],
-            next?: ValOf<T> | ValOf<T>[],
+            key?: string | symbol,
+            prev?: any | any[],
+            next?: any | any[],
         }) => void
-    ): T {
+    ) {
         if (origin instanceof Array) {
             let lock = false;
             const {
@@ -175,7 +175,7 @@ export namespace Delegator {
                     return true;
                 }
             });
-            result.push = useLock((...next: ValOf<T>[]) => {  
+            result.push = useLock((...next: Base.List) => {  
                 const index = push.apply(origin, next);
                 listener({ next });
                 return index;
@@ -185,7 +185,7 @@ export namespace Delegator {
                 listener({ prev });
                 return prev;
             });
-            result.unshift = useLock((...next: ValOf<T>[]) => {
+            result.unshift = useLock((...next: Base.List) => {
                 const index = unshift.apply(origin, next);
                 listener({ next });
                 return index;
@@ -195,7 +195,7 @@ export namespace Delegator {
                 listener({ prev });
                 return prev;
             });
-            result.splice = useLock((start: number, count: number, ...next: ValOf<T>[]) => {
+            result.splice = useLock((start: number, count: number, ...next: Base.List) => {
                 const prev = splice.call(
                     origin, 
                     start,
@@ -211,7 +211,7 @@ export namespace Delegator {
             return result;
         } else {
             return new Proxy(origin, {
-                set: (target, key: KeyOf<T>, value) => {
+                set: (target, key, value) => {
                     const prev = target[key];
                     const next = target[key] = value;
                     if (prev === next) return false;

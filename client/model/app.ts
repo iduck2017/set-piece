@@ -1,24 +1,25 @@
-import { Validator } from "@/service/validator";
 import { Base } from "@/type/base";
-import { DictModel } from "./dict";
-import { File } from "@/service/file";
 import { DemoModel } from "./demo";
 import { GameModel } from "./game";
+import { NodeModel } from "./node";
+import { Def } from "@/type/define";
+import { Validator } from "@/service/validator";
+import { File } from "@/service/file";
 
-type AppDef = {
+type AppDef = Def.Merge<{
     code: 'app',
-    state: {
-        version: string,
+    stateDict: {
+        readonly version: string,
         count: number
     },
-    child: {
-        demo?: DemoModel
-        game?: GameModel
+    childDict: {
+        demo?: DemoModel,
+        game?: GameModel,
     },
     parent: undefined,
-}
+}>
 
-export class AppModel extends DictModel<AppDef> {
+export class AppModel extends NodeModel<AppDef> {
     private static _singleton: Map<Function, boolean> = new Map();
     static useSingleton() {
         return function (Type: Base.Class) {
@@ -45,43 +46,44 @@ export class AppModel extends DictModel<AppDef> {
     constructor() {
         super({
             code: 'app',
-            state: {
+            stateDict: {
                 version: '0.1.0',
                 count: 0
             },
-            child: {},
-            event: {},
+            paramDict: {},
+            childDict: {},
+            childList: [],
             parent: undefined
         });
         window.app = this;
     }
     
     count() {
-        this.rawState.count++;
+        this.baseStateDict.count++;
     }
 
-    @Validator.useCondition(app => !app.child.game)
+    @Validator.useCondition(app => !app.childDict.game)
     async start() {
-        const chunk = await File.load<GameModel>('game');
-        this.rawChild.game = chunk;
+        const chunk = await File.loadChunk<GameModel>('game');
+        this._childChunkDict.game = chunk;
     }
     
-    @Validator.useCondition(app => !app.child.demo)
+    @Validator.useCondition(app => !app.childDict.demo)
     async test() {
-        const chunk = await File.load<DemoModel>('demo');
-        this.rawChild.demo = chunk;
+        const chunk = await File.loadChunk<DemoModel>('demo');
+        this._childChunkDict.demo = chunk;
     }
 
-    @Validator.useCondition(app => Boolean(app.child.game || app.child.demo))
+    @Validator.useCondition(app => Boolean(app.childDict.game || app.childDict.demo))
     async save() {
-        if (this.child.demo) await File.save<DemoModel>(this.child.demo);
-        if (this.child.game) await File.save<GameModel>(this.child.game);
+        if (this.childDict.demo) await File.saveChunk<DemoModel>(this.childDict.demo);
+        if (this.childDict.game) await File.saveChunk<GameModel>(this.childDict.game);
     }
 
-    @Validator.useCondition(app => Boolean(app.child.demo || app.child.game))
+    @Validator.useCondition(app => Boolean(app.childDict.demo || app.childDict.game))
     quit() {
-        if (this.rawChild.demo) delete this.rawChild.demo;
-        if (this.rawChild.game) delete this.rawChild.game;
+        if (this.childDict.demo) delete this._childChunkDict.demo;
+        if (this.childDict.game) delete this._childChunkDict.game;
         AppModel._singleton = new Map();
     }
 }

@@ -1,10 +1,11 @@
 import { Factory } from "@/service/factory";
-import { NodeProps } from "@/type/props";
 import { Random } from "@/util/random";
 import { AnimalModel } from "./animal";
-import { ListModel } from "./list";
-import { Model } from "./node";
 import { Validator } from "@/service/validator";
+import { NodeModel } from "./node";
+import { Def } from "@/type/define";
+import { Props } from "@/type/props";
+import { Model } from "@/type/model";
 
 export enum Gender {
     Male = 'male',
@@ -12,33 +13,35 @@ export enum Gender {
     Unknown = 'unknown'
 }
 
-type ReproductiveDef<T extends AnimalModel> = {
+type ReproductiveDef<T extends AnimalModel> = Def.Merge<{
     code: 'reproductive',
-    state: {
+    stateDict: {
         gender: Gender
-    }
-    child: T[],
+    },
+    childList: T[],
     parent: AnimalModel
-}
+}>
 
 @Factory.useProduct('reproductive')
 export class ReproductiveModel<
     T extends AnimalModel
-> extends ListModel<ReproductiveDef<T>> {
-    constructor(props: NodeProps<ReproductiveDef<T>>) {
+> extends NodeModel<ReproductiveDef<T>> {
+    constructor(props: Props<ReproductiveDef<T>>) {
         super({
-            child: [],
             ...props,
-            state: {
+            stateDict: {
                 gender: Random.type(Gender),
-                ...props.state
-            }
+                ...props.stateDict
+            },
+            childDict: {},
+            paramDict: {}
         });
     }
 
-    @Validator.useCondition(model => model.parent.state.isAlive)
-    @Validator.useCondition(model => model.state.gender === Gender.Female)
-    reproduce(chunk: Model.Chunk<T>): void {
-        this.rawChild.push(chunk);
+    @Validator.useCondition(model => model.parent.stateDict.isAlive)
+    @Validator.useCondition(model => model.stateDict.gender === Gender.Female)
+    reproduceChild(chunk: Model.Chunk<T>): void {
+        this._childChunkList.push(chunk);
     }
+    
 }

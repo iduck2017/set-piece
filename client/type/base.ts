@@ -8,13 +8,14 @@ export namespace Base {
     export type Value = string | number | boolean | undefined
 }
 
-export type KeyOf<M extends Base.Dict> = keyof M & string;
-export type ValOf<M extends Base.Dict> = M[KeyOf<M>];
+export namespace Dict {
+    export type Key<M extends Base.Dict> = keyof M & string;
+    export type Value<M extends Base.Dict> = M[Key<M>];
 
-export type Assign<A extends Base.Dict, B extends Base.Dict> = A & Omit<B, KeyOf<A>>;
-export type Strict<M extends Base.Dict> = KeyOf<M> extends never ? Base.Dict<never> : M;
-export type Valid<M extends Base.Dict> = {
-    [K in RequiredKeys<M> as M[K] extends never ? never : K]: M[K]
-} & {
-    [K in OptionalKeys<M> as M[K] extends never ? never : K]?: M[K]
+    export type Assign<A extends Base.Dict, B extends Base.Dict> = A & Omit<B, Dict.Key<A>>;
+    export type Strict<M extends Base.Dict> = Dict.Key<M> extends never ? Base.Dict<never> : M;
+    
+    export type Valid<M extends Base.Dict> = 
+        { [K in RequiredKeys<M> as M[K] extends never ? never : K]: M[K] } & 
+        { [K in OptionalKeys<M> as M[K] extends never ? never : K]?: M[K] }
 }

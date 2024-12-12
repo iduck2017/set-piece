@@ -1,40 +1,35 @@
-import { Model, NodeModel } from "@/model/node";
-import { Assign, Base, Strict } from "./base";
-import { NodeChunkDict, NodeChunk } from "./chunk";
-import { Def, ListDef, NodeDef } from "./define";
-import { EventReqList, NodeEvent } from "./event";
+// import { Model, NodeModel } from "@/model/node";
+// import { Assign, Base, Strict } from "./base";
+// import { NodeChunkDict, NodeChunk } from "./chunk";
+// import { Def, ListDef, NodeDef } from "./define";
+// import { EventReqList, NodeEvent } from "./event";
 
-export type BaseNodeProps<T extends Partial<NodeDef>> = {
-    uuid?: string;
-    code: Def.Code<T>;
-    state: Def.State<T>;
-    event?: Strict<Partial<EventReqList<NodeEvent<NodeModel, T>>>>
-    parent: Def.Parent<T>;
-}
-export type BaseListProps<T extends Partial<ListDef>> = BaseNodeProps<T> & {
-    child: Base.List<Model.Chunk<Def.Child<T>[number]>>
-}
+import { NodeEvent } from "@/model/node";
+import { Base, Dict } from "./base";
+import { Chunk } from "./chunk";
+import { Def } from "./define";
+import { Event } from "./event";
+import { Model } from "./model";
 
-export type BaseDictProps<
-    A extends Partial<NodeDef>,
-    B extends NodeDef
-> = {
-    code: Def.Code<A>;
-    state: Strict<Def.State<A> & Partial<Def.State<B>>>;
-    child: Strict<
-        NodeChunkDict<Def.Child<A>> & 
-        Partial<NodeChunkDict<Def.Child<B>>>
-    >,
-    event?: Strict<
-        Partial<EventReqList<NodeEvent<NodeModel, A>>> & 
-        Partial<EventReqList<NodeEvent<NodeModel, B>>>
-    >
-    parent: Def.Parent<A>;
+export type Props<T extends Def> = {
+    uuid?: string,
+    code: Def.Code<T>,
+    childDict?: Partial<Dict.Strict<Chunk.Dict<Def.ChildDict<T>>>>,
+    childList?: Base.List<Model.Chunk<Def.ChildList<T>[number]>>
+    stateDict?: Partial<Dict.Strict<Def.StateDict<T>>>,
+    parent: Def.Parent<T>,
+    eventRect?: Partial<Dict.Strict<Event.EmitterRect<NodeEvent<T> & Def.EventDict<T>>>>
 }
 
-export type NodeProps<T extends Partial<NodeDef>> = 
-    NodeChunk<T> &
-    { parent: Def.Parent<T> } &
-    (Def.Child<T> extends Base.List<infer U extends NodeModel> ?
-        { child?: Base.List<Model.Chunk<U>> } :
-        { child?: Partial<Strict<NodeChunkDict<Def.Child<T>>>> } )
+export namespace Props {
+    export type Strict<T extends Def> = {
+        uuid?: string,
+        code: Def.Code<T>,
+        childDict: Dict.Strict<Chunk.Dict<Def.ChildDict<T>>>,
+        childList?: Base.List<Model.Chunk<Def.ChildList<T>[number]>>,
+        stateDict: Dict.Strict<Def.StateDict<T>>,
+        paramDict: Dict.Strict<Def.ParamDict<T>>,
+        eventRect?: Partial<Dict.Strict<Event.EmitterRect<NodeEvent<T> & Def.EventDict<T>>>>
+        parent: Def.Parent<T>,
+    }
+}

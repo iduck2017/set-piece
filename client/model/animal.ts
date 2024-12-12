@@ -1,33 +1,30 @@
-import { NodeDef } from "@/type/define";
-import { DictModel } from "./dict";
+import { Def } from "@/type/define";
 import { MetabolicModel } from "./metabolic";
-import { BaseDictProps } from "@/type/props";
+import { NodeModel } from "./node";
+import { Props } from "@/type/props";
 
-export type AnimalDef = {
+export type AnimalDef = Def.Merge<{
     code: string;
-    state: {
+    stateDict: {
         isAlive: boolean;
     },
-    event: {},
-    child: {
-        metabolic: MetabolicModel
+    eventDict: {},
+    childDict: {
     }
-}
+}>
 
 export abstract class AnimalModel<
-    T extends Partial<NodeDef> = NodeDef
-> extends DictModel<T & AnimalDef> {
-    constructor(props: BaseDictProps<T, AnimalDef>) {
-        super({
+    T extends Def = Def
+> extends NodeModel<T & AnimalDef> {
+    static mergeProps(props: Props<AnimalDef>): Props.Strict<AnimalDef> {
+        return {
             ...props,
-            state: {
+            stateDict: {
                 isAlive: true,
-                ...props.state
+                ...props.stateDict
             },
-            child: {
-                metabolic: { code: 'metabolic' },
-                ...props.child
-            }
-        });
+            paramDict: {},
+            childDict: {}
+        };
     }
 }

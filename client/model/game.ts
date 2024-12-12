@@ -1,16 +1,17 @@
 import { Factory } from "@/service/factory";
 import { Lifecycle } from "@/service/lifecycle";
 import { AppModel } from "./app";
-import { DictModel } from "./dict";
-import { NodeProps } from "@/type/props";
+import { NodeModel } from "./node";
+import { Def } from "@/type/define";
+import { Props } from "@/type/props";
 
-type GameDef = {
+type GameDef = Def.Merge<{
     code: 'game',
-    parent: AppModel
-}
+    parent: AppModel,
+}>
 
 @Factory.useProduct('game')
-export class GameModel extends DictModel<GameDef> {
+export class GameModel extends NodeModel<GameDef> {
     private static _core?: GameModel;
     static get core(): GameModel {
         if (!GameModel._core) {
@@ -20,14 +21,14 @@ export class GameModel extends DictModel<GameDef> {
         return GameModel._core;
     }
 
-    constructor(props: NodeProps<GameDef>) {
+    constructor(props: Props<GameDef>) {
         super({
             ...props,
-            child: {},
-            state: {}
+            childDict: {},
+            stateDict: {},
+            paramDict: {}
         });
     }
-
    
     @Lifecycle.useLoader()
     private _register() {

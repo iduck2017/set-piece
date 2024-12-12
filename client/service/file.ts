@@ -1,7 +1,7 @@
-import { Model, NodeModel } from "@/model/node";
+import { Model } from "@/type/model";
 
 export class File {
-    static async load<T extends NodeModel>(
+    static async loadChunk<T extends Model>(
         code: Model.Code<T>
     ): Promise<Model.Chunk<T>> {
         const result = await localStorage.getItem(code);
@@ -11,9 +11,7 @@ export class File {
         return { code };
     }
 
-    static async save<T extends NodeModel>(
-        target: T
-    ): Promise<void> {
+    static async saveChunk<T extends Model>(target: T): Promise<void> {
         await localStorage.setItem(
             target.code, 
             JSON.stringify(target.chunk)

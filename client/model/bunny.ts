@@ -1,45 +1,47 @@
-import { AnimalModel } from "./animal";
-import { NodeProps } from "@/type/props";
+import { AnimalDef, AnimalModel } from "./animal";
 import { Factory } from "@/service/factory";
 import { ReproductiveModel } from "./reproductive";
 import { Validator } from "@/service/validator";
+import { Def } from "@/type/define";
+import { Props } from "@/type/props";
 
-type BunnyDef = {
+type BunnyDef = Def.Merge<{
     code: 'bunny',
-    state: {
+    stateDict: {
         age: number,
-        name: string,
+        readonly name: string,
     },
-    child: {
+    childDict: {
         reproductive: ReproductiveModel<BunnyModel>
     },
-    event: {}
-}
+    eventDict: {}
+}>
+
 
 @Factory.useProduct('bunny')
 export class BunnyModel extends AnimalModel<BunnyDef> {
-    constructor(props: NodeProps<BunnyDef>) {
+    constructor(props: Props<BunnyDef> & Props<AnimalDef>) {
+        const superProps = AnimalModel.mergeProps(props);
         super({
             ...props,
-            child: {
+            childDict: {
+                ...superProps.childDict,
                 reproductive: { code: 'reproductive' },
-                ...props.child
+                ...props.childDict
             },
-            state: {
+            stateDict: {
+                ...superProps.stateDict,
                 name: 'bunny',
                 age: 0,
-                ...props.state
-            }
+                ...props.stateDict
+            },
+            paramDict: {}
         });
         this.code;
     }
     
-    @Validator.useCondition(model => model.state.isAlive)
+    @Validator.useCondition(model => model.stateDict.isAlive)
     growup() {
-        this.rawState.age += 1;
-    }
-
-    debug(): void {
-        super.debug();
+        this.baseStateDict.age += 1;
     }
 }

@@ -1,18 +1,18 @@
-import { NodeModel } from "@/model/node";
 import { Base } from "@/type/base";
+import { Model } from "@/type/model";
 
 export class Validator {
-    private static _conditions: Map<
+    private static _conditionRect: Map<
         Function, 
         Record<string, Base.Func[]>
     > = new Map();
 
-    static preCheck<M extends NodeModel>(
+    static preCheck<M extends Model>(
         target: M,
         key: string,
-        ...args: any[]
+        ...args: Base.List
     ) {
-        const conditions = Validator._conditions.get(target.constructor)?.[key] || [];
+        const conditions = Validator._conditionRect.get(target.constructor)?.[key] || [];
         for (const condition of conditions) {
             if (!condition(target, ...args)) return false;
         }
@@ -25,10 +25,10 @@ export class Validator {
         key: string
     ) {
         const constructor = target.constructor;
-        const conditions = Validator._conditions.get(constructor) || {};
-        conditions[key] = conditions[key] || [];
-        conditions[key].push(condition);
-        Validator._conditions.set(constructor, conditions);
+        const conditionList = Validator._conditionRect.get(constructor) || {};
+        conditionList[key] = conditionList[key] || [];
+        conditionList[key].push(condition);
+        Validator._conditionRect.set(constructor, conditionList);
     }
 
     static useCondition<N extends Record<string, any>, T extends any[]>(
@@ -46,7 +46,7 @@ export class Validator {
                 if (result) {
                     return handler?.apply(this, args);
                 } else {
-                    console.error('InvalidState:', {
+                    console.error('[invalid-state]', {
                         target: this,
                         method: key
                     });

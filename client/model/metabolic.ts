@@ -1,32 +1,34 @@
 import { Factory } from "@/service/factory";
-import { DictModel } from "./dict";
-import { NodeProps } from "@/type/props";
 import { Validator } from "@/service/validator";
 import { AnimalModel } from "./animal";
+import { NodeModel } from "./node";
+import { Def } from "@/type/define";
+import { Props } from "@/type/props";
 
-type MetaBolicDef = {
+type MetaBolicDef = Def.Merge<{
     code: 'metabolic',
-    state: {
+    stateDict: {
         calories: number,
     }
     parent: AnimalModel
-}
+}>
 
 @Factory.useProduct('metabolic')
-export class MetabolicModel extends DictModel<MetaBolicDef> {
-    constructor(props: NodeProps<MetaBolicDef>) {
+export class MetabolicModel extends NodeModel<MetaBolicDef> {
+    constructor(props: Props<MetaBolicDef>) {
         super({
             ...props,
-            state: {
+            stateDict: {
                 calories: 100,
-                ...props.state
+                ...props.stateDict
             },
-            child: {}
+            childDict: {},
+            paramDict: {}
         });
     }
 
-    @Validator.useCondition(model => model.parent.state.isAlive)
+    @Validator.useCondition(model => model.parent.stateDict.isAlive)
     digest() {
-        this.rawState.calories -= 1;
+        this.baseStateDict.calories -= 1;
     }
 }

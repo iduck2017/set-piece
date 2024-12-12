@@ -1,59 +1,55 @@
 import { Factory } from "@/service/factory";
 import { AppModel } from "./app";
-import { DictModel } from "./dict";
-import { NodeProps } from "@/type/props";
 import { Lifecycle } from "@/service/lifecycle";
-import { BunnyModel } from "./bunny";
-import { Gender } from "./reproductive";
+import { Def } from "@/type/define";
+import { NodeModel } from "./node";
+import { Props } from "@/type/props";
 
-type DemoDef = {
+type DemoDef = Def.Merge<{
     code: 'demo',
-    state: {
-        count: number,
-    },
-    child: {
-        bunny: BunnyModel
+    parent: AppModel,
+    stateDict: {
+        count: number
     }
-    parent: AppModel
-}
+}>
 
 @Factory.useProduct('demo')
-export class DemoModel extends DictModel<DemoDef> {
+export class DemoModel extends NodeModel<DemoDef> {
     private static _core?: DemoModel;
     static get core(): DemoModel {
         if (!DemoModel._core) {
-            console.error('DemoUninited');
+            console.error('demo-uninited');
             throw new Error();
         }
         return DemoModel._core;
     }
 
-    constructor(props: NodeProps<DemoDef>) {
+    constructor(props: Props<DemoDef>) {
         super({
             ...props,
-            child: { 
-                bunny: { 
-                    code: 'bunny', 
-                    child: {
-                        reproductive: {
-                            code: 'reproductive',
-                            state: {
-                                gender: Gender.Female
-                            }
-                        }
-                    } 
-                },
-                ...props.child
+            childDict: { 
+                // bunny: { 
+                //     code: 'bunny', 
+                //     child: {
+                //         reproductive: {
+                //             code: 'reproductive',
+                //             state: {
+                //                 gender: Gender.Female
+                //             }
+                //         }
+                //     } 
+                // },
             },
-            state: {
+            paramDict: {},
+            stateDict: {
                 count: 0,
-                ...props.state
+                ...props.stateDict
             }
         });
     }
 
     count() {
-        this.rawState.count++;
+        this.baseStateDict.count++;
     }
 
     @Lifecycle.useLoader()

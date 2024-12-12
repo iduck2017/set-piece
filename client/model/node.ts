@@ -1,270 +1,107 @@
 import { Factory } from "@/service/factory";
 import { Lifecycle } from "@/service/lifecycle";
-import { KeyOf, Strict, Base } from "@/type/base";
-import { NodeChunk } from "@/type/chunk";
-import { Def, NodeDef } from "@/type/define";
-import { Event, EventDict, EventReq, EventReqDict, EventRes, NodeEvent } from "@/type/event";
-import { BaseNodeProps } from "@/type/props";
+import { Base, Dict } from "@/type/base";
+import { Chunk } from "@/type/chunk";
+import { Def } from "@/type/define";
+import { Event } from "@/type/event";
+import { Model } from "@/type/model";
+import { Props } from "@/type/props";
 import { Delegator } from "@/util/proxy";
 
-export namespace Model {
-    export type Code<M extends NodeModel> = M['code']
-    export type Child<M extends NodeModel> = M['child']
-    export type State<M extends NodeModel> = M['state']
-    export type Chunk<M extends NodeModel> = M['chunk']
-    export type Parent<M extends NodeModel> = M['parent']
+export type NodeEvent<T extends Def> = {
+    onStateAlter: NodeEvent.OnStateAlter<T>
+    onStateCheck: NodeEvent.OnStateCheck<T>
+    onChildSpawn: NodeEvent.OnChildSpawn<T>
+}
+export namespace NodeEvent {
+    export type OnStateAlter<T extends Def> = [
+        Model<T>, 
+        Readonly<Dict.Strict<Def.ParamDict<T> & Def.StateDict<T>>>
+    ]
+    export type OnChildSpawn<T extends Def> = [Model<T>]
+    export type OnStateCheck<T extends Def> = [Model<T>, Dict.Strict<Def.ParamDict<T>>]
 }
 
-export abstract class NodeModel<
-    T extends Partial<NodeDef> = any
-> {
+export abstract class NodeModel<T extends Def> {
     readonly code: Def.Code<T>;
     readonly parent: Def.Parent<T>;
 
-    constructor(props: BaseNodeProps<T>) {
-        this.parent = props.parent;
+    constructor(props: Props.Strict<T>) {
         this.code = props.code;
+        this.parent = props.parent;
         this.uuid = props.uuid || Factory.uuid;
-
-        this.rawState = Delegator.Observed(
-            props.state,
-            this._onAlter.bind(this, false)
-        );
-        this._state = { ...this.rawState };
         
-        this.eventReq = Delegator.Automic<any>({}, (key) => {
-            return new EventReq(this, key, props.event?.[key]);
+        this.baseStateDict = Delegator.Observed(
+            props.stateDict,
+            this._onStateAlter.bind(this, false)
+        );
+        this._baseParamDict = props.paramDict;
+        this._prevStateDict = { ...this.baseStateDict };
+        this._paramDict = { ...this._baseParamDict };
+
+        const childList = Delegator.Observed(
+            props.childList?.map(chunk => this._createChild(chunk)) || [],
+            this._onChildSpawn.bind(this)
+        );
+        this.childList = Delegator.Readonly(childList);
+        this._childChunkList = Delegator.Formatted(
+            childList,
+            (model) => model?.chunk,
+            (chunk) => this._createChild(chunk) 
+        );
+
+        const origin: any = {};
+        for (const key in props.childDict) {
+            origin[key] = this._createChild(props.childDict[key]);
+        }
+        const childDict = Delegator.Observed(
+            origin,
+            this._onChildSpawn.bind(this)
+        );
+        this.childDict = Delegator.Readonly(childDict);
+        this._childChunkDict = Delegator.Formatted(
+            childDict,
+            (model) => model?.chunk,
+            (chunk) => this._createChild(chunk) 
+        );
+
+
+        this.eventEmitterDict = Delegator.Automic({}, (key) => {
+            return new Event.Emitter(this, key, props.eventRect?.[key]);
         });
     }
-
     
-    readonly uuid: string;
-    private readonly _uuids: Record<string, NodeModel> = {};
-    get uuids() {
-        const result: string[] = [];
-        let target: NodeModel | undefined = this;
-        while (target) {
-            result.unshift(target.uuid);
-            target = target.parent;
-        }
-        return result;
-    }
-    
-    public query(uuids: string[]): NodeModel | undefined {
-        for (const uuid of uuids) {
-            if (this._uuids[uuid]) {
-                return this._uuids[uuid].query(
-                    uuids.slice(uuids.indexOf(uuid) + 1)
-                );
-            }
-        }
-        return undefined;
+    public debug() {
+        console.log(this.stateDict);
     }
 
-    abstract readonly child: Readonly<Def.Child<T>>;
-
-    protected _onSpawn(data: {
-        prev?: NodeModel | NodeModel[],
-        next?: NodeModel | NodeModel[]
+    readonly childList: Readonly<Def.ChildList<T>>;    
+    readonly childDict: Readonly<Dict.Strict<Def.ChildDict<T>>>;
+    protected readonly _childChunkDict: Chunk.Dict<Def.ChildDict<T>>;
+    protected readonly _childChunkList: Base.List<Model.Chunk<Def.ChildList<T>[number]>>;
+    private _onChildSpawn(data: {
+        prev?: Model | Model[],
+        next?: Model | Model[]
     }) {
         const { prev, next } = data;
         if (next instanceof Array) next.map(target => target._load());
         if (prev instanceof Array) prev.map(target => target._unload());
         if (next instanceof NodeModel) next._load();
         if (prev instanceof NodeModel) prev._unload();
-        this._event.onSpawn(this);
+        this._eventDict.onChildSpawn(this);
     }
-
-    public useChild(setter: Event<NodeEvent.OnSpawn<typeof this>>){
-        this.bind(this.eventReq.onSpawn, setter);
+    public useChild(setter: Event<NodeEvent.OnChildSpawn<T>>){
+        this.bindEvent(this.eventEmitterDict.onChildSpawn, setter);
         return () => {
-            this.unbind(this.eventReq.onSpawn, setter);
+            this.unbindEvent(this.eventEmitterDict.onChildSpawn, setter);
         };
     }
-
-    protected rawState: Strict<Def.State<T>>;
-    private _state: Strict<Def.State<T>>;
-    get state(): Readonly<Strict<Def.State<T>>> {
-        return { ...this._state };
-    }
-
-    protected _onAlter(recursive?: boolean) {
-        const prevState = { ...this._state };
-        const nextState = { ...this.rawState };
-        this._event.onCheck(this, nextState);
-        this._state = nextState;
-        this._event.onAlter(this, prevState);
-        if (recursive) {
-            if (this.child instanceof Array) {
-                this.child.map((child: NodeModel) => {
-                    child._onAlter(recursive);
-                });
-            } else {
-                for (const key in this.child) {
-                    const child: NodeModel | undefined = this.child[key];
-                    child?._onAlter(recursive);
-                }
-            }
-        }
-    }
-    
-    public useState(setter: Event<NodeEvent.OnAlter<typeof this>>){
-        this.bind(this.eventReq.onAlter, setter);
-        return () => {
-            this.unbind(this.eventReq.onAlter, setter);
-        };
-    }
-    
-    protected event: Readonly<Strict<
-        EventDict<NodeEvent<typeof this, T>>
-    >> = Delegator.Automic<any>({}, (key) => {
-        return this._emit.bind(this, key);
-    });
-    private readonly _event: Readonly<
-        EventDict<NodeEvent<typeof this, {}>>
-    > = this.event;
-
-    readonly eventReq: Readonly<Strict<
-        EventReqDict<NodeEvent<typeof this, T>>
-    >>;
-    private readonly _eventRes: Map<Base.Func, EventRes> = new Map();
-    private readonly _eventDep: 
-        Map<EventReq, Base.List<EventRes>> & 
-        Map<EventRes, Base.List<EventReq>> = new Map();
-
-    private _emit<K extends KeyOf<NodeEvent<typeof this, T>>>(
-        key: K, 
-        data: NodeEvent<typeof this, T>[K]
-    ) {
-        const eventReqs = [
-            this.eventReq[key],
-            ...this.eventReq[key].alias
-        ];
-        for (const eventReq of eventReqs) {
-            const { target } = eventReq;
-            const eventReses = target._eventDep.get(eventReq) || [];
-            for (const eventRes of eventReses) {
-                eventRes.handler.call(eventRes.target, data);
-            }
-        }
-    }
-
-    protected bind<E extends Base.List>(
-        eventReq: EventReq<E>,
-        handler: Event<E>
-    ) {
-        const { target } = eventReq;
-        const eventRes = 
-            this._eventRes.get(handler) || 
-            new EventRes(target, handler);
-        this._eventRes.set(handler, eventRes);
-
-        const eventReses = target._eventDep.get(eventReq) || [];
-        eventReses.push(eventRes);
-        target._eventDep.set(eventReq, eventReses);
-
-        const eventReqs = this._eventDep.get(eventRes) || [];
-        eventReqs.push(eventReq);
-        this._eventDep.set(eventRes, eventReqs);
-
-        if (eventReq.key.endsWith('Check')) {
-            target._onAlter(true);
-        }
-    }
-
-    protected unbind<E extends Base.List>(
-        eventReq: EventReq<E> | undefined,
-        handler: Event<E>
-    ) {
-        const eventRes = this._eventRes.get(handler);
-        if (eventRes) {
-            const eventReqs = this._eventDep.get(eventRes) || [];
-            for (const curEventReq of eventReqs) {
-                if (eventReq && curEventReq !== eventReq) continue;
-                const { target } = curEventReq;
-                const eventReses = target._eventDep.get(curEventReq) || [];
-                target._eventDep.set(
-                    curEventReq, 
-                    eventReses.filter(target => target !== eventRes)
-                );
-                if (curEventReq.key.endsWith('Check')) {
-                    target._onAlter(true);
-                }
-            }
-            this._eventDep.delete(eventRes);
-            this._eventRes.delete(handler);
-        }
-    }
-
-
-    private readonly _loaders: Base.Func[] = Lifecycle.getLoaders(this);
-    private readonly _unloaders: Base.Func[] = Lifecycle.getUnloaders(this);
-
-    private _load() {
-        for (const loader of this._loaders) {
-            loader.call(this);
-        }
-        if (this.child instanceof Array) {
-            this.child.map((child: NodeModel) => {
-                child._load();
-            });
-        } else {
-            for (const key in this.child) {
-                const child: NodeModel | undefined = this.child[key];
-                child?._load();
-            }
-        }
-    }
-
-    private _unload() {
-        for (const eventPair of this._eventDep) {
-            const eventReqOrRes = eventPair[0];
-            if (eventReqOrRes instanceof EventReq) {
-                const [ eventReq, eventReses ] = eventPair;
-                for (const eventRes of eventReses) {
-                    eventRes.target.unbind(
-                        eventReq,
-                        eventRes.handler
-                    );
-                }
-            }
-            if (eventReqOrRes instanceof EventRes) {
-                const [ eventRes ] = eventPair;
-                this.unbind(undefined, eventRes.handler);
-            }
-        }
-        if (this.child instanceof Array) {
-            this.child.map((child: NodeModel) => {
-                child._unload();
-            });
-        } else {
-            for (const key in this.child) {
-                const child: NodeModel | undefined = this.child[key];
-                child?._unload();
-            }
-        }
-        for (const unloader of this._unloaders) {
-            unloader.call(this);
-        }
-        if (this.parent) {
-            delete this.parent._uuids[this.uuid];
-        }
-    }
-    
-    get chunk(): NodeChunk<T> {
-        return {
-            code: this.code,
-            uuid: this.uuid,
-            state: this.state
-        };
-    }
-
-    protected _create<M extends NodeModel>(
+    protected _createChild<M extends Model>(
         chunk: Model.Chunk<M>
     ): M {
-        const Type = Factory.products[chunk.code];
+        const Type = Factory.productList[chunk.code];
         if (!Type) {
-            console.error('ModelNotFound:', { chunk });
+            console.error('[model-not-found]', { chunk });
             throw new Error();
         }
         const instance: M = new Type({
@@ -274,8 +111,189 @@ export abstract class NodeModel<
         return instance;
     }
 
-    public debug() {
-        console.log(this.state);
+    
+    protected eventDict: Readonly<Dict.Strict<
+        Event.Dict<NodeEvent<T> & Def.EventDict<T>>
+    >> = Delegator.Automic({}, (key) => {
+            return this._emitEvent.bind(this, key);
+        });
+    private readonly _eventDict: Readonly<Dict.Strict<
+        Event.Dict<NodeEvent<T>>
+    >> = this.eventDict;
+
+    readonly eventEmitterDict: Readonly<Dict.Strict<
+        Event.EmitterDict<NodeEvent<T> & Def.EventDict<T>>
+    >>;
+    private readonly _eventHandlerDict: Map<Base.Func, Event.Handler> = new Map();
+    private readonly _eventVectorList: 
+        Map<Event.Emitter, Base.List<Event.Handler>> & 
+        Map<Event.Handler, Base.List<Event.Emitter>> = new Map();
+
+    private _emitEvent<K extends Dict.Key<NodeEvent<T> & Def.EventDict<T>>>(
+        key: K, 
+        ...args: (NodeEvent<T> & Def.EventDict<T>)[K]
+    ) {
+        const eventEmitterList = [
+            this.eventEmitterDict[key],
+            ...this.eventEmitterDict[key].alias
+        ];
+        for (const eventEmitter of eventEmitterList) {
+            const { target } = eventEmitter;
+            const eventHandlerList = target._eventVectorList.get(eventEmitter) || [];
+            for (const eventHandler of eventHandlerList) {
+                eventHandler.handler.call(eventHandler.target, ...args);
+            }
+        }
+    }
+    protected bindEvent<E extends Base.List>(
+        eventEmitter: Event.Emitter<E>,
+        handler: Event<E>
+    ) {
+        const { target } = eventEmitter;
+        const eventHandler = 
+            this._eventHandlerDict.get(handler) || 
+            new Event.Handler(target, handler);
+        this._eventHandlerDict.set(handler, eventHandler);
+
+        const eventHandlerList = target._eventVectorList.get(eventEmitter) || [];
+        eventHandlerList.push(eventHandler);
+        target._eventVectorList.set(eventEmitter, eventHandlerList);
+
+        const eventEmitterList = this._eventVectorList.get(eventHandler) || [];
+        eventEmitterList.push(eventEmitter);
+        this._eventVectorList.set(eventHandler, eventEmitterList);
+
+        if (eventEmitter.key.endsWith('Check')) {
+            target._onStateAlter(true);
+        }
+    }
+    protected unbindEvent<E extends Base.List>(
+        eventEmitter: Event.Emitter<E> | undefined,
+        handler: Event<E>
+    ) {
+        const eventHandler = this._eventHandlerDict.get(handler);
+        if (eventHandler) {
+            const eventEmitterList = this._eventVectorList.get(eventHandler) || [];
+            for (const curEventEmitter of eventEmitterList) {
+                if (eventEmitter && curEventEmitter !== eventEmitter) continue;
+                const { target } = curEventEmitter;
+                const eventHandlerList = target._eventVectorList.get(curEventEmitter) || [];
+                target._eventVectorList.set(
+                    curEventEmitter, 
+                    eventHandlerList.filter(target => target !== eventHandler)
+                );
+                if (curEventEmitter.key.endsWith('Check')) {
+                    target._onStateAlter(true);
+                }
+            }
+            this._eventVectorList.delete(eventHandler);
+            this._eventHandlerDict.delete(handler);
+        }
+    }
+    
+
+    private readonly _baseParamDict: Dict.Strict<Def.ParamDict<T>>;
+    private _paramDict: Dict.Strict<Def.ParamDict<T>>;
+    private _prevStateDict: Readonly<Dict.Strict<Def.StateDict<T>>>;
+    protected baseStateDict: Dict.Strict<Def.StateDict<T>>;
+    get stateDict(): 
+        Readonly<Dict.Strict<Def.StateDict<T>>> &
+        Readonly<Dict.Strict<Def.ParamDict<T>>> {
+        return { 
+            ...this.baseStateDict,
+            ...this._paramDict 
+        };
+    }
+    private _onStateAlter(recursive?: boolean) {
+        const prevState = {
+            ...this._prevStateDict,
+            ...this._paramDict
+        };
+        const nextParam = { ...this._baseParamDict };
+        this._eventDict.onStateCheck(this, nextParam);
+        this._paramDict = nextParam;
+        this._prevStateDict = this.stateDict;
+        this._eventDict.onStateAlter(this, prevState);
+        if (recursive) {
+            const childList: Model[] = [
+                ...Object.values(this.childDict).filter(Boolean),
+                ...this.childList
+            ];
+            for (const child of childList) child._onStateAlter();
+        }
+    }
+    public useState(setter: Event<NodeEvent.OnStateAlter<T>>){
+        this.bindEvent(this.eventEmitterDict.onStateAlter, setter);
+        return () => {
+            this.unbindEvent(this.eventEmitterDict.onStateAlter, setter);
+        };
+    }
+
+
+    readonly uuid: string;
+    private readonly _uuidDict: Record<string, Model> = {};
+    get uuidList(): string[] {
+        return (this.parent?.uuidList || []).concat(this.uuid);
+    }
+    queryChild(uuidList: string[]): Model | undefined {
+        for (const uuid of uuidList) {
+            const target = this._uuidDict[uuid];
+            if (!target) continue;
+            const index = uuidList.indexOf(uuid) + 1;
+            return target.queryChild(uuidList.slice(index));
+        }
+        return undefined;
+    }
+
+    
+    private readonly _loaderList: Base.Func[] = Lifecycle.getLoaderList(this);
+    private readonly _unloaderList: Base.Func[] = Lifecycle.getUnloaderList(this);
+    private _load() {
+        for (const loader of this._loaderList) loader.call(this);
+        const childList: Model[] = [
+            ...Object.values(this.childDict).filter(Boolean),
+            ...this.childList
+        ];
+        for (const child of childList) child._load();
+    }
+    private _unload() {
+        for (const eventVector of this._eventVectorList) {
+            const eventEmitterOrHandler = eventVector[0];
+            if (eventEmitterOrHandler instanceof Event.Emitter) {
+                const [ eventEmitter, eventHandlerList ] = eventVector;
+                for (const eventHandler of eventHandlerList) {
+                    eventHandler.target.unbindEvent(
+                        eventEmitter,
+                        eventHandler.handler
+                    );
+                }
+            }
+            if (eventEmitterOrHandler instanceof Event.Handler) {
+                const [ eventHandler ] = eventVector;
+                this.unbindEvent(undefined, eventHandler.handler);
+            }
+        }
+        const childList: Model[] = [
+            ...Object.values(this.childDict).filter(Boolean),
+            ...this.childList
+        ];
+        for (const child of childList) child._unload();
+        for (const unloader of this._unloaderList) unloader.call(this);
+        if (this.parent) {
+            delete this.parent._uuidDict[this.uuid];
+        }
+    }
+
+    
+    get chunk(): Chunk<T> {
+        const chunk: Chunk.Strict<T> =  {
+            code: this.code,
+            uuid: this.uuid,
+            stateDict: { ...this.baseStateDict },
+            childDict: { ...this._childChunkDict },
+            childList: [ ...this._childChunkList ]
+        };
+        return chunk;
     }
 }
 
