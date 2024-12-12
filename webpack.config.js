@@ -8,9 +8,9 @@ const { CleanWebpackPlugin } = require('clean-webpack-plugin');
 /** 循环遍历model文件夹 */
 function getFileName(dirname) {
     const pathname = path.resolve(__dirname, dirname)
-    const filenames = fs.readdirSync(pathname);
+    const filenameList = fs.readdirSync(pathname);
     const result = [];
-    filenames.forEach(filename => {
+    filenameList.forEach(filename => {
         const filePath = `${dirname}/${filename}`;
         const stat = fs.statSync(filePath);
         if (stat.isFile()) {
