@@ -4,23 +4,23 @@ import { ModelComp } from ".";
 import { useModel } from "./use-model";
 import { Link } from "./common";
 import { BunnyComp } from "./bunny";
+import { PingPongComp } from "./ping-pong";
 
 export function DemoComp(props: {
     model: DemoModel
 }) {
-    const { model } = props;
-    const [ state, child ] = useModel(model);
+    const model = useModel(props.model);
 
     return <ModelComp
-        model={model}
+        model={props.model}
         form={
             <>
-                <Link model={model} action="count" />
             </>
         }
         menu={
             <>
-                {child.bunny && <BunnyComp model={child.bunny} />}
+                {model.childDict.bunny && <BunnyComp model={model.childDict.bunny} />}
+                {model.childDict.pingPong && <PingPongComp model={model.childDict.pingPong} />}
             </>
         }
     />;

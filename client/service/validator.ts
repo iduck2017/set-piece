@@ -2,7 +2,7 @@ import { Base } from "@/type/base";
 import { Model } from "@/type/model";
 
 export class Validator {
-    private static _conditionRect: Map<
+    private static _conditionMap: Map<
         Function, 
         Record<string, Base.Func[]>
     > = new Map();
@@ -12,7 +12,7 @@ export class Validator {
         key: string,
         ...args: Base.List
     ) {
-        const conditions = Validator._conditionRect.get(target.constructor)?.[key] || [];
+        const conditions = Validator._conditionMap.get(target.constructor)?.[key] || [];
         for (const condition of conditions) {
             if (!condition(target, ...args)) return false;
         }
@@ -25,10 +25,10 @@ export class Validator {
         key: string
     ) {
         const constructor = target.constructor;
-        const conditionList = Validator._conditionRect.get(constructor) || {};
+        const conditionList = Validator._conditionMap.get(constructor) || {};
         conditionList[key] = conditionList[key] || [];
         conditionList[key].push(condition);
-        Validator._conditionRect.set(constructor, conditionList);
+        Validator._conditionMap.set(constructor, conditionList);
     }
 
     static useCondition<N extends Record<string, any>, T extends any[]>(

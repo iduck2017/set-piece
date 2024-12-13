@@ -8,7 +8,7 @@ export type Chunk<T extends Def> = {
     uuid?: string
     childList?: Base.List<Model.Chunk<Def.ChildList<T>[number]>>
     childDict?: Partial<Dict.Strict<Chunk.Dict<Def.ChildDict<T>>>>,
-    stateDict?: Partial<Dict.Strict<Def.StateDict<T>>>,
+    stateDict?: Partial<Def.StateDict<T>>,
 }
 
 export namespace Chunk {
@@ -21,6 +21,6 @@ export namespace Chunk {
         uuid: string,
         childDict: Dict.Strict<Chunk.Dict<Def.ChildDict<T>>>,
         childList: Base.List<Model.Chunk<Def.ChildList<T>[number]>>,
-        stateDict: Readonly<Dict.Strict<Def.StateDict<T>>>,
+        stateDict: Readonly<Def.StateDict<T>>,
     }
 }

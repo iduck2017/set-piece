@@ -1,7 +1,8 @@
 import { Def } from "@/type/define";
-import { MetabolicModel } from "./metabolic";
 import { NodeModel } from "./node";
 import { Props } from "@/type/props";
+import { MetabolicModel } from "./metabolic";
+import { ReproductiveModel } from "./reproductive";
 
 export type AnimalDef = Def.Merge<{
     code: string;
@@ -10,6 +11,8 @@ export type AnimalDef = Def.Merge<{
     },
     eventDict: {},
     childDict: {
+        metabolic: MetabolicModel,
+        reproductive?: ReproductiveModel<AnimalModel>
     }
 }>
 
@@ -24,7 +27,9 @@ export abstract class AnimalModel<
                 ...props.stateDict
             },
             paramDict: {},
-            childDict: {}
+            childDict: {
+                metabolic: { code: 'metabolic' }
+            }
         };
     }
 }

@@ -7,7 +7,7 @@ import { Def } from "@/type/define";
 import { Props } from "@/type/props";
 import { Model } from "@/type/model";
 
-export enum Gender {
+export enum GenderType {
     Male = 'male',
     Female = 'female',
     Unknown = 'unknown'
@@ -16,7 +16,7 @@ export enum Gender {
 type ReproductiveDef<T extends AnimalModel> = Def.Merge<{
     code: 'reproductive',
     stateDict: {
-        gender: Gender
+        gender: GenderType
     },
     childList: T[],
     parent: AnimalModel
@@ -30,7 +30,7 @@ export class ReproductiveModel<
         super({
             ...props,
             stateDict: {
-                gender: Random.type(Gender),
+                gender: Random.type(GenderType),
                 ...props.stateDict
             },
             childDict: {},
@@ -39,9 +39,9 @@ export class ReproductiveModel<
     }
 
     @Validator.useCondition(model => model.parent.stateDict.isAlive)
-    @Validator.useCondition(model => model.stateDict.gender === Gender.Female)
+    @Validator.useCondition(model => model.stateDict.gender === GenderType.Female)
     reproduceChild(chunk: Model.Chunk<T>): void {
         this._childChunkList.push(chunk);
     }
-    
+
 }

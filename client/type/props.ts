@@ -18,7 +18,7 @@ export type Props<T extends Def> = {
     childList?: Base.List<Model.Chunk<Def.ChildList<T>[number]>>
     stateDict?: Partial<Dict.Strict<Def.StateDict<T>>>,
     parent: Def.Parent<T>,
-    eventRect?: Partial<Dict.Strict<Event.EmitterRect<NodeEvent<T> & Def.EventDict<T>>>>
+    eventGrid?: Partial<Dict.Strict<Event.EmitterGrid<NodeEvent<T> & Def.EventDict<T>>>>
 }
 
 export namespace Props {
@@ -29,7 +29,7 @@ export namespace Props {
         childList?: Base.List<Model.Chunk<Def.ChildList<T>[number]>>,
         stateDict: Dict.Strict<Def.StateDict<T>>,
         paramDict: Dict.Strict<Def.ParamDict<T>>,
-        eventRect?: Partial<Dict.Strict<Event.EmitterRect<NodeEvent<T> & Def.EventDict<T>>>>
+        eventGrid?: Partial<Dict.Strict<Event.EmitterGrid<NodeEvent<T> & Def.EventDict<T>>>>
         parent: Def.Parent<T>,
     }
 }

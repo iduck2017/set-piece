@@ -17,7 +17,6 @@ type BunnyDef = Def.Merge<{
     eventDict: {}
 }>
 
-
 @Factory.useProduct('bunny')
 export class BunnyModel extends AnimalModel<BunnyDef> {
     constructor(props: Props<BunnyDef> & Props<AnimalDef>) {

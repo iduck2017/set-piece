@@ -25,7 +25,7 @@ export namespace Event {
     export type EmitterDict<T extends Base.Dict<Base.List>> = { 
         [K in Dict.Key<T>]: Emitter<Required<T>[K]>; 
     }
-    export type EmitterRect<T extends Base.Dict<Base.List>> = { 
+    export type EmitterGrid<T extends Base.Dict<Base.List>> = { 
         [K in Dict.Key<T>]: Base.List<Emitter<Required<T>[K]>> 
     }
     export type HandlerDict<T extends Base.Dict<Base.List>> = { 

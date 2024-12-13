@@ -1,28 +1,30 @@
-import { Model, NodeModel } from "@/model/node";
+import { Model } from "@/type/model";
 import { useEffect, useState } from "react";
 
-export function useModel<N extends NodeModel>(model: N): [
-    Model.State<N>, 
-    Model.Child<N>
-] {
-    const [ state, setState ] = useState<Model.State<N>>({ ...model.state });
-    const [ child, setChild ] = useState<Model.Child<N>>(() => {
-        if (model.child instanceof Array) return [ ...model.child ];
-        else return { ...model.child };
-    });
+export function useModel<N extends Model>(model: N): {
+    stateDict: Model.StateDict<N>, 
+    childDict: Model.ChildDict<N>,
+    childList: Model.ChildList<N>
+} {
+    const [ stateDict, setStateDict ] = useState<Model.StateDict<N>>({ ...model.stateDict });
+    const [ childDict, setChildDict ] = useState<Model.ChildDict<N>>({ ...model.childDict });
+    const [ childList, setChildList ] = useState<Model.ChildList<N>>([ ...model.childList ]);
 
     useEffect(() => {
-        return model.useState((target) => {
-            setState({ ...target.state });
+        const unuseState = model.useState((target) => setStateDict({ ...target.stateDict }));
+        const unuseChild = model.useChild((target) => {
+            setChildDict({ ...target.childDict });
+            setChildList([ ...target.childList ]);
         });
-    }, [ model ]);
-    
-    useEffect(() => {
-        return model.useChild((target) => {
-            if (target.child instanceof Array) setChild([ ...target.child ]);
-            else setChild({ ...target.child });
-        });
+        return () => {
+            unuseState();
+            unuseChild();
+        };
     }, [ model ]);
 
-    return [ state, child ];
+    return {
+        stateDict,
+        childDict,
+        childList
+    };
 }

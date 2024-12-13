@@ -21,15 +21,15 @@ export class Factory {
         return now.toString(36) + ticket.toString(36);
     }
 
-    private static _productList: Record<string, Base.Class> = {};
-    static get productList() {
-        return { ...Factory._productList };
+    private static _productDict: Record<string, Base.Class> = {};
+    static get productDict() {
+        return { ...Factory._productDict };
     }
 
     static useProduct<T extends string>(code: T) {
         return function (Type: Base.Class<{ code: T }>) {
             console.log('UseProduct:', code);
-            Factory._productList[code] = Type;
+            Factory._productDict[code] = Type;
         };
     }
 

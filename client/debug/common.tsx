@@ -1,42 +1,41 @@
 import React from "react";
 import './index.css';
-import { KeyOf } from "@/type/base";
 import { Validator } from "@/service/validator";
-import { NodeModel } from "@/model/node";
 import { useModel } from "./use-model";
+import { Model } from "@/type/model";
+import { Base, Dict } from "@/type/base";
 
 export function State(props: {
-    model: NodeModel
+    model: Model
 }) {
     const { model } = props;
-    const [ state ] = useModel(model);
-    console.log(state);
+    const { stateDict } = useModel(model);
 
     return Object
-        .entries(state)
+        .entries(stateDict)
         .map(([ key, value ], index) => (
-            <div key={index}>{key}: {String(value)}
-            </div>
+            <div key={index}>{key}: {String(value)}</div>
         ));
 }
 
 
 export function Link<
-    M extends NodeModel,
-    K extends KeyOf<M>,
+    M extends Model,
+    K extends Dict.Key<M>,
 >(props: {
     model: M,
     action: K,
+    args?: Base.List
 }) {
-    const { model, action } = props;
+    const { model, action, args = [] } = props;
     
-    const visible = Validator.preCheck(model, action);
+    const visible = Validator.preCheck(model, action, ...args);
     if (!visible) return null;
 
     const emit = () => {
         const method: any = model[action];
         if (typeof method === "function") {
-            method.apply(model);
+            method.apply(model, args);
         }
     };
 

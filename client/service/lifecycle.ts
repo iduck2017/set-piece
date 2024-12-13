@@ -2,14 +2,14 @@ import { Base } from "@/type/base";
 import { Model } from "@/type/model";
 
 export class Lifecycle {
-    private static readonly _loaderList: Map<Function, string[]> = new Map();
-    private static readonly _unloaderList: Map<Function, string[]> = new Map();
+    private static readonly _loaderMap: Map<Function, string[]> = new Map();
+    private static readonly _unloaderMap: Map<Function, string[]> = new Map();
 
     static getLoaderList(target: Model) {
         const result = [];
         let constructor: any = target.constructor;
         while (constructor.__proto__ !== null) {
-            const keys = Lifecycle._loaderList.get(constructor) || [];
+            const keys = Lifecycle._loaderMap.get(constructor) || [];
             for (const key of keys) {
                 result.push(Reflect.get(target, key));
             }
@@ -23,9 +23,9 @@ export class Lifecycle {
             key: string,
             descriptor: TypedPropertyDescriptor<Base.Func>
         ): TypedPropertyDescriptor<Base.Func> {
-            const keys = Lifecycle._loaderList.get(target.constructor) || [];
+            const keys = Lifecycle._loaderMap.get(target.constructor) || [];
             keys.push(key);
-            Lifecycle._loaderList.set(target.constructor, keys);
+            Lifecycle._loaderMap.set(target.constructor, keys);
             return descriptor;
         };
     }
@@ -34,7 +34,7 @@ export class Lifecycle {
         const result = [];
         let constructor: any = target.constructor;
         while (constructor.__proto__ !== null) {
-            const keys = Lifecycle._unloaderList.get(constructor) || [];
+            const keys = Lifecycle._unloaderMap.get(constructor) || [];
             for (const key of keys) {
                 result.push(Reflect.get(target, key));
             }
@@ -48,9 +48,9 @@ export class Lifecycle {
             key: string,
             descriptor: TypedPropertyDescriptor<Base.Func>
         ): TypedPropertyDescriptor<Base.Func> {
-            const keys = Lifecycle._unloaderList.get(target.constructor) || [];
+            const keys = Lifecycle._unloaderMap.get(target.constructor) || [];
             keys.push(key);
-            Lifecycle._unloaderList.set(target.constructor, keys);
+            Lifecycle._unloaderMap.set(target.constructor, keys);
             return descriptor;
         };
     }

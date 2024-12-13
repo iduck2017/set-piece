@@ -11,8 +11,7 @@ export function AppComp(props: {
     model: AppModel
 }) {
     const { model } = props;
-    const [ state, child ] = useModel(model);
-    console.log({ ...state }, { ...child }, child.demo);
+    const { childDict } = useModel(model);
 
     useEffect(() => {
         // model.start();
@@ -31,8 +30,8 @@ export function AppComp(props: {
         }
         menu={
             <>
-                {child.demo && <DemoComp model={child.demo} />}
-                {child.game && <GameComp model={child.game} />}
+                {childDict.demo && <DemoComp model={childDict.demo} />}
+                {childDict.game && <GameComp model={childDict.game} />}
             </>
         }
     />;

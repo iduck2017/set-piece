@@ -1,17 +1,14 @@
 import React, { ReactNode } from "react";
 import './index.css';
-import { useModel } from "./use-model";
-import { Link } from "./common";
-import { NodeModel } from "@/model/node";
-
+import { Link, State } from "./common";
+import { Model } from "@/type/model";
 
 export function ModelComp(props: {
-    model: NodeModel,
+    model: Model,
     menu?: ReactNode | ReactNode[],
     form?: ReactNode | ReactNode[]
 }) {
     const { model, form, menu } = props;
-    const [ state ] = useModel(model);
 
     return <div className="tree">
         <div className="form">
@@ -20,14 +17,8 @@ export function ModelComp(props: {
             <div>uuid: {model.uuid}</div>
             <Link model={model} action="debug" />
             {form}
-            {Object
-                .entries(state)
-                .map(([ key, value ], index) => (
-                    <div key={index}>{key}: {String(value)}</div>
-                ))}
+            <State model={model} />
         </div>
-        <div className="menu">
-            {menu}
-        </div>
+        <div className="menu">{menu}</div>
     </div>;
 }

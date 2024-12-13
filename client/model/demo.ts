@@ -4,10 +4,17 @@ import { Lifecycle } from "@/service/lifecycle";
 import { Def } from "@/type/define";
 import { NodeModel } from "./node";
 import { Props } from "@/type/props";
+import { GenderType } from "./reproductive";
+import { BunnyModel } from "./bunny";
+import { PingPongModel } from "./ping-pong";
 
 type DemoDef = Def.Merge<{
     code: 'demo',
     parent: AppModel,
+    childDict: {
+        bunny: BunnyModel
+        pingPong: PingPongModel
+    },
     stateDict: {
         count: number
     }
@@ -28,17 +35,21 @@ export class DemoModel extends NodeModel<DemoDef> {
         super({
             ...props,
             childDict: { 
-                // bunny: { 
-                //     code: 'bunny', 
-                //     child: {
-                //         reproductive: {
-                //             code: 'reproductive',
-                //             state: {
-                //                 gender: Gender.Female
-                //             }
-                //         }
-                //     } 
-                // },
+                bunny: { 
+                    code: 'bunny', 
+                    childDict: {
+                        reproductive: {
+                            code: 'reproductive',
+                            stateDict: {
+                                gender: GenderType.Female
+                            }
+                        }
+                    }
+                },
+                pingPong: {
+                    code: 'ping-pong'
+                },
+                ...props.childDict
             },
             paramDict: {},
             stateDict: {
