@@ -1,7 +1,7 @@
 import { Factory } from "@/service/factory";
 import { Lifecycle } from "@/service/lifecycle";
 import { Def } from "@/type/define";
-import { NodeModel } from "./node";
+import { NodeEvent, NodeModel } from "./node";
 import { Props } from "@/type/props";
 import { Base } from "@/type/base";
 import { Event } from "@/type/event";
@@ -18,8 +18,12 @@ type PingPongDef = Def.Merge<{
         readonly type: PingPongType
         value: number
     },
+    paramDict: {
+        count: number 
+    },
     childList: Base.List<PingPongModel>,
     eventDict: {
+        onChildStateCheck: NodeEvent.OnStateCheck<PingPongDef>
         onChildTrigger: [PingPongType]
         onTrigger: [PingPongType],
         onChildAppend: [PingPongModel | undefined],
@@ -30,11 +34,14 @@ type PingPongDef = Def.Merge<{
 @Factory.useProduct('ping-pong')
 export class PingPongModel extends NodeModel<PingPongDef> {
     constructor(props: Props<PingPongDef>) {
-        let parent = props.parent;
+        const parent = props.parent;
+        const onChildStateCheckEmitterList: 
+            Event.Emitter<NodeEvent.OnStateCheck<PingPongDef>>[] = [];
         const onTriggerEmitterList: Event.Emitter<[PingPongType]>[] = [];
-        while (parent instanceof PingPongModel) {
+        if (parent instanceof PingPongModel) {
             onTriggerEmitterList.push(parent.eventEmitterDict.onChildTrigger);
-            parent = parent.parent;
+            onChildStateCheckEmitterList.push(parent.eventEmitterDict.onChildStateCheck);
+            // parent = parent.parent;
         }
         super({
             childList: [],
@@ -45,9 +52,12 @@ export class PingPongModel extends NodeModel<PingPongDef> {
                 type: Random.type(PingPongType),
                 ...props.stateDict
             },
-            paramDict: {},
+            paramDict: {
+                count: 0
+            },
             eventGrid: {
-                onTrigger: onTriggerEmitterList
+                onTrigger: onTriggerEmitterList,
+                onStateCheck: onChildStateCheckEmitterList
             }
         });
     }
@@ -69,8 +79,15 @@ export class PingPongModel extends NodeModel<PingPongDef> {
                     }
                 }
             );
+            this.bindEvent(
+                this.parent.eventEmitterDict.onChildStateCheck,
+                (model, state) => {
+                    state.count += 1;
+                }
+            );
         }
     }
+
     
     appendChild() {
         const uuid = Factory.uuid;
