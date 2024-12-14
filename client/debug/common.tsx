@@ -13,9 +13,12 @@ export function State(props: {
 
     return Object
         .entries(stateDict)
-        .map(([ key, value ], index) => (
-            <div key={index}>{key}: {String(value)}</div>
-        ));
+        .map(([ key, value ], index) => {
+            if (typeof value === 'object') {
+                return null;
+            }
+            return <div key={index}>{key}: {String(value)}</div>;
+        });
 }
 
 

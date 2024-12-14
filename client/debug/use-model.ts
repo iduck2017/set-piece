@@ -4,7 +4,8 @@ import { useEffect, useState } from "react";
 export function useModel<N extends Model>(model: N): {
     stateDict: Model.StateDict<N>, 
     childDict: Model.ChildDict<N>,
-    childList: Model.ChildList<N>
+    childList: Model.ChildList<N>,
+    refresh: () => void
 } {
     const [ stateDict, setStateDict ] = useState<Model.StateDict<N>>({ ...model.stateDict });
     const [ childDict, setChildDict ] = useState<Model.ChildDict<N>>({ ...model.childDict });
@@ -22,9 +23,16 @@ export function useModel<N extends Model>(model: N): {
         };
     }, [ model ]);
 
+    const refresh = () => {
+        setStateDict({ ...model.stateDict });
+        setChildDict({ ...model.childDict });
+        setChildList([ ...model.childList ]);
+    };
+
     return {
         stateDict,
         childDict,
-        childList
+        childList,
+        refresh
     };
 }

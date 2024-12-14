@@ -5,14 +5,18 @@ import { DeckComp } from "./deck";
 import { GraveyardComp } from "./graveyard";
 import { BoardComp } from "./board";
 import { HandComp } from "./hand";
+import { useModel } from "./use-model";
 
 export function PlayerComp(props: {
     model: PlayerModel
 }) {
+    const model = useModel(props.model);
+
     return <ModelComp
         model={props.model}
         form={
             <>
+                <div className="link" onClick={model.refresh}>refresh</div>
             </>
         }
         menu={

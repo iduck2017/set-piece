@@ -14,8 +14,8 @@ export function PingPongComp(props: {
         form={
             <>
                 <Link model={props.model} action="trigger" />
-                <Link model={props.model} action="appendChild" />
-                <Link model={props.model} action="removeChild" />
+                <Link model={props.model} action="appendPingPong" />
+                <Link model={props.model} action="removePingPong" />
             </>
         }
         menu={

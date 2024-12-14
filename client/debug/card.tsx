@@ -1,31 +1,26 @@
-// import React from "react";
-// import { useModel } from "./use-model";
-// import { ModelComp, StateForm } from ".";
-// import './index.css';
-// import { Card } from "@/model.bk/card";
-// import { Link } from "./common";
+import React from "react";
+import { ModelComp } from ".";
+import { CardModel } from "@/model/card";
+import { useModel } from "./use-model";
+import { Link, State } from "./common";
 
-// export function CardComp(props: {
-//     card: Card
-// }) {
-//     const { card } = props;
-//     const [ state, child ] = useModel(card);
+export function CardComp(props: {
+    model: CardModel
+}) {
+    const model = useModel(props.model);
 
-//     return <ModelComp 
-//         model={card}
-//         form={
-//             <>
-//                 {child.minion && <StateForm model={child.minion} />}
-//                 {card.child.minion && <Link model={card.child.minion} action="play" />}
-//                 {card.child.minion && <Link model={card.child.minion} action="attack" />}
-//             </>
-//         }
-//         menu={
-//             <>
-                
-//             </>
-//         }
-//     />;
-// }
-
+    return <ModelComp 
+        model={props.model} 
+        form={
+            <>
+                <Link model={props.model} action='play' />
+                {model.childDict.combatable && 
+                    <Link model={model.childDict.combatable} action='attack' />}
+                {model.childDict.castable && <State model={model.childDict.castable} />}
+                {model.childDict.combatable && 
+                    <State model={model.childDict.combatable} />}
+            </>
+        }    
+    />;
+}
 

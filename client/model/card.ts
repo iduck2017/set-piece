@@ -3,6 +3,13 @@ import { NodeModel } from "./node";
 import { Props } from "@/type/props";
 import { CastableModel } from "./castable";
 import { FeatureListModel } from "./feature";
+import { CombatableModel } from "./combatable";
+import { Validator } from "@/service/validator";
+import { HandModel } from "./hand";
+import { GraveyardModel } from "./graveyard";
+import { DeckModel } from "./deck";
+import { BoardModel } from "./board";
+import { PlayerModel } from "./player";
 
 export type CardDef = Def.Merge<{
     code: string;
@@ -15,8 +22,10 @@ export type CardDef = Def.Merge<{
     eventDict: {},
     childDict: {
         castable?: CastableModel,
-        featureList: FeatureListModel
+        combatable?: CombatableModel
+        featureList: FeatureListModel,
     }
+    parent: HandModel | GraveyardModel | DeckModel | BoardModel
 }>
 
 export abstract class CardModel<
@@ -35,5 +44,32 @@ export abstract class CardModel<
                 featureList: { code: 'feature-list' }
             }
         };
+    }
+
+    get opponent(): PlayerModel {
+        const player = this.parent.parent;
+        const game = player.parent;
+        return game.childDict.redPlayer === player ?
+            game.childDict.bluePlayer :
+            game.childDict.redPlayer;
+    }
+
+    get player() {
+        return this.parent.parent;
+    }
+
+    get stateDict() {
+        return {
+            ...super.stateDict,
+            opponent: this.opponent,
+            player: this.player
+        };
+    }
+ 
+    @Validator.useCondition(model => model.parent instanceof HandModel)
+    play() {
+        if (this.parent instanceof HandModel) {
+            this.parent.removeCard(this);
+        }
     }
 }

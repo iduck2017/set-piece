@@ -3,6 +3,9 @@ import { Def } from "@/type/define";
 import { NodeModel } from "./node";
 import { Props } from "@/type/props";
 import { CardModel } from "./card";
+import { Validator } from "@/service/validator";
+import { PlayerModel } from "./player";
+import { Model } from "@/type/model";
 
 type DeckDef = Def.Merge<{
     code: 'deck',
@@ -10,6 +13,7 @@ type DeckDef = Def.Merge<{
     paramDict: {},
     childList: CardModel[],
     eventDict: {},
+    parent: PlayerModel
 }>
 
 @Factory.useProduct('deck')
@@ -22,5 +26,33 @@ export class DeckModel extends NodeModel<DeckDef> {
             stateDict: {},
             paramDict: {}
         });
+    }
+
+    @Validator.useCondition(model => !model.childList.length)
+    generateCard() {
+        const chunk = { code: 'wisp' };
+        this.appendChild(chunk);
+    }
+
+    appendCard(chunk: Model.Chunk<CardModel>) {
+        const target = this.appendChild(chunk);
+        return target;
+    }
+
+    @Validator.useCondition(model => Boolean(model.childList.length))
+    removeCard(target?: CardModel) {
+        if (!target) target = this.childList[0];
+        const chunk = this.removeChild(target);
+        return chunk;
+    }
+
+    @Validator.useCondition(model => Boolean(model.childList.length))
+    drawCard() {
+        const chunk = this.removeCard();
+        if (chunk) {
+            const hand = this.parent.childDict.hand;
+            const result = hand.appendCard(chunk);
+            return result;
+        }
     }
 }

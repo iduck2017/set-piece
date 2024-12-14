@@ -3,6 +3,7 @@ import { Def } from "@/type/define";
 import { NodeModel } from "./node";
 import { Props } from "@/type/props";
 import { CardModel } from "./card";
+import { PlayerModel } from "./player";
 
 type GraveyardDef = Def.Merge<{
     code: 'graveyard',
@@ -10,6 +11,7 @@ type GraveyardDef = Def.Merge<{
     paramDict: {},
     childList: CardModel[],
     eventDict: {},
+    parent: PlayerModel
 }>
 
 @Factory.useProduct('graveyard')

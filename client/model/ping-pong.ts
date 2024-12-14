@@ -6,6 +6,7 @@ import { Props } from "@/type/props";
 import { Base } from "@/type/base";
 import { Event } from "@/type/event";
 import { Random } from "@/util/random";
+import { Chunk } from "@/type/chunk";
 
 enum PingPongType {
     Ping = 'ping',
@@ -23,7 +24,7 @@ type PingPongDef = Def.Merge<{
     },
     childList: Base.List<PingPongModel>,
     eventDict: {
-        onChildStateCheck: NodeEvent.OnStateCheck<PingPongDef>
+        onChildParamCheck: NodeEvent.OnParamCheck<PingPongDef>
         onChildTrigger: [PingPongType]
         onTrigger: [PingPongType],
         onChildAppend: [PingPongModel | undefined],
@@ -35,14 +36,14 @@ type PingPongDef = Def.Merge<{
 export class PingPongModel extends NodeModel<PingPongDef> {
     constructor(props: Props<PingPongDef>) {
         const parent = props.parent;
-        const onChildStateCheckEmitterList: 
-            Event.Emitter<NodeEvent.OnStateCheck<PingPongDef>>[] = [];
+        const onChildParamCheckEmitterList: 
+            Event.Emitter<NodeEvent.OnParamCheck<PingPongDef>>[] = [];
         const onTriggerEmitterList: Event.Emitter<[PingPongType]>[] = [];
-        // while (parent instanceof PingPongModel) {
         if (parent instanceof PingPongModel) {
             onTriggerEmitterList.push(parent.eventEmitterDict.onChildTrigger);
-            onChildStateCheckEmitterList.push(parent.eventEmitterDict.onChildStateCheck);
-            // parent = parent.parent;
+            onChildParamCheckEmitterList.push(
+                parent.eventEmitterDict.onChildParamCheck
+            );
         }
         super({
             childList: [],
@@ -58,7 +59,7 @@ export class PingPongModel extends NodeModel<PingPongDef> {
             },
             eventGrid: {
                 onTrigger: onTriggerEmitterList,
-                onStateCheck: onChildStateCheckEmitterList
+                onParamCheck: onChildParamCheckEmitterList
             }
         });
     }
@@ -68,7 +69,7 @@ export class PingPongModel extends NodeModel<PingPongDef> {
     }
 
     @Lifecycle.useLoader()    
-    private _listenPingPong() {
+    private _handleTrigger() {
         if (this.parent instanceof PingPongModel) {
             this.bindEvent(
                 this.parent.eventEmitterDict.onChildTrigger,
@@ -80,8 +81,15 @@ export class PingPongModel extends NodeModel<PingPongDef> {
                     }
                 }
             );
+        }
+    }
+
+
+    @Lifecycle.useUnloader()
+    private _handlePingPongParamCheck() {
+        if (this.parent instanceof PingPongModel) {
             this.bindEvent(
-                this.parent.eventEmitterDict.onChildStateCheck,
+                this.parent.eventEmitterDict.onChildParamCheck,
                 (model, state) => {
                     state.count += 1;
                 }
@@ -89,25 +97,37 @@ export class PingPongModel extends NodeModel<PingPongDef> {
         }
     }
 
+    appendPingPong(chunk?: Chunk<PingPongDef>) {
+        if (!chunk) chunk = { code: 'ping-pong' };
+        const target = super.appendChild(chunk);
+        return target;
+    }
+
+    removePingPong(target?: PingPongModel) {
+        if (!target) target = this.childList[0];
+        const chunk = super.removeChild(target);
+        return chunk;
+    }
+
     
-    appendChild() {
-        const uuid = Factory.uuid;
-        this._childChunkList.push({ 
-            code: 'ping-pong',
-            uuid 
-        });
-        const child = this.childList.find((child) => child.uuid === uuid);
-        this.eventDict.onChildAppend(child);
-        return child;
-    }
+    // appendChild() {
+    //     const uuid = Factory.uuid;
+    //     this._childChunkList.push({ 
+    //         code: 'ping-pong',
+    //         uuid 
+    //     });
+    //     const child = this.childList.find((child) => child.uuid === uuid);
+    //     this.eventDict.onChildAppend(child);
+    //     return child;
+    // }
 
-    removeChild(target?: PingPongModel) {
-        if (!target) target = this.childList[this.childList.length - 1];
+    // removeChild(target?: PingPongModel) {
+    //     if (!target) target = this.childList[this.childList.length - 1];
 
-        const index = this.childList.indexOf(target);
-        if (index < 0) return;
+    //     const index = this.childList.indexOf(target);
+    //     if (index < 0) return;
 
-        this._childChunkList.splice(index, 1);
-        this.eventDict.onChildRemove(target);
-    }
+    //     this._childChunkList.splice(index, 1);
+    //     this.eventDict.onChildRemove(target);
+    // }
 }

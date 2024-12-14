@@ -10,7 +10,7 @@ import { Delegator } from "@/util/proxy";
 
 export type NodeEvent<T extends Def> = {
     onStateAlter: NodeEvent.OnStateAlter<T>
-    onStateCheck: NodeEvent.OnStateCheck<T>
+    onParamCheck: NodeEvent.OnParamCheck<T>
     onChildSpawn: NodeEvent.OnChildSpawn<T>
 }
 export namespace NodeEvent {
@@ -19,7 +19,7 @@ export namespace NodeEvent {
         Readonly<Def.ParamDict<T> & Def.StateDict<T>>
     ]
     export type OnChildSpawn<T extends Def> = [Model<T>]
-    export type OnStateCheck<T extends Def> = [Model<T>, Def.ParamDict<T>]
+    export type OnParamCheck<T extends Def> = [Model<T>, Def.ParamDict<T>]
 }
 
 export abstract class NodeModel<T extends Def> {
@@ -56,7 +56,10 @@ export abstract class NodeModel<T extends Def> {
 
         const origin: any = {};
         for (const key in props.childDict) {
-            origin[key] = this._createChild(props.childDict[key]);
+            if (props.childDict[key]) {
+                const child = this._createChild(props.childDict[key]);
+                if (child) origin[key] = child;
+            }
         }
         const childDict = Delegator.Observed(
             origin,
@@ -89,19 +92,38 @@ export abstract class NodeModel<T extends Def> {
         if (prev instanceof NodeModel) prev._unload();
         this._eventDict.onChildSpawn(this);
     }
-    public useChild(setter: Event<NodeEvent.OnChildSpawn<T>>){
+    useChild(setter: Event<NodeEvent.OnChildSpawn<T>>){
         this.bindEvent(this.eventEmitterDict.onChildSpawn, setter);
         return () => {
             this.unbindEvent(this.eventEmitterDict.onChildSpawn, setter);
         };
     }
+    protected appendChild(chunk: Model.Chunk<Def.ChildList<T>[number]>) {
+        const uuid = chunk.uuid || Factory.uuid;
+        this._childChunkList.push({
+            ...chunk,
+            uuid
+        });
+        const target = this.childList.find((child) => child.uuid === uuid);
+        return target;
+    }
+    protected removeChild(
+        target: Def.ChildList<T>[number]
+    ): Model.Chunk<Def.ChildList<T>[number]> | undefined {
+        const index = this.childList.indexOf(target);
+        this._childChunkList.splice(index, 1);
+        return target.chunk;
+    }
+
+
     protected _createChild<M extends Model>(
         chunk: Model.Chunk<M>
-    ): M {
+    ): M | undefined {
         const Type = Factory.productDict[chunk.code];
         if (!Type) {
             console.error('Model Not Found', { chunk });
-            throw new Error();
+            // throw new Error();
+            return undefined;
         }
         const instance: M = new Type({
             ...chunk,
@@ -204,7 +226,7 @@ export abstract class NodeModel<T extends Def> {
             ...this._paramDict
         };
         const nextParam = { ...this._baseParamDict };
-        this._eventDict.onStateCheck(this, nextParam);
+        this._eventDict.onParamCheck(this, nextParam);
         this._paramDict = nextParam;
         this._prevStateDict = this.stateDict;
         this._eventDict.onStateAlter(this, prevState);

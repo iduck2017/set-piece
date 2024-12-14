@@ -12,8 +12,14 @@ export class Validator {
         key: string,
         ...args: Base.List
     ) {
-        const conditions = Validator._conditionMap.get(target.constructor)?.[key] || [];
-        for (const condition of conditions) {
+        const conditionList: Base.Func[] = [];
+        let constructor: any = target.constructor;
+        while (constructor.__proto__ !== null) {
+            const curConditionList = Validator._conditionMap.get(constructor)?.[key] || [];
+            conditionList.push(...curConditionList);
+            constructor = constructor.__proto__;
+        }
+        for (const condition of conditionList) {
             if (!condition(target, ...args)) return false;
         }
         return true;

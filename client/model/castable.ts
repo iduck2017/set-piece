@@ -2,44 +2,46 @@ import { Def } from "@/type/define";
 import { NodeModel } from "./node";
 import { Props } from "@/type/props";
 import { Base } from "@/type/base";
+import { Factory } from "@/service/factory";
+import { CardModel } from "./card";
 
 export type CastableRule = {
     manaCost: number;
 }
 
 export type CastableDef = Def.Merge<{
-    code: string;
+    code: 'castable';
     stateDict: {
         readonly fixManaCost?: number;
     },
     paramDict: {
-        manaCost: number;
+        curManaCost: number;
     }
     eventDict: {},
     childDict: {}
+    parent: CardModel
 }>
 
-export abstract class CastableModel<
-    T extends Def = Def
-> extends NodeModel<T & CastableDef> {
-    private static readonly _ruleMap: Map<Function, CastableRule>; 
+@Factory.useProduct('castable')
+export class CastableModel extends NodeModel<CastableDef> {
+    private static readonly _ruleMap: Map<Function, CastableRule> = new Map(); 
     static useRule(rule: CastableRule) {
         return function(Type: Base.Class) {
             CastableModel._ruleMap.set(Type, rule);
         };
     }
 
-    static mergeProps(props: Props<CastableDef>): Props.Strict<CastableDef> {
-        const castableRule = CastableModel._ruleMap.get(this.constructor);
-        return {
+    constructor(props: Props<CastableDef>) {
+        const castableRule = CastableModel._ruleMap.get(props.parent.constructor);
+        super({
             ...props,
             stateDict: {
                 ...props.stateDict
             },
             paramDict: {
-                manaCost: props.stateDict?.fixManaCost || castableRule?.manaCost || 1
+                curManaCost: props.stateDict?.fixManaCost || castableRule?.manaCost || 1
             },
             childDict: {}
-        };
+        });
     }
 }

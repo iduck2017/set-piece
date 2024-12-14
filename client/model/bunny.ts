@@ -19,7 +19,7 @@ type BunnyDef = Def.Merge<{
 
 @Factory.useProduct('bunny')
 export class BunnyModel extends AnimalModel<BunnyDef> {
-    constructor(props: Props<BunnyDef> & Props<AnimalDef>) {
+    constructor(props: Props<BunnyDef & AnimalDef>) {
         const superProps = AnimalModel.mergeProps(props);
         super({
             ...props,

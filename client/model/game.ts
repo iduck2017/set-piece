@@ -31,7 +31,8 @@ export class GameModel extends NodeModel<GameDef> {
             ...props,
             childDict: {
                 redPlayer: { code: 'player' },
-                bluePlayer: { code: 'player' }
+                bluePlayer: { code: 'player' },
+                ...props.childDict
             },
             stateDict: {},
             paramDict: {}
