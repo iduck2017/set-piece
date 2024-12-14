@@ -25,7 +25,7 @@ export class DemoModel extends NodeModel<DemoDef> {
     private static _core?: DemoModel;
     static get core(): DemoModel {
         if (!DemoModel._core) {
-            console.error('demo-uninited');
+            console.error('Demo Uninited');
             throw new Error();
         }
         return DemoModel._core;

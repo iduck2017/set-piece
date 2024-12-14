@@ -1,0 +1,5 @@
+NodeModel文件是所有实体的基类， PingPongModel和BunnyModel基于NodeModel实现的一个类，请参考它们实现一个新的类
+
+请注意：你不需要实现任何业务逻辑，也就是说，这个类不具有stateDict,paramDict或是child
+
+这个类的类名为

@@ -1,6 +1,7 @@
 import React from "react";
 import { ModelComp } from ".";
 import { GameModel } from "@/model/game";
+import { PlayerComp } from "./player";
 
 export function GameComp(props: {
     model: GameModel
@@ -15,9 +16,8 @@ export function GameComp(props: {
         }
         menu={
             <>
-                {/* {child.pings && <PingsComp pings={child.pings} />}
-                {child.pongs && <PongsComp pongs={child.pongs} />}
-                {child.bunny && <BunnyComp bunny={child.bunny} />} */}
+                {model.childDict.redPlayer && <PlayerComp model={model.childDict.redPlayer} />}
+                {model.childDict.bluePlayer && <PlayerComp model={model.childDict.bluePlayer} />}
             </>
         }
     />;

@@ -4,10 +4,15 @@ import { AppModel } from "./app";
 import { NodeModel } from "./node";
 import { Def } from "@/type/define";
 import { Props } from "@/type/props";
+import { PlayerModel } from "./player";
 
 type GameDef = Def.Merge<{
     code: 'game',
     parent: AppModel,
+    childDict: {
+        redPlayer: PlayerModel,
+        bluePlayer: PlayerModel
+    }
 }>
 
 @Factory.useProduct('game')
@@ -15,7 +20,7 @@ export class GameModel extends NodeModel<GameDef> {
     private static _core?: GameModel;
     static get core(): GameModel {
         if (!GameModel._core) {
-            console.error('[game-uninited]');
+            console.error('Game Uninited');
             throw new Error();
         }
         return GameModel._core;
@@ -24,7 +29,10 @@ export class GameModel extends NodeModel<GameDef> {
     constructor(props: Props<GameDef>) {
         super({
             ...props,
-            childDict: {},
+            childDict: {
+                redPlayer: { code: 'player' },
+                bluePlayer: { code: 'player' }
+            },
             stateDict: {},
             paramDict: {}
         });

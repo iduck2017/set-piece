@@ -21,6 +21,7 @@ export type Props<T extends Def> = {
     eventGrid?: Partial<Dict.Strict<Event.EmitterGrid<NodeEvent<T> & Def.EventDict<T>>>>
 }
 
+
 export namespace Props {
     export type Strict<T extends Def> = {
         uuid?: string,

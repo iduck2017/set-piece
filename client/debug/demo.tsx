@@ -2,7 +2,6 @@ import React from "react";
 import { DemoModel } from "@/model/demo";
 import { ModelComp } from ".";
 import { useModel } from "./use-model";
-import { Link } from "./common";
 import { BunnyComp } from "./bunny";
 import { PingPongComp } from "./ping-pong";
 

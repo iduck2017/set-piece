@@ -28,7 +28,7 @@ export class Factory {
 
     static useProduct<T extends string>(code: T) {
         return function (Type: Base.Class<{ code: T }>) {
-            console.log('UseProduct:', code);
+            console.log('Use Product', code);
             Factory._productDict[code] = Type;
         };
     }

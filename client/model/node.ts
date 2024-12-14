@@ -100,7 +100,7 @@ export abstract class NodeModel<T extends Def> {
     ): M {
         const Type = Factory.productDict[chunk.code];
         if (!Type) {
-            console.error('[model-not-found]', { chunk });
+            console.error('Model Not Found', { chunk });
             throw new Error();
         }
         const instance: M = new Type({

@@ -1,9 +1,10 @@
 import React from "react";
-import { HandModel } from "@/model/hand";
 import { ModelComp } from ".";
+import { BoardModel } from "@/model/board";
 
-export function HandComp(props: {
-    model: HandModel
+export function BoardComp(props: {
+    model: BoardModel
 }) {
     return <ModelComp model={props.model} />;
 }
+

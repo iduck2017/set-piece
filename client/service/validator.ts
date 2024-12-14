@@ -46,7 +46,7 @@ export class Validator {
                 if (result) {
                     return handler?.apply(this, args);
                 } else {
-                    console.error('[invalid-state]', {
+                    console.error('Invalid State', {
                         target: this,
                         method: key
                     });

@@ -38,6 +38,7 @@ export class PingPongModel extends NodeModel<PingPongDef> {
         const onChildStateCheckEmitterList: 
             Event.Emitter<NodeEvent.OnStateCheck<PingPongDef>>[] = [];
         const onTriggerEmitterList: Event.Emitter<[PingPongType]>[] = [];
+        // while (parent instanceof PingPongModel) {
         if (parent instanceof PingPongModel) {
             onTriggerEmitterList.push(parent.eventEmitterDict.onChildTrigger);
             onChildStateCheckEmitterList.push(parent.eventEmitterDict.onChildStateCheck);
