@@ -1,11 +1,13 @@
 import { OptionalKeys, RequiredKeys } from "utility-types";
 
 export namespace Base {
+    export type Key = string | number;
     export type Dict<T = any> = Record<string, T>
     export type List<T = any> = Array<T>
     export type Func<R = any> = (...args: List) => R
     export type Class<T = any> = new (...args: List) => T
     export type Value = string | number | boolean | undefined
+    export type Values = Value | Value[]
 }
 
 export namespace Dict {

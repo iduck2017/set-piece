@@ -59,7 +59,7 @@ export class PingPongModel extends NodeModel<PingPongDef> {
             paramDict: {
                 count: 0
             },
-            eventGrid: {
+            eventInfo: {
                 onTrigger: onTriggerEmitterList,
                 onParamCheck: onChildParamCheckEmitterList
             }

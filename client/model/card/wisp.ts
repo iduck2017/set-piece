@@ -3,11 +3,13 @@ import { CardDef } from ".";
 import { Props } from "@/type/props";
 import { Factory } from "@/service/factory";
 import { MinionDef, MinionModel } from "./minion";
+import { DataBase } from "@/service/database";
 
 export type WispDef = Def.Create<{
     code: 'wisp',
 }>
 
+@DataBase.useCard({})
 @MinionModel.useRule({
     manaCost: 0,
     health: 1,

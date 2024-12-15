@@ -11,13 +11,14 @@ import { Model } from "@/type/model";
 import { Base, Dict } from "@/type/base";
 import { Lifecycle } from "@/service/lifecycle";
 import { Chunk } from "@/type/chunk";
+import { DataBase } from "@/service/database";
 
 export type MinionDef = Def.Create<{
     code: string,
     stateDict: {},
     paramDict: {},
     eventDict: {
-        onBattlecry: [CardModel]
+        onBattlecry: [MinionModel]
     },
     childDict: {
         castable: CastableModel,
@@ -33,6 +34,7 @@ export abstract class MinionModel<
         return function(Type: Base.Class) {
             CombatableModel.useRule(rule)(Type);
             CastableModel.useRule(rule)(Type);
+            DataBase.useCard(rule)(Type);
         };
     }
 
@@ -57,9 +59,12 @@ export abstract class MinionModel<
     play() {
         const board = this.parent.parent.childDict.board;
         super.play();
-        this._minionEventDict.onBattlecry(this)
         if (board instanceof BoardModel) {
-            board.appendCard(this.chunk);
+            const target = board.appendCard(this.chunk);
+            console.log(target);
+            if (target instanceof MinionModel) {
+                target.eventDict.onBattlecry(target);
+            }
         }
     }
 

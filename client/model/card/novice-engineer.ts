@@ -6,6 +6,7 @@ import { FeatureListModel, FeatureModel } from "../feature";
 import { FeatureDef } from "../feature";
 import { Factory } from "@/service/factory";
 import { Lifecycle } from "@/service/lifecycle";
+import { DataBase } from "@/service/database";
 
 export type NoviceEngineerDef = Def.Create<{
     code: 'novice-engineer',
@@ -14,6 +15,7 @@ export type NoviceEngineerDef = Def.Create<{
     }
 }>
 
+@DataBase.useCard({})
 @MinionModel.useRule({
     manaCost: 2,
     health: 1,
@@ -35,6 +37,11 @@ export class NoviceEngineerModel extends MinionModel<NoviceEngineerDef> {
                 ...superProps.childDict,
             }
         });
+    }
+
+    debug() {
+        super.debug();
+        this.childDict.battlecry.debug();
     }
 }
 
@@ -60,12 +67,14 @@ export class BattlecryNoviceEngineerModel extends FeatureModel<BattlecryNoviceEn
     @Lifecycle.useLoader()
     private _handleBattlecry() {
         if (this.card instanceof MinionModel) {
+            const card: MinionModel<Def.Pure> = this.card;
             this.bindEvent(
-                this.card.eventEmitterDict.onBattlecry,
+                card.eventEmitterDict.onBattlecry,
                 () => {
                     this.card.player.childDict.deck.drawCard()
                 }
             )
         }
     }
+
 }

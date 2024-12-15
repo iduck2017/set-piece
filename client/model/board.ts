@@ -55,7 +55,7 @@ export class BoardModel extends NodeModel<BoardDef> {
     //     });
     // }
 
-    appendCard(chunk: Model.Chunk<CardModel>) {
+    appendCard<T extends CardModel>(chunk: Model.Chunk<T>) {
         const target = this.appendChild(chunk);
         return target;
     }

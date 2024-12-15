@@ -26,10 +26,16 @@ export class Factory {
         return { ...Factory._productDict };
     }
 
+    private static _productMap: Map<Base.Class, string> = new Map();
+    static get productMap() {
+        return new Map(Factory._productMap);
+    }
+
     static useProduct<T extends string>(code: T) {
         return function (Type: Base.Class<{ code: T }>) {
             console.log('Use Product', code);
             Factory._productDict[code] = Type;
+            Factory._productMap.set(Type, code);
         };
     }
 

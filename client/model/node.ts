@@ -23,46 +23,6 @@ export namespace NodeEvent {
 }
 
 export abstract class NodeModel<T extends Def> {
-    // protected static mergeProps<
-    //     A extends Def,
-    //     B extends Def
-    // >(
-    //     superProps: Props.Strict<B>,
-    //     props: Props.Strict<A>
-    // ): Props.Strict<A & B> {
-    //     const eventGrid: any = {};
-    //     for (const key of Object.keys({
-    //         ...superProps.eventGrid,
-    //         ...props.eventGrid
-    //     })) {
-    //         eventGrid[key] = [
-    //             ...(superProps.eventGrid?.[key] || []),
-    //             ...(props.eventGrid?.[key] || [])
-    //         ]
-    //     }
-    //     return {
-    //         ...superProps,
-    //         ...props,
-    //         stateDict: {
-    //             ...superProps.stateDict,
-    //             ...props.stateDict
-    //         },
-    //         paramDict: {
-    //             ...superProps.paramDict,
-    //             ...props.paramDict
-    //         },
-    //         childDict: {
-    //             ...superProps.childDict,
-    //             ...props.childDict
-    //         },
-    //         childList: [
-    //             ...superProps.childList || [],
-    //             ...props.childList || []
-    //         ],
-    //         eventGrid
-    //     };
-    // }
-
     readonly code: Def.Code<T>;
     readonly parent: Def.Parent<T>;
 
@@ -80,7 +40,7 @@ export abstract class NodeModel<T extends Def> {
         this._paramDict = { ...this._baseParamDict };
 
         this.eventEmitterDict = Delegator.Automic({}, (key) => {
-            return new Event.Emitter(this, key, props.eventGrid?.[key]);
+            return new Event.Emitter(this, key, props.eventInfo?.[key]);
         });
 
         const childList = Delegator.Observed(
@@ -115,6 +75,7 @@ export abstract class NodeModel<T extends Def> {
     
     public debug() {
         console.log(this.stateDict);
+        console.log(this._eventVectorMap);
     }
 
     readonly childList: Readonly<Def.ChildList<T>>;    
@@ -138,14 +99,20 @@ export abstract class NodeModel<T extends Def> {
             this.unbindEvent(this.eventEmitterDict.onChildSpawn, setter);
         };
     }
-    protected appendChild(chunk: Model.Chunk<Def.ChildList<T>[number]>) {
+    protected appendChild(
+        chunk: Model.Chunk<Def.ChildList<T>[number]>
+    ): Def.ChildList<T>[number] | undefined {
         const uuid = chunk.uuid || Factory.uuid;
         this.childChunkList.push({
             ...chunk,
             uuid
         });
-        const target = this.childList.find((child) => child.uuid === uuid);
-        return target;
+        for (const child of this.childList) {
+            if (child.uuid === uuid) {
+                return child;
+            }
+        }
+        return undefined;
     }
     protected removeChild(
         target: Def.ChildList<T>[number]

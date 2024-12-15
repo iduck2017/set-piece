@@ -62,4 +62,6 @@ export class Validator {
             return descriptor;
         };
     }
+
+    private constructor() {}
 }

@@ -2,6 +2,7 @@ import React from "react";
 import { ModelComp } from ".";
 import { GameModel } from "@/model/game";
 import { PlayerComp } from "./player";
+import { Link } from "./common";
 
 export function GameComp(props: {
     model: GameModel
@@ -12,6 +13,7 @@ export function GameComp(props: {
         model={model}
         form={
             <>
+                <Link model={model} action="checkDatabase" />
             </>
         }
         menu={

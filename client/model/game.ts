@@ -5,6 +5,7 @@ import { NodeModel } from "./node";
 import { Def } from "@/type/define";
 import { Props } from "@/type/props";
 import { PlayerModel } from "./player";
+import { DataBase } from "@/service/database";
 
 type GameDef = Def.Create<{
     code: 'game',
@@ -47,5 +48,9 @@ export class GameModel extends NodeModel<GameDef> {
     @Lifecycle.useUnloader()
     private _unregister() {
         delete GameModel._core;
+    }
+
+    checkDatabase() {
+        console.log(DataBase.cardProductInfo);
     }
 }

@@ -2,10 +2,11 @@ import { Factory } from "@/service/factory";
 import { Def } from "@/type/define";
 import { NodeModel } from "./node";
 import { Props } from "@/type/props";
-import { CardModel } from "./card";
+import { CardDef, CardModel } from "./card";
 import { Validator } from "@/service/validator";
 import { PlayerModel } from "./player";
 import { Model } from "@/type/model";
+import { DataBase } from "@/service/database";
 
 type DeckDef = Def.Create<{
     code: 'deck',
@@ -28,9 +29,10 @@ export class DeckModel extends NodeModel<DeckDef> {
         });
     }
 
-    @Validator.useCondition(model => !model.childList.length)
     generateCard() {
-        const chunk = { code: 'wisp' };
+        const chunk = DataBase.randomSelect<CardDef>(
+            DataBase.cardProductInfo.selectAll
+        );
         this.appendChild(chunk);
     }
 

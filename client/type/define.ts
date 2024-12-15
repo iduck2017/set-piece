@@ -3,8 +3,8 @@ import { Model } from "./model";
 
 export type Def = {
     code: string;
-    stateDict: Base.Dict
-    paramDict: Base.Dict
+    stateDict: Base.Dict<Base.Values>
+    paramDict: Base.Dict<Base.Values>
     childList: Model[]
     childDict: Base.Dict<Model>
     eventDict: Base.Dict<Base.List>    
