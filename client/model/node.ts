@@ -75,7 +75,7 @@ export abstract class NodeModel<T extends Def> {
     
     public debug() {
         console.log(this.stateDict);
-        console.log(this._eventVectorMap);
+        console.log(this._eventDependencyMap);
     }
 
     readonly childList: Readonly<Def.ChildList<T>>;    
@@ -128,7 +128,7 @@ export abstract class NodeModel<T extends Def> {
     ): M | undefined {
         const Type = Factory.productDict[chunk.code];
         if (!Type) {
-            console.error('Model Not Found', { chunk });
+            console.error('[model-not-found]', { chunk });
             // throw new Error();
             return undefined;
         }
@@ -147,7 +147,7 @@ export abstract class NodeModel<T extends Def> {
 
     readonly eventEmitterDict: Readonly<Event.EmitterDict<NodeEvent<T> & Def.EventDict<T>>>;
     private readonly _eventHandlerMap: Map<Base.Func, Event.Handler> = new Map();
-    private readonly _eventVectorMap: 
+    private readonly _eventDependencyMap: 
         Map<Event.Emitter, Base.List<Event.Handler>> & 
         Map<Event.Handler, Base.List<Event.Emitter>> = new Map();
 
@@ -161,7 +161,7 @@ export abstract class NodeModel<T extends Def> {
         ];
         for (const eventEmitter of eventEmitterList) {
             const { target } = eventEmitter;
-            const eventHandlerList = target._eventVectorMap.get(eventEmitter) || [];
+            const eventHandlerList = target._eventDependencyMap.get(eventEmitter) || [];
             for (const eventHandler of eventHandlerList) {
                 eventHandler.handler.call(eventHandler.target, ...args);
             }
@@ -177,13 +177,13 @@ export abstract class NodeModel<T extends Def> {
             new Event.Handler(target, handler);
         this._eventHandlerMap.set(handler, eventHandler);
 
-        const eventHandlerList = target._eventVectorMap.get(eventEmitter) || [];
+        const eventHandlerList = target._eventDependencyMap.get(eventEmitter) || [];
         eventHandlerList.push(eventHandler);
-        target._eventVectorMap.set(eventEmitter, eventHandlerList);
+        target._eventDependencyMap.set(eventEmitter, eventHandlerList);
 
-        const eventEmitterList = this._eventVectorMap.get(eventHandler) || [];
+        const eventEmitterList = this._eventDependencyMap.get(eventHandler) || [];
         eventEmitterList.push(eventEmitter);
-        this._eventVectorMap.set(eventHandler, eventEmitterList);
+        this._eventDependencyMap.set(eventHandler, eventEmitterList);
 
         if (eventEmitter.key.endsWith('Check')) {
             target._onStateAlter(true);
@@ -195,12 +195,12 @@ export abstract class NodeModel<T extends Def> {
     ) {
         const eventHandler = this._eventHandlerMap.get(handler);
         if (eventHandler) {
-            const eventEmitterList = this._eventVectorMap.get(eventHandler) || [];
+            const eventEmitterList = this._eventDependencyMap.get(eventHandler) || [];
             for (const curEventEmitter of eventEmitterList) {
                 if (eventEmitter && curEventEmitter !== eventEmitter) continue;
                 const { target } = curEventEmitter;
-                const eventHandlerList = target._eventVectorMap.get(curEventEmitter) || [];
-                target._eventVectorMap.set(
+                const eventHandlerList = target._eventDependencyMap.get(curEventEmitter) || [];
+                target._eventDependencyMap.set(
                     curEventEmitter, 
                     eventHandlerList.filter(target => target !== eventHandler)
                 );
@@ -208,7 +208,7 @@ export abstract class NodeModel<T extends Def> {
                     target._onStateAlter(true);
                 }
             }
-            this._eventVectorMap.delete(eventHandler);
+            this._eventDependencyMap.delete(eventHandler);
             this._eventHandlerMap.delete(handler);
         }
     }
@@ -218,6 +218,9 @@ export abstract class NodeModel<T extends Def> {
     private _paramDict: Def.ParamDict<T>;
     private _prevStateDict: Readonly<Def.StateDict<T>>;
     protected baseStateDict: Def.StateDict<T>;
+    get paramDict(): Readonly<Def.ParamDict<T>> {
+        return { ...this._paramDict };
+    }
     get stateDict(): 
         Readonly<Def.StateDict<T>> &
         Readonly<Def.ParamDict<T>> {
@@ -279,10 +282,10 @@ export abstract class NodeModel<T extends Def> {
         for (const child of childList) child._load();
     }
     private _unload() {
-        for (const eventVector of this._eventVectorMap) {
-            const eventEmitterOrHandler = eventVector[0];
+        for (const eventDependency of this._eventDependencyMap) {
+            const eventEmitterOrHandler = eventDependency[0];
             if (eventEmitterOrHandler instanceof Event.Emitter) {
-                const [ eventEmitter, eventHandlerList ] = eventVector;
+                const [ eventEmitter, eventHandlerList ] = eventDependency;
                 for (const eventHandler of eventHandlerList) {
                     eventHandler.target.unbindEvent(
                         eventEmitter,
@@ -291,7 +294,7 @@ export abstract class NodeModel<T extends Def> {
                 }
             }
             if (eventEmitterOrHandler instanceof Event.Handler) {
-                const [ eventHandler ] = eventVector;
+                const [ eventHandler ] = eventDependency;
                 this.unbindEvent(undefined, eventHandler.handler);
             }
         }

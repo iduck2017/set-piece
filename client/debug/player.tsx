@@ -1,6 +1,6 @@
 import React from "react";
 import { ModelComp } from ".";
-import { PlayerModel } from "@/model/player";
+import { PlayerModel } from "@/model/hearth/player";
 import { DeckComp } from "./deck";
 import { GraveyardComp } from "./graveyard";
 import { BoardComp } from "./board";

@@ -1,6 +1,6 @@
 import React from "react";
 import { ModelComp } from ".";
-import { BoardModel } from "@/model/board";
+import { BoardModel } from "@/model/hearth/board";
 import { useModel } from "./use-model";
 import { CardComp } from "./card";
 import { Link } from "./common";

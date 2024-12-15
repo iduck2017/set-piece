@@ -3,7 +3,7 @@ import { Def } from "@/type/define";
 import { NodeModel } from "../node";
 import { Props } from "@/type/props";
 import { Dict } from "@/type/base";
-import { CardModel } from "../card";
+import { CardModel } from "./card";
 
 export type FeatureListDef = Def.Create<{
     code: 'feature-list',

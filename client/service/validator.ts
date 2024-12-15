@@ -38,7 +38,8 @@ export class Validator {
     }
 
     static useCondition<N extends Record<string, any>, T extends any[]>(
-        condition: (target: N, ...args: T) => boolean 
+        condition: (target: N, ...args: T) => boolean,
+        isStrict?: boolean
     ) {
         return function (
             target: N,
@@ -51,8 +52,8 @@ export class Validator {
                 const result = condition(this, ...args);
                 if (result) {
                     return handler?.apply(this, args);
-                } else {
-                    console.error('Invalid State', {
+                } else if (isStrict) {
+                    console.error('[invalid-state]', {
                         target: this,
                         method: key
                     });

@@ -1,12 +1,11 @@
 import { Factory } from "@/service/factory";
 import { Def } from "@/type/define";
-import { NodeModel } from "./node";
+import { NodeModel } from "../node";
 import { Props } from "@/type/props";
-import { CardDef, CardModel } from "./card";
+import { CardModel } from "./card";
 import { Validator } from "@/service/validator";
 import { PlayerModel } from "./player";
 import { Model } from "@/type/model";
-import { DataBase } from "@/service/database";
 
 type DeckDef = Def.Create<{
     code: 'deck',
@@ -30,9 +29,13 @@ export class DeckModel extends NodeModel<DeckDef> {
     }
 
     generateCard() {
-        const chunk = DataBase.randomSelect<CardDef>(
-            DataBase.cardProductInfo.selectAll
-        );
+        // const chunk = DataBase.randomSelect<CardDef>(
+        //     DataBase.cardProductInfo.selectAll
+        // );
+        // const chunk = { code: 'abusive-sergeant' };
+        // const chunk = { code: 'elven-archer' };
+        // const chunk = { code: 'blood-imp' };
+        const chunk = { code: 'big-game-hunter' };
         this.appendChild(chunk);
     }
 

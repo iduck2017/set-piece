@@ -1,6 +1,6 @@
 import React from "react";
 import { ModelComp } from ".";
-import { GraveyardModel } from "@/model/graveyard";
+import { GraveyardModel } from "@/model/hearth/graveyard";
 import { CardComp } from "./card";
 import { useModel } from "./use-model";
 

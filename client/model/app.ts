@@ -1,6 +1,6 @@
 import { Base } from "@/type/base";
 import { DemoModel } from "./demo";
-import { GameModel } from "./game";
+import { GameModel } from "./hearth/game";
 import { NodeModel } from "./node";
 import { Def } from "@/type/define";
 import { Validator } from "@/service/validator";

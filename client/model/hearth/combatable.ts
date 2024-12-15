@@ -5,10 +5,14 @@ import { Def } from "@/type/define";
 import { Base } from "@/type/base";
 import { Lifecycle } from "@/service/lifecycle";
 import { Validator } from "@/service/validator";
+import { Model } from "@/type/model";
+import { RaceType } from "@/service/database";
 
 export type CombatableRule = {
     health: number;
     attack: number;
+    isDivineShield?: boolean;
+    // races?: RaceType[];
 }
 
 export type CombatableDef = Def.Create<{
@@ -18,14 +22,17 @@ export type CombatableDef = Def.Create<{
         readonly fixAttack?: number;
         curHealth: number;
         isAlive: boolean;
+        isDivineShield: boolean;
     };
     paramDict: {
         maxHealth: number;
         attack: number;
+        // readonly races: RaceType[];
     }
     eventDict: {
         onDie: [CombatableModel] 
-    }
+        onHurt: [CombatableModel, number]
+    },
 }>
 
 @Factory.useProduct('combatable')
@@ -44,9 +51,11 @@ export class CombatableModel extends NodeModel<CombatableDef> {
             stateDict: {
                 curHealth: props.stateDict?.fixHealth || combatableRule?.health || 1,
                 isAlive: true,
+                isDivineShield: combatableRule?.isDivineShield || false,
                 ...props.stateDict
             },
             paramDict: {
+                // races: combatableRule?.races || [],
                 maxHealth: combatableRule?.health || props.stateDict?.fixAttack || 1,
                 attack: combatableRule?.attack || props.stateDict?.fixAttack || 1
             },
@@ -97,13 +106,20 @@ export class CombatableModel extends NodeModel<CombatableDef> {
     private _dealDamage(target: CombatableModel) {
         const damage = this.stateDict.attack;
         const enemyDamage = target.stateDict.attack;
-        target._receiveDamage(damage);
-        this._receiveDamage(enemyDamage);
+        target.receiveDamage(damage, this.parent);
+        this.receiveDamage(enemyDamage, target.parent);
     }
 
-    private _receiveDamage(damage: number) {
-        if (this.stateDict.isAlive) {
-            this.baseStateDict.curHealth -= damage;
+    receiveDamage(damage: number, source: Model) {
+        if (this.stateDict.isDivineShield) {
+            this.baseStateDict.isDivineShield = false;
+            return;
         }
+        this.baseStateDict.curHealth -= damage;
+        this.eventDict.onHurt(this, damage);
+    }
+
+    destroy() {
+        this._die();
     }
 }

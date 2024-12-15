@@ -1,6 +1,6 @@
 import { Factory } from "@/service/factory";
 import { Def } from "@/type/define";
-import { NodeModel } from "./node";
+import { NodeModel } from "../node";
 import { Props } from "@/type/props";
 import { CardModel } from "./card";
 import { Model } from "@/type/model";
@@ -36,5 +36,11 @@ export class HandModel extends NodeModel<HandDef> {
         if (!target) target = this.childList[0];
         const chunk = this.removeChild(target);
         return chunk;
+    }
+
+    clearCardList() {
+        for (const child of [ ...this.childList ]) {
+            this.removeChild(child);
+        }
     }
 }

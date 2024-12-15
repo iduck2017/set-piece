@@ -1,6 +1,6 @@
 import { Factory } from "@/service/factory";
 import { Def } from "@/type/define";
-import { NodeModel } from "./node";
+import { NodeModel } from "../node";
 import { Props } from "@/type/props";
 import { CardModel } from "./card";
 import { PlayerModel } from "./player";
@@ -31,4 +31,5 @@ export class GraveyardModel extends NodeModel<GraveyardDef> {
         const target = this.appendChild(chunk);
         return target;
     }
+
 }

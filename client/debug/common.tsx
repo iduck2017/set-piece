@@ -28,9 +28,10 @@ export function Link<
 >(props: {
     model: M,
     action: K,
-    args?: Base.List
+    args?: M[K] extends Base.Func ? Parameters<M[K]> : never,
+    then?: M[K] extends Base.Func ? (result: ReturnType<M[K]>) => void : never
 }) {
-    const { model, action, args = [] } = props;
+    const { model, action, args = [], then } = props;
     
     const visible = Validator.preCheck(model, action, ...args);
     if (!visible) return null;
@@ -38,7 +39,8 @@ export function Link<
     const emit = () => {
         const method: any = model[action];
         if (typeof method === "function") {
-            method.apply(model, args);
+            const result = method.apply(model, args);
+            if (then) then(result);
         }
     };
 

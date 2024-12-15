@@ -1,12 +1,10 @@
 import { Def } from "@/type/define";
-import { CardDef, CardModel } from ".";
+import { CardDef } from ".";
 import { Props } from "@/type/props";
 import { MinionDef, MinionModel } from "./minion";
-import { FeatureListModel, FeatureModel } from "../feature";
-import { FeatureDef } from "../feature";
+import { FeatureModel, FeatureDef } from "..";
 import { Factory } from "@/service/factory";
 import { Lifecycle } from "@/service/lifecycle";
-import { DataBase } from "@/service/database";
 
 export type NoviceEngineerDef = Def.Create<{
     code: 'novice-engineer',
@@ -15,11 +13,12 @@ export type NoviceEngineerDef = Def.Create<{
     }
 }>
 
-@DataBase.useCard({})
+
 @MinionModel.useRule({
     manaCost: 2,
     health: 1,
-    attack: 1
+    attack: 1,
+    races: []
 })
 @Factory.useProduct('novice-engineer')
 export class NoviceEngineerModel extends MinionModel<NoviceEngineerDef> {
@@ -29,12 +28,13 @@ export class NoviceEngineerModel extends MinionModel<NoviceEngineerDef> {
             ...superProps,
             stateDict: {},
             paramDict: {
+                races: [],
                 name: 'Novice Engineer',
                 desc: 'Battlecry: Draw a card.'
             },
             childDict: {
                 battlecry: { code: 'battlecry-novice-engineer' },
-                ...superProps.childDict,
+                ...superProps.childDict
             }
         });
     }
@@ -71,9 +71,9 @@ export class BattlecryNoviceEngineerModel extends FeatureModel<BattlecryNoviceEn
             this.bindEvent(
                 card.eventEmitterDict.onBattlecry,
                 () => {
-                    this.card.player.childDict.deck.drawCard()
+                    this.card.player.childDict.deck.drawCard();
                 }
-            )
+            );
         }
     }
 

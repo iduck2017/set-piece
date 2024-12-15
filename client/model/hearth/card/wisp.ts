@@ -3,17 +3,16 @@ import { CardDef } from ".";
 import { Props } from "@/type/props";
 import { Factory } from "@/service/factory";
 import { MinionDef, MinionModel } from "./minion";
-import { DataBase } from "@/service/database";
 
 export type WispDef = Def.Create<{
     code: 'wisp',
 }>
 
-@DataBase.useCard({})
 @MinionModel.useRule({
     manaCost: 0,
     health: 1,
-    attack: 1
+    attack: 1,
+    races: []
 })
 @Factory.useProduct('wisp') 
 export class WispModel extends MinionModel<WispDef> {
@@ -22,6 +21,7 @@ export class WispModel extends MinionModel<WispDef> {
         super({
             ...superProps,
             paramDict: {
+                races: [],
                 name: 'Wisp',
                 desc: ''
             },

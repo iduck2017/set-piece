@@ -1,14 +1,12 @@
 import { Factory } from "@/service/factory";
 import { Def } from "@/type/define";
-import { NodeModel } from "./node";
+import { NodeModel } from "../node";
 import { Props } from "@/type/props";
 import { CardModel } from "./card";
 import { Validator } from "@/service/validator";
 import { Model } from "@/type/model";
 import { PlayerModel } from "./player";
-import { Lifecycle } from "@/service/lifecycle";
 import { Random } from "@/util/random";
-import { MinionModel } from "./card/minion";
 
 type BoardDef = Def.Create<{
     code: 'board',
@@ -67,13 +65,19 @@ export class BoardModel extends NodeModel<BoardDef> {
         return chunk;
     }
 
+    @Validator.useCondition(model => (
+        model.opponent.childDict.board.childList.length > 0 &&
+        model.childList.length > 0
+    ))
     randomCommand() {
         const targetAlly = this.childList[Random.number(0, this.childList.length - 1)];
         const opponentBoard = this.opponent.childDict.board;
-        const targetEnemy = opponentBoard.childList[Random.number(0, opponentBoard.childList.length - 1)];
+        const targetEnemy = opponentBoard.childList[
+            Random.number(0, opponentBoard.childList.length - 1)
+        ];
         if (
-            targetEnemy.childDict.combatable && 
-            targetAlly.childDict.combatable
+            targetEnemy?.childDict.combatable && 
+            targetAlly?.childDict.combatable
         ) {
             targetAlly.childDict.combatable.attack(
                 targetEnemy.childDict.combatable

@@ -1,6 +1,6 @@
 import { Factory } from "@/service/factory";
 import { Def } from "@/type/define";
-import { NodeModel } from "./node";
+import { NodeModel } from "../node";
 import { Props } from "@/type/props";
 import { DeckModel } from "./deck";
 import { HandModel } from "./hand";

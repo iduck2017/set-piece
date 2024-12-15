@@ -1,9 +1,9 @@
 import React from "react";
 import { ModelComp } from ".";
-import { DeckModel } from "@/model/deck";
 import { useModel } from "./use-model";
 import { CardComp } from "./card";
 import { Link } from "./common";
+import { DeckModel } from "@/model/hearth/deck";
 
 export function DeckComp(props: {
     model: DeckModel

@@ -1,16 +1,25 @@
-import { CardModel } from "@/model/card";
+import { CardModel } from "@/model/hearth/card";
 import { Base } from "@/type/base";
 import { Chunk } from "@/type/chunk";
 import { Def } from "@/type/define";
 import { Random } from "@/util/random";
 import { Factory } from "./factory";
+import { MinionRule } from "@/model/hearth/card/minion";
+import { CombatableRule } from "@/model/hearth/combatable";
+import { CastableRule } from "@/model/hearth/castable";
+
+export enum RaceType {
+    Murloc = 'murloc',
+    Beast = 'beast',
+    Demon = 'demon',
+}
 
 export class DataBase {
     private constructor() {}
 
     private static _cardProductInfo: {
         selectAll: Base.List<Base.Class>,
-        sortByRace: Record<string, Base.List<Base.Class>>,
+        sortByRace: Partial<Record<RaceType, Base.List<Base.Class>>>,
         sortByManaCost: Record<string, Base.List<Base.Class>>,
         sortByAttack: Record<string, Base.List<Base.Class>>,
         sortByHealth: Record<string, Base.List<Base.Class>>,
@@ -31,7 +40,7 @@ export class DataBase {
         const Type = list[number];
         const code = Factory.productMap.get(Type);
         if (!code) {
-            console.error('Model Not Found');
+            console.error('[model-not-found]');
             throw new Error();
         }
         return { code };
@@ -52,12 +61,12 @@ export class DataBase {
         }
     }
     
-    static useCard(config: {
-        races?: string[]
-        manaCost?: number
-        attack?: number
-        health?: number
-    }) {
+    static useCard(config: 
+        Partial<
+            MinionRule & 
+            CombatableRule & 
+            CastableRule
+        >) {
         return function (Type: Base.Class<CardModel>) {
   
             const { 

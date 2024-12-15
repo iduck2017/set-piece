@@ -27,6 +27,9 @@ body {
     text-decoration: underline;
     color: #4d6aff;
 }
+.form>div.mark {
+    color: #ff0000;
+}
 
 .menu {
     display: flex;

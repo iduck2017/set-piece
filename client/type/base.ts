@@ -7,7 +7,7 @@ export namespace Base {
     export type Func<R = any> = (...args: List) => R
     export type Class<T = any> = new (...args: List) => T
     export type Value = string | number | boolean | undefined
-    export type Values = Value | Value[]
+    export type Values = Value | Readonly<Value[]>
 }
 
 export namespace Dict {

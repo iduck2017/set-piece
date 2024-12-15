@@ -1,7 +1,7 @@
 import { Factory } from "@/service/factory";
 import { Lifecycle } from "@/service/lifecycle";
-import { AppModel } from "./app";
-import { NodeModel } from "./node";
+import { AppModel } from "../app";
+import { NodeModel } from "../node";
 import { Def } from "@/type/define";
 import { Props } from "@/type/props";
 import { PlayerModel } from "./player";
@@ -10,9 +10,16 @@ import { DataBase } from "@/service/database";
 type GameDef = Def.Create<{
     code: 'game',
     parent: AppModel,
+    stateDict: {
+        round: number
+    }
     childDict: {
         redPlayer: PlayerModel,
         bluePlayer: PlayerModel
+    }
+    eventDict: {
+        onRoundEnd: []
+        onRoundStart: []
     }
 }>
 
@@ -21,7 +28,7 @@ export class GameModel extends NodeModel<GameDef> {
     private static _core?: GameModel;
     static get core(): GameModel {
         if (!GameModel._core) {
-            console.error('Game Uninited');
+            console.error('[game-uninited]');
             throw new Error();
         }
         return GameModel._core;
@@ -35,7 +42,10 @@ export class GameModel extends NodeModel<GameDef> {
                 bluePlayer: { code: 'player' },
                 ...props.childDict
             },
-            stateDict: {},
+            stateDict: {
+                round: 0,
+                ...props.stateDict
+            },
             paramDict: {}
         });
     }
@@ -52,5 +62,11 @@ export class GameModel extends NodeModel<GameDef> {
 
     checkDatabase() {
         console.log(DataBase.cardProductInfo);
+    }
+
+    nextRound() {
+        this.eventDict.onRoundEnd();
+        this.baseStateDict.round += 1;
+        this.eventDict.onRoundStart();
     }
 }
