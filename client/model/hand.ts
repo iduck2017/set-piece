@@ -6,7 +6,7 @@ import { CardModel } from "./card";
 import { Model } from "@/type/model";
 import { PlayerModel } from "./player";
 
-type HandDef = Def.Merge<{
+type HandDef = Def.Create<{
     code: 'hand',
     stateDict: {},
     paramDict: {},

@@ -2,7 +2,7 @@ import React from "react";
 import { ModelComp } from ".";
 import { useModel } from "./use-model";
 import { Link, State } from "./common";
-import { BunnyModel } from "@/model/bunny";
+import { BunnyModel } from "@/model/demo/bunny";
 
 export function BunnyComp(props: {
     model: BunnyModel

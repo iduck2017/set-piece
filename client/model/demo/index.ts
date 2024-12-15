@@ -1,14 +1,14 @@
 import { Factory } from "@/service/factory";
-import { AppModel } from "./app";
+import { AppModel } from "../app";
 import { Lifecycle } from "@/service/lifecycle";
 import { Def } from "@/type/define";
-import { NodeModel } from "./node";
+import { NodeModel } from "../node";
 import { Props } from "@/type/props";
 import { GenderType } from "./reproductive";
 import { BunnyModel } from "./bunny";
 import { PingPongModel } from "./ping-pong";
 
-type DemoDef = Def.Merge<{
+type DemoDef = Def.Create<{
     code: 'demo',
     parent: AppModel,
     childDict: {

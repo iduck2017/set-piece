@@ -5,7 +5,7 @@ import { Validator } from "@/service/validator";
 import { Def } from "@/type/define";
 import { Props } from "@/type/props";
 
-type BunnyDef = Def.Merge<{
+type BunnyDef = Def.Create<{
     code: 'bunny',
     stateDict: {
         age: number,
@@ -20,7 +20,7 @@ type BunnyDef = Def.Merge<{
 @Factory.useProduct('bunny')
 export class BunnyModel extends AnimalModel<BunnyDef> {
     constructor(props: Props<BunnyDef & AnimalDef>) {
-        const superProps = AnimalModel.mergeProps(props);
+        const superProps = AnimalModel.superProps(props);
         super({
             ...props,
             childDict: {
@@ -36,7 +36,6 @@ export class BunnyModel extends AnimalModel<BunnyDef> {
             },
             paramDict: {}
         });
-        this.code;
     }
     
     @Validator.useCondition(model => model.stateDict.isAlive)

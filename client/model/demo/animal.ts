@@ -1,10 +1,11 @@
 import { Def } from "@/type/define";
-import { NodeModel } from "./node";
+import { NodeModel } from "../node";
 import { Props } from "@/type/props";
 import { MetabolicModel } from "./metabolic";
 import { ReproductiveModel } from "./reproductive";
+import { DemoModel } from ".";
 
-export type AnimalDef = Def.Merge<{
+export type AnimalDef = Def.Create<{
     code: string;
     stateDict: {
         isAlive: boolean;
@@ -14,12 +15,13 @@ export type AnimalDef = Def.Merge<{
         metabolic: MetabolicModel,
         reproductive?: ReproductiveModel<AnimalModel>
     }
+    parent: AnimalModel | DemoModel
 }>
 
 export abstract class AnimalModel<
     T extends Def = Def
 > extends NodeModel<T & AnimalDef> {
-    static mergeProps(props: Props<AnimalDef>): Props.Strict<AnimalDef> {
+    static superProps(props: Props<AnimalDef>): Props.Strict<AnimalDef> {
         return {
             ...props,
             stateDict: {

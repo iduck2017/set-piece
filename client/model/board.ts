@@ -7,8 +7,10 @@ import { Validator } from "@/service/validator";
 import { Model } from "@/type/model";
 import { PlayerModel } from "./player";
 import { Lifecycle } from "@/service/lifecycle";
+import { Random } from "@/util/random";
+import { MinionModel } from "./card/minion";
 
-type BoardDef = Def.Merge<{
+type BoardDef = Def.Create<{
     code: 'board',
     stateDict: {},
     paramDict: {},
@@ -27,6 +29,15 @@ export class BoardModel extends NodeModel<BoardDef> {
             stateDict: {},
             paramDict: {}
         });
+    }
+
+    
+    get opponent(): PlayerModel {
+        const player = this.parent;
+        const game = player.parent;
+        return game.childDict.redPlayer === player ?
+            game.childDict.bluePlayer :
+            game.childDict.redPlayer;
     }
 
     // @Lifecycle.useLoader()
@@ -54,5 +65,26 @@ export class BoardModel extends NodeModel<BoardDef> {
         if (!target) target = this.childList[0];
         const chunk = this.removeChild(target);
         return chunk;
+    }
+
+    randomCommand() {
+        const targetAlly = this.childList[Random.number(0, this.childList.length - 1)];
+        const opponentBoard = this.opponent.childDict.board;
+        const targetEnemy = opponentBoard.childList[Random.number(0, opponentBoard.childList.length - 1)];
+        if (
+            targetEnemy.childDict.combatable && 
+            targetAlly.childDict.combatable
+        ) {
+            targetAlly.childDict.combatable.attack(
+                targetEnemy.childDict.combatable
+            );
+        }
+    }
+
+    disposeBody(card: CardModel) {
+        const chunk = this.removeCard(card);
+        if (chunk) {
+            this.parent.childDict.graveyard.appendCard(chunk);
+        }
     }
 }

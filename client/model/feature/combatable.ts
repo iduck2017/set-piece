@@ -1,18 +1,17 @@
 import { Factory } from "@/service/factory";
 import { Props } from "@/type/props";
-import { NodeModel } from "./node";
+import { NodeModel } from "../node";
 import { Def } from "@/type/define";
 import { Base } from "@/type/base";
 import { Lifecycle } from "@/service/lifecycle";
 import { Validator } from "@/service/validator";
-import { CardModel } from "./card";
 
 export type CombatableRule = {
     health: number;
     attack: number;
 }
 
-export type CombatableDef = Def.Merge<{
+export type CombatableDef = Def.Create<{
     code: 'combatable';
     stateDict: {
         readonly fixHealth?: number;
@@ -73,22 +72,22 @@ export class CombatableModel extends NodeModel<CombatableDef> {
     @Validator.useCondition(model => model.stateDict.isAlive)
     private _die() {
         this.baseStateDict.isAlive = false;
-        if (this.parent instanceof CardModel) {
-            const board = this.parent.player.childDict.board;
-            board.removeCard(this.parent);
-        }
+        // if (this.parent instanceof CardModel) {
+        //     const board = this.parent.player.childDict.board;
+        //     board.removeCard(this.parent);
+        // }
         this.eventDict.onDie(this);
     }
 
     @Validator.useCondition(model => model.stateDict.isAlive)
-    attack(target?: CombatableModel) {
-        if (!target && this.parent instanceof CardModel) {
-            const opponent = this.parent.opponent;
-            const card = opponent.childDict.board.childList[0];
-            if (card) {
-                target = card.childDict.combatable;
-            }
-        }
+    attack(target: CombatableModel) {
+        // if (!target && this.parent instanceof CardModel) {
+        //     const opponent = this.parent.opponent;
+        //     const card = opponent.childDict.board.childList[0];
+        //     if (card) {
+        //         target = card.childDict.combatable;
+        //     }
+        // }
         if (target) {
             this._dealDamage(target);
             target._dealDamage(this);

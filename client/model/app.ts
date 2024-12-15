@@ -6,7 +6,7 @@ import { Def } from "@/type/define";
 import { Validator } from "@/service/validator";
 import { File } from "@/service/file";
 
-type AppDef = Def.Merge<{
+type AppDef = Def.Create<{
     code: 'app',
     stateDict: {
         readonly version: string,
@@ -65,13 +65,13 @@ export class AppModel extends NodeModel<AppDef> {
     @Validator.useCondition(app => !app.childDict.game)
     async start() {
         const chunk = await File.loadChunk<GameModel>('game');
-        this._childChunkDict.game = chunk;
+        this.childChunkDict.game = chunk;
     }
     
     @Validator.useCondition(app => !app.childDict.demo)
     async test() {
         const chunk = await File.loadChunk<DemoModel>('demo');
-        this._childChunkDict.demo = chunk;
+        this.childChunkDict.demo = chunk;
     }
 
     @Validator.useCondition(app => Boolean(app.childDict.game || app.childDict.demo))
@@ -82,8 +82,8 @@ export class AppModel extends NodeModel<AppDef> {
 
     @Validator.useCondition(app => Boolean(app.childDict.demo || app.childDict.game))
     quit() {
-        if (this.childDict.demo) delete this._childChunkDict.demo;
-        if (this.childDict.game) delete this._childChunkDict.game;
+        if (this.childDict.demo) delete this.childChunkDict.demo;
+        if (this.childDict.game) delete this.childChunkDict.game;
         AppModel._singleton = new Map();
     }
 }

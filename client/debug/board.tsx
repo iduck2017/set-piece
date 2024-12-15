@@ -3,6 +3,7 @@ import { ModelComp } from ".";
 import { BoardModel } from "@/model/board";
 import { useModel } from "./use-model";
 import { CardComp } from "./card";
+import { Link } from "./common";
 
 export function BoardComp(props: {
     model: BoardModel
@@ -11,6 +12,9 @@ export function BoardComp(props: {
 
     return <ModelComp 
         model={props.model} 
+        form={
+            <Link model={props.model} action='randomCommand' />
+        }
         menu={model.childList.map(child => (
             <CardComp key={child.uuid} model={child} />
         ))}

@@ -1,7 +1,7 @@
 import React from "react";
 import { ModelComp } from ".";
 import { useModel } from "./use-model";
-import { PingPongModel } from "@/model/ping-pong";
+import { PingPongModel } from "@/model/demo/ping-pong";
 import { Link } from "./common";
 
 export function PingPongComp(props: {

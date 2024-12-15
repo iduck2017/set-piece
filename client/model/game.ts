@@ -6,7 +6,7 @@ import { Def } from "@/type/define";
 import { Props } from "@/type/props";
 import { PlayerModel } from "./player";
 
-type GameDef = Def.Merge<{
+type GameDef = Def.Create<{
     code: 'game',
     parent: AppModel,
     childDict: {

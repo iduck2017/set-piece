@@ -3,8 +3,8 @@ import { Model } from "./model";
 
 export type Def = {
     code: string;
-    stateDict: Base.Dict<Base.Value>
-    paramDict: Base.Dict<Base.Value>
+    stateDict: Base.Dict
+    paramDict: Base.Dict
     childList: Model[]
     childDict: Base.Dict<Model>
     eventDict: Base.Dict<Base.List>    
@@ -30,5 +30,5 @@ export namespace Def {
     export type EventDict<T extends Def> = T["eventDict"]
     export type Parent<T extends Def> = T["parent"]
 
-    export type Merge<T extends Partial<Def>> = Dict.Assign<T, Def.Pure>
+    export type Create<T extends Partial<Def>> = Dict.Override<T, Def.Pure>
 }

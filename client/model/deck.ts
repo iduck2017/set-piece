@@ -7,7 +7,7 @@ import { Validator } from "@/service/validator";
 import { PlayerModel } from "./player";
 import { Model } from "@/type/model";
 
-type DeckDef = Def.Merge<{
+type DeckDef = Def.Create<{
     code: 'deck',
     stateDict: {},
     paramDict: {},

@@ -6,10 +6,9 @@ import { DeckModel } from "./deck";
 import { HandModel } from "./hand";
 import { BoardModel } from "./board";
 import { GraveyardModel } from "./graveyard";
-import { Validator } from "@/service/validator";
 import { GameModel } from "./game";
 
-type PlayerDef = Def.Merge<{
+type PlayerDef = Def.Create<{
     code: 'player',
     stateDict: {},
     paramDict: {},

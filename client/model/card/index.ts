@@ -1,17 +1,20 @@
 import { Def } from "@/type/define";
-import { NodeModel } from "./node";
+import { NodeModel } from "../node";
 import { Props } from "@/type/props";
-import { CastableModel } from "./castable";
-import { FeatureListModel } from "./feature";
-import { CombatableModel } from "./combatable";
+import { CastableModel } from "../castable";
+import { FeatureListModel } from "../feature";
+import { CombatableModel } from "../feature/combatable";
 import { Validator } from "@/service/validator";
-import { HandModel } from "./hand";
-import { GraveyardModel } from "./graveyard";
-import { DeckModel } from "./deck";
-import { BoardModel } from "./board";
-import { PlayerModel } from "./player";
+import { HandModel } from "../hand";
+import { GraveyardModel } from "../graveyard";
+import { DeckModel } from "../deck";
+import { BoardModel } from "../board";
+import { PlayerModel } from "../player";
+import { Event } from "@/type/event";
+import { Chunk } from "@/type/chunk";
+import { Dict } from "@/type/base";
 
-export type CardDef = Def.Merge<{
+export type CardDef = Def.Create<{
     code: string;
     stateDict: {
     },
@@ -31,18 +34,14 @@ export type CardDef = Def.Merge<{
 export abstract class CardModel<
     T extends Def = Def
 > extends NodeModel<T & CardDef> {
-    static mergeProps(props: Props<CardDef>): Props.Strict<CardDef> {
+    static cardProps<T>(props: Props<T & CardDef>) {
+        const childDict: Dict.Strict<Chunk.Dict<Def.ChildDict<CardDef>>> = {
+            featureList: { code: 'feature-list' },
+            ...props.childDict
+        }
         return {
             ...props,
-            stateDict: {
-            },
-            paramDict: {
-                name: 'Unknown Card',
-                desc: 'Unknown Card'
-            },
-            childDict: {
-                featureList: { code: 'feature-list' }
-            }
+            childDict
         };
     }
 
@@ -58,14 +57,14 @@ export abstract class CardModel<
         return this.parent.parent;
     }
 
-    get stateDict() {
-        return {
-            ...super.stateDict,
-            opponent: this.opponent,
-            player: this.player
-        };
-    }
- 
+    // get stateDict() {
+    //     return {
+    //         ...super.stateDict,
+    //         opponent: this.opponent,
+    //         player: this.player
+    //     };
+    // }
+
     @Validator.useCondition(model => model.parent instanceof HandModel)
     play() {
         if (this.parent instanceof HandModel) {

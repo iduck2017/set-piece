@@ -14,8 +14,6 @@ export function CardComp(props: {
         form={
             <>
                 <Link model={props.model} action='play' />
-                {model.childDict.combatable && 
-                    <Link model={model.childDict.combatable} action='attack' />}
                 {model.childDict.castable && <State model={model.childDict.castable} />}
                 {model.childDict.combatable && 
                     <State model={model.childDict.combatable} />}

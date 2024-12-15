@@ -12,7 +12,7 @@ export namespace Dict {
     export type Key<M extends Base.Dict> = keyof M & string;
     export type Value<M extends Base.Dict> = M[Key<M>];
 
-    export type Assign<A extends Base.Dict, B extends Base.Dict> = A & Omit<B, Dict.Key<A>>;
+    export type Override<A extends Base.Dict, B extends Base.Dict> = A & Omit<B, Dict.Key<A>>;
     export type Strict<M extends Base.Dict> = Dict.Key<M> extends never ? Base.Dict<never> : M;
     
     export type Valid<M extends Base.Dict> = 

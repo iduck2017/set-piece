@@ -4,8 +4,9 @@ import { NodeModel } from "./node";
 import { Props } from "@/type/props";
 import { CardModel } from "./card";
 import { PlayerModel } from "./player";
+import { Model } from "@/type/model";
 
-type GraveyardDef = Def.Merge<{
+type GraveyardDef = Def.Create<{
     code: 'graveyard',
     stateDict: {},
     paramDict: {},
@@ -24,5 +25,10 @@ export class GraveyardModel extends NodeModel<GraveyardDef> {
             stateDict: {},
             paramDict: {}
         });
+    }
+
+    appendCard(chunk: Model.Chunk<CardModel>) {
+        const target = this.appendChild(chunk);
+        return target;
     }
 }

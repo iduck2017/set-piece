@@ -1,11 +1,11 @@
 import { Factory } from "@/service/factory";
 import { Validator } from "@/service/validator";
 import { AnimalModel } from "./animal";
-import { NodeModel } from "./node";
+import { NodeModel } from "../node";
 import { Def } from "@/type/define";
 import { Props } from "@/type/props";
 
-type MetaBolicDef = Def.Merge<{
+type MetaBolicDef = Def.Create<{
     code: 'metabolic',
     stateDict: {
         calories: number,

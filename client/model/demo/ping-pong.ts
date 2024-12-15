@@ -1,7 +1,7 @@
 import { Factory } from "@/service/factory";
 import { Lifecycle } from "@/service/lifecycle";
 import { Def } from "@/type/define";
-import { NodeEvent, NodeModel } from "./node";
+import { NodeEvent, NodeModel } from "../node";
 import { Props } from "@/type/props";
 import { Base } from "@/type/base";
 import { Event } from "@/type/event";
@@ -13,7 +13,7 @@ enum PingPongType {
     Pong = 'pong'
 }
 
-type PingPongDef = Def.Merge<{
+type PingPongDef = Def.Create<{
     code: 'ping-pong',
     stateDict: {
         readonly type: PingPongType
@@ -39,11 +39,13 @@ export class PingPongModel extends NodeModel<PingPongDef> {
         const onChildParamCheckEmitterList: 
             Event.Emitter<NodeEvent.OnParamCheck<PingPongDef>>[] = [];
         const onTriggerEmitterList: Event.Emitter<[PingPongType]>[] = [];
+        // while (parent instanceof PingPongModel) {
         if (parent instanceof PingPongModel) {
             onTriggerEmitterList.push(parent.eventEmitterDict.onChildTrigger);
             onChildParamCheckEmitterList.push(
                 parent.eventEmitterDict.onChildParamCheck
             );
+            // parent = parent.parent;
         }
         super({
             childList: [],

@@ -2,7 +2,7 @@ import { Factory } from "@/service/factory";
 import { Random } from "@/util/random";
 import { AnimalModel } from "./animal";
 import { Validator } from "@/service/validator";
-import { NodeModel } from "./node";
+import { NodeModel } from "../node";
 import { Def } from "@/type/define";
 import { Props } from "@/type/props";
 import { Model } from "@/type/model";
@@ -13,7 +13,7 @@ export enum GenderType {
     Unknown = 'unknown'
 }
 
-type ReproductiveDef<T extends AnimalModel> = Def.Merge<{
+type ReproductiveDef<T extends AnimalModel> = Def.Create<{
     code: 'reproductive',
     stateDict: {
         gender: GenderType
@@ -41,7 +41,7 @@ export class ReproductiveModel<
     @Validator.useCondition(model => model.parent.stateDict.isAlive)
     @Validator.useCondition(model => model.stateDict.gender === GenderType.Female)
     reproduceChild(chunk: Model.Chunk<T>): void {
-        this._childChunkList.push(chunk);
+        this.childChunkList.push(chunk);
     }
 
 }

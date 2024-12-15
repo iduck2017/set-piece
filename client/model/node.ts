@@ -23,6 +23,46 @@ export namespace NodeEvent {
 }
 
 export abstract class NodeModel<T extends Def> {
+    // protected static mergeProps<
+    //     A extends Def,
+    //     B extends Def
+    // >(
+    //     superProps: Props.Strict<B>,
+    //     props: Props.Strict<A>
+    // ): Props.Strict<A & B> {
+    //     const eventGrid: any = {};
+    //     for (const key of Object.keys({
+    //         ...superProps.eventGrid,
+    //         ...props.eventGrid
+    //     })) {
+    //         eventGrid[key] = [
+    //             ...(superProps.eventGrid?.[key] || []),
+    //             ...(props.eventGrid?.[key] || [])
+    //         ]
+    //     }
+    //     return {
+    //         ...superProps,
+    //         ...props,
+    //         stateDict: {
+    //             ...superProps.stateDict,
+    //             ...props.stateDict
+    //         },
+    //         paramDict: {
+    //             ...superProps.paramDict,
+    //             ...props.paramDict
+    //         },
+    //         childDict: {
+    //             ...superProps.childDict,
+    //             ...props.childDict
+    //         },
+    //         childList: [
+    //             ...superProps.childList || [],
+    //             ...props.childList || []
+    //         ],
+    //         eventGrid
+    //     };
+    // }
+
     readonly code: Def.Code<T>;
     readonly parent: Def.Parent<T>;
 
@@ -48,7 +88,7 @@ export abstract class NodeModel<T extends Def> {
             this._onChildSpawn.bind(this)
         );
         this.childList = Delegator.Readonly(childList);
-        this._childChunkList = Delegator.Formatted(
+        this.childChunkList = Delegator.Formatted(
             childList,
             (model) => model?.chunk,
             (chunk) => this._createChild(chunk) 
@@ -66,7 +106,7 @@ export abstract class NodeModel<T extends Def> {
             this._onChildSpawn.bind(this)
         );
         this.childDict = Delegator.Readonly(childDict);
-        this._childChunkDict = Delegator.Formatted(
+        this.childChunkDict = Delegator.Formatted(
             childDict,
             (model) => model?.chunk,
             (chunk) => this._createChild(chunk) 
@@ -79,8 +119,8 @@ export abstract class NodeModel<T extends Def> {
 
     readonly childList: Readonly<Def.ChildList<T>>;    
     readonly childDict: Readonly<Def.ChildDict<T>>;
-    protected readonly _childChunkDict: Chunk.Dict<Def.ChildDict<T>>;
-    protected readonly _childChunkList: Base.List<Model.Chunk<Def.ChildList<T>[number]>>;
+    protected readonly childChunkDict: Chunk.Dict<Def.ChildDict<T>>;
+    protected readonly childChunkList: Base.List<Model.Chunk<Def.ChildList<T>[number]>>;
     private _onChildSpawn(data: {
         prev?: Model | Model[],
         next?: Model | Model[]
@@ -90,7 +130,7 @@ export abstract class NodeModel<T extends Def> {
         if (prev instanceof Array) prev.map(target => target._unload());
         if (next instanceof NodeModel) next._load();
         if (prev instanceof NodeModel) prev._unload();
-        this._eventDict.onChildSpawn(this);
+        this._baseEventDict.onChildSpawn(this);
     }
     useChild(setter: Event<NodeEvent.OnChildSpawn<T>>){
         this.bindEvent(this.eventEmitterDict.onChildSpawn, setter);
@@ -100,7 +140,7 @@ export abstract class NodeModel<T extends Def> {
     }
     protected appendChild(chunk: Model.Chunk<Def.ChildList<T>[number]>) {
         const uuid = chunk.uuid || Factory.uuid;
-        this._childChunkList.push({
+        this.childChunkList.push({
             ...chunk,
             uuid
         });
@@ -111,7 +151,7 @@ export abstract class NodeModel<T extends Def> {
         target: Def.ChildList<T>[number]
     ): Model.Chunk<Def.ChildList<T>[number]> | undefined {
         const index = this.childList.indexOf(target);
-        this._childChunkList.splice(index, 1);
+        this.childChunkList.splice(index, 1);
         return target.chunk;
     }
 
@@ -132,12 +172,11 @@ export abstract class NodeModel<T extends Def> {
         return instance;
     }
 
-    
     protected eventDict: Readonly<Event.Dict<NodeEvent<T> & Def.EventDict<T>>> = 
         Delegator.Automic({}, (key) => {
             return this._emitEvent.bind(this, key);
         });
-    private readonly _eventDict: Readonly<Event.Dict<NodeEvent<T>>> = this.eventDict;
+    private readonly _baseEventDict: Readonly<Event.Dict<NodeEvent<T>>> = this.eventDict;
 
     readonly eventEmitterDict: Readonly<Event.EmitterDict<NodeEvent<T> & Def.EventDict<T>>>;
     private readonly _eventHandlerMap: Map<Base.Func, Event.Handler> = new Map();
@@ -226,10 +265,10 @@ export abstract class NodeModel<T extends Def> {
             ...this._paramDict
         };
         const nextParam = { ...this._baseParamDict };
-        this._eventDict.onParamCheck(this, nextParam);
+        this._baseEventDict.onParamCheck(this, nextParam);
         this._paramDict = nextParam;
         this._prevStateDict = this.stateDict;
-        this._eventDict.onStateAlter(this, prevState);
+        this._baseEventDict.onStateAlter(this, prevState);
         if (recursive) {
             const childList: Model[] = [
                 ...Object.values(this.childDict).filter(Boolean),
@@ -306,8 +345,8 @@ export abstract class NodeModel<T extends Def> {
             code: this.code,
             uuid: this.uuid,
             stateDict: { ...this.baseStateDict },
-            childDict: { ...this._childChunkDict },
-            childList: [ ...this._childChunkList ]
+            childDict: { ...this.childChunkDict },
+            childList: [ ...this.childChunkList ]
         };
         return chunk;
     }
