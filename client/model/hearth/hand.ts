@@ -2,7 +2,7 @@ import { Factory } from "@/service/factory";
 import { Def } from "@/type/define";
 import { NodeModel } from "../node";
 import { Props } from "@/type/props";
-import { CardModel } from "./card";
+import { CardModel } from "./card/card";
 import { Model } from "@/type/model";
 import { PlayerModel } from "./player";
 

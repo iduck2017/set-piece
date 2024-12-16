@@ -1,5 +1,5 @@
 import { Def } from "@/type/define";
-import { CardDef } from ".";
+import { CardDef } from "./card";
 import { Props } from "@/type/props";
 import { MinionDef, MinionModel } from "./minion";
 import { Factory } from "@/service/factory";

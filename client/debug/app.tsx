@@ -14,7 +14,7 @@ export function AppComp(props: {
     const { childDict } = useModel(model);
 
     useEffect(() => {
-        // model.start();
+        model.start();
     }, []);
 
     return <ModelComp 

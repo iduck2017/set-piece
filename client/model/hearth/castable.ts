@@ -3,7 +3,7 @@ import { NodeModel } from "../node";
 import { Props } from "@/type/props";
 import { Base } from "@/type/base";
 import { Factory } from "@/service/factory";
-import { CardModel } from "./card";
+import { CardModel } from "./card/card";
 
 export type CastableRule = {
     manaCost: number;

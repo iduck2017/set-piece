@@ -2,7 +2,7 @@ import { Def } from "@/type/define";
 import { NodeModel } from "../../node";
 import { Props } from "@/type/props";
 import { CastableModel } from "../castable";
-import { FeatureListModel } from "..";
+import { FeatureDef, FeatureListModel } from "../feature";
 import { CombatableModel } from "../combatable";
 import { Validator } from "@/service/validator";
 import { HandModel } from "../hand";
@@ -85,6 +85,7 @@ export abstract class CardModel<
     //         player: this.player
     //     };
     // }
+
     
     @Validator.useCondition(model => model.parent instanceof HandModel)
     prepare(): TargetCollectorInfo | undefined {
@@ -107,5 +108,10 @@ export abstract class CardModel<
         if (this.parent instanceof HandModel) {
             this.parent.removeCard(this);
         }
+    }
+
+    debug() {
+        super.debug();
+        this.childDict.combatable?.debug();
     }
 }

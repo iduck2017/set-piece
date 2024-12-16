@@ -1,6 +1,6 @@
 import { Def } from "@/type/define";
 import { Props } from "@/type/props";
-import { CardDef, CardModel, TargetCollector } from ".";
+import { CardDef, CardModel, TargetCollector } from "./card";
 import { CastableModel, CastableRule } from "../castable";
 import { CombatableModel, CombatableRule } from "../combatable";
 import { BoardModel } from "../board";

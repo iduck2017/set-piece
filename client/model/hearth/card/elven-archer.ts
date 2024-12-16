@@ -1,8 +1,8 @@
 import { Def } from "@/type/define";
-import { CardDef, CardModel, TargetCollector } from ".";
+import { CardDef, CardModel, TargetCollector } from "./card";
 import { Props } from "@/type/props";
 import { MinionDef, MinionModel } from "./minion";
-import { FeatureModel, FeatureDef } from "..";
+import { FeatureModel, FeatureDef } from "../feature";
 import { Factory } from "@/service/factory";
 import { BoardModel } from "../board";
 import { CombatableModel } from "../combatable";

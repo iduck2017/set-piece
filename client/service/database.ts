@@ -1,4 +1,4 @@
-import { CardModel } from "@/model/hearth/card";
+import { CardModel } from "@/model/hearth/card/card";
 import { Base } from "@/type/base";
 import { Chunk } from "@/type/chunk";
 import { Def } from "@/type/define";

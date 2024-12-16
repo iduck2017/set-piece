@@ -3,7 +3,8 @@ import { Def } from "@/type/define";
 import { NodeModel } from "../node";
 import { Props } from "@/type/props";
 import { Dict } from "@/type/base";
-import { CardModel } from "./card";
+import { CardModel } from "./card/card";
+import { Chunk } from "@/type/chunk";
 
 export type FeatureListDef = Def.Create<{
     code: 'feature-list',
@@ -38,12 +39,19 @@ export class FeatureListModel extends NodeModel<FeatureListDef> {
             paramDict: {}
         });
     }
+    
+
+    addFeature(chunk: Chunk<FeatureDef>) {
+        console.log('[add-feature]', chunk);
+        const target = this.appendChild(chunk);
+        return target;
+    }
 }
 
 export abstract class FeatureModel<
     T extends Def = Def
 > extends NodeModel<T & FeatureDef> {
-    static superProps(props: Props<FeatureDef>) {
+    static featureProps<T>(props: Props<T & FeatureDef>) {
         return props;
     }
 

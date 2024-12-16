@@ -1,6 +1,6 @@
 import React from "react";
 import { ModelComp } from ".";
-import { CardModel } from "@/model/hearth/card";
+import { CardModel } from "@/model/hearth/card/card";
 import { useModel } from "./use-model";
 import { Link, State } from "./common";
 import { useContext } from "./use-context";

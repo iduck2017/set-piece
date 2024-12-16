@@ -1,4 +1,4 @@
-import { TargetCollector, TargetCollectorInfo } from '@/model/hearth/card';
+import { TargetCollector, TargetCollectorInfo } from '@/model/hearth/card/card';
 import { Model } from '@/type/model';
 import React, { createContext, useEffect, useState } from 'react';
 

@@ -1,13 +1,15 @@
 import { Def } from "@/type/define";
-import { CardDef } from ".";
+import { CardDef } from "./card";
 import { Props } from "@/type/props";
 import { MinionDef, MinionModel } from "./minion";
-import { FeatureModel, FeatureDef } from "..";
+import { FeatureModel, FeatureDef } from "../feature";
 import { Factory } from "@/service/factory";
 import { DataBase, RaceType } from "@/service/database";
 import { Lifecycle } from "@/service/lifecycle";
 import { GameModel } from "../game";
 import { Random } from "@/util/random";
+import { BuffDef, BuffModel } from "../buff";
+import { Chunk } from "@/type/chunk";
 
 /**
  * @prompt
@@ -69,35 +71,51 @@ export class EffectBloodImpModel extends FeatureModel<EffectBloodImpDef> {
     }
 
     @Lifecycle.useLoader()
-    private _handleEndTurn() {
+    private _handleRoundEnd() {
         if (this.card instanceof MinionModel) {
             const card: MinionModel<Def.Pure> = this.card;
             this.bindEvent(
                 GameModel.core.eventEmitterDict.onRoundEnd,
                 () => {
-                    // 只在自己的回合结束时触发
-                    // if (card.player === card.game.currentPlayer) {
                     const minionAllyList = card.player.childDict.board.childList
-                        .filter(minion => minion !== this.card); // 排除自己
+                        .filter(minion => minion !== this.card);
                     if (minionAllyList.length > 0) {
-                        // 随机选择一个友方随从
-                        // const randomIndex = Math.floor(Math.random() * allyList.length);
                         const index = Random.number(0, minionAllyList.length - 1);
                         const target = minionAllyList[index];
                         if (target instanceof MinionModel) {
                             const card: MinionModel<Def.Pure> = target;
-                            const combatable = card.childDict.combatable;
-                            this.bindEvent(
-                                combatable.eventEmitterDict.onParamCheck,
-                                (target, param) => {
-                                    param.maxHealth += 1;
-                                }
-                            );
+                            const chunk: Chunk<BuffBloodImpDef> = {
+                                code: 'buff-blood-imp'
+                            };
+                            card.childDict.featureList.addFeature(chunk);
                         }
                     }
-                    // }
                 }
             );
         }
     }
 } 
+
+
+export type BuffBloodImpDef = Def.Create<{
+    code: 'buff-blood-imp',
+}> 
+
+@Factory.useProduct('buff-blood-imp')
+export class BuffBloodImpModel extends BuffModel<BuffBloodImpDef> {
+    constructor(props: Props<BuffBloodImpDef & BuffDef & FeatureDef>) {
+        super({
+            ...props,
+            paramDict: {
+                name: 'Blood Imp\'s Buff',
+                desc: 'Give a minion +1 Health this turn.',
+                modAttack: 0,
+                modHealth: 1
+            },
+            stateDict: {},
+            childDict: {}
+        });
+    }
+}
+
+

@@ -6,7 +6,6 @@ import { Base } from "@/type/base";
 import { Lifecycle } from "@/service/lifecycle";
 import { Validator } from "@/service/validator";
 import { Model } from "@/type/model";
-import { RaceType } from "@/service/database";
 
 export type CombatableRule = {
     health: number;
@@ -22,12 +21,11 @@ export type CombatableDef = Def.Create<{
         readonly fixAttack?: number;
         curHealth: number;
         isAlive: boolean;
-        isDivineShield: boolean;
+        hasDivineShield: boolean;
     };
     paramDict: {
         maxHealth: number;
         attack: number;
-        // readonly races: RaceType[];
     }
     eventDict: {
         onDie: [CombatableModel] 
@@ -51,7 +49,7 @@ export class CombatableModel extends NodeModel<CombatableDef> {
             stateDict: {
                 curHealth: props.stateDict?.fixHealth || combatableRule?.health || 1,
                 isAlive: true,
-                isDivineShield: combatableRule?.isDivineShield || false,
+                hasDivineShield: combatableRule?.isDivineShield || false,
                 ...props.stateDict
             },
             paramDict: {
@@ -111,8 +109,8 @@ export class CombatableModel extends NodeModel<CombatableDef> {
     }
 
     receiveDamage(damage: number, source: Model) {
-        if (this.stateDict.isDivineShield) {
-            this.baseStateDict.isDivineShield = false;
+        if (this.stateDict.hasDivineShield) {
+            this.baseStateDict.hasDivineShield = false;
             return;
         }
         this.baseStateDict.curHealth -= damage;

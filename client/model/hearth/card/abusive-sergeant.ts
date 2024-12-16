@@ -1,16 +1,13 @@
 import { Def } from "@/type/define";
-import { CardDef, CardModel, TargetCollector } from ".";
+import { CardDef, CardModel, TargetCollector } from "./card";
 import { Props } from "@/type/props";
 import { MinionDef, MinionModel } from "./minion";
-import { FeatureModel, FeatureDef } from "..";
-
+import { FeatureModel, FeatureDef } from "../feature";
 import { Factory } from "@/service/factory";
 import { Lifecycle } from "@/service/lifecycle";
-import { CombatableModel } from "../combatable";
-import { Model } from "@/type/model";
-import { Mutable } from "utility-types";
-import { GameModel } from "../game";
 import { BoardModel } from "../board";
+import { BuffDef, BuffModel } from "../buff";
+import { Chunk } from "@/type/chunk";
 
 /**
  * @propmt
@@ -82,43 +79,15 @@ export class BattlecryAbusiveSergeantModel extends FeatureModel<BattlecryAbusive
             this.bindEvent(
                 card.eventEmitterDict.onBattlecry,
                 (target, targetCollectorList) => {
-                    // if (target?.childDict.combatable) {
-                    //     const combatable = target.childDict.combatable;
-                    //     const game = this.card.game;
-                        
-                    //     // 增加攻击力
-                    //     const oldAttack = combatable.stateDict.attack;
-                    //     combatable.baseStateDict.attack += 2;
-
-                    //     // 在回合结束时恢复
-                    //     this.bindEvent(
-                    //         game.eventEmitterDict.onRoundEnd,
-                    //         () => {
-                    //             combatable.baseStateDict.attack = oldAttack;
-                    //         },
-                    //         true // 只触发一次
-                    //     );
-                    // }
                     const targetCollector = targetCollectorList.find(
                         item => item.uuid === this.uuid
                     );
                     if (targetCollector?.result instanceof MinionModel) {
                         const card: MinionModel<Def.Pure> = targetCollector.result;
-                        const combatable = card.childDict.combatable;
-                        this.bindEvent(
-                            combatable.eventEmitterDict.onParamCheck,
-                            this._handleBuff
-                        );
-                        this.bindEvent(
-                            GameModel.core.eventEmitterDict.onRoundEnd,
-                            () => {
-                                console.log('[buff-timeout]', card.code);
-                                this.unbindEvent(
-                                    combatable.eventEmitterDict.onParamCheck,
-                                    this._handleBuff
-                                );
-                            }
-                        );
+                        const chunk: Chunk<BuffAbusiveSergeantDef> = {
+                            code: 'buff-abusive-sergeant'
+                        };
+                        card.childDict.featureList.addFeature(chunk);
                     }
                 }
             );
@@ -133,7 +102,6 @@ export class BattlecryAbusiveSergeantModel extends FeatureModel<BattlecryAbusive
                 const length =
                     this.card.opponent.childDict.board.childList.length +
                     this.card.player.childDict.board.childList.length;
-                console.log('[minion-number]', length);
                 if (length) {
                     targetCollectorList.push({
                         uuid: this.uuid,
@@ -150,11 +118,28 @@ export class BattlecryAbusiveSergeantModel extends FeatureModel<BattlecryAbusive
             }
         );
     }
+}
 
-    private _handleBuff(
-        target: CombatableModel,
-        param: Mutable<Model.ParamDict<CombatableModel>>
-    ) {
-        param.attack += 2;
+export type BuffAbusiveSergeantDef = Def.Create<{
+    code: 'buff-abusive-sergeant',
+}>
+
+@Factory.useProduct('buff-abusive-sergeant')
+export class BuffAbusiveSergeantModel extends BuffModel<BuffAbusiveSergeantDef> {
+    constructor(props: Props<BuffAbusiveSergeantDef & BuffDef & FeatureDef>) {
+        const buffProps = BuffModel.buffProps(props);
+        super({
+            ...buffProps,
+            paramDict: {
+                name: 'Abusive Sergeant\'s Buff',
+                desc: 'Give a minion +2 Attack this turn.',
+                modAttack: 2,
+                modHealth: 0,
+                disposeOnRoundEnd: true
+            },
+            stateDict: {},
+            childDict: {}
+        });
     }
 }
+

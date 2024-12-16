@@ -74,8 +74,7 @@ export abstract class NodeModel<T extends Def> {
     }
     
     public debug() {
-        console.log(this.stateDict);
-        console.log(this._eventDependencyMap);
+        console.log(this);
     }
 
     readonly childList: Readonly<Def.ChildList<T>>;    
@@ -174,7 +173,7 @@ export abstract class NodeModel<T extends Def> {
         const { target } = eventEmitter;
         const eventHandler = 
             this._eventHandlerMap.get(handler) || 
-            new Event.Handler(target, handler);
+            new Event.Handler(this, handler);
         this._eventHandlerMap.set(handler, eventHandler);
 
         const eventHandlerList = target._eventDependencyMap.get(eventEmitter) || [];
