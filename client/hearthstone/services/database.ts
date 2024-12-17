@@ -1,4 +1,8 @@
 import { Base, Random, Chunk, Def, Factory } from "@/set-piece";
+import { MinionRule } from "../models/card/minion";
+import { CombatableRule } from "../models/combatable";
+import { CardModel } from "../models/card/card";
+import { CastableRule } from "../models/castable";
 
 
 export enum RaceType {

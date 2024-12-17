@@ -1,9 +1,9 @@
 import React from "react";
 import { ModelComp } from ".";
-import { BoardModel } from "@/hearthstone/model/board";
 import { useModel } from "./use-model";
 import { CardComp } from "./card";
 import { Link } from "./common";
+import { BoardModel } from "../models/board";
 
 export function BoardComp(props: {
     model: BoardModel

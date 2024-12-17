@@ -1,11 +1,6 @@
-import { Factory } from "@/set-piece/service/factory";
-import { Def } from "@/set-piece/type/define";
-import { NodeModel } from "../../set-piece/node";
-import { Props } from "@/set-piece/type/props";
 import { CardModel } from "./card/card";
-import { Validator } from "@/set-piece";
 import { PlayerModel } from "./player";
-import { Model } from "@/set-piece/type/model";
+import { Def, Factory, Model, NodeModel, Props, Validator } from "@/set-piece";
 
 type DeckDef = Def.Create<{
     code: 'deck',

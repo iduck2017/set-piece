@@ -1,9 +1,8 @@
 import React from "react";
 import './index.css';
-import { Validator } from "@/set-piece/service/validator";
 import { useModel } from "./use-model";
-import { Model } from "@/set-piece/type/model";
-import { Base, Dict } from "@/set-piece/type/base";
+import { Dict, Validator, Model, Base } from "@/set-piece";
+
 
 export function State(props: {
     model: Model

@@ -3,9 +3,8 @@ import './index.css';
 import { useModel } from "./use-model";
 import { ModelComp } from ".";
 import { Link } from "./common";
-import { AppModel } from "@/model/app";
-import { DemoComp } from "./demo";
 import { GameComp } from "./game";
+import { AppModel } from "../models/app";
 
 export function AppComp(props: {
     model: AppModel
@@ -31,7 +30,6 @@ export function AppComp(props: {
         }
         menu={
             <>
-                {childDict.demo && <DemoComp model={childDict.demo} />}
                 {childDict.game && <GameComp model={childDict.game} />}
             </>
         }

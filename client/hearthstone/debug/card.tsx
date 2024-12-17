@@ -1,9 +1,9 @@
 import React from "react";
 import { ModelComp } from ".";
-import { CardModel } from "@/hearthstone/model/card/card";
 import { useModel } from "./use-model";
 import { Link, State } from "./common";
 import { useContext } from "./use-context";
+import { CardModel } from "../models/card/card";
 
 export function CardComp(props: {
     model: CardModel

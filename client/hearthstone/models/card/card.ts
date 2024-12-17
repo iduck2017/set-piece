@@ -1,19 +1,12 @@
-import { Def } from "@/set-piece/type/define";
-import { NodeModel } from "../../../set-piece/node";
-import { Props } from "@/set-piece/type/props";
 import { CastableModel } from "../castable";
 import { FeatureListModel } from "../feature";
 import { CombatableModel } from "../combatable";
-import { Validator } from "@/set-piece";
 import { HandModel } from "../hand";
 import { GraveyardModel } from "../graveyard";
 import { DeckModel } from "../deck";
 import { BoardModel } from "../board";
 import { PlayerModel } from "../player";
-import { Chunk } from "@/set-piece/type/chunk";
-import { Dict } from "@/set-piece/type/base";
-import { Event } from "@/set-piece/type/event";
-import { Model } from "@/set-piece/type/model";
+import { Chunk, Def, Dict, Event, Model, NodeModel, Props, Validator } from "@/set-piece";
 
 export type TargetCollector<T = any>  = {
     hint: string;

@@ -1,8 +1,8 @@
 import React from "react";
 import { ModelComp } from ".";
-import { GraveyardModel } from "@/model/hearth/graveyard";
 import { CardComp } from "./card";
 import { useModel } from "./use-model";
+import { GraveyardModel } from "../models/graveyard";
 
 export function GraveyardComp(props: {
     model: GraveyardModel

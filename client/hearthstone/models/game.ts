@@ -1,11 +1,7 @@
-import { Factory } from "@/set-piece/service/factory";
-import { Lifecycle } from "@/set-piece/service/lifecycle";
-import { AppModel } from "../../demo/model/app";
-import { NodeModel } from "../../set-piece/node";
-import { Def } from "@/set-piece/type/define";
-import { Props } from "@/set-piece/type/props";
 import { PlayerModel } from "./player";
 import { DataBase } from "@/hearthstone/services/database";
+import { Def, Factory, Lifecycle, NodeModel, Props } from "@/set-piece";
+import { AppModel } from "./app";
 
 type GameDef = Def.Create<{
     code: 'game',

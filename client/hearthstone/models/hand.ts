@@ -1,10 +1,6 @@
-import { Factory } from "@/set-piece/service/factory";
-import { Def } from "@/set-piece/type/define";
-import { NodeModel } from "../../set-piece/node";
-import { Props } from "@/set-piece/type/props";
 import { CardModel } from "./card/card";
-import { Model } from "@/set-piece/type/model";
 import { PlayerModel } from "./player";
+import { Def, Factory, Model, NodeModel, Props } from "@/set-piece";
 
 type HandDef = Def.Create<{
     code: 'hand',

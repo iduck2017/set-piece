@@ -1,9 +1,9 @@
 import React from "react";
-import { HandModel } from "@/model/hearth/hand";
 import { ModelComp } from ".";
 import { CardComp } from "./card";
 import { useModel } from "./use-model";
 import { Link } from "./common";
+import { HandModel } from "../models/hand";
 
 export function HandComp(props: {
     model: HandModel

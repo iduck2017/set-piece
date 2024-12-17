@@ -1,6 +1,7 @@
-import { TargetCollector, TargetCollectorInfo } from '@/hearthstone/model/card/card';
-import { Model } from '@/set-piece/type/model';
+import { Model } from '@/set-piece';
 import React, { createContext, useEffect, useState } from 'react';
+import { TargetCollector, TargetCollectorInfo } from '../models/card/card';
+
 
 export type GameContextInfo = {
     handleTargetCollect: (target: Model) => void;

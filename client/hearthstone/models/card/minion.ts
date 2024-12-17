@@ -1,14 +1,9 @@
-import { Def } from "@/set-piece/type/define";
-import { Props } from "@/set-piece/type/props";
 import { CardDef, CardModel, TargetCollector } from "./card";
 import { CastableModel, CastableRule } from "../castable";
 import { CombatableModel, CombatableRule } from "../combatable";
 import { BoardModel } from "../board";
-import { Base, Dict } from "@/set-piece/type/base";
-import { Lifecycle } from "@/set-piece/service/lifecycle";
-import { Chunk } from "@/set-piece/type/chunk";
 import { DataBase, RaceType } from "@/hearthstone/services/database";
-import { Event } from "@/set-piece/type/event";
+import { Base, Chunk, Def, Dict, Event, Lifecycle, Props } from "@/set-piece";
 
 export type MinionRule = {
     readonly races: Readonly<RaceType[]>;

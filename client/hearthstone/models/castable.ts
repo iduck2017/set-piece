@@ -1,8 +1,4 @@
-import { Def } from "@/set-piece/type/define";
-import { NodeModel } from "../../set-piece/node";
-import { Props } from "@/set-piece/type/props";
-import { Base } from "@/set-piece/type/base";
-import { Factory } from "@/set-piece/service/factory";
+import { Base, Def, Factory, NodeModel, Props } from "@/set-piece";
 import { CardModel } from "./card/card";
 
 export type CastableRule = {

@@ -3,7 +3,7 @@ import { ModelComp } from ".";
 import { useModel } from "./use-model";
 import { CardComp } from "./card";
 import { Link } from "./common";
-import { DeckModel } from "@/hearthstone/model/deck";
+import { DeckModel } from "../models/deck";
 
 export function DeckComp(props: {
     model: DeckModel

@@ -1,10 +1,5 @@
-import { Factory } from "@/set-piece/service/factory";
-import { Props } from "@/set-piece/type/props";
-import { NodeModel } from "../../set-piece/node";
-import { Def } from "@/set-piece/type/define";
-import { Base } from "@/set-piece/type/base";
-import { Validator, Lifecycle } from "@/set-piece";
-import { Model } from "@/set-piece/type/model";
+import { Base, Def, Factory, Lifecycle, 
+    Model, NodeModel, Props, Validator } from "@/set-piece";
 
 export type CombatableRule = {
     health: number;

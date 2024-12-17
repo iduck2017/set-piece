@@ -1,10 +1,6 @@
-import { Factory } from "@/set-piece/service/factory";
-import { Def } from "@/set-piece/type/define";
-import { NodeModel } from "../../set-piece/node";
-import { Props } from "@/set-piece/type/props";
 import { CardModel } from "./card/card";
 import { PlayerModel } from "./player";
-import { Model } from "@/set-piece/type/model";
+import { Def, Factory, Model, NodeModel, Props } from "@/set-piece";
 
 type GraveyardDef = Def.Create<{
     code: 'graveyard',
@@ -31,5 +27,4 @@ export class GraveyardModel extends NodeModel<GraveyardDef> {
         const target = this.appendChild(chunk);
         return target;
     }
-
 }

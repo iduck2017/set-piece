@@ -1,12 +1,10 @@
-import { Def } from "@/set-piece/type/define";
-import { FeatureDef, FeatureModel } from "./feature";
-import { Props } from "@/set-piece/type/props";
-import { Lifecycle } from "@/set-piece/service/lifecycle";
-import { MinionModel } from "./card/minion";
-import { Model } from "@/set-piece/type/model";
+import { Def, Lifecycle, Model, Props } from "@/set-piece";
 import { CombatableModel } from "./combatable";
 import { Mutable } from "utility-types";
 import { GameModel } from "./game";
+import { MinionModel } from "./card/minion";
+import { FeatureDef, FeatureModel } from "./feature";
+
 
 export type BuffDef = Def.Create<{
     code: string;

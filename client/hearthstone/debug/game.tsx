@@ -1,9 +1,9 @@
 import React from "react";
 import { ModelComp } from ".";
-import { GameModel } from "@/hearthstone/model/game";
 import { PlayerComp } from "./player";
 import { Link } from "./common";
 import { GameProvider, useContext } from "./use-context";
+import { GameModel } from "../models/game";
 
 function RawGameComp(props: {
     model: GameModel

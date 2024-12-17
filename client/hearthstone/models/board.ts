@@ -1,9 +1,4 @@
-import { Factory } from "@/set-piece/service/factory";
-import { Def } from "@/set-piece/type/define";
-import { NodeModel } from "../../set-piece/node";
-import { Props } from "@/set-piece/type/props";
-import { Validator, Random } from "@/set-piece";
-import { Model } from "@/set-piece/type/model";
+import { Def, Factory, Model, NodeModel, Props, Random, Validator } from "@/set-piece";
 import { PlayerModel } from "./player";
 import { MinionModel } from "./card/minion";
 import { RaceType } from "@/hearthstone/services/database";
@@ -106,7 +101,7 @@ export class BoardModel extends NodeModel<BoardDef> {
         }
         if (options.requiredRaces) {
             const races = options.requiredRaces;
-            result = result.filter(item => (
+            result = result.filter((item: MinionModel) => (
                 item.stateDict.races?.some(race => (
                     races.includes(race)
                 ))

@@ -1,11 +1,11 @@
 import React from "react";
 import { ModelComp } from ".";
-import { PlayerModel } from "@/model/hearth/player";
 import { DeckComp } from "./deck";
 import { GraveyardComp } from "./graveyard";
 import { BoardComp } from "./board";
 import { HandComp } from "./hand";
 import { useModel } from "./use-model";
+import { PlayerModel } from "../models/player";
 
 export function PlayerComp(props: {
     model: PlayerModel

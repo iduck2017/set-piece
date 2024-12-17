@@ -1,12 +1,6 @@
-import { Factory } from "@/set-piece/service/factory";
-import { Def } from "@/set-piece/type/define";
-import { NodeModel } from "../../set-piece/node";
-import { Props } from "@/set-piece/type/props";
 import { CardModel } from "./card/card";
-import { Chunk } from "@/set-piece/type/chunk";
-import { Dict } from "@/set-piece/type/base";
+import { Def, Factory, Model, NodeModel, Props } from "@/set-piece";
 import { MinionModel } from "./card/minion";
-import { Model } from "@/set-piece/type/model";
 
 export type FeatureListDef = Def.Create<{
     code: 'feature-list',

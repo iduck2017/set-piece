@@ -1,11 +1,8 @@
-import { Base } from "@/set-piece/type/base";
-import { DemoModel } from "../../demo/model/demo";
 import { GameModel } from "./game";
-import { NodeModel } from "../../set-piece/node";
-import { Def } from "@/set-piece/type/define";
-import { Validator } from "@/set-piece";
+import { Validator, Def, Factory, NodeModel, Base } from "@/set-piece";
 import { File } from "@/hearthstone/services/file";
-import { Factory } from "@/set-piece/service/factory";
+import { DemoModel } from "@/demo/models/demo";
+
 
 type AppDef = Def.Create<{
     code: 'app',
