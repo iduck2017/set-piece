@@ -40,8 +40,10 @@
   },
   "scripts": {
     "watch": "webpack -w",
-    "build": "webpack --mode production",
-    "serve": "webpack serve",
+    "build::demo": "webpack --mode production --config ./client/demo/webpack.config.js",
+    "serve::demo": "webpack serve --config ./client/demo/webpack.config.js",
+    "build::hs": "webpack --mode production --config ./client/hearthstone/webpack.config.js",
+    "serve::hs": "webpack serve --config ./client/hearthstone/webpack.config.js",
     "tauri": "tauri"
   }
 }
