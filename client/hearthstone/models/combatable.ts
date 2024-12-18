@@ -6,11 +6,12 @@ import { CardRefer } from "../utils/refers/card";
 export type CombatableRule = {
     health: number;
     attack: number;
-    isDivineShield?: boolean;
+    hasDivineShield?: boolean;
     isRush?: boolean;
     isCharge?: boolean;
     isWindfury?: boolean;
     isTaunt?: boolean;
+    isStealth?: boolean;
     races: Readonly<RaceType[]>;
 }
 
@@ -23,6 +24,7 @@ export type CombatableDef = Def.Create<{
         isAlive: boolean;
         hasDivineShield: boolean;
         actionPoint: number;
+        isStealth: boolean;
     };
     paramDict: {
         maxHealth: number;
@@ -60,8 +62,8 @@ export class CombatableModel extends NodeModel<CombatableDef> {
             target = target.parent;
         }
         const {
-            health, attack, isDivineShield, races,
-            isRush, isCharge, isWindfury, isTaunt
+            health, attack, hasDivineShield: isDivineShield, races,
+            isRush, isCharge, isWindfury, isTaunt, isStealth
         } = rule || {};
         super({
             ...props,
@@ -70,6 +72,7 @@ export class CombatableModel extends NodeModel<CombatableDef> {
                 isAlive: true,
                 hasDivineShield: isDivineShield || false,
                 actionPoint: (isRush || isCharge) ? 1 : 0,
+                isStealth: isStealth || false,
                 ...props.stateDict
             },
             paramDict: {

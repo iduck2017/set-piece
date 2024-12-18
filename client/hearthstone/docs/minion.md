@@ -4,6 +4,7 @@
 
 我会以叫嚣的中士（Abusive Sergeant 1/2/1 Battlecry: Give a minion +2 Attack this turn）为例，给出如下例子：
 
+
 - 创建一个文件，用于描述随从的基本属性：
 
     - 文件应被放置在models/minions路径下，命名规范：随从名.ts，kebab-case 
@@ -37,7 +38,7 @@ export type AbusiveSergeantDef = MinionDef<
     health: 1,
     attack: 2,
     races: []
-})
+}) 
 @Factory.useProduct('abusive-sergeant')
 export class AbusiveSergeantModel extends MinionModel<AbusiveSergeantDef> {
     constructor(props: Props<AbusiveSergeantDef & CardDef & MinionDef>) {
@@ -189,3 +190,9 @@ export class BuffAbusiveSergeantModel extends BuffModel<BuffAbusiveSergeantDef> 
 }
 
 ```
+
+此外，你还需要注意以下几点：
+
+1. 代码中不要出现中文
+2. 不要修改set-piece文件夹下的代码
+3. 衍生物需要将useRule的参数2设置为true Minion.useRule({}, true)

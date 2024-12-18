@@ -86,7 +86,7 @@ export class DataBase {
                 isRush,
                 isWindfury,
                 isTaunt,
-                isDivineShield
+                hasDivineShield: isDivineShield
             } = config;
             const {
                 _register: register,

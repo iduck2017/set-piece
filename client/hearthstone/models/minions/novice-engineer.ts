@@ -1,78 +1,42 @@
-// import { Def } from "@/type/define";
-// import { CardDef } from "./card";
-// import { Props } from "@/type/props";
-// import { MinionDef, MinionModel } from "./minion";
-// import { FeatureModel, FeatureDef } from "../feature";
-// import { Factory } from "@/service/factory";
-// import { Lifecycle } from "@/service/lifecycle";
+import { Def, Factory, Props } from "@/set-piece";
+import { MinionDef, MinionModel } from "../minion";
+import { BattlecryNoviceEngineerModel } from "../features/battlecry-novice-engineer";
 
-// export type NoviceEngineerDef = Def.Create<{
-//     code: 'novice-engineer',
-//     childDict: {
-//         battlecry: BattlecryNoviceEngineerModel
-//     }
-// }>
+/**
+ * @prompt
+ * Novice Engineer 1/1/1 Battlecry: Draw a card.
+ */
 
+export type NoviceEngineerDef = MinionDef<
+    Def.Create<{
+        code: 'novice-engineer',
+        childDict: {
+            battlecry: BattlecryNoviceEngineerModel
+        }
+    }>
+>
 
-// @MinionModel.useRule({
-//     manaCost: 2,
-//     health: 1,
-//     attack: 1,
-//     races: []
-// })
-// @Factory.useProduct('novice-engineer')
-// export class NoviceEngineerModel extends MinionModel<NoviceEngineerDef> {
-//     constructor(props: Props<NoviceEngineerDef & CardDef & MinionDef>) {
-//         const superProps = MinionModel.minionProps(props);
-//         super({
-//             ...superProps,
-//             stateDict: {},
-//             paramDict: {
-//                 races: [],
-//                 name: 'Novice Engineer',
-//                 desc: 'Battlecry: Draw a card.'
-//             },
-//             childDict: {
-//                 battlecry: { code: 'battlecry-novice-engineer' },
-//                 ...superProps.childDict
-//             }
-//         });
-//     }
-
-//     debug() {
-//         super.debug();
-//         this.childDict.battlecry.debug();
-//     }
-// }
-
-// export type BattlecryNoviceEngineerDef = Def.Create<{
-//     code: 'battlecry-novice-engineer',
-//     parent: NoviceEngineerModel
-// }>
-
-// @Factory.useProduct('battlecry-novice-engineer')
-// export class BattlecryNoviceEngineerModel extends FeatureModel<BattlecryNoviceEngineerDef> {
-//     constructor(props: Props<BattlecryNoviceEngineerDef & FeatureDef>) {
-//         super({
-//             ...props,
-//             paramDict: {
-//                 name: 'Novice Engineer\'s Battlecry',
-//                 desc: 'Draw a card.'
-//             },
-//             stateDict: {},
-//             childDict: {}
-//         });
-//     }
-
-//     @Lifecycle.useLoader()
-//     private _handleBattlecry() {
-//         if (this.card instanceof MinionModel) {
-//             this.bindEvent(
-//                 this.card.eventEmitterDict.onBattlecry,
-//                 () => {
-//                     this.card.player.childDict.deck.drawCard();
-//                 }
-//             );
-//         }
-//     }
-// }
+@MinionModel.useRule({
+    manaCost: 1,
+    health: 1,
+    attack: 1,
+    races: []
+})
+@Factory.useProduct('novice-engineer')
+export class NoviceEngineerModel extends MinionModel<NoviceEngineerDef> {
+    constructor(props: Props<NoviceEngineerDef>) {
+        const superProps = MinionModel.minionProps(props);
+        super({
+            ...superProps,
+            paramDict: {
+                name: 'Novice Engineer',
+                desc: 'Battlecry: Draw a card.'
+            },
+            stateDict: {},
+            childDict: {
+                battlecry: { code: 'battlecry-novice-engineer' },
+                ...superProps.childDict
+            }
+        });
+    }
+}

@@ -6,7 +6,8 @@ export function validateTarget(
     options: {
         isMinion?: boolean;
         isMinionOnBoard?: boolean;
-    }
+    },
+    validator?: (model: Model) => boolean
 ) {
     const validatorDict = {
         isMinion: (model: Model) =>  model instanceof MinionModel,
@@ -17,11 +18,11 @@ export function validateTarget(
     };
     for (const key in options) {
         if (Reflect.has(options, key)) {
-            const validator = Reflect.get(validatorDict, key);
+            const result = Reflect.get(validatorDict, key);
             const isDeny = Reflect.get(options, key);
-            if (isDeny) return !validator(model);
-            return validator(model);
+            if (isDeny === result) return false;
         }
     }
-    return false;
+    if (validator && !validator(model)) return false;
+    return true;
 }
