@@ -33,7 +33,6 @@ export class Factory {
 
     static useProduct<T extends string>(code: T) {
         return function (Type: Base.Class<{ code: T }>) {
-            console.log('Use Product', code);
             Factory._productDict[code] = Type;
             Factory._productMap.set(Type, code);
         };

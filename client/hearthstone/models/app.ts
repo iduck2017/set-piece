@@ -53,6 +53,7 @@ export class AppModel extends NodeModel<AppDef> {
 
     @Validator.useCondition(app => !app.childDict.game)
     async start() {
+        console.log('start');
         const chunk = await File.loadChunk<GameModel>('game');
         this.childChunkDict.game = chunk;
     }

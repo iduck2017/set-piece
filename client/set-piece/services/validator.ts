@@ -52,12 +52,14 @@ export class Validator {
                 const result = condition(this, ...args);
                 if (result) {
                     return handler?.apply(this, args);
-                } else if (isStrict) {
+                } else {
                     console.error('[invalid-state]', {
                         method: key
                     });
-                    throw new Error();
-                }
+                    if (isStrict) {
+                        throw new Error();
+                    }
+                } 
             };
             return descriptor;
         };

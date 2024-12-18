@@ -120,6 +120,7 @@ export class CombatableModel extends NodeModel<CombatableDef> {
     @Validator.useCondition(model => model.stateDict.isAlive)
     @Validator.useCondition(model => model.stateDict.actionPoint > 0)
     attack(target: CombatableModel) {
+        console.log(target);
         if (target) {
             this.baseStateDict.actionPoint -= 1;
             this._dealDamage(target);
@@ -129,6 +130,7 @@ export class CombatableModel extends NodeModel<CombatableDef> {
     }
 
     private _dealDamage(target: CombatableModel) {
+        console.log(target);
         const damage = this.stateDict.attack;
         target.receiveDamage(damage, target);
         this.eventDict.onDealDamage(this, damage);

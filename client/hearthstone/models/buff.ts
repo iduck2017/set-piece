@@ -28,8 +28,9 @@ export abstract class BuffModel<
 
     @Lifecycle.useLoader()
     private _handleBuff() {
-        const combatable = this.refer.combatable;
+        const combatable = this.refer.minionCombatable;
         if (!combatable) return;
+        console.log('[handle-buff]', this, combatable);
         this.bindEvent(
             combatable.eventEmitterDict.onParamCheck,
             this._buff
@@ -47,10 +48,11 @@ export abstract class BuffModel<
 
     @Lifecycle.useLoader()
     private _handleRoundEnd() {
-        const combatable = this.refer.combatable;
+        const combatable = this.refer.minionCombatable;
         const game = this.refer.game;
         if (!combatable || !game) return;
         if (this.stateDict.shouldDisposedOnRoundEnd) {
+            console.log('[handle-round-end]', this);
             this.bindEvent(
                 game.eventEmitterDict.onRoundEnd,
                 () => {

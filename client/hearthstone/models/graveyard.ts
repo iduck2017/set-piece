@@ -1,6 +1,6 @@
 import { CardModel } from "./card";
 import { PlayerModel } from "./player";
-import { Def, Factory, Model, NodeModel, Props } from "@/set-piece";
+import { Def, Factory, Model, NodeModel, Props, Validator } from "@/set-piece";
 
 type GraveyardDef = Def.Create<{
     code: 'graveyard',
@@ -9,6 +9,7 @@ type GraveyardDef = Def.Create<{
     childList: CardModel[],
     eventDict: {
         onCardAccess: [CardModel];
+        onCardRemove: [CardModel];
     },
     parent: PlayerModel
 }>
@@ -30,6 +31,16 @@ export class GraveyardModel extends NodeModel<GraveyardDef> {
         if (target) {
             this.eventDict.onCardAccess(target);
             return target;
+        }
+    }
+
+    @Validator.useCondition(model => !model.childList.length)
+    removeCard(target?: CardModel) {
+        if (!target) target = this.childList[0];
+        const chunk = this.removeChild(target);
+        if (chunk) {
+            this.eventDict.onCardRemove(target);
+            return chunk;
         }
     }
 }

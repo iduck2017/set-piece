@@ -4,7 +4,7 @@ import { MinionModel, MinionDef } from "../minion";
 
 /**
  * @propmt
- * Abusive Sergeant  Battlecry: Give a minion +2 Attack this turn
+ * Abusive Sergeant 1/2/1 Battlecry: Give a minion +2 Attack this turn
  * use GameModel event onRoundEnd 
  */
 import { Def, Factory, Props } from "@/set-piece";

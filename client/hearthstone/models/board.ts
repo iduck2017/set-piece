@@ -11,6 +11,7 @@ type BoardDef = Def.Create<{
     eventDict: {
         onMinionSummon: [MinionModel];
         onMinionRemove: [MinionModel];
+        onMinionDispose: [MinionModel];
     },
     parent: PlayerModel
 }>
@@ -44,6 +45,16 @@ export class BoardModel extends NodeModel<BoardDef> {
         const chunk = this.removeChild(target);
         if (chunk) {
             this.eventDict.onMinionRemove(target);
+            return chunk;
+        }
+    }
+
+    disposeMinion(target: MinionModel) {
+        if (!target) target = this.childList[0];
+        const chunk = this.removeMinion(target);
+        if (chunk) {
+            this.refer.playerGraveyard?.accessCard(chunk);
+            this.eventDict.onMinionDispose(target);
             return chunk;
         }
     }

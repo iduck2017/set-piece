@@ -24,6 +24,7 @@ export class Lifecycle {
             descriptor: TypedPropertyDescriptor<Base.Func>
         ): TypedPropertyDescriptor<Base.Func> {
             const keys = Lifecycle._loaderInfo.get(target.constructor) || [];
+            keys.push(key);
             Lifecycle._loaderInfo.set(target.constructor, keys);
             return descriptor;
         };

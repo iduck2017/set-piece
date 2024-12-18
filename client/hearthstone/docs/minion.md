@@ -2,7 +2,7 @@
 
 你是一位炉石传说的开发者，请遵从如下规则生成一个随从类，随从的属性、效果、描述等已经给出
 
-我会以叫嚣的中士（Abusive Sergeant  Battlecry: Give a minion +2 Attack this turn）为例，给出如下例子：
+我会以叫嚣的中士（Abusive Sergeant 1/2/1 Battlecry: Give a minion +2 Attack this turn）为例，给出如下例子：
 
 - 创建一个文件，用于描述随从的基本属性：
 
@@ -18,7 +18,7 @@ import { MinionModel, MinionDef } from "../minion";
 
 /**
  * @propmt
- * Abusive Sergeant  Battlecry: Give a minion +2 Attack this turn
+ * Abusive Sergeant 1/2/1 Battlecry: Give a minion +2 Attack this turn
  * use GameModel event onRoundEnd 
  */
 import { Def, Factory, Props } from "@/set-piece";
@@ -156,7 +156,7 @@ export class BattlecryAbusiveSergeantModel extends FeatureModel<BattlecryAbusive
     - 你需要实现实体的类型声明，命名规范：前缀+随从名+Def，UpperCase
     - 你需要实现实体的类声明，命名规范： 前缀+随从名+Model，UpperCase
 
-```
+```typescript
 
 import { Factory } from "@/set-piece/services/factory";
 import { Props } from "@/set-piece/types/props";

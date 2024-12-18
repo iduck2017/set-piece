@@ -74,7 +74,7 @@ export abstract class MinionModel<
         this.bindEvent(
             this.childDict.combatable.eventEmitterDict.onDie,
             () => {
-                this.refer.playerBoard?.removeMinion(this);
+                this.refer.playerBoard?.disposeMinion(this);
             }
         );
     }
