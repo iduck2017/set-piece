@@ -3,7 +3,7 @@ import { ModelComp } from ".";
 import { useModel } from "./use-model";
 import { Link, State } from "./common";
 import { useContext } from "./use-context";
-import { CardModel } from "../models/card/card";
+import { CardModel } from "../models/card";
 
 export function CardComp(props: {
     model: CardModel
@@ -28,7 +28,7 @@ export function CardComp(props: {
                             if (result) setTargetCollectorInfo(result);
                         }}
                     />
-                    <Link model={props.model} action='draw' />
+                    <Link model={props.model} action='pick' />
                 </>}
                 {isTargetCollectable(props.model) && 
                     <div 

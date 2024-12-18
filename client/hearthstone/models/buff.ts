@@ -1,42 +1,39 @@
 import { Def, Lifecycle, Model, Props } from "@/set-piece";
 import { CombatableModel } from "./combatable";
 import { Mutable } from "utility-types";
-import { GameModel } from "./game";
-import { MinionModel } from "./card/minion";
 import { FeatureDef, FeatureModel } from "./feature";
 
+export type BuffDef<
+    T extends Def = Def
+> = FeatureDef<
+    Def.Create<{
+        code: string;
+        stateDict: {
+        },
+        paramDict: {
+            modAttack: number;
+            modHealth: number;
+            shouldDisposedOnRoundEnd?: boolean;
+        }
+    }>
+> & T;
 
-export type BuffDef = Def.Create<{
-    code: string;
-    stateDict: {
-    },
-    paramDict: {
-        modAttack: number;
-        modHealth: number;
-        shouldDisposedOnRoundEnd?: boolean;
-    }
-}>
 
 export abstract class BuffModel<
-    T extends Def = Def
-> extends FeatureModel<T & BuffDef> {
-    static buffProps<T>(
-        props: Props<T & FeatureDef & BuffDef>
-    ) {
-        const featureProps = FeatureModel.featureProps(props);
-        return featureProps;
+    T extends BuffDef = BuffDef
+> extends FeatureModel<T> {
+    static buffProps<T extends BuffDef>(props: Props<T>) {
+        return FeatureModel.featureProps(props);
     }
 
     @Lifecycle.useLoader()
     private _handleBuff() {
-        if (this.card instanceof MinionModel) {
-            const card: MinionModel<Def.Pure> = this.card;
-            const combatable = card.childDict.combatable;
-            this.bindEvent(
-                combatable.eventEmitterDict.onParamCheck,
-                this._buff
-            );
-        }
+        const combatable = this.refer.combatable;
+        if (!combatable) return;
+        this.bindEvent(
+            combatable.eventEmitterDict.onParamCheck,
+            this._buff
+        );
     }
 
     private _buff(
@@ -50,14 +47,12 @@ export abstract class BuffModel<
 
     @Lifecycle.useLoader()
     private _handleRoundEnd() {
-        if (
-            this.stateDict.shouldDisposedOnRoundEnd && 
-            this.card instanceof MinionModel
-        ) {
-            const card: MinionModel<Def.Pure> = this.card;
-            const combatable = card.childDict.combatable;
+        const combatable = this.refer.combatable;
+        const game = this.refer.game;
+        if (!combatable || !game) return;
+        if (this.stateDict.shouldDisposedOnRoundEnd) {
             this.bindEvent(
-                GameModel.core.eventEmitterDict.onRoundEnd,
+                game.eventEmitterDict.onRoundEnd,
                 () => {
                     this.unbindEvent(
                         combatable.eventEmitterDict.onParamCheck,

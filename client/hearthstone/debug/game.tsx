@@ -16,7 +16,6 @@ function RawGameComp(props: {
             model={model}
             form={
                 <>
-                    <Link model={model} action="checkDatabase" />
                     <Link model={model} action="nextRound" />
                     {targetCollector?.hint && <div className="mark">
                         hint: {targetCollector.hint}

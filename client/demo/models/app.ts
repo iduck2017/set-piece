@@ -50,7 +50,6 @@ export class AppModel extends NodeModel<AppDef> {
             childList: [],
             parent: undefined
         });
-        window.app = this;
     }
     
     count() {

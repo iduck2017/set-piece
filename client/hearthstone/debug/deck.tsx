@@ -15,7 +15,7 @@ export function DeckComp(props: {
         form={
             <>
                 <Link model={props.model} action="generateCard" />
-                <Link model={props.model} action="removeCard" />
+                <Link model={props.model} action='discardCard' />
                 <Link model={props.model} action="drawCard" />
             </>
         }

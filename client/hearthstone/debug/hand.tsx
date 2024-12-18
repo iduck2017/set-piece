@@ -14,7 +14,7 @@ export function HandComp(props: {
         model={props.model} 
         form={
             <>
-                <Link model={props.model} action="emptyCardList" />
+                <Link model={props.model} action='discardCard' />
             </>
         }
         menu={

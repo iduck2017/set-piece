@@ -1,17 +1,19 @@
-import { CardModel } from "./card/card";
 import { Def, Factory, Model, NodeModel, Props } from "@/set-piece";
-import { MinionModel } from "./card/minion";
+import { FeatureRefer } from "../utils/refers/feature";
 
 export type FeatureListDef = Def.Create<{
     code: 'feature-list',
     stateDict: {},
     paramDict: {},
     childList: FeatureModel[],
-    eventDict: {},
-    parent: CardModel<Def.Pure>
+    eventDict: {
+        onFeatureAccess: [FeatureModel];
+    },
 }>
 
-export type FeatureDef = Def.Create<{
+export type FeatureDef<
+    T extends Def = Def
+> = Def.Create<{
     code: string,
     stateDict: {
     },
@@ -21,8 +23,7 @@ export type FeatureDef = Def.Create<{
     }
     childList: [],
     eventDict: {},
-    parent: CardModel<Def.Pure> | FeatureListModel
-}>
+}> & T;
 
 @Factory.useProduct('feature-list')
 export class FeatureListModel extends NodeModel<FeatureListDef> {
@@ -34,36 +35,31 @@ export class FeatureListModel extends NodeModel<FeatureListDef> {
             stateDict: {},
             paramDict: {}
         });
-    }
+    } 
     
-    addFeature<M extends FeatureModel>(chunk: Model.Chunk<M>) {
-        console.log('[add-feature]', chunk);
+    accessFeature<M extends FeatureModel>(chunk: Model.Chunk<M>) {
         const target = this.appendChild(chunk);
-        return target;
+        if (target) {
+            this.eventDict.onFeatureAccess(target);
+            return target;
+        }
     }
 }
 
+
 export abstract class FeatureModel<
-    T extends Def = Def
-> extends NodeModel<T & FeatureDef> {
-    static featureProps<T>(props: Props<T & FeatureDef>) {
+    T extends FeatureDef = FeatureDef
+> extends NodeModel<T> {
+    readonly refer: FeatureRefer;
+
+    static featureProps<T extends FeatureDef>(
+        props: Props<T>
+    ) {
         return props;
     }
-
-    get card(): CardModel<Def.Pure> {
-        return this.parent instanceof CardModel ? 
-            this.parent : 
-            this.parent.parent;
+    
+    constructor(props: Props.Strict<T>) {
+        super(props);
+        this.refer = new FeatureRefer(this);
     }
-
-    get minion(): MinionModel<Def.Pure> | undefined {
-        return this.card instanceof MinionModel ? this.card : undefined;
-    }
-
-    // get stateDict() {
-    //     return {
-    //         ...super.stateDict,
-    //         card: this.card
-    //     };
-    // }
 }

@@ -1,17 +1,14 @@
+import { DataBase } from "../services/database";
+import { File } from "../services/file";
 import { GameModel } from "./game";
 import { Validator, Def, Factory, NodeModel, Base } from "@/set-piece";
-import { File } from "@/hearthstone/services/file";
-import { DemoModel } from "@/demo/models/demo";
-
 
 type AppDef = Def.Create<{
     code: 'app',
     stateDict: {
         readonly version: string,
-        count: number
     },
     childDict: {
-        demo?: DemoModel,
         game?: GameModel,
     },
     parent: undefined,
@@ -45,19 +42,13 @@ export class AppModel extends NodeModel<AppDef> {
         super({
             code: 'app',
             stateDict: {
-                version: '0.1.0',
-                count: 0
+                version: '0.1.0'
             },
             paramDict: {},
             childDict: {},
             childList: [],
             parent: undefined
         });
-        window.app = this;
-    }
-    
-    count() {
-        this.baseStateDict.count++;
     }
 
     @Validator.useCondition(app => !app.childDict.game)
@@ -65,28 +56,22 @@ export class AppModel extends NodeModel<AppDef> {
         const chunk = await File.loadChunk<GameModel>('game');
         this.childChunkDict.game = chunk;
     }
-    
-    @Validator.useCondition(app => !app.childDict.demo)
-    async test() {
-        const chunk = await File.loadChunk<DemoModel>('demo');
-        this.childChunkDict.demo = chunk;
-    }
 
-    @Validator.useCondition(app => Boolean(app.childDict.game || app.childDict.demo))
+    @Validator.useCondition(app => Boolean(app.childDict.game))
     async save() {
-        if (this.childDict.demo) await File.saveChunk<DemoModel>(this.childDict.demo);
-        if (this.childDict.game) await File.saveChunk<GameModel>(this.childDict.game);
+        if (this.childDict.game) {
+            await File.saveChunk<GameModel>(this.childDict.game);
+        }
     }
 
-    @Validator.useCondition(app => Boolean(app.childDict.demo || app.childDict.game))
+    @Validator.useCondition(app => Boolean(app.childDict.game))
     quit() {
-        if (this.childDict.demo) delete this.childChunkDict.demo;
         if (this.childDict.game) delete this.childChunkDict.game;
         AppModel._singleton = new Map();
     }
 
-    checkFactory() {
+    debug() {
         console.log(Factory.productDict);
-        console.log(Factory.productMap);
+        console.log(DataBase.cardProductInfo);
     }
 }

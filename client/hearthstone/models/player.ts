@@ -2,8 +2,8 @@ import { DeckModel } from "./deck";
 import { HandModel } from "./hand";
 import { BoardModel } from "./board";
 import { GraveyardModel } from "./graveyard";
-import { GameModel } from "./game";
 import { Def, Factory, NodeModel, Props } from "@/set-piece";
+import { PlayerRefer } from "../utils/refers/player";
 
 type PlayerDef = Def.Create<{
     code: 'player',
@@ -16,11 +16,12 @@ type PlayerDef = Def.Create<{
         graveyard: GraveyardModel
     },
     eventDict: {},
-    parent: GameModel
 }>
 
 @Factory.useProduct('player')
 export class PlayerModel extends NodeModel<PlayerDef> {
+    readonly refer: PlayerRefer;
+
     constructor(props: Props<PlayerDef>) {
         super({
             ...props,
@@ -35,5 +36,6 @@ export class PlayerModel extends NodeModel<PlayerDef> {
             stateDict: {},
             paramDict: {}
         });
+        this.refer = new PlayerRefer(this);
     }
 }

@@ -1,42 +1,49 @@
 import { AnimalDef, AnimalModel } from "./animal";
-import { Def, Props, Factory, Validator } from "@/set-piece";
+import { Def, Props, Factory } from "@/set-piece";
 import { ReproductiveModel } from "./reproductive";
 
-type BunnyDef = Def.Create<{
-    code: 'bunny',
-    stateDict: {
-        age: number,
-        readonly name: string,
-    },
-    childDict: {
-        reproductive: ReproductiveModel<BunnyModel>
-    },
-    eventDict: {}
-}>
+type BunnyDef = AnimalDef<
+    Def.Create<{
+        code: 'bunny',
+        stateDict: {
+            age: number,
+            readonly name: string,
+        },
+        childDict: {
+            reproductive: ReproductiveModel<BunnyModel>
+        },
+        eventDict: {},
+        childList: BunnyModel[]
+    }>
+>
 
 @Factory.useProduct('bunny')
 export class BunnyModel extends AnimalModel<BunnyDef> {
-    constructor(props: Props<BunnyDef & AnimalDef>) {
-        const superProps = AnimalModel.superProps(props);
+    constructor(props: Props<BunnyDef>) {
+        const superProps = AnimalModel.animalProps(props);
         super({
             ...props,
             childDict: {
                 ...superProps.childDict,
-                reproductive: { code: 'reproductive' },
+                reproductive: {
+                    code: 'reproductive'
+                },
                 ...props.childDict
             },
             stateDict: {
                 ...superProps.stateDict,
                 name: 'bunny',
                 age: 0,
+                curAge: 0,
+                curCalories: 0,
                 ...props.stateDict
             },
-            paramDict: {}
+            paramDict: {
+                name: 'bunny',
+                desc: 'bunny',
+                maxAge: 10,
+                maxCalories: 100
+            }
         });
-    }
-    
-    @Validator.useCondition(model => model.stateDict.isAlive)
-    growup() {
-        this.baseStateDict.age += 1;
     }
 }

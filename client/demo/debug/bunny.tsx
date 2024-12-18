@@ -14,8 +14,6 @@ export function BunnyComp(props: {
         form={
             <>
                 <Link model={props.model} action="growup" />
-                <Link model={model.childDict.metabolic} action="digest" />
-                <State model={model.childDict.metabolic} />
                 <State model={model.childDict.reproductive} />
             </>
         }

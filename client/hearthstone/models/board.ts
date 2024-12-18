@@ -1,19 +1,24 @@
 import { Def, Factory, Model, NodeModel, Props, Random, Validator } from "@/set-piece";
 import { PlayerModel } from "./player";
-import { MinionModel } from "./card/minion";
-import { RaceType } from "@/hearthstone/services/database";
+import { MinionModel } from "./minion";
+import { PlayerRefer } from "../utils/refers/player";
 
 type BoardDef = Def.Create<{
     code: 'board',
     stateDict: {},
     paramDict: {},
     childList: MinionModel[],
-    eventDict: {},
+    eventDict: {
+        onMinionSummon: [MinionModel];
+        onMinionRemove: [MinionModel];
+    },
     parent: PlayerModel
 }>
 
 @Factory.useProduct('board')
 export class BoardModel extends NodeModel<BoardDef> {
+    readonly refer: PlayerRefer;
+
     constructor(props: Props<BoardDef>) {
         super({
             childList: [],
@@ -22,92 +27,41 @@ export class BoardModel extends NodeModel<BoardDef> {
             stateDict: {},
             paramDict: {}
         });
+        this.refer = new PlayerRefer(this);
     }
-
-    get opponent(): PlayerModel {
-        const player = this.parent;
-        const game = player.parent;
-        return game.childDict.redPlayer === player ?
-            game.childDict.bluePlayer :
-            game.childDict.redPlayer;
-    }
-
-    // @Lifecycle.useLoader()
-    // private _handleChildDie() {
-    //     this.childList.forEach(child => {
-    //         const combatable = child.childDict.combatable;
-    //         if (combatable) {
-    //             this.bindEvent(
-    //                 combatable.eventEmitterDict.onDie,
-    //                 () => {
-    //                     this.removeChild(child);
-    //                 }
-    //             );
-    //         }
-    //     });
-    // }
-
+    
     summonMinion<T extends MinionModel>(chunk: Model.Chunk<T>) {
         const target = this.appendChild(chunk);
-        return target;
+        if (target) {
+            this.eventDict.onMinionSummon(target);
+            return target;
+        }
     }
 
     @Validator.useCondition(model => Boolean(model.childList.length))
-    removeCard(target?: MinionModel) {
+    removeMinion(target?: MinionModel) {
         if (!target) target = this.childList[0];
         const chunk = this.removeChild(target);
-        return chunk;
+        if (chunk) {
+            this.eventDict.onMinionRemove(target);
+            return chunk;
+        }
     }
 
-    @Validator.useCondition(model => (
-        model.opponent.childDict.board.childList.length > 0 &&
-        model.childList.length > 0
-    ))
-    randomCommand() {
+    @Validator.useCondition(model => (Boolean(
+        model.refer.opponentBoard?.childList.length &&
+        model.childList.length
+    )))
+    randomAttack() {
         const targetAlly = this.childList[Random.number(0, this.childList.length - 1)];
-        const opponentBoard = this.opponent.childDict.board;
+        const opponentBoard = this.refer.opponent?.childDict.board;
+        if (!opponentBoard) return;
         const targetEnemy = opponentBoard.childList[
             Random.number(0, opponentBoard.childList.length - 1)
         ];
-        if (
-            targetEnemy?.childDict.combatable && 
-            targetAlly?.childDict.combatable
-        ) {
-            targetAlly.childDict.combatable.attack(
-                targetEnemy.childDict.combatable
-            );
-        }
+        if (!targetAlly || !targetEnemy) return;
+        targetAlly.childDict.combatable.attack(
+            targetEnemy.childDict.combatable
+        );
     }
-
-    disposeBody(card: MinionModel) {
-        const chunk = this.removeCard(card);
-        if (chunk) {
-            this.parent.childDict.graveyard.appendCard(chunk);
-        }
-    }
-
-    getMinionList(options: {
-        excludeTarget?: MinionModel
-        includeEnemy?: boolean,
-        requiredRaces?: RaceType[]
-    }) {
-        let result = this.childList;
-        if (options.includeEnemy) {
-            const opponentBoard = this.opponent.childDict.board;
-            result = result.concat(opponentBoard.childList);
-        }
-        if (options.excludeTarget) {
-            result = result.filter(item => item !== options.excludeTarget);
-        }
-        if (options.requiredRaces) {
-            const races = options.requiredRaces;
-            result = result.filter((item: MinionModel) => (
-                item.stateDict.races?.some(race => (
-                    races.includes(race)
-                ))
-            ));
-        }
-        return result;
-    }
-
 }

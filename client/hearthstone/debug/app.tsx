@@ -20,12 +20,9 @@ export function AppComp(props: {
         model={model}
         form={
             <>
-                <Link model={model} action="count" />
-                <Link model={model} action="test" />
                 <Link model={model} action="save" />
                 <Link model={model} action="quit" />
                 <Link model={model} action="start" />
-                <Link model={model} action="checkFactory" />
             </>
         }
         menu={

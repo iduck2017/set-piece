@@ -1,12 +1,11 @@
-import { Def } from "@/set-piece/type/define";
-import { CardDef } from "./card";
-import { Props } from "@/set-piece/type/props";
-import { Factory } from "@/set-piece/service/factory";
-import { MinionDef, MinionModel } from "./minion";
+import { Def, Factory, Props } from "@/set-piece";
+import { MinionDef, MinionModel } from "../minion";
 
-export type WispDef = Def.Create<{
-    code: 'wisp',
-}>
+export type WispDef = MinionDef<
+    Def.Create<{
+        code: 'wisp',
+    }>
+>
 
 @MinionModel.useRule({
     manaCost: 0,
@@ -16,12 +15,11 @@ export type WispDef = Def.Create<{
 })
 @Factory.useProduct('wisp') 
 export class WispModel extends MinionModel<WispDef> {
-    constructor(props: Props<WispDef & CardDef & MinionDef>) {
+    constructor(props: Props<WispDef>) {
         const superProps = MinionModel.minionProps(props);
         super({
             ...superProps,
             paramDict: {
-                races: [],
                 name: 'Wisp',
                 desc: ''
             },

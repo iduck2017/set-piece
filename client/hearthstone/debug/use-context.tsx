@@ -1,6 +1,6 @@
 import { Model } from '@/set-piece';
 import React, { createContext, useEffect, useState } from 'react';
-import { TargetCollector, TargetCollectorInfo } from '../models/card/card';
+import { TargetCollector, TargetCollectorInfo } from '../models/card';
 
 
 export type GameContextInfo = {

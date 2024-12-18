@@ -1,4 +1,4 @@
-import { CardModel } from "./card/card";
+import { CardModel } from "./card";
 import { PlayerModel } from "./player";
 import { Def, Factory, Model, NodeModel, Props } from "@/set-piece";
 
@@ -7,7 +7,11 @@ type HandDef = Def.Create<{
     stateDict: {},
     paramDict: {},
     childList: CardModel[],
-    eventDict: {},
+    eventDict: {
+        onCardAccess: [CardModel];
+        onCardDiscard: [CardModel];
+        onCardPlay: [CardModel];
+    },
     parent: PlayerModel
 }>
 
@@ -23,20 +27,29 @@ export class HandModel extends NodeModel<HandDef> {
         });
     }
 
-    appendCard(card: Model.Chunk<CardModel>) {
+    accessCard(card: Model.Chunk<CardModel>) {
         const target = this.appendChild(card);
-        return target;
+        if (target) {
+            this.eventDict.onCardAccess(target);
+            return target;
+        }
     }
 
-    removeCard(target?: CardModel) {
+    discardCard(target?: CardModel) {
         if (!target) target = this.childList[0];
         const chunk = this.removeChild(target);
-        return chunk;
+        if (chunk) {
+            this.eventDict.onCardDiscard(target);
+            return chunk;
+        }
     }
 
-    emptyCardList() {
-        for (const child of [ ...this.childList ]) {
-            this.removeChild(child);
+    playCard(target?: CardModel) {
+        if (!target) target = this.childList[0];
+        const chunk = this.removeChild(target);
+        if (chunk) {
+            this.eventDict.onCardPlay(target);
+            return chunk;
         }
     }
 }

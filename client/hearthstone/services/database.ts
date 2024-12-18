@@ -1,9 +1,18 @@
 import { Base, Random, Chunk, Def, Factory } from "@/set-piece";
-import { MinionRule } from "../models/card/minion";
+import { MinionRule } from "../models/minion";
 import { CombatableRule } from "../models/combatable";
-import { CardModel } from "../models/card/card";
+import { CardModel } from "../models/card";
 import { CastableRule } from "../models/castable";
 
+export enum KeywordType {
+    Battlecry = 'battlecry',
+    Deathrattle = 'deathrattle',
+    Taunt = 'taunt',
+    DivineShield = 'divineShield',
+    Rush = 'rush',
+    Windfury = 'windfury',
+    Charge = 'charge',
+}
 
 export enum RaceType {
     Murloc = 'murloc',
@@ -20,12 +29,14 @@ export class DataBase {
         sortByManaCost: Record<string, Base.List<Base.Class>>,
         sortByAttack: Record<string, Base.List<Base.Class>>,
         sortByHealth: Record<string, Base.List<Base.Class>>,
-    } = {
+        sortByKeyword: Partial<Record<KeywordType, Base.List<Base.Class>>>,
+    } = {   
             selectAll: [],
             sortByRace: {},
             sortByManaCost: {},
             sortByAttack: {},
-            sortByHealth: {}
+            sortByHealth: {},
+            sortByKeyword: {}
         };
     static get cardProductInfo() {
         const result = { ...DataBase._cardProductInfo };
@@ -70,7 +81,12 @@ export class DataBase {
                 races = [],
                 manaCost, 
                 attack, 
-                health 
+                health,
+                isCharge,
+                isRush,
+                isWindfury,
+                isTaunt,
+                isDivineShield
             } = config;
             const {
                 _register: register,
@@ -83,6 +99,13 @@ export class DataBase {
                 sortByManaCost,
                 sortByRace
             } = cardProductInfo;
+
+            const keywordList = [];
+            if (isCharge) keywordList.push(KeywordType.Charge);
+            if (isRush) keywordList.push(KeywordType.Rush);
+            if (isWindfury) keywordList.push(KeywordType.Windfury);
+            if (isTaunt) keywordList.push(KeywordType.Taunt);
+            if (isDivineShield) keywordList.push(KeywordType.DivineShield);
 
             register(Type, selectAll);
             for (const race of races) register(Type, sortByRace, race);

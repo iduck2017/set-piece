@@ -1,5 +1,4 @@
-import { Base, Def, Factory, NodeModel, Props } from "@/set-piece";
-import { CardModel } from "./card/card";
+import { Base, Def, Factory, Model, NodeModel, Props } from "@/set-piece";
 
 export type CastableRule = {
     manaCost: number;
@@ -15,7 +14,6 @@ export type CastableDef = Def.Create<{
     }
     eventDict: {},
     childDict: {}
-    parent: CardModel
 }>
 
 @Factory.useProduct('castable')
@@ -28,14 +26,21 @@ export class CastableModel extends NodeModel<CastableDef> {
     }
 
     constructor(props: Props<CastableDef>) {
-        const castableRule = CastableModel._ruleMap.get(props.parent.constructor);
+        let rule: CastableRule | undefined = undefined;
+        let target: Model | undefined = props.parent;
+        while (target) {
+            const tempRule = CastableModel._ruleMap.get(target.constructor);
+            if (tempRule) rule = Object.assign(rule || {}, tempRule);
+            target = target.parent;
+        }
+        const { manaCost } = rule || {};
         super({
             ...props,
             stateDict: {
                 ...props.stateDict
             },
             paramDict: {
-                curManaCost: props.stateDict?.fixManaCost || castableRule?.manaCost || 1
+                curManaCost: props.stateDict?.fixManaCost || manaCost || 1
             },
             childDict: {}
         });

@@ -1,4 +1,4 @@
-import { CardModel } from "./card/card";
+import { CardModel } from "./card";
 import { PlayerModel } from "./player";
 import { Def, Factory, Model, NodeModel, Props } from "@/set-piece";
 
@@ -7,7 +7,9 @@ type GraveyardDef = Def.Create<{
     stateDict: {},
     paramDict: {},
     childList: CardModel[],
-    eventDict: {},
+    eventDict: {
+        onCardAccess: [CardModel];
+    },
     parent: PlayerModel
 }>
 
@@ -23,8 +25,11 @@ export class GraveyardModel extends NodeModel<GraveyardDef> {
         });
     }
 
-    appendCard(chunk: Model.Chunk<CardModel>) {
+    accessCard(chunk: Model.Chunk<CardModel>) {
         const target = this.appendChild(chunk);
-        return target;
+        if (target) {
+            this.eventDict.onCardAccess(target);
+            return target;
+        }
     }
 }

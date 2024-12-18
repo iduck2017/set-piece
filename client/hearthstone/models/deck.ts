@@ -1,4 +1,5 @@
-import { CardModel } from "./card/card";
+import { DataBase } from "../services/database";
+import { CardDef, CardModel } from "./card";
 import { PlayerModel } from "./player";
 import { Def, Factory, Model, NodeModel, Props, Validator } from "@/set-piece";
 
@@ -7,7 +8,11 @@ type DeckDef = Def.Create<{
     stateDict: {},
     paramDict: {},
     childList: CardModel[],
-    eventDict: {},
+    eventDict: {
+        onCardDiscard: [CardModel];
+        onCardDraw: [CardModel];
+        onCardGenerate: [CardModel];
+    },
     parent: PlayerModel
 }>
 
@@ -23,36 +28,39 @@ export class DeckModel extends NodeModel<DeckDef> {
         });
     }
 
-    generateCard() {
-        // const chunk = DataBase.randomSelect<CardDef>(
-        //     DataBase.cardProductInfo.selectAll
-        // );
-        const chunk = { code: 'abusive-sergeant' };
-        // const chunk = { code: 'elven-archer' };
-        // const chunk = { code: 'blood-imp' };
-        // const chunk = { code: 'big-game-hunter' };
-        this.appendChild(chunk);
-    }
-
-    appendCard(chunk: Model.Chunk<CardModel>) {
+    generateCard<T extends CardModel>(chunk?: Model.Chunk<T>) {
+        if (!chunk) {
+            chunk = DataBase.randomSelect<CardDef>(
+                DataBase.cardProductInfo.selectAll
+            );
+        }
         const target = this.appendChild(chunk);
-        return target;
+        if (target) {
+            this.eventDict.onCardGenerate(target);
+            return target;
+        }
     }
 
     @Validator.useCondition(model => Boolean(model.childList.length))
-    removeCard(target?: CardModel) {
+    discardCard(target?: CardModel) {
         if (!target) target = this.childList[0];
         const chunk = this.removeChild(target);
-        return chunk;
+        if (chunk) {
+            this.eventDict.onCardDiscard(target);
+            return chunk;
+        }
     }
 
     @Validator.useCondition(model => Boolean(model.childList.length))
-    drawCard() {
-        const chunk = this.removeCard();
+    drawCard(target?: CardModel) {
+        const chunk = this.discardCard(target);
         if (chunk) {
             const hand = this.parent.childDict.hand;
-            const result = hand.appendCard(chunk);
-            return result;
+            const result = hand.accessCard(chunk);
+            if (result) {
+                this.eventDict.onCardDraw(result);
+                return result;
+            }
         }
     }
 }

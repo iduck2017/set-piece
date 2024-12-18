@@ -1,11 +1,17 @@
 import { Base, Def, Factory, Lifecycle, 
     Model, NodeModel, Props, Validator } from "@/set-piece";
+import { RaceType } from "../services/database";
+import { CardRefer } from "../utils/refers/card";
 
 export type CombatableRule = {
     health: number;
     attack: number;
     isDivineShield?: boolean;
-    // races?: RaceType[];
+    isRush?: boolean;
+    isCharge?: boolean;
+    isWindfury?: boolean;
+    isTaunt?: boolean;
+    races: Readonly<RaceType[]>;
 }
 
 export type CombatableDef = Def.Create<{
@@ -16,14 +22,21 @@ export type CombatableDef = Def.Create<{
         curHealth: number;
         isAlive: boolean;
         hasDivineShield: boolean;
+        actionPoint: number;
     };
     paramDict: {
         maxHealth: number;
         attack: number;
+        isTaunt: boolean;
+        maxActionPoint: number;
+        races: Readonly<RaceType[]>;
     }
     eventDict: {
         onDie: [CombatableModel] 
-        onHurt: [CombatableModel, number]
+        onReceiveDamage: [CombatableModel, number]
+        onDealDamage: [CombatableModel, number]
+        onAttack: [CombatableModel, CombatableModel]
+        onDestroy: [CombatableModel]
     },
 }>
 
@@ -36,23 +49,39 @@ export class CombatableModel extends NodeModel<CombatableDef> {
         };
     }
 
+    readonly refer: CardRefer;
+
     constructor(props: Props<CombatableDef>) {
-        const combatableRule = CombatableModel._ruleMap.get(props.parent.constructor);
+        let rule: CombatableRule | undefined = undefined;
+        let target: Model | undefined = props.parent;
+        while (target) {
+            const tempRule = CombatableModel._ruleMap.get(target.constructor);
+            if (tempRule) rule = Object.assign(rule || {}, tempRule);
+            target = target.parent;
+        }
+        const {
+            health, attack, isDivineShield, races,
+            isRush, isCharge, isWindfury, isTaunt
+        } = rule || {};
         super({
             ...props,
             stateDict: {
-                curHealth: props.stateDict?.fixHealth || combatableRule?.health || 1,
+                curHealth: props.stateDict?.fixHealth || health || 1,
                 isAlive: true,
-                hasDivineShield: combatableRule?.isDivineShield || false,
+                hasDivineShield: isDivineShield || false,
+                actionPoint: (isRush || isCharge) ? 1 : 0,
                 ...props.stateDict
             },
             paramDict: {
-                // races: combatableRule?.races || [],
-                maxHealth: combatableRule?.health || props.stateDict?.fixAttack || 1,
-                attack: combatableRule?.attack || props.stateDict?.fixAttack || 1
+                maxHealth: health || props.stateDict?.fixAttack || 1,
+                attack: attack || props.stateDict?.fixAttack || 1,
+                maxActionPoint: isWindfury ? 2 : 1,
+                isTaunt: isTaunt || false,
+                races: races || []
             },
             childDict: {}
         });
+        this.refer = new CardRefer(this);
     }
 
     @Lifecycle.useLoader()
@@ -70,36 +99,39 @@ export class CombatableModel extends NodeModel<CombatableDef> {
         );
     }
 
+    @Lifecycle.useLoader()
+    private _handleActionPointReset() {
+        const game = this.refer.game;
+        if (!game) return;
+        this.bindEvent(
+            game.eventEmitterDict.onRoundStart,
+            () => {
+                this.baseStateDict.actionPoint = this.paramDict.maxActionPoint;
+            }
+        );
+    }
+
     @Validator.useCondition(model => model.stateDict.isAlive)
     private _die() {
         this.baseStateDict.isAlive = false;
-        // if (this.parent instanceof CardModel) {
-        //     const board = this.parent.player.childDict.board;
-        //     board.removeCard(this.parent);
-        // }
         this.eventDict.onDie(this);
     }
 
     @Validator.useCondition(model => model.stateDict.isAlive)
+    @Validator.useCondition(model => model.stateDict.actionPoint > 0)
     attack(target: CombatableModel) {
-        // if (!target && this.parent instanceof CardModel) {
-        //     const opponent = this.parent.opponent;
-        //     const card = opponent.childDict.board.childList[0];
-        //     if (card) {
-        //         target = card.childDict.combatable;
-        //     }
-        // }
         if (target) {
+            this.baseStateDict.actionPoint -= 1;
             this._dealDamage(target);
             target._dealDamage(this);
+            this.eventDict.onAttack(this, target);
         }
     }
 
     private _dealDamage(target: CombatableModel) {
         const damage = this.stateDict.attack;
-        const enemyDamage = target.stateDict.attack;
-        target.receiveDamage(damage, this.parent);
-        this.receiveDamage(enemyDamage, target.parent);
+        target.receiveDamage(damage, target);
+        this.eventDict.onDealDamage(this, damage);
     }
 
     receiveDamage(damage: number, source: Model) {
@@ -108,10 +140,11 @@ export class CombatableModel extends NodeModel<CombatableDef> {
             return;
         }
         this.baseStateDict.curHealth -= damage;
-        this.eventDict.onHurt(this, damage);
+        this.eventDict.onReceiveDamage(this, damage);
     }
 
     destroy() {
         this._die();
+        this.eventDict.onDestroy(this);
     }
 }

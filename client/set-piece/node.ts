@@ -23,6 +23,7 @@ export namespace NodeEvent {
 }
 
 export abstract class NodeModel<T extends Def> {
+
     readonly code: Def.Code<T>;
     readonly parent: Def.Parent<T>;
 
@@ -74,7 +75,12 @@ export abstract class NodeModel<T extends Def> {
     }
     
     public debug() {
-        console.log(this);
+        console.log(
+            this, 
+            { ...this.stateDict }, 
+            { ...this.childDict },
+            [ ...this.childList ]
+        );
     }
 
     readonly childList: Readonly<Def.ChildList<T>>;    
