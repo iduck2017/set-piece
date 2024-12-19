@@ -3,7 +3,7 @@ import { Props, Def, NodeModel, Validator, CustomDef } from "@/set-piece";
 export type AnimalDef<
     T extends Def = Def
 > = CustomDef<{
-    code: `animal-${string}`;
+    code: string;
     stateDict: {
         isAlive: boolean;
         curAge: number;
@@ -57,7 +57,7 @@ export type AvesDef<
     T extends Def = Def
 > = AnimalDef<
     CustomDef<{
-        code: `animal-aves-${string}`;
+        code: string;
         stateDict: {
             isFlying: boolean;
         }
@@ -92,7 +92,7 @@ export abstract class AvesModel<
 
 export type PenguinDef = AvesDef<
     CustomDef<{
-        code: 'animal-aves-penguin';
+        code: 'animal-penguin';
         stateDict: {
             isSwimming: boolean;
         },

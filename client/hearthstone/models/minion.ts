@@ -12,7 +12,7 @@ export type MinionDef<
     T extends Def = Def
 > = CardDef<
     CustomDef<{
-        code: `card-minion-${string}`,
+        code: string,
         paramDict: {
         },
         eventDict: {

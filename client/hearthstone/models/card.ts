@@ -23,7 +23,7 @@ export type TargetCollectorInfo = {
 export type CardDef<
     T extends Def = Def
 > = CustomDef<{
-    code: `card-${string}`;
+    code: string;
     stateDict: {
     },
     paramDict: {

@@ -14,7 +14,7 @@ export type FeatureListDef = CustomDef<{
 export type FeatureDef<
     T extends Def = Def
 > = CustomDef<{
-    code: `feature-${string}`,
+    code: string,
     stateDict: {
     },
     paramDict: {

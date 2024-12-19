@@ -23,6 +23,7 @@ function getFileName(dirname) {
 module.exports = {
     entry: [
         ...getFileName(path.resolve(__dirname, './models')),
+        ...getFileName(path.resolve(__dirname, '../hearthstone-extension-classic')),
         path.resolve(__dirname, './main.tsx'),
     ],
     mode: "development",

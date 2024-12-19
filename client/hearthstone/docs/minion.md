@@ -26,7 +26,7 @@ import { Def, Factory, Props } from "@/set-piece";
 
 export type AbusiveSergeantDef = MinionDef<
     CustomDef<{
-        code: 'abusive-sergeant',
+        code: 'card-abusive-sergeant',
         childDict: {
             battlecry: BattlecryAbusiveSergeantModel
         }
@@ -83,7 +83,7 @@ import { BuffAbusiveSergeantModel } from "../effects/buff-abusive-sergeant";
 
 export type BattlecryAbusiveSergeantDef = FeatureDef<
     CustomDef<{
-        code: 'battlecry-abusive-sergeant',
+        code: 'feature-battlecry-abusive-sergeant',
         parent: AbusiveSergeantModel
     }>
 >
@@ -166,7 +166,7 @@ import { BuffModel, BuffDef } from "../buff";
 
 export type BuffAbusiveSergeantDef = BuffDef<
     CustomDef<{
-        code: 'buff-abusive-sergeant',
+        code: 'feature-buff-abusive-sergeant',
     }>
 >
 
@@ -191,7 +191,7 @@ export class BuffAbusiveSergeantModel extends BuffModel<BuffAbusiveSergeantDef> 
 
 ```
 
-此外，你还需要注意以下几点：
+同时注意如下规范
 
 1. 代码中不要出现中文
 2. 不要修改set-piece文件夹下的代码

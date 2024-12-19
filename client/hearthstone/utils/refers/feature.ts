@@ -10,7 +10,7 @@ export class FeatureRefer extends CardRefer {
     get minion(): MinionModel<MinionDef<PureDef>> | undefined {
         return this.queryParent<MinionModel>(
             undefined,
-            (model) => model instanceof MinionModel
+            (model) => model.code.startsWith('card-minion')
         );
     }
 }

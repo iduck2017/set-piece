@@ -1,4 +1,4 @@
-import { Base, CustomDef, Def, Factory, Lifecycle, 
+import { Base, CustomDef, Factory, Lifecycle, 
     Model, NodeModel, Props, Validator } from "@/set-piece";
 import { RaceType } from "../services/database";
 import { CardRefer } from "../utils/refers/card";
@@ -6,15 +6,17 @@ import { CardRefer } from "../utils/refers/card";
 export type CombatableRule = {
     health: number;
     attack: number;
-    hasDivineShield?: boolean;
+    races: Readonly<RaceType[]>;
+
     isRush?: boolean;
     isCharge?: boolean;
     isWindfury?: boolean;
     isTaunt?: boolean;
     isStealth?: boolean;
-    cantAttack?: boolean;
     isFrozen?: boolean;
-    races: Readonly<RaceType[]>;
+
+    cantAttack?: boolean;
+    hasDivineShield?: boolean;
 }
 
 export type CombatableDef = CustomDef<{

@@ -7,7 +7,7 @@ export type BuffDef<
     T extends Def = Def
 > = FeatureDef<
     CustomDef<{
-        code: `feature-buff-${string}`;
+        code: string;
         stateDict: {
         },
         paramDict: {

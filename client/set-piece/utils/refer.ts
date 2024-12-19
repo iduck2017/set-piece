@@ -14,7 +14,7 @@ export class NodeRefer {
         let target: Model | undefined = this._parent;
         while (target) {
             const flag = 
-                (!code || target.code === code) &&
+                (!code || target.code.startsWith(code)) &&
                 (!validator || validator(target));
             if (flag) {
                 const result: any = target;

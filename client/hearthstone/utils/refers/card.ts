@@ -10,7 +10,7 @@ export class CardRefer extends PlayerRefer {
     get card(): CardModel<CardDef<PureDef>> | undefined { 
         return this.queryParent<CardModel>(
             undefined, 
-            (model) => model instanceof CardModel
+            (model) => model.code.startsWith('card')
         ); 
     }
 
