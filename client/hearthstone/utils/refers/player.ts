@@ -23,6 +23,7 @@ export class PlayerRefer extends NodeRefer {
     get playerHand() { return this.player?.childDict.hand; }
     get playerGraveyard() { return this.player?.childDict.graveyard; }
     get playerBoard() { return this.player?.childDict.board; }
+    get playerCombatable() { return this.player?.childDict.combatable; }
 
     get opponentBoard() {
         const opponent = this.opponent;

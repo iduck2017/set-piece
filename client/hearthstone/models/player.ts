@@ -4,6 +4,7 @@ import { BoardModel } from "./board";
 import { GraveyardModel } from "./graveyard";
 import { Def, Factory, NodeModel, Props } from "@/set-piece";
 import { PlayerRefer } from "../utils/refers/player";
+import { CombatableModel } from "./combatable";
 
 type PlayerDef = Def.Create<{
     code: 'player',
@@ -13,11 +14,17 @@ type PlayerDef = Def.Create<{
         deck: DeckModel,
         hand: HandModel,
         board: BoardModel,
-        graveyard: GraveyardModel
+        graveyard: GraveyardModel,
+        combatable: CombatableModel
     },
     eventDict: {},
 }>
 
+@CombatableModel.useRule({
+    health: 30,
+    attack: 0,
+    races: []
+})
 @Factory.useProduct('player')
 export class PlayerModel extends NodeModel<PlayerDef> {
     readonly refer: PlayerRefer;
@@ -31,6 +38,7 @@ export class PlayerModel extends NodeModel<PlayerDef> {
                 hand: { code: 'hand' },
                 board: { code: 'board' },
                 graveyard: { code: 'graveyard' },
+                combatable: { code: 'combatable' },
                 ...props.childDict
             },
             stateDict: {},

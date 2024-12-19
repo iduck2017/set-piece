@@ -12,6 +12,8 @@ export type CombatableRule = {
     isWindfury?: boolean;
     isTaunt?: boolean;
     isStealth?: boolean;
+    cantAttack?: boolean;
+    isFrozen?: boolean;
     races: Readonly<RaceType[]>;
 }
 
@@ -25,12 +27,14 @@ export type CombatableDef = Def.Create<{
         hasDivineShield: boolean;
         actionPoint: number;
         isStealth: boolean;
+        isFrozen: boolean;
     };
     paramDict: {
         maxHealth: number;
         attack: number;
         isTaunt: boolean;
         maxActionPoint: number;
+        cantAttack: boolean;
         races: Readonly<RaceType[]>;
     }
     eventDict: {
@@ -63,7 +67,7 @@ export class CombatableModel extends NodeModel<CombatableDef> {
         }
         const {
             health, attack, hasDivineShield: isDivineShield, races,
-            isRush, isCharge, isWindfury, isTaunt, isStealth
+            isRush, isCharge, isWindfury, isTaunt, isStealth, cantAttack
         } = rule || {};
         super({
             ...props,
@@ -73,6 +77,7 @@ export class CombatableModel extends NodeModel<CombatableDef> {
                 hasDivineShield: isDivineShield || false,
                 actionPoint: (isRush || isCharge) ? 1 : 0,
                 isStealth: isStealth || false,
+                isFrozen: false,
                 ...props.stateDict
             },
             paramDict: {
@@ -80,7 +85,8 @@ export class CombatableModel extends NodeModel<CombatableDef> {
                 attack: attack || props.stateDict?.fixAttack || 1,
                 maxActionPoint: isWindfury ? 2 : 1,
                 isTaunt: isTaunt || false,
-                races: races || []
+                races: races || [],
+                cantAttack: cantAttack || false 
             },
             childDict: {}
         });
@@ -100,6 +106,12 @@ export class CombatableModel extends NodeModel<CombatableDef> {
                 }
             }
         );
+    }
+
+    getDevineShield() {
+        if (!this.stateDict.hasDivineShield) {
+            this.baseStateDict.hasDivineShield = true;
+        }
     }
 
     @Lifecycle.useLoader()
