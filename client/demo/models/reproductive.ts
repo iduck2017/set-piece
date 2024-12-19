@@ -1,5 +1,5 @@
 import { AnimalModel } from "./animal";
-import { Def, Props, Model, NodeModel, Validator, Factory, Random } from "@/set-piece";
+import { Def, Props, Model, NodeModel, Validator, Factory, Random, CustomDef } from "@/set-piece";
 
 export enum GenderType {
     Male = 'male',

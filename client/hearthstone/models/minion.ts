@@ -2,7 +2,7 @@ import { CardDef, CardModel, TargetCollector } from "./card";
 import { CastableModel, CastableRule } from "./castable";
 import { CombatableModel, CombatableRule } from "./combatable";
 import { DataBase, RaceType } from "@/hearthstone/services/database";
-import { Base, Chunk, CustomDef, Def, Dict, Event, Lifecycle, Model, Props } from "@/set-piece";
+import { Base, Chunk, CustomDef, Def, Dict, Event, Lifecycle, Props, PureDef } from "@/set-piece";
 
 export type MinionRule = {
     readonly races: Readonly<RaceType[]>;
@@ -12,7 +12,7 @@ export type MinionDef<
     T extends Def = Def
 > = CardDef<
     CustomDef<{
-        code: string,
+        code: `card-minion-${string}`,
         paramDict: {
         },
         eventDict: {
@@ -28,9 +28,8 @@ export abstract class MinionModel<
     T extends MinionDef = MinionDef
 > extends CardModel<T> {
     private _minionEventDict: Readonly<Event.Dict<
-        Def.EventDict<MinionDef<CustomDef>>
+        Def.EventDict<MinionDef<PureDef>>
     >> = this.eventDict;
-    
     
     static useRule(
         rule: CombatableRule & CastableRule & MinionRule,
@@ -50,7 +49,7 @@ export abstract class MinionModel<
     ) {
         const superProps = CardModel.cardProps(props);
         const childDict: Dict.Strict<Chunk.Dict<
-            Def.ChildDict<MinionDef<CustomDef>>
+            Def.ChildDict<MinionDef<PureDef>>
         >> = {
             ...superProps.childDict,
             castable: { code: 'castable' },

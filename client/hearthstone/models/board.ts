@@ -1,4 +1,4 @@
-import { CustomDef, Def, Factory, Model, NodeModel, Props, Random, Validator } from "@/set-piece";
+import { CustomDef, Factory, Model, NodeModel, Props, Random, Validator } from "@/set-piece";
 import { PlayerModel } from "./player";
 import { MinionModel } from "./minion";
 import { PlayerRefer } from "../utils/refers/player";

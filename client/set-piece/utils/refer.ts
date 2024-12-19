@@ -1,4 +1,4 @@
-import { Base, Model } from "@/set-piece";
+import { Base, Def, Model } from "@/set-piece";
 
 export class NodeRefer {
     private readonly _parent: Model;
@@ -8,13 +8,13 @@ export class NodeRefer {
     }
 
     protected queryParent<T extends Model>(
-        Type?: Base.Class<T>,
+        code?: Model.Code<T>,
         validator?: ((model: Model) => boolean)
     ): T | undefined {
         let target: Model | undefined = this._parent;
         while (target) {
             const flag = 
-                (!Type || target instanceof Type) &&
+                (!code || target.code === code) &&
                 (!validator || validator(target));
             if (flag) {
                 const result: any = target;

@@ -1,10 +1,10 @@
 import { AnimalDef, AnimalModel } from "./animal";
-import { Def, Props, Factory } from "@/set-piece";
+import { Props, Factory, CustomDef } from "@/set-piece";
 import { ReproductiveModel } from "./reproductive";
 
 type BunnyDef = AnimalDef<
     CustomDef<{
-        code: 'bunny',
+        code: 'animal-bunny',
         stateDict: {
             age: number,
             readonly name: string,
@@ -17,7 +17,7 @@ type BunnyDef = AnimalDef<
     }>
 >
 
-@Factory.useProduct('bunny')
+@Factory.useProduct('animal-bunny')
 export class BunnyModel extends AnimalModel<BunnyDef> {
     constructor(props: Props<BunnyDef>) {
         const superProps = AnimalModel.animalProps(props);

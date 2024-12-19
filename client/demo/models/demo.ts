@@ -1,7 +1,7 @@
 import { AppModel } from "./app";
 import { BunnyModel } from "./bunny";
 import { PingPongModel } from "./ping-pong";
-import { Def, Props, NodeModel, Factory, Lifecycle } from "@/set-piece";
+import { Def, Props, NodeModel, Factory, Lifecycle, CustomDef } from "@/set-piece";
 import { GenderType } from "./reproductive";
 
 type DemoDef = CustomDef<{

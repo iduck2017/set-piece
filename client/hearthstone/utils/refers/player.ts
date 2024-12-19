@@ -5,9 +5,11 @@ import { MinionModel } from "../../models/minion";
 import { RaceType } from "../../services/database";
 
 export class PlayerRefer extends NodeRefer {
-    get player() { return this.queryParent(PlayerModel); }
+    get player(): PlayerModel | undefined { 
+        return this.queryParent('player'); 
+    }
 
-    get opponent() {
+    get opponent(): any {
         const player = this.player;
         const game = this.game;
         if (!player || !game) return undefined;
@@ -17,18 +19,33 @@ export class PlayerRefer extends NodeRefer {
         return game.childDict.redPlayer;
     }
 
-    get game() { return this.queryParent(GameModel); }
+    get game(): GameModel | undefined { 
+        return this.queryParent('game'); 
+    }
 
-    get playerDeck() { return this.player?.childDict.deck; }
-    get playerHand() { return this.player?.childDict.hand; }
-    get playerGraveyard() { return this.player?.childDict.graveyard; }
-    get playerBoard() { return this.player?.childDict.board; }
-    get playerCombatable() { return this.player?.childDict.combatable; }
 
-    get opponentBoard() {
-        const opponent = this.opponent;
-        if (!opponent) return undefined;
-        return opponent.childDict.board;
+    get playerDeck() { 
+        return this.player?.childDict.deck;
+    }
+
+    get playerHand() { 
+        return this.player?.childDict.hand;
+    }
+    
+    get playerGraveyard() { 
+        return this.player?.childDict.graveyard;
+    }
+
+    get playerBoard() { 
+        return this.player?.childDict.board;
+    }
+
+    get playerCombatable() {
+        return this.player?.childDict.combatable;
+    }
+
+    get opponentBoard(): any {
+        return this.opponent?.childDict.board;
     }
 
     queryMinionList(options: {
@@ -36,7 +53,7 @@ export class PlayerRefer extends NodeRefer {
         excludeEnemy?: boolean,
         excludeAlly?: boolean,
         requiredRaces?: RaceType[]
-    }) {
+    }): any[] {
         const {
             excludeTarget,
             excludeEnemy,
