@@ -1,4 +1,4 @@
-import { Def, Factory, Props } from "@/set-piece";
+import { CustomDef, Def, Factory, Props } from "@/set-piece";
 import { MinionDef, MinionModel } from "../minion";
 import { RaceType } from "@/hearthstone/services/database";
 
@@ -8,7 +8,7 @@ import { RaceType } from "@/hearthstone/services/database";
  * isCharge is a fixed property in CombatableModel
  */
 export type BluegillWarriorDef = MinionDef<
-    Def.Create<{
+    CustomDef<{
         code: 'bluegill-warrior'
     }>
 >

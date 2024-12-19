@@ -1,11 +1,11 @@
-import { Def, Factory, Lifecycle, Model, Props } from "@/set-piece";
+import { CustomDef, Def, Factory, Lifecycle, Model, Props } from "@/set-piece";
 import { FeatureDef, FeatureModel } from "../feature";
 import { AmaniBerserkerModel } from "../minions/amani-berserker";
 import { CombatableModel } from "../combatable";
 import { Mutable } from "utility-types";
 
 export type FeatureAmaniBerserkerDef = FeatureDef<
-    Def.Create<{
+    CustomDef<{
         code: 'feature-amani-berserker',
         parent: AmaniBerserkerModel,
         stateDict: {

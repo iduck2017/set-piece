@@ -1,11 +1,11 @@
-import { Def, Factory, Lifecycle, Props } from "@/set-piece";
+import { CustomDef, Def, Factory, Lifecycle, Props } from "@/set-piece";
 import { FeatureDef, FeatureModel } from "../feature";
 import { ColdlightSeerModel } from "../minions/coldlight-seer";
 import { BuffColdlightSeerModel } from "../effects/buff-coldlight-seer";
 import { RaceType } from "@/hearthstone/services/database";
 
 export type BattlecryColdlightSeerDef = FeatureDef<
-    Def.Create<{
+    CustomDef<{
         code: 'battlecry-coldlight-seer',
         parent: ColdlightSeerModel
     }>

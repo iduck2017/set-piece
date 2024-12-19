@@ -1,18 +1,20 @@
 import { Factory } from "@/set-piece/services/factory";
 import { Lifecycle } from "@/set-piece/services/lifecycle";
 import { Base, Dict } from "@/set-piece/types/base";
-import { Chunk } from "@/set-piece/types/chunk";
+import { Chunk, StrictChunk } from "@/set-piece/types/chunk";
 import { Def } from "@/set-piece/types/define";
 import { Event } from "@/set-piece/types/event";
 import { Model } from "@/set-piece/types/model";
-import { Props } from "@/set-piece/types/props";
+import { StrictProps } from "@/set-piece/types/props";
 import { Delegator } from "@/set-piece/utils/proxy";
+import { EventEmitter, EventHandler } from "./utils/event";
 
 export type NodeEvent<T extends Def> = {
     onStateAlter: NodeEvent.OnStateAlter<T>
     onParamCheck: NodeEvent.OnParamCheck<T>
     onChildSpawn: NodeEvent.OnChildSpawn<T>
 }
+
 export namespace NodeEvent {
     export type OnStateAlter<T extends Def> = [
         Model<T>, 
@@ -27,7 +29,7 @@ export abstract class NodeModel<T extends Def> {
     readonly code: Def.Code<T>;
     readonly parent: Def.Parent<T>;
 
-    constructor(props: Props.Strict<T>) {
+    constructor(props: StrictProps<T>) {
         this.code = props.code;
         this.parent = props.parent;
         this.uuid = props.uuid || Factory.uuid;
@@ -41,7 +43,7 @@ export abstract class NodeModel<T extends Def> {
         this._paramDict = { ...this._baseParamDict };
 
         this.eventEmitterDict = Delegator.Automic({}, (key) => {
-            return new Event.Emitter(this, key, props.eventInfo?.[key]);
+            return new EventEmitter(this, key, props.eventInfo?.[key]);
         });
 
         const childList = Delegator.Observed(
@@ -151,10 +153,10 @@ export abstract class NodeModel<T extends Def> {
     private readonly _baseEventDict: Readonly<Event.Dict<NodeEvent<T>>> = this.eventDict;
 
     readonly eventEmitterDict: Readonly<Event.EmitterDict<NodeEvent<T> & Def.EventDict<T>>>;
-    private readonly _eventHandlerMap: Map<Base.Func, Event.Handler> = new Map();
+    private readonly _eventHandlerMap: Map<Base.Func, EventHandler> = new Map();
     private readonly _eventDependencyMap: 
-        Map<Event.Emitter, Base.List<Event.Handler>> & 
-        Map<Event.Handler, Base.List<Event.Emitter>> = new Map();
+        Map<EventEmitter, Base.List<EventHandler>> & 
+        Map<EventHandler, Base.List<EventEmitter>> = new Map();
 
     private _emitEvent<K extends Dict.Key<NodeEvent<T> & Def.EventDict<T>>>(
         key: K, 
@@ -173,13 +175,13 @@ export abstract class NodeModel<T extends Def> {
         }
     }
     protected bindEvent<E extends Base.List>(
-        eventEmitter: Event.Emitter<E>,
+        eventEmitter: EventEmitter<E>,
         handler: Event<E>
     ) {
         const { target } = eventEmitter;
         const eventHandler = 
             this._eventHandlerMap.get(handler) || 
-            new Event.Handler(this, handler);
+            new EventHandler(this, handler);
         this._eventHandlerMap.set(handler, eventHandler);
 
         const eventHandlerList = target._eventDependencyMap.get(eventEmitter) || [];
@@ -195,7 +197,7 @@ export abstract class NodeModel<T extends Def> {
         }
     }
     protected unbindEvent<E extends Base.List>(
-        eventEmitter: Event.Emitter<E> | undefined,
+        eventEmitter: EventEmitter<E> | undefined,
         handler: Event<E>
     ) {
         const eventHandler = this._eventHandlerMap.get(handler);
@@ -289,7 +291,7 @@ export abstract class NodeModel<T extends Def> {
     private _unload() {
         for (const eventDependency of this._eventDependencyMap) {
             const eventEmitterOrHandler = eventDependency[0];
-            if (eventEmitterOrHandler instanceof Event.Emitter) {
+            if (eventEmitterOrHandler instanceof EventEmitter) {
                 const [ eventEmitter, eventHandlerList ] = eventDependency;
                 for (const eventHandler of eventHandlerList) {
                     eventHandler.target.unbindEvent(
@@ -298,7 +300,7 @@ export abstract class NodeModel<T extends Def> {
                     );
                 }
             }
-            if (eventEmitterOrHandler instanceof Event.Handler) {
+            if (eventEmitterOrHandler instanceof EventHandler) {
                 const [ eventHandler ] = eventDependency;
                 this.unbindEvent(undefined, eventHandler.handler);
             }
@@ -315,7 +317,7 @@ export abstract class NodeModel<T extends Def> {
     }
     
     get chunk(): Chunk<T> {
-        const chunk: Chunk.Strict<T> =  {
+        const chunk: StrictChunk<T> =  {
             code: this.code,
             uuid: this.uuid,
             stateDict: { ...this.baseStateDict },

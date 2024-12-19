@@ -2,11 +2,11 @@ import { DeckModel } from "./deck";
 import { HandModel } from "./hand";
 import { BoardModel } from "./board";
 import { GraveyardModel } from "./graveyard";
-import { Def, Factory, NodeModel, Props } from "@/set-piece";
+import { CustomDef, Factory, NodeModel, Props } from "@/set-piece";
 import { PlayerRefer } from "../utils/refers/player";
 import { CombatableModel } from "./combatable";
 
-type PlayerDef = Def.Create<{
+type PlayerDef = CustomDef<{
     code: 'player',
     stateDict: {},
     paramDict: {},

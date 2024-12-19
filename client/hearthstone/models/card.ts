@@ -1,7 +1,7 @@
 import { CardRefer } from "../utils/refers/card";
 import { CastableModel } from "./castable";
 import { FeatureListModel } from "./feature";
-import { Chunk, Def, Dict, Event, Model, NodeModel, Props, Validator } from "@/set-piece";
+import { Chunk, CustomDef, Def, Dict, Event, Model, NodeModel, Props, StrictProps, Validator } from "@/set-piece";
 import { MinionModel } from "./minion";
 
 export type TargetCollector<T = any>  = {
@@ -22,7 +22,7 @@ export type TargetCollectorInfo = {
 
 export type CardDef<
     T extends Def = Def
-> = Def.Create<{
+> = CustomDef<{
     code: string;
     stateDict: {
     },
@@ -44,7 +44,7 @@ export abstract class CardModel<
     T extends CardDef = CardDef
 > extends NodeModel<T> {
     _cardEventDict: Readonly<Event.Dict<
-        Def.EventDict<CardDef<Def.Pure>>
+        Def.EventDict<CardDef<CustomDef>>
     >> = this.eventDict;
    
 
@@ -52,7 +52,7 @@ export abstract class CardModel<
         props: Props<T>
     ) {
         const childDict: Dict.Strict<Chunk.Dict<
-            Def.ChildDict<CardDef<Def.Pure>>
+            Def.ChildDict<CardDef<CustomDef>>
         >> = {
             featureList: { code: 'feature-list' },
             castable: { code: 'castable' },
@@ -66,7 +66,7 @@ export abstract class CardModel<
 
     readonly refer: CardRefer;
 
-    constructor(props: Props.Strict<T>) {
+    constructor(props: StrictProps<T>) {
         super(props);
         this.refer = new CardRefer(this);
     }

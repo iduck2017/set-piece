@@ -1,9 +1,9 @@
-import { Def, Factory, Lifecycle, Props } from "@/set-piece";
+import { CustomDef, Def, Factory, Lifecycle, Props } from "@/set-piece";
 import { FeatureDef, FeatureModel } from "../feature";
 import { DoomsayerModel } from "../minions/doomsayer";
 
 export type FeatureDoomsayerDef = FeatureDef<
-    Def.Create<{
+    CustomDef<{
         code: 'feature-doomsayer',
         parent: DoomsayerModel
     }>

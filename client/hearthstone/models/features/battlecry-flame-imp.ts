@@ -1,9 +1,9 @@
-import { Def, Factory, Lifecycle, Props } from "@/set-piece";
+import { CustomDef, Def, Factory, Lifecycle, Props } from "@/set-piece";
 import { FeatureDef, FeatureModel } from "../feature";
 import { FlameImpModel } from "../minions/flame-imp";
 
 export type BattlecryFlameImpDef = FeatureDef<
-    Def.Create<{
+    CustomDef<{
         code: 'battlecry-flame-imp',
         parent: FlameImpModel
     }>

@@ -1,4 +1,4 @@
-import { Def, Lifecycle, Model, Props } from "@/set-piece";
+import { CustomDef, Def, Lifecycle, Model, Props } from "@/set-piece";
 import { CombatableModel } from "./combatable";
 import { Mutable } from "utility-types";
 import { FeatureDef, FeatureModel } from "./feature";
@@ -6,7 +6,7 @@ import { FeatureDef, FeatureModel } from "./feature";
 export type BuffDef<
     T extends Def = Def
 > = FeatureDef<
-    Def.Create<{
+    CustomDef<{
         code: string;
         stateDict: {
         },

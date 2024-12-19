@@ -2,7 +2,7 @@ import { Def, Base, NodeModel, Validator, Factory } from "@/set-piece";
 import { DemoModel } from "./demo";
 import { File } from "../services/file";
 
-type AppDef = Def.Create<{
+type AppDef = CustomDef<{
     code: 'app',
     stateDict: {
         readonly version: string,

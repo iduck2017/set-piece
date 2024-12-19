@@ -1,4 +1,4 @@
-import { Def, Factory, Lifecycle, Props } from "@/set-piece";
+import { CustomDef, Def, Factory, Lifecycle, Props } from "@/set-piece";
 import { FeatureDef, FeatureModel } from "../feature";
 import { CardModel, TargetCollector } from "../card";
 import { AbusiveSergeantModel } from "../minions/abusive-sergeant";
@@ -6,7 +6,7 @@ import { BuffAbusiveSergeantModel } from "../effects/buff-abusive-sergeant";
 import { validateTarget } from "@/hearthstone/utils/validator";
 
 export type BattlecryAbusiveSergeantDef = FeatureDef<
-    Def.Create<{
+    CustomDef<{
         code: 'battlecry-abusive-sergeant',
         parent: AbusiveSergeantModel
     }>

@@ -1,10 +1,10 @@
-import { Base, Def, Factory, Model, NodeModel, Props } from "@/set-piece";
+import { Base, CustomDef, Def, Factory, Model, NodeModel, Props } from "@/set-piece";
 
 export type CastableRule = {
     manaCost: number;
 }
 
-export type CastableDef = Def.Create<{
+export type CastableDef = CustomDef<{
     code: 'castable';
     stateDict: {
         readonly fixManaCost?: number;

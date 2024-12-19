@@ -25,7 +25,7 @@ import { MinionModel, MinionDef } from "../minion";
 import { Def, Factory, Props } from "@/set-piece";
 
 export type AbusiveSergeantDef = MinionDef<
-    Def.Create<{
+    CustomDef<{
         code: 'abusive-sergeant',
         childDict: {
             battlecry: BattlecryAbusiveSergeantModel
@@ -82,7 +82,7 @@ import { AbusiveSergeantModel } from "../minions/abusive-sergeant";
 import { BuffAbusiveSergeantModel } from "../effects/buff-abusive-sergeant";
 
 export type BattlecryAbusiveSergeantDef = FeatureDef<
-    Def.Create<{
+    CustomDef<{
         code: 'battlecry-abusive-sergeant',
         parent: AbusiveSergeantModel
     }>
@@ -165,7 +165,7 @@ import { Def } from "@/set-piece";
 import { BuffModel, BuffDef } from "../buff";
 
 export type BuffAbusiveSergeantDef = BuffDef<
-    Def.Create<{
+    CustomDef<{
         code: 'buff-abusive-sergeant',
     }>
 >

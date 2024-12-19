@@ -7,7 +7,7 @@ export enum GenderType {
     Unknown = 'unknown'
 }
 
-type ReproductiveDef<T extends AnimalModel> = Def.Create<{
+type ReproductiveDef<T extends AnimalModel> = CustomDef<{
     code: 'reproductive',
     stateDict: {
         gender: GenderType

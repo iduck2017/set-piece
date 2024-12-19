@@ -1,11 +1,11 @@
-import { Def, Factory, Lifecycle, Model, Props } from "@/set-piece";
+import { CustomDef, Def, Factory, Lifecycle, Model, Props } from "@/set-piece";
 import { FeatureDef, FeatureModel } from "../feature";
 import { AngryChickenModel } from "../minions/angry-chicken";
 import { CombatableModel } from "../combatable";
 import { Mutable } from "utility-types";
 
 export type FeatureAngryChickenDef = FeatureDef<
-    Def.Create<{
+    CustomDef<{
         code: 'feature-angry-chicken',
         parent: AngryChickenModel,
         stateDict: {

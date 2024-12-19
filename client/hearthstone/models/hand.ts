@@ -1,8 +1,8 @@
 import { CardModel } from "./card";
 import { PlayerModel } from "./player";
-import { Def, Factory, Model, NodeModel, Props } from "@/set-piece";
+import { CustomDef, Def, Factory, Model, NodeModel, Props } from "@/set-piece";
 
-type HandDef = Def.Create<{
+type HandDef = CustomDef<{
     code: 'hand',
     stateDict: {},
     paramDict: {},

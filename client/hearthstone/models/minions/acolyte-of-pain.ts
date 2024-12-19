@@ -1,4 +1,4 @@
-import { Def, Factory, Props } from "@/set-piece";
+import { CustomDef, Def, Factory, Props } from "@/set-piece";
 import { MinionDef, MinionModel } from "../minion";
 import { FeatureAcolyteOfPainModel } from "../features/feature-acolyte-of-pain";
 
@@ -8,7 +8,7 @@ import { FeatureAcolyteOfPainModel } from "../features/feature-acolyte-of-pain";
  */
 
 export type AcolyteOfPainDef = MinionDef<
-    Def.Create<{
+    CustomDef<{
         code: 'acolyte-of-pain',
         childDict: {
             feature: FeatureAcolyteOfPainModel

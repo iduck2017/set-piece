@@ -4,10 +4,10 @@ import { BoardModel } from "@/hearthstone/models/board";
 import { DeckModel } from "@/hearthstone/models/deck";
 import { HandModel } from "@/hearthstone/models/hand";
 import { GraveyardModel } from "@/hearthstone/models/graveyard";
-import { Def } from "@/set-piece";
+import { CustomDef, Def } from "@/set-piece";
 
 export class CardRefer extends PlayerRefer {
-    get card(): CardModel<CardDef<Def.Pure>> | undefined { 
+    get card(): CardModel<CardDef<CustomDef>> | undefined { 
         return this.queryParent<CardModel>(
             undefined, 
             (model) => model instanceof CardModel

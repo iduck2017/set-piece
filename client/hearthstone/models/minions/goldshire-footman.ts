@@ -1,4 +1,4 @@
-import { Def, Factory, Props } from "@/set-piece";
+import { CustomDef, Def, Factory, Props } from "@/set-piece";
 import { MinionDef, MinionModel } from "../minion";
 
 /**
@@ -8,7 +8,7 @@ import { MinionDef, MinionModel } from "../minion";
  */
 
 export type GoldshireFootmanDef = MinionDef<
-    Def.Create<{
+    CustomDef<{
         code: 'goldshire-footman'
     }>
 >

@@ -7,10 +7,10 @@ import { MinionModel, MinionDef } from "../minion";
  * Abusive Sergeant 1/2/1 Battlecry: Give a minion +2 Attack this turn
  * use GameModel event onRoundEnd 
  */
-import { Def, Factory, Props } from "@/set-piece";
+import { CustomDef, Def, Factory, Props } from "@/set-piece";
 
 export type AbusiveSergeantDef = MinionDef<
-    Def.Create<{
+    CustomDef<{
         code: 'abusive-sergeant',
         childDict: {
             battlecry: BattlecryAbusiveSergeantModel

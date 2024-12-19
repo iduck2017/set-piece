@@ -1,4 +1,4 @@
-import { Base, Def, Factory, Lifecycle, 
+import { Base, CustomDef, Def, Factory, Lifecycle, 
     Model, NodeModel, Props, Validator } from "@/set-piece";
 import { RaceType } from "../services/database";
 import { CardRefer } from "../utils/refers/card";
@@ -17,7 +17,7 @@ export type CombatableRule = {
     races: Readonly<RaceType[]>;
 }
 
-export type CombatableDef = Def.Create<{
+export type CombatableDef = CustomDef<{
     code: 'combatable';
     stateDict: {
         readonly fixHealth?: number;

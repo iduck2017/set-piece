@@ -1,4 +1,4 @@
-import { Def, Factory, Props } from "@/set-piece";
+import { CustomDef, Def, Factory, Props } from "@/set-piece";
 import { MinionDef, MinionModel } from "../minion";
 import { BattlecryFlameImpModel } from "../features/battlecry-flame-imp";
 import { RaceType } from "@/hearthstone/services/database";
@@ -9,7 +9,7 @@ import { RaceType } from "@/hearthstone/services/database";
  */
 
 export type FlameImpDef = MinionDef<
-    Def.Create<{
+    CustomDef<{
         code: 'flame-imp',
         childDict: {
             battlecry: BattlecryFlameImpModel

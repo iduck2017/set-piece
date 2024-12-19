@@ -1,9 +1,9 @@
-import { Def, Factory, Model, NodeModel, Props, Random, Validator } from "@/set-piece";
+import { CustomDef, Def, Factory, Model, NodeModel, Props, Random, Validator } from "@/set-piece";
 import { PlayerModel } from "./player";
 import { MinionModel } from "./minion";
 import { PlayerRefer } from "../utils/refers/player";
 
-type BoardDef = Def.Create<{
+type BoardDef = CustomDef<{
     code: 'board',
     stateDict: {},
     paramDict: {},

@@ -1,4 +1,4 @@
-import { Def, Factory, Props } from "@/set-piece";
+import { CustomDef, Def, Factory, Props } from "@/set-piece";
 import { MinionDef, MinionModel } from "../minion";
 import { FeatureAmaniBerserkerModel } from "../features/feature-amani-berserker";
 
@@ -9,7 +9,7 @@ import { FeatureAmaniBerserkerModel } from "../features/feature-amani-berserker"
  */
 
 export type AmaniBerserkerDef = MinionDef<
-    Def.Create<{
+    CustomDef<{
         code: 'amani-berserker',
         childDict: {
             feature: FeatureAmaniBerserkerModel

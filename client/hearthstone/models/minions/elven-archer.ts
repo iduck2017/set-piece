@@ -1,4 +1,4 @@
-import { Def, Factory, Props } from "@/set-piece";
+import { CustomDef, Def, Factory, Props } from "@/set-piece";
 import { MinionDef, MinionModel } from "../minion";
 import { BattlecryElvenArcherModel } from "../features/battlecry-elven-archer";
 
@@ -8,7 +8,7 @@ import { BattlecryElvenArcherModel } from "../features/battlecry-elven-archer";
  */
 
 export type ElvenArcherDef = MinionDef<
-    Def.Create<{
+    CustomDef<{
         code: 'elven-archer',
         childDict: {
             battlecry: BattlecryElvenArcherModel

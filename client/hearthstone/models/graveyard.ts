@@ -1,8 +1,8 @@
 import { CardModel } from "./card";
 import { PlayerModel } from "./player";
-import { Def, Factory, Model, NodeModel, Props, Validator } from "@/set-piece";
+import { CustomDef, Def, Factory, Model, NodeModel, Props, Validator } from "@/set-piece";
 
-type GraveyardDef = Def.Create<{
+type GraveyardDef = CustomDef<{
     code: 'graveyard',
     stateDict: {},
     paramDict: {},

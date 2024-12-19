@@ -14,16 +14,13 @@ export type Props<T extends Def> = {
     parent: Def.Parent<T>,
 }
 
-
-export namespace Props {
-    export type Strict<T extends Def> = {
-        uuid?: string,
-        code: Def.Code<T>,
-        childDict: Dict.Strict<Chunk.Dict<Def.ChildDict<T>>>,
-        childList?: Base.List<Model.Chunk<Def.ChildList<T>[number]>>,
-        stateDict: Dict.Strict<Def.StateDict<T>>,
-        paramDict: Dict.Strict<Def.ParamDict<T>>,
-        eventInfo?: Partial<Dict.Strict<Event.EmitterInfo<NodeEvent<T> & Def.EventDict<T>>>>
-        parent: Def.Parent<T>,
-    }
+export type StrictProps<T extends Def> = {
+    uuid?: string,
+    code: Def.Code<T>,
+    childDict: Dict.Strict<Chunk.Dict<Def.ChildDict<T>>>,
+    childList?: Base.List<Model.Chunk<Def.ChildList<T>[number]>>,
+    stateDict: Dict.Strict<Def.StateDict<T>>,
+    paramDict: Dict.Strict<Def.ParamDict<T>>,
+    eventInfo?: Partial<Dict.Strict<Event.EmitterInfo<NodeEvent<T> & Def.EventDict<T>>>>
+    parent: Def.Parent<T>,
 }

@@ -1,10 +1,10 @@
 import { Factory } from "@/set-piece/services/factory";
 import { Props } from "@/set-piece/types/props";
-import { Def } from "@/set-piece";
+import { CustomDef, Def } from "@/set-piece";
 import { BuffModel, BuffDef } from "../buff";
 
 export type BuffAbusiveSergeantDef = BuffDef<
-    Def.Create<{
+    CustomDef<{
         code: 'buff-abusive-sergeant',
     }>
 >

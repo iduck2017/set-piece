@@ -11,17 +11,19 @@ export type Def = {
     parent?: Model
 }
 
-export namespace Def {
-    export type Pure = {
-        code: string,
-        stateDict: {},
-        paramDict: {},
-        childList: [],
-        childDict: {},
-        eventDict: {},
-        parent: Model
-    }
+export type CustomDef<
+    T extends Partial<Def> = {}
+> =  Dict.Override<T, {
+    code: string,
+    stateDict: {},
+    paramDict: {},
+    childList: [],
+    childDict: {},
+    eventDict: {},
+    parent: Model
+}>
 
+export namespace Def {
     export type Code<T extends Def> = T["code"]
     export type StateDict<T extends Def> = T["stateDict"]
     export type ParamDict<T extends Def> = T["paramDict"]
@@ -29,6 +31,4 @@ export namespace Def {
     export type ChildDict<T extends Def> = T["childDict"]
     export type EventDict<T extends Def> = T["eventDict"]
     export type Parent<T extends Def> = T["parent"]
-
-    export type Create<T extends Partial<Def>> = Dict.Override<T, Def.Pure>
 }

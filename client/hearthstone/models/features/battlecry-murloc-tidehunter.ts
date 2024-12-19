@@ -1,10 +1,10 @@
-import { Def, Factory, Lifecycle, Props } from "@/set-piece";
+import { CustomDef, Def, Factory, Lifecycle, Props } from "@/set-piece";
 import { FeatureDef, FeatureModel } from "../feature";
 import { MurlocTidehunterModel } from "../minions/murloc-tidehunter";
 import { MurlocScoutModel } from "../minions/murloc-scout";
 
 export type BattlecryMurlocTidehunterDef = FeatureDef<
-    Def.Create<{
+    CustomDef<{
         code: 'battlecry-murloc-tidehunter',
         parent: MurlocTidehunterModel
     }>

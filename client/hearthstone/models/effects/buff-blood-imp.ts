@@ -1,8 +1,8 @@
-import { Def, Factory, Props } from "@/set-piece";
+import { CustomDef, Def, Factory, Props } from "@/set-piece";
 import { BuffModel, BuffDef } from "../buff";
 
 export type BuffBloodImpDef = BuffDef<
-    Def.Create<{
+    CustomDef<{
         code: 'buff-blood-imp'
     }>
 >

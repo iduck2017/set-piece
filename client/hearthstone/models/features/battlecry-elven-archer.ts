@@ -1,4 +1,4 @@
-import { Def, Factory, Lifecycle, Props } from "@/set-piece";
+import { CustomDef, Def, Factory, Lifecycle, Props } from "@/set-piece";
 import { FeatureDef, FeatureModel } from "../feature";
 import { ElvenArcherModel } from "../minions/elven-archer";
 import { TargetCollector } from "../card";
@@ -6,7 +6,7 @@ import { MinionModel } from "../minion";
 import { validateTarget } from "@/hearthstone/utils/validator";
 
 export type BattlecryElvenArcherDef = FeatureDef<
-    Def.Create<{
+    CustomDef<{
         code: 'battlecry-elven-archer',
         parent: ElvenArcherModel
     }>

@@ -17,7 +17,7 @@ import { Props, Def, NodeModel } from "@/set-piece";
 import { MetabolicModel } from "./metabolic";
 import { ReproductiveModel } from "./reproductive";
 
-export type AnimalDef<T extends Def> = Def.Create<{
+export type AnimalDef<T extends Def> = CustomDef<{
     code: string;
     stateDict: {
         isAlive: boolean;
@@ -37,7 +37,7 @@ export abstract class AnimalModel<
 > extends NodeModel<AnimalDef<T>> {
     protected static superProps(
         props: Props<AnimalDef<Def.Pure>>
-    ): Props.Strict<AnimalDef<Def.Pure>> {
+    ): StrictProps<AnimalDef<Def.Pure>> {
         return {
             ...props,
             stateDict: {
@@ -63,7 +63,7 @@ import { Props, Def, NodeModel } from "@/set-piece";
 import { MetabolicModel } from "./metabolic";
 import { ReproductiveModel } from "./reproductive";
 
-export type AvesModel<T extends Def> = Def.Create<{
+export type AvesModel<T extends Def> = CustomDef<{
     code: string;
     stateDict: {
         isAlive: boolean;
@@ -80,7 +80,7 @@ export abstract class AvesModel<
 > extends NodeModel<AnimalDef<T>> {
     protected static superProps(
         props: Props<AnimalDef<Def.Pure>>
-    ): Props.Strict<AnimalDef<Def.Pure>> {
+    ): StrictProps<AnimalDef<Def.Pure>> {
         return {
             ...props,
             stateDict: {

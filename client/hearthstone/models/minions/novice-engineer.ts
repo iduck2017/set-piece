@@ -1,4 +1,4 @@
-import { Def, Factory, Props } from "@/set-piece";
+import { CustomDef, Def, Factory, Props } from "@/set-piece";
 import { MinionDef, MinionModel } from "../minion";
 import { BattlecryNoviceEngineerModel } from "../features/battlecry-novice-engineer";
 
@@ -8,7 +8,7 @@ import { BattlecryNoviceEngineerModel } from "../features/battlecry-novice-engin
  */
 
 export type NoviceEngineerDef = MinionDef<
-    Def.Create<{
+    CustomDef<{
         code: 'novice-engineer',
         childDict: {
             battlecry: BattlecryNoviceEngineerModel

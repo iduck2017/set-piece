@@ -8,7 +8,7 @@ import { DeckModel } from "../models/deck";
 export function DeckComp(props: {
     model: DeckModel
 }) {
-    const model = useModel(props.model);    
+    const model = useModel(props.model);   
 
     return <ModelComp 
         model={props.model} 

@@ -1,4 +1,4 @@
-import { Def, Factory, Props } from "@/set-piece";
+import { CustomDef, Def, Factory, Props } from "@/set-piece";
 import { MinionDef, MinionModel } from "../minion";
 import { BattlecryBigGameHunterModel } from "../features/battlecry-big-game-hunter";
 
@@ -8,7 +8,7 @@ import { BattlecryBigGameHunterModel } from "../features/battlecry-big-game-hunt
  */
 
 export type BigGameHunterDef = MinionDef<
-    Def.Create<{
+    CustomDef<{
         code: 'big-game-hunter',
         childDict: {
             battlecry: BattlecryBigGameHunterModel

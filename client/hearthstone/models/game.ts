@@ -1,7 +1,7 @@
 import { PlayerModel } from "./player";
-import { Def, Factory, NodeModel, Props } from "@/set-piece";
+import { CustomDef, Def, Factory, NodeModel, Props } from "@/set-piece";
 
-type GameDef = Def.Create<{
+type GameDef = CustomDef<{
     code: 'game',
     stateDict: {
         round: number

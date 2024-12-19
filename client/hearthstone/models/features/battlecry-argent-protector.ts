@@ -1,4 +1,4 @@
-import { Def, Factory, Lifecycle, Props } from "@/set-piece";
+import { CustomDef, Def, Factory, Lifecycle, Props } from "@/set-piece";
 import { FeatureDef, FeatureModel } from "../feature";
 import { ArgentProtectorModel } from "../minions/argent-protector";
 import { TargetCollector } from "../card";
@@ -6,7 +6,7 @@ import { MinionModel } from "../minion";
 import { validateTarget } from "@/hearthstone/utils/validator";
 
 export type BattlecryArgentProtectorDef = FeatureDef<
-    Def.Create<{
+    CustomDef<{
         code: 'battlecry-argent-protector',
         parent: ArgentProtectorModel
     }>

@@ -3,7 +3,7 @@ import { Def, Props, Factory } from "@/set-piece";
 import { ReproductiveModel } from "./reproductive";
 
 type BunnyDef = AnimalDef<
-    Def.Create<{
+    CustomDef<{
         code: 'bunny',
         stateDict: {
             age: number,

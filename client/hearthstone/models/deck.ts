@@ -1,9 +1,9 @@
 import { DataBase } from "../services/database";
 import { CardDef, CardModel } from "./card";
 import { PlayerModel } from "./player";
-import { Def, Factory, Model, NodeModel, Props, Validator } from "@/set-piece";
+import { CustomDef, Def, Factory, Model, NodeModel, Props, Validator } from "@/set-piece";
 
-type DeckDef = Def.Create<{
+type DeckDef = CustomDef<{
     code: 'deck',
     stateDict: {},
     paramDict: {},

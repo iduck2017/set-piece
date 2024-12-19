@@ -1,4 +1,4 @@
-import { Def, Factory, Props } from "@/set-piece";
+import { CustomDef, Def, Factory, Props } from "@/set-piece";
 import { MinionDef, MinionModel } from "../minion";
 import { BattlecryArgentProtectorModel } from "../features/battlecry-argent-protector";
 
@@ -8,7 +8,7 @@ import { BattlecryArgentProtectorModel } from "../features/battlecry-argent-prot
  */
 
 export type ArgentProtectorDef = MinionDef<
-    Def.Create<{
+    CustomDef<{
         code: 'argent-protector',
         childDict: {
             battlecry: BattlecryArgentProtectorModel

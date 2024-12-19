@@ -1,9 +1,9 @@
 import { DataBase } from "../services/database";
 import { File } from "../services/file";
 import { GameModel } from "./game";
-import { Validator, Def, Factory, NodeModel, Base } from "@/set-piece";
+import { Validator, Factory, NodeModel, Base, CustomDef } from "@/set-piece";
 
-type AppDef = Def.Create<{
+type AppDef = CustomDef<{
     code: 'app',
     stateDict: {
         readonly version: string,

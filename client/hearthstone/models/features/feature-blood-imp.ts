@@ -1,10 +1,10 @@
-import { Def, Factory, Lifecycle, Props, Random } from "@/set-piece";
+import { CustomDef, Def, Factory, Lifecycle, Props, Random } from "@/set-piece";
 import { FeatureDef, FeatureModel } from "../feature";
 import { BloodImpModel } from "../minions/blood-imp";
 import { BuffBloodImpModel } from "../effects/buff-blood-imp";
 
 export type FeatureBloodImpDef = FeatureDef<
-    Def.Create<{
+    CustomDef<{
         code: 'feature-blood-imp',
         parent: BloodImpModel
     }>

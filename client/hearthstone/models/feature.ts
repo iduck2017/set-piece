@@ -1,7 +1,7 @@
-import { Def, Factory, Model, NodeModel, Props } from "@/set-piece";
+import { CustomDef, Def, Factory, Model, NodeModel, Props, StrictProps } from "@/set-piece";
 import { FeatureRefer } from "../utils/refers/feature";
 
-export type FeatureListDef = Def.Create<{
+export type FeatureListDef = CustomDef<{
     code: 'feature-list',
     stateDict: {},
     paramDict: {},
@@ -13,7 +13,7 @@ export type FeatureListDef = Def.Create<{
 
 export type FeatureDef<
     T extends Def = Def
-> = Def.Create<{
+> = CustomDef<{
     code: string,
     stateDict: {
     },
@@ -58,7 +58,7 @@ export abstract class FeatureModel<
         return props;
     }
     
-    constructor(props: Props.Strict<T>) {
+    constructor(props: StrictProps<T>) {
         super(props);
         this.refer = new FeatureRefer(this);
     }

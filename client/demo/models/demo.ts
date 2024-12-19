@@ -4,7 +4,7 @@ import { PingPongModel } from "./ping-pong";
 import { Def, Props, NodeModel, Factory, Lifecycle } from "@/set-piece";
 import { GenderType } from "./reproductive";
 
-type DemoDef = Def.Create<{
+type DemoDef = CustomDef<{
     code: 'demo',
     parent: AppModel,
     childDict: {

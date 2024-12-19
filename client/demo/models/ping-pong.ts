@@ -1,12 +1,14 @@
-import { Base, NodeEvent, Def, Props, NodeModel, 
-    Factory, Random, Chunk, Event, Lifecycle } from "@/set-piece";
+import { Base, NodeEvent, Props, NodeModel, 
+    Factory, Random, Chunk, Lifecycle, 
+    CustomDef } from "@/set-piece";
+import { EventEmitter } from "@/set-piece/utils/event";
 
 enum PingPongType {
     Ping = 'ping',
     Pong = 'pong'
 }
 
-type PingPongDef = Def.Create<{
+type PingPongDef = CustomDef<{
     code: 'ping-pong',
     stateDict: {
         readonly type: PingPongType
@@ -30,8 +32,8 @@ export class PingPongModel extends NodeModel<PingPongDef> {
     constructor(props: Props<PingPongDef>) {
         const parent = props.parent;
         const onChildParamCheckEmitterList: 
-            Event.Emitter<NodeEvent.OnParamCheck<PingPongDef>>[] = [];
-        const onTriggerEmitterList: Event.Emitter<[PingPongType]>[] = [];
+            EventEmitter<NodeEvent.OnParamCheck<PingPongDef>>[] = [];
+        const onTriggerEmitterList: EventEmitter<[PingPongType]>[] = [];
         // while (parent instanceof PingPongModel) {
         if (parent instanceof PingPongModel) {
             onTriggerEmitterList.push(parent.eventEmitterDict.onChildTrigger);
