@@ -46,7 +46,8 @@ export class GameModel extends NodeModel<GameDef> {
 
     queryTargetList(
         options: {
-            excludeTarget?: Model
+            excludePlayer?: boolean,
+            excludeTarget?: Model,
             excludePosition?: PlayerModel,
             requiredRaces?: RaceType[]
         }
@@ -54,25 +55,33 @@ export class GameModel extends NodeModel<GameDef> {
         const {
             excludeTarget,
             requiredRaces,
-            excludePosition
+            excludePosition,
+            excludePlayer
         } = options;
         const readPlayer = this.childDict.redPlayer;
         const bluePlayer = this.childDict.bluePlayer;
         const redBoard = readPlayer.childDict.board;
         const blueBoard = bluePlayer.childDict.board;
-        let result: MinionModel[] = [
+        let result: Model[] = [
             ...redBoard.childList,
-            ...blueBoard.childList
+            ...blueBoard.childList,
+            readPlayer,
+            bluePlayer
         ];
         if (excludePosition) {
             result = result.filter(item => {
-                const player = item.queryParent('player', true);
+                const player = item instanceof PlayerModel ?
+                    item :
+                    item.queryParent('player', true);
                 if (!player) return false;
                 return player !== excludePosition;
             });
         }
         if (excludeTarget) {
             result = result.filter(item => item !== excludeTarget);
+        }
+        if (excludePlayer) {
+            result = result.filter(item => !(item instanceof PlayerModel));
         }
         if (requiredRaces) {
             result = result.filter((item: MinionModel) => {

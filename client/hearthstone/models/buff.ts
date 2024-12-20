@@ -28,17 +28,17 @@ export abstract class BuffModel<
 
     @Lifecycle.useLoader()
     @Validator.useCondition(model => Boolean(model.referDict.board))
-    private _handleBuff() {
+    private _listenParamCheck() {
         const minion = this.referDict.minion;
         const combatable = minion?.childDict.combatable;
         if (!combatable) return;
         this.bindEvent(
             combatable.eventEmitterDict.onParamCheck,
-            this._buff
+            this._handleBuff
         );
     }
 
-    private _buff(
+    private _handleBuff(
         target: CombatableModel, 
         param: Mutable<Model.ParamDict<CombatableModel>>
     ) {
@@ -49,7 +49,7 @@ export abstract class BuffModel<
 
     @Lifecycle.useLoader()
     @Validator.useCondition(model => Boolean(model.referDict.minion))
-    private _handleRoundEnd() {
+    private _listenRoundEnd() {
         if (!this.stateDict.shouldDisposedOnRoundEnd) return;
         const minion = this.referDict.minion;
         const combatable = minion?.childDict.combatable;
@@ -61,7 +61,7 @@ export abstract class BuffModel<
             () => {
                 this.unbindEvent(
                     combatable.eventEmitterDict.onParamCheck,
-                    this._buff
+                    this._handleBuff
                 );
             }
         );

@@ -21,7 +21,8 @@ export class WispModel extends MinionModel<WispDef> {
             ...superProps,
             paramDict: {
                 name: 'Wisp',
-                desc: ''
+                desc: '',
+                flavor: 'If you hit an Eredar Lord with enough Wisps, it will explode. But why?'
             },
             stateDict: {}
         });

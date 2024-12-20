@@ -19,6 +19,17 @@ import { HandModel } from "./hand";
 import { GraveyardModel } from "./graveyard";
 import { TargetCollector, TargetCollectorInfo } from "../types/collector";
 
+export enum CardType {
+    Minion = 'minion',
+    Spell = 'spell',
+    Weapon = 'weapon',
+    Hero = 'hero',
+}
+
+export type CardRule = {
+    type: CardType,
+}
+
 export type CardDef<
     T extends Def = Def
 > = CustomDef<{
@@ -28,9 +39,10 @@ export type CardDef<
     paramDict: {
         readonly name: string;
         readonly desc: string;
+        readonly flavor: string;
     }
     eventDict: {
-        onTargetCheck: [TargetCollector[]] 
+        onCollectorCheck: [TargetCollector[]] 
     },
     childDict: {
         castable: CastableModel,
@@ -77,7 +89,7 @@ export abstract class CardModel<
     @Validator.useCondition(model => Boolean(model.referDict.hand))
     willPlay(): TargetCollectorInfo | undefined {
         const targetCollectorList: TargetCollector[] = [];
-        this._cardEventDict.onTargetCheck(targetCollectorList);
+        this._cardEventDict.onCollectorCheck(targetCollectorList);
         if (!targetCollectorList.length) {
             this.play([]);
             return undefined;

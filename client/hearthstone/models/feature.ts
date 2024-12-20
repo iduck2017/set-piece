@@ -1,12 +1,12 @@
-import { CustomDef, Def, Factory, Model, NodeModel, Props, StrictProps } from "@/set-piece";
-import { CardModel } from "./card";
+import { CustomDef, Def, Factory, Model, NodeModel, Props, PureDef, StrictProps } from "@/set-piece";
+import { CardDef, CardModel } from "./card";
 import { GameModel } from "./game";
 import { PlayerModel } from "./player";
 import { BoardModel } from "./board";
 import { HandModel } from "./hand";
 import { DeckModel } from "./deck";
 import { GraveyardModel } from "./graveyard";
-import { MinionModel } from "./minion";
+import { MinionDef, MinionModel } from "./minion";
 
 export type FeatureListDef = CustomDef<{
     code: 'feature-list',
@@ -45,7 +45,10 @@ export class FeatureListModel extends NodeModel<FeatureListDef> {
         });
     } 
     
-    accessFeature<M extends FeatureModel>(chunk: Model.Chunk<M>) {
+    accessFeature<M extends FeatureModel>(code: Model.Code<M>): void;
+    accessFeature<M extends FeatureModel>(chunk: Model.Chunk<M>): void;
+    accessFeature<M extends FeatureModel>(chunk: Model.Chunk<M> | Model.Code<M>) {
+        if (typeof chunk === 'string') chunk = { code: chunk };
         const target = this.appendChild(chunk);
         if (target) {
             this.eventDict.onFeatureAccess(target);
@@ -59,7 +62,7 @@ export abstract class FeatureModel<
     T extends FeatureDef = FeatureDef
 > extends NodeModel<T> {
     
-    private get _minion() {
+    private get _minion(): MinionModel<MinionDef<PureDef>> | undefined {
         return this.queryParent<MinionModel>(
             undefined,
             true,
@@ -67,7 +70,7 @@ export abstract class FeatureModel<
         );
     }
 
-    private get _card() {
+    private get _card(): CardModel<CardDef<PureDef>> | undefined {
         return this.queryParent<CardModel>(
             undefined,
             false,

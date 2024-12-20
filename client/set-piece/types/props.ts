@@ -21,6 +21,6 @@ export type StrictProps<T extends Def> = {
     childList?: Base.List<Model.Chunk<Def.ChildList<T>[number]>>,
     stateDict: Dict.Strict<Def.StateDict<T>>,
     paramDict: Dict.Strict<Def.ParamDict<T>>,
-    eventInfo?: Partial<Dict.Strict<Event.EmitterInfo<NodeEvent<T> & Def.EventDict<T>>>>
+    eventInfo?: Partial<Dict.Strict<Event.EmitterInfo<NodeEvent<Model<T>> & Def.EventDict<T>>>>
     parent: Def.Parent<T>,
 }

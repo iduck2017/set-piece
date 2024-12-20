@@ -7,18 +7,23 @@ export function ModelComp(props: {
     model: Model,
     menu?: ReactNode | ReactNode[],
     form?: ReactNode | ReactNode[],
-    isFold?: boolean
+    options?: {
+        isFold?: boolean,
+        isList?: boolean
+    }
 }) {
-    const { model, form, menu } = props;
+    const { model, form, menu, options } = props;
 
-    const [ isFold, setIsFold ] = useState(props.isFold);
+    const [ isFold, setIsFold ] = useState(options?.isFold);
 
-    return <div className="tree">
+    return <div className={`tree ${options?.isList ? 'list' : ''}`}>
         <div className="form">
             <div 
                 className="title" 
                 onClick={() => setIsFold(!isFold)}
-            >{model.constructor.name}</div>
+            >
+                {model.constructor.name}
+            </div>
             <div>code: {model.code}</div>
             <div>uuid: {model.uuid}</div>
             <Link model={model} action="debug" />

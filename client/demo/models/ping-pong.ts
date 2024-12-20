@@ -19,7 +19,7 @@ type PingPongDef = CustomDef<{
     },
     childList: Base.List<PingPongModel>,
     eventDict: {
-        onChildParamCheck: NodeEvent.OnParamCheck<PingPongDef>
+        onChildParamCheck: NodeEvent.OnParamCheck<PingPongModel>
         onChildTrigger: [PingPongType]
         onTrigger: [PingPongType],
         onChildAppend: [PingPongModel | undefined],
@@ -32,7 +32,7 @@ export class PingPongModel extends NodeModel<PingPongDef> {
     constructor(props: Props<PingPongDef>) {
         const parent = props.parent;
         const onChildParamCheckEmitterList: 
-            EventEmitter<NodeEvent.OnParamCheck<PingPongDef>>[] = [];
+            EventEmitter<NodeEvent.OnParamCheck<PingPongModel>>[] = [];
         const onTriggerEmitterList: EventEmitter<[PingPongType]>[] = [];
         // while (parent instanceof PingPongModel) {
         if (parent instanceof PingPongModel) {
@@ -66,7 +66,7 @@ export class PingPongModel extends NodeModel<PingPongDef> {
     }
 
     @Lifecycle.useLoader()    
-    private _handleTrigger() {
+    private _listenTrigger() {
         if (this.parent instanceof PingPongModel) {
             this.bindEvent(
                 this.parent.eventEmitterDict.onChildTrigger,
@@ -83,7 +83,7 @@ export class PingPongModel extends NodeModel<PingPongDef> {
 
 
     @Lifecycle.useUnloader()
-    private _handlePingPongParamCheck() {
+    private _listenPingPongCheck() {
         if (this.parent instanceof PingPongModel) {
             this.bindEvent(
                 this.parent.eventEmitterDict.onChildParamCheck,

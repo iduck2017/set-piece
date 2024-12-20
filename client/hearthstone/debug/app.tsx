@@ -18,6 +18,9 @@ export function AppComp(props: {
 
     return <ModelComp 
         model={model}
+        options={{
+            isList: true
+        }}
         form={
             <>
                 <Link model={model} action="save" />

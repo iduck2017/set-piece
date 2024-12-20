@@ -1,15 +1,15 @@
-import React from "react";
+import React, { useContext } from "react";
 import { ModelComp } from ".";
 import { PlayerComp } from "./player";
 import { Link } from "./common";
-import { GameProvider, useContext } from "./use-context";
+import { GameContext, GameProvider } from "./use-context";
 import { GameModel } from "../models/game";
 
 function RawGameComp(props: {
     model: GameModel
 }) {
     const { model } = props;
-    const { targetCollector } = useContext();
+    const { targetCollector } = useContext(GameContext);
 
     return (
         <ModelComp

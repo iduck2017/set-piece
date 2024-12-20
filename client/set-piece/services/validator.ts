@@ -53,10 +53,10 @@ export class Validator {
                 if (result) {
                     return handler?.apply(this, args);
                 } else {
-                    console.error('[invalid-state]', {
-                        method: key
-                    });
                     if (isStrict) {
+                        console.error('[invalid-state]', {
+                            method: key
+                        });
                         throw new Error();
                     }
                 } 

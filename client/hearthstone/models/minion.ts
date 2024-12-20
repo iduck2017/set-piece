@@ -1,8 +1,8 @@
 import { TargetCollector } from "../types/collector";
-import { CardDef, CardModel } from "./card";
+import { CardDef, CardModel, CardType } from "./card";
 import { CastableModel, CastableRule } from "./castable";
 import { CombatableModel, CombatableRule } from "./combatable";
-import { DataBase, RaceType } from "@/hearthstone/services/database";
+import { DataBase } from "@/hearthstone/services/database";
 import { 
     Base, 
     Chunk, 
@@ -15,10 +15,6 @@ import {
     PureDef, 
     Validator
 } from "@/set-piece";
-
-export type MinionRule = {
-    readonly races: Readonly<RaceType[]>;
-}
 
 export type MinionDef<
     T extends Def = Def
@@ -44,14 +40,17 @@ export abstract class MinionModel<
     >> = this.eventDict;
     
     static useRule(
-        rule: CombatableRule & CastableRule & MinionRule,
+        rule: CombatableRule & CastableRule,
         isDerived?: boolean
     ) {
         return function(Type: Base.Class) {
             CombatableModel.useRule(rule)(Type);
             CastableModel.useRule(rule)(Type);
             if (isDerived) return;
-            DataBase.useCard(rule)(Type);
+            DataBase.useCard({
+                ...rule,
+                type: CardType.Minion
+            })(Type);
         };
     }
 
@@ -81,6 +80,13 @@ export abstract class MinionModel<
         const target = board.summonMinion(this.chunk);
         if (!target) return;
         target._minionEventDict.onBattlecry(target, targetCollectorList);
+    }
+
+    @Validator.useCondition(model => Boolean(model.referDict.deck))
+    recruit() {
+        const player = this.referDict.player;
+        const deck = player?.childDict.deck;
+        deck?.recruitMinion(this);
     }
 
     @Lifecycle.useLoader()

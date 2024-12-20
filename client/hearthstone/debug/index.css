@@ -43,3 +43,22 @@ body {
     flex-wrap: wrap;
     gap: 4px;
 }
+.tree.list {
+    flex-direction: column;
+}
+
+.select.input {
+    background: transparent;
+    border: none;
+    outline: none;
+    box-shadow: none;
+    font-size: 12px;
+}
+.select.options {
+    position: absolute;
+    background: #ffffff;
+    padding: 2px;
+    cursor: pointer;
+    max-height: 200px;
+    overflow-y: auto;
+}

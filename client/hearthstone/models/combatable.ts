@@ -41,7 +41,7 @@ export type CombatableDef = CustomDef<{
         readonly fixHealth?: number;
         readonly fixAttack?: number;
 
-        curHealth: number;
+        healthWaste: number;
         actionPoint: number;
 
         isAlive: boolean;
@@ -80,6 +80,14 @@ export class CombatableModel extends NodeModel<CombatableDef> {
         };
     }
 
+    public get stateDict() {
+        const stateDict = super.stateDict;
+        return {
+            ...stateDict,
+            curHealth: stateDict.maxHealth - stateDict.healthWaste
+        };
+    }
+
     private get _minion() {
         return this.queryParent<MinionModel>(
             undefined,
@@ -110,13 +118,6 @@ export class CombatableModel extends NodeModel<CombatableDef> {
     }
 
     constructor(props: Props<CombatableDef>) {
-        // const rule: CombatableRule | undefined = undefined;
-        // let target: Model | undefined = props.parent;
-        // while (target) {
-        //     const tempRule = CombatableModel._ruleMap.get(target.constructor);
-        //     if (tempRule) rule = Object.assign(rule || {}, tempRule);
-        //     target = target.parent;
-        // }
         const rule = CombatableModel._ruleMap.get(props.parent.constructor);
         const {
             health, 
@@ -133,21 +134,21 @@ export class CombatableModel extends NodeModel<CombatableDef> {
         super({
             ...props,
             stateDict: {
-                curHealth: props.stateDict?.fixHealth || health || 1,
+                healthWaste: 0,
                 isAlive: true,
-                hasDivineShield: hasDivineShield || false,
+                hasDivineShield: hasDivineShield ?? false,
                 actionPoint: (isRush || isCharge) ? 1 : 0,
-                isStealth: isStealth || false,
+                isStealth: isStealth ?? false,
                 isFrozen: false,
                 ...props.stateDict
             },
             paramDict: {
-                maxHealth: health || props.stateDict?.fixAttack || 1,
-                attack: attack || props.stateDict?.fixAttack || 1,
+                maxHealth: health ?? props.stateDict?.fixAttack ?? 1,
+                attack: attack ?? props.stateDict?.fixAttack ?? 1,
                 maxActionPoint: isWindfury ? 2 : 1,
-                isTaunt: isTaunt || false,
-                races: races || [],
-                cantAttack: cantAttack || false 
+                isTaunt: isTaunt ?? false,
+                races: races ?? [],
+                cantAttack: cantAttack ?? false 
             },
             childDict: {}
         });
@@ -155,10 +156,10 @@ export class CombatableModel extends NodeModel<CombatableDef> {
 
     @Lifecycle.useLoader()
     @Validator.useCondition(model => Boolean(model.referDict.board))
-    private _handleHealthAlter() {
+    private _listenHealthAlter() {
         this.bindEvent(
             this.eventEmitterDict.onStateAlter,
-            (target, prevState) => {
+            (target: CombatableModel, prevState) => {
                 if (
                     prevState.curHealth > 0 && 
                     target.stateDict.curHealth <= 0
@@ -171,7 +172,7 @@ export class CombatableModel extends NodeModel<CombatableDef> {
     
     @Lifecycle.useLoader()
     @Validator.useCondition(model => Boolean(model.referDict.game))
-    private _handleActionPointReset() {
+    private _listenRoundStart() {
         const game = this.referDict.game;
         if (!game) return;
         this.bindEvent(
@@ -241,7 +242,7 @@ export class CombatableModel extends NodeModel<CombatableDef> {
             this.eventDict.onDevineShieldBreak(this);
             return;
         }
-        this.baseStateDict.curHealth -= damage;
+        this.baseStateDict.healthWaste += damage;
         this.eventDict.onReceiveDamage(this, damage);
     }
 

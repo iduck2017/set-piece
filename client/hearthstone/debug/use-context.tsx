@@ -9,7 +9,12 @@ export type GameContextInfo = {
     targetCollector?: TargetCollector;
 };
 
-const GameContext = createContext<GameContextInfo | undefined>(undefined);
+export const GameContext = createContext<GameContextInfo>({
+    handleTargetCollect: () => {},
+    isTargetCollectable: () => false,
+    setTargetCollectorInfo: () => {},
+    targetCollector: undefined
+});
 
 export const GameProvider: React.FC<{
     children: React.ReactNode;
@@ -62,11 +67,3 @@ export const GameProvider: React.FC<{
         </GameContext.Provider>
     );
 };
-
-export const useContext = () => {
-    const context = React.useContext(GameContext);
-    if (context === undefined) {
-        throw new Error('useGameContext must be used within a GameProvider');
-    }
-    return context;
-}; 

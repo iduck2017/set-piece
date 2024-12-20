@@ -8,20 +8,20 @@ import { Model } from "@/set-piece/types/model";
 import { StrictProps } from "@/set-piece/types/props";
 import { Delegator } from "@/set-piece/utils/proxy";
 import { EventEmitter, EventHandler } from "./utils/event";
+import { Mutable } from "utility-types";
 
-export type NodeEvent<T extends Def> = {
-    onStateAlter: NodeEvent.OnStateAlter<T>
-    onParamCheck: NodeEvent.OnParamCheck<T>
-    onChildSpawn: NodeEvent.OnChildSpawn<T>
+export type NodeEvent<M extends Model> = {
+    onStateAlter: NodeEvent.OnStateAlter<M>
+    onParamCheck: NodeEvent.OnParamCheck<M>
+    onChildSpawn: NodeEvent.OnChildSpawn<M>
 }
 
 export namespace NodeEvent {
-    export type OnStateAlter<T extends Def> = [
-        Model<T>, 
-        Readonly<Def.ParamDict<T> & Def.StateDict<T>>
+    export type OnStateAlter<M extends Model> = [
+        M, Readonly<Model.StateDict<M>>
     ]
-    export type OnChildSpawn<T extends Def> = [Model<T>]
-    export type OnParamCheck<T extends Def> = [Model<T>, Def.ParamDict<T>]
+    export type OnChildSpawn<M extends Model> = [M]
+    export type OnParamCheck<M extends Model> = [M, Mutable<Model.ParamDict<M>>]
 }
 
 export abstract class NodeModel<T extends Def> {
@@ -119,7 +119,7 @@ export abstract class NodeModel<T extends Def> {
         if (prev instanceof NodeModel) prev._unload();
         this._baseEventDict.onChildSpawn(this);
     }
-    useChild(setter: Event<NodeEvent.OnChildSpawn<T>>){
+    useChild(setter: Event<NodeEvent.OnChildSpawn<typeof this>>){
         this.bindEvent(this.eventEmitterDict.onChildSpawn, setter);
         return () => {
             this.unbindEvent(this.eventEmitterDict.onChildSpawn, setter);
@@ -165,21 +165,21 @@ export abstract class NodeModel<T extends Def> {
         return instance;
     }
 
-    protected eventDict: Readonly<Event.Dict<NodeEvent<T> & Def.EventDict<T>>> = 
+    protected eventDict: Readonly<Event.Dict<NodeEvent<typeof this> & Def.EventDict<T>>> = 
         Delegator.Automic({}, (key) => {
             return this._emitEvent.bind(this, key);
         });
-    private readonly _baseEventDict: Readonly<Event.Dict<NodeEvent<T>>> = this.eventDict;
+    private readonly _baseEventDict: Readonly<Event.Dict<NodeEvent<typeof this>>> = this.eventDict;
 
-    readonly eventEmitterDict: Readonly<Event.EmitterDict<NodeEvent<T> & Def.EventDict<T>>>;
+    readonly eventEmitterDict: Readonly<Event.EmitterDict<NodeEvent<typeof this> & Def.EventDict<T>>>;
     private readonly _eventHandlerMap: Map<Base.Func, EventHandler> = new Map();
     private readonly _eventDependencyMap: 
         Map<EventEmitter, Base.List<EventHandler>> & 
         Map<EventHandler, Base.List<EventEmitter>> = new Map();
 
-    private _emitEvent<K extends Dict.Key<NodeEvent<T> & Def.EventDict<T>>>(
+    private _emitEvent<K extends Dict.Key<NodeEvent<typeof this> & Def.EventDict<T>>>(
         key: K, 
-        ...args: (NodeEvent<T> & Def.EventDict<T>)[K]
+        ...args: (NodeEvent<typeof this> & Def.EventDict<T>)[K]
     ) {
         const eventEmitterList = [
             this.eventEmitterDict[key],
@@ -273,7 +273,7 @@ export abstract class NodeModel<T extends Def> {
             for (const child of childList) child._onStateAlter();
         }
     }
-    public useState(setter: Event<NodeEvent.OnStateAlter<T>>){
+    public useState(setter: Event<NodeEvent.OnStateAlter<typeof this>>){
         this.bindEvent(this.eventEmitterDict.onStateAlter, setter);
         return () => {
             this.unbindEvent(this.eventEmitterDict.onStateAlter, setter);

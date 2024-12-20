@@ -10,8 +10,10 @@ export function GraveyardComp(props: {
     const model = useModel(props.model);
 
     return <ModelComp 
-        isFold
         model={props.model} 
+        options={{
+            isFold: true
+        }}
         form={
             <>
             </>

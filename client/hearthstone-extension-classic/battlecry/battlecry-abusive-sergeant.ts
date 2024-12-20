@@ -1,0 +1,60 @@
+import { CustomDef, Def, Factory, Lifecycle, Props } from "@/set-piece";
+import { BattlecryModel } from "@/hearthstone/models/battlecry";
+import { FeatureDef } from "@/hearthstone/models/feature";
+import { TargetCollector } from "@/hearthstone/types/collector";
+import { CardModel } from "@/hearthstone/models/card";
+import { BuffAbusiveSergeantModel } from "../buffs/buff-abusive-sergeant";
+
+export type BattlecryAbusiveSergeantDef = FeatureDef<
+    CustomDef<{
+        code: 'battlecry-abusive-sergeant',
+    }>
+>
+
+@Factory.useProduct('battlecry-abusive-sergeant')
+export class BattlecryAbusiveSergeantModel extends BattlecryModel<BattlecryAbusiveSergeantDef> {
+    constructor(props: Props<BattlecryAbusiveSergeantDef>) {
+        super({
+            ...props,
+            paramDict: {
+                name: 'Abusive Sergeant\'s Battlecry',
+                desc: 'Give a minion +2 Attack this turn.'
+            },
+            stateDict: {},
+            childDict: {}
+        });
+    }
+
+    protected handleBattlecry(
+        target: CardModel,
+        targetCollectorList: TargetCollector[]
+    ): void {
+        const targetCollector:
+            TargetCollector<CardModel> | undefined = 
+            targetCollectorList.find(
+                item => item.uuid === this.uuid
+            );
+        const result = targetCollector?.result;
+        if (!result) return;
+        result.childDict.featureList.accessFeature<
+            BuffAbusiveSergeantModel
+        >('buff-abusive-sergeant');
+    }
+
+    protected handleCollectorCheck(
+        targetCollectorList: TargetCollector[]
+    ) {
+        const game = this.referDict.game;
+        if (!game) return;
+        const candidateList = game.queryTargetList({
+            excludePlayer: true,
+            excludeTarget: this.referDict.card
+        });
+        if (!candidateList.length) return;
+        targetCollectorList.push({
+            uuid: Factory.uuid,
+            hint: 'Choose a minion.',
+            candidateList: candidateList,
+        });
+    }
+}
