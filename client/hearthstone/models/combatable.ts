@@ -194,24 +194,24 @@ export class CombatableModel extends NodeModel<CombatableDef> {
     @Validator.useCondition(model => model.stateDict.isAlive)
     @Validator.useCondition(model => model.stateDict.actionPoint > 0)
     willAttack() {
-        // if (this.refer.queryMinionList({
-        //     excludeAlly: true
-        // }).length) {
-        //     const targetCollectorList: TargetCollector[] = [ {
-        //         hint: 'Choose a target',
-        //         uuid: Factory.uuid,
-        //         validator: (target) => validateTarget(target, {
-        //             isMinion: [ true ],
-        //             isOnBoard: [ true ],
-        //             isEnemy: [ true, this ]
-        //         })
-        //     } ];
-        //     return {
-        //         list: targetCollectorList,
-        //         index: 0,
-        //         runner: this.attack.bind(this)
-        //     };
-        // }
+        const game = this.referDict.game;
+        if (!game) return;
+        const candidateList = game.queryTargetList({
+            excludeTarget: this.referDict.card,
+            excludePosition: this.referDict.player
+        });
+        console.log('[candidate-list]', candidateList);
+        if (!candidateList.length) return;
+        const targetCollectorList: TargetCollector[] = [ {
+            hint: 'Choose a target',
+            uuid: Factory.uuid,
+            candidateList
+        } ];
+        return {
+            list: targetCollectorList,
+            index: 0,
+            runner: this.attack.bind(this)
+        };
     }
 
     @Validator.useCondition(model => model.stateDict.isAlive)

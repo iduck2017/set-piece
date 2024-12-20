@@ -46,7 +46,7 @@ export class GameModel extends NodeModel<GameDef> {
 
     queryTargetList(
         options: {
-            excludeTarget?: MinionModel
+            excludeTarget?: Model
             excludePosition?: PlayerModel,
             requiredRaces?: RaceType[]
         }

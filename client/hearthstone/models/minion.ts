@@ -50,9 +50,8 @@ export abstract class MinionModel<
         return function(Type: Base.Class) {
             CombatableModel.useRule(rule)(Type);
             CastableModel.useRule(rule)(Type);
-            if (!isDerived) {
-                DataBase.useCard(rule)(Type);
-            }
+            if (isDerived) return;
+            DataBase.useCard(rule)(Type);
         };
     }
 
