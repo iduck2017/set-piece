@@ -1,4 +1,13 @@
-import { CustomDef, Def, Factory, Model, NodeModel, Props, PureDef, StrictProps } from "@/set-piece";
+import { 
+    CustomDef,
+    Def,
+    Factory,
+    Model,
+    NodeModel,
+    Props,
+    PureDef,
+    StrictProps
+} from "@/set-piece";
 import { CardDef, CardModel } from "./card";
 import { GameModel } from "./game";
 import { PlayerModel } from "./player";

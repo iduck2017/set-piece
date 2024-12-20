@@ -4,7 +4,7 @@ import { SpellDef } from "@/hearthstone/models/spell";
 import { SpellModel } from "@/hearthstone/models/spell";
 import { TargetCollector } from "@/hearthstone/types/collector";
 import { MinionModel } from "@/hearthstone/models/minion";
-import { BuffBlessingOfKingsModel } from "../buffs/buff-blessing-of-kings";
+import { BuffBlessingOfKingsModel } from "../buffs/blessing-of-kings";
 
 export type SpellBlessingOfKingsDef = SpellDef<
     CustomDef<{
@@ -46,10 +46,9 @@ export class SpellBlessingOfKingsModel extends SpellModel<SpellBlessingOfKingsDe
         });
         if (!candidateList.length) return;
         targetCollectorList.push({
-            uuid: Factory.uuid,
+            uuid: this.uuid,
             hint: 'Choose a minion.',
-            candidateList: candidateList,
-            result: candidateList[0]
+            candidateList,
         });
     }
 }

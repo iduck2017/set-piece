@@ -120,9 +120,9 @@ export class BattlecryAbusiveSergeantModel extends BattlecryModel<BattlecryAbusi
         });
         if (!candidateList.length) return;
         targetCollectorList.push({
-            uuid: Factory.uuid,
+            uuid: this.uuid,
             hint: 'Choose a minion.',
-            candidateList: candidateList,
+            candidateList,
         });
     }
 }
@@ -212,10 +212,9 @@ export class SpellBlessingOfKingsModel extends SpellModel<SpellBlessingOfKingsDe
         });
         if (!candidateList.length) return;
         targetCollectorList.push({
-            uuid: Factory.uuid,
+            uuid: this.uuid,
             hint: 'Choose a minion.',
-            candidateList: candidateList,
-            result: candidateList[0]
+            candidateList,
         });
     }
 }

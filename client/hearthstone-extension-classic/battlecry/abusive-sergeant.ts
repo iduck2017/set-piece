@@ -3,7 +3,7 @@ import { BattlecryModel } from "@/hearthstone/models/battlecry";
 import { FeatureDef } from "@/hearthstone/models/feature";
 import { TargetCollector } from "@/hearthstone/types/collector";
 import { CardModel } from "@/hearthstone/models/card";
-import { BuffAbusiveSergeantModel } from "../buffs/buff-abusive-sergeant";
+import { BuffAbusiveSergeantModel } from "../buffs/abusive-sergeant";
 
 export type BattlecryAbusiveSergeantDef = FeatureDef<
     CustomDef<{
@@ -52,9 +52,9 @@ export class BattlecryAbusiveSergeantModel extends BattlecryModel<BattlecryAbusi
         });
         if (!candidateList.length) return;
         targetCollectorList.push({
-            uuid: Factory.uuid,
+            uuid: this.uuid,
             hint: 'Choose a minion.',
-            candidateList: candidateList,
+            candidateList,
         });
     }
 }

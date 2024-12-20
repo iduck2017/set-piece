@@ -6,7 +6,7 @@
 import { CardDef } from "@/hearthstone/models/card";
 import { MinionModel } from "@/hearthstone/models/minion";
 import { MinionDef } from "@/hearthstone/models/minion";
-import { BattlecryAbusiveSergeantModel } from "../battlecry/battlecry-abusive-sergeant";
+import { BattlecryAbusiveSergeantModel } from "../battlecry/abusive-sergeant";
 import { CustomDef, Def, Factory, Props } from "@/set-piece";
 
 export type AbusiveSergeantDef = MinionDef<

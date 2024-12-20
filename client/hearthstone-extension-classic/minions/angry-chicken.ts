@@ -1,6 +1,6 @@
 import { CustomDef, Def, Factory, Props } from "@/set-piece";
 import { MinionDef, MinionModel } from "@/hearthstone/models/minion";
-import { FeatureAngryChickenModel } from "../features/feature-angry-chicken";
+import { FeatureAngryChickenModel } from "../features/angry-chicken";
 import { RaceType } from "@/hearthstone/services/database";
 
 /**
