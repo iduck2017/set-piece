@@ -1,11 +1,11 @@
 import React from "react";
 import { ModelComp } from ".";
 import { DeckComp } from "./deck";
-import { GraveyardComp } from "./graveyard";
 import { BoardComp } from "./board";
 import { HandComp } from "./hand";
 import { useModel } from "./use-model";
 import { PlayerModel } from "../models/player";
+import { State } from "./common";
 
 export function PlayerComp(props: {
     model: PlayerModel
@@ -17,15 +17,14 @@ export function PlayerComp(props: {
         form={
             <>
                 <div className="link" onClick={model.refresh}>refresh</div>
+                <State model={model.childDict.combatable} />
             </>
         }
         menu={
             <>
-                {props.model.childDict.hand && <HandComp model={props.model.childDict.hand} />}
-                {props.model.childDict.deck && <DeckComp model={props.model.childDict.deck} />}
-                {props.model.childDict.board && <BoardComp model={props.model.childDict.board} />}
-                {props.model.childDict.graveyard && 
-                    <GraveyardComp model={props.model.childDict.graveyard} />}
+                {model.childDict.hand && <HandComp model={model.childDict.hand} />}
+                {model.childDict.deck && <DeckComp model={model.childDict.deck} />}
+                {model.childDict.board && <BoardComp model={model.childDict.board} />}
             </>
         }
     />;

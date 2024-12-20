@@ -1,7 +1,23 @@
-import { Base, CustomDef, Factory, Lifecycle, 
-    Model, NodeModel, Props, Validator } from "@/set-piece";
+import { 
+    Base, 
+    CustomDef, 
+    Factory, 
+    Lifecycle, 
+    Model, 
+    NodeModel, 
+    Props, 
+    Validator 
+} from "@/set-piece";
 import { RaceType } from "../services/database";
-import { CardRefer } from "../utils/refers/card";
+import { CardModel } from "./card";
+import { MinionModel } from "./minion";
+import { GameModel } from "./game";
+import { BoardModel } from "./board";
+import { PlayerModel } from "./player";
+import { HandModel } from "./hand";
+import { GraveyardModel } from "./graveyard";
+import { DeckModel } from "./deck";
+import { TargetCollector } from "../types/collector";
 
 export type CombatableRule = {
     health: number;
@@ -24,12 +40,15 @@ export type CombatableDef = CustomDef<{
     stateDict: {
         readonly fixHealth?: number;
         readonly fixAttack?: number;
+
         curHealth: number;
-        isAlive: boolean;
-        hasDivineShield: boolean;
         actionPoint: number;
+
+        isAlive: boolean;
         isStealth: boolean;
         isFrozen: boolean;
+        
+        hasDivineShield: boolean;
     };
     paramDict: {
         maxHealth: number;
@@ -45,11 +64,15 @@ export type CombatableDef = CustomDef<{
         onDealDamage: [CombatableModel, number]
         onAttack: [CombatableModel, CombatableModel]
         onDestroy: [CombatableModel]
+        onDevineShieldBreak: [CombatableModel]
+        onDevineShieldAccess: [CombatableModel]
     },
+    parent: PlayerModel | MinionModel
 }>
 
 @Factory.useProduct('combatable')
 export class CombatableModel extends NodeModel<CombatableDef> {
+
     private static readonly _ruleMap: Map<Function, CombatableRule> = new Map();
     static useRule(rule: CombatableRule) {
         return function(Type: Base.Class) {
@@ -57,26 +80,62 @@ export class CombatableModel extends NodeModel<CombatableDef> {
         };
     }
 
-    readonly refer: CardRefer;
+    private get _minion() {
+        return this.queryParent<MinionModel>(
+            undefined,
+            false,
+            (model) => model instanceof MinionModel
+        );
+    }
+
+    private get _card() {
+        return this.queryParent<CardModel>(
+            undefined,
+            false,
+            (model) => model instanceof CardModel
+        );
+    }
+
+    get referDict() {
+        return {
+            game: this.queryParent<GameModel>('game', true),
+            player: this.queryParent<PlayerModel>('player', true),
+            board: this.queryParent<BoardModel>('board', true),
+            hand: this.queryParent<HandModel>('hand', true),
+            deck: this.queryParent<DeckModel>('deck', true),
+            graveyard: this.queryParent<GraveyardModel>('graveyard', true),
+            minion: this._minion,
+            card: this._card
+        };
+    }
 
     constructor(props: Props<CombatableDef>) {
-        let rule: CombatableRule | undefined = undefined;
-        let target: Model | undefined = props.parent;
-        while (target) {
-            const tempRule = CombatableModel._ruleMap.get(target.constructor);
-            if (tempRule) rule = Object.assign(rule || {}, tempRule);
-            target = target.parent;
-        }
+        // const rule: CombatableRule | undefined = undefined;
+        // let target: Model | undefined = props.parent;
+        // while (target) {
+        //     const tempRule = CombatableModel._ruleMap.get(target.constructor);
+        //     if (tempRule) rule = Object.assign(rule || {}, tempRule);
+        //     target = target.parent;
+        // }
+        const rule = CombatableModel._ruleMap.get(props.parent.constructor);
         const {
-            health, attack, hasDivineShield: isDivineShield, races,
-            isRush, isCharge, isWindfury, isTaunt, isStealth, cantAttack
+            health, 
+            attack, 
+            hasDivineShield, 
+            races,
+            isRush, 
+            isCharge, 
+            isWindfury, 
+            isTaunt, 
+            isStealth, 
+            cantAttack
         } = rule || {};
         super({
             ...props,
             stateDict: {
                 curHealth: props.stateDict?.fixHealth || health || 1,
                 isAlive: true,
-                hasDivineShield: isDivineShield || false,
+                hasDivineShield: hasDivineShield || false,
                 actionPoint: (isRush || isCharge) ? 1 : 0,
                 isStealth: isStealth || false,
                 isFrozen: false,
@@ -92,10 +151,10 @@ export class CombatableModel extends NodeModel<CombatableDef> {
             },
             childDict: {}
         });
-        this.refer = new CardRefer(this);
     }
 
     @Lifecycle.useLoader()
+    @Validator.useCondition(model => Boolean(model.referDict.board))
     private _handleHealthAlter() {
         this.bindEvent(
             this.eventEmitterDict.onStateAlter,
@@ -109,24 +168,21 @@ export class CombatableModel extends NodeModel<CombatableDef> {
             }
         );
     }
-
-    getDevineShield() {
-        if (!this.stateDict.hasDivineShield) {
-            this.baseStateDict.hasDivineShield = true;
-        }
-    }
-
+    
     @Lifecycle.useLoader()
+    @Validator.useCondition(model => Boolean(model.referDict.game))
     private _handleActionPointReset() {
-        const game = this.refer.game;
+        const game = this.referDict.game;
         if (!game) return;
         this.bindEvent(
             game.eventEmitterDict.onRoundStart,
             () => {
-                this.baseStateDict.actionPoint = this.paramDict.maxActionPoint;
+                this.baseStateDict.actionPoint = 
+                    this.stateDict.maxActionPoint;
             }
         );
     }
+
 
     @Validator.useCondition(model => model.stateDict.isAlive)
     private _die() {
@@ -134,36 +190,72 @@ export class CombatableModel extends NodeModel<CombatableDef> {
         this.eventDict.onDie(this);
     }
 
+    @Validator.useCondition(model => Boolean(model.referDict.board))
     @Validator.useCondition(model => model.stateDict.isAlive)
     @Validator.useCondition(model => model.stateDict.actionPoint > 0)
-    attack(target: CombatableModel) {
-        console.log(target);
-        if (target) {
-            this.baseStateDict.actionPoint -= 1;
-            this._dealDamage(target);
-            target._dealDamage(this);
-            this.eventDict.onAttack(this, target);
-        }
+    willAttack() {
+        // if (this.refer.queryMinionList({
+        //     excludeAlly: true
+        // }).length) {
+        //     const targetCollectorList: TargetCollector[] = [ {
+        //         hint: 'Choose a target',
+        //         uuid: Factory.uuid,
+        //         validator: (target) => validateTarget(target, {
+        //             isMinion: [ true ],
+        //             isOnBoard: [ true ],
+        //             isEnemy: [ true, this ]
+        //         })
+        //     } ];
+        //     return {
+        //         list: targetCollectorList,
+        //         index: 0,
+        //         runner: this.attack.bind(this)
+        //     };
+        // }
+    }
+
+    @Validator.useCondition(model => model.stateDict.isAlive)
+    @Validator.useCondition(model => model.stateDict.actionPoint > 0)
+    attack(collectorList: TargetCollector<MinionModel>[]) {
+        const collector = collectorList[0];
+        const result = collector?.result;
+        const target = result?.childDict.combatable;
+        if (!target) return;
+        this.baseStateDict.actionPoint -= 1;
+        this._dealDamage(target);
+        target._dealDamage(this);
+        this.eventDict.onAttack(this, target);
     }
 
     private _dealDamage(target: CombatableModel) {
-        console.log(target);
         const damage = this.stateDict.attack;
         target.receiveDamage(damage, target);
         this.eventDict.onDealDamage(this, damage);
     }
 
+    @Validator.useCondition(model => model.stateDict.isAlive)
     receiveDamage(damage: number, source: Model) {
+        source;
         if (this.stateDict.hasDivineShield) {
             this.baseStateDict.hasDivineShield = false;
+            this.eventDict.onDevineShieldBreak(this);
             return;
         }
         this.baseStateDict.curHealth -= damage;
         this.eventDict.onReceiveDamage(this, damage);
     }
 
+    @Validator.useCondition(model => model.stateDict.isAlive)
     destroy() {
         this._die();
         this.eventDict.onDestroy(this);
+    }
+    
+    @Validator.useCondition(model => model.stateDict.isAlive)
+    getDevineShield() {
+        if (!this.stateDict.hasDivineShield) {
+            this.baseStateDict.hasDivineShield = true;
+            this.eventDict.onDevineShieldAccess(this);
+        }
     }
 }

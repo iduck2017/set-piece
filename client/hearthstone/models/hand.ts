@@ -1,6 +1,6 @@
 import { CardModel } from "./card";
 import { PlayerModel } from "./player";
-import { CustomDef, Def, Factory, Model, NodeModel, Props } from "@/set-piece";
+import { CustomDef, Factory, Model, NodeModel, Props, Validator } from "@/set-piece";
 
 type HandDef = CustomDef<{
     code: 'hand',
@@ -29,27 +29,25 @@ export class HandModel extends NodeModel<HandDef> {
 
     accessCard(card: Model.Chunk<CardModel>) {
         const target = this.appendChild(card);
-        if (target) {
-            this.eventDict.onCardAccess(target);
-            return target;
-        }
+        if (!target) return;
+        this.eventDict.onCardAccess(target);
+        return target;
     }
 
+    @Validator.useCondition(model => Boolean(model.childList.length))
     discardCard(target?: CardModel) {
-        if (!target) target = this.childList[0];
+        target = target ?? this.childList[0];
         const chunk = this.removeChild(target);
-        if (chunk) {
-            this.eventDict.onCardDiscard(target);
-            return chunk;
-        }
+        if (!chunk) return;
+        this.eventDict.onCardDiscard(target);
+        return chunk;
     }
 
     playCard(target?: CardModel) {
-        if (!target) target = this.childList[0];
+        target = target ?? this.childList[0];
         const chunk = this.removeChild(target);
-        if (chunk) {
-            this.eventDict.onCardPlay(target);
-            return chunk;
-        }
+        if (!chunk) return;
+        this.eventDict.onCardPlay(target);
+        return chunk;
     }
 }

@@ -53,21 +53,20 @@ export class AppModel extends NodeModel<AppDef> {
 
     @Validator.useCondition(app => !app.childDict.game)
     async start() {
-        console.log('start');
         const chunk = await File.loadChunk<GameModel>('game');
         this.childChunkDict.game = chunk;
     }
 
     @Validator.useCondition(app => Boolean(app.childDict.game))
     async save() {
-        if (this.childDict.game) {
-            await File.saveChunk<GameModel>(this.childDict.game);
-        }
+        if (!this.childDict.game) return;
+        await File.saveChunk<GameModel>(this.childDict.game);
     }
 
     @Validator.useCondition(app => Boolean(app.childDict.game))
     quit() {
-        if (this.childDict.game) delete this.childChunkDict.game;
+        if (!this.childDict.game) return;
+        delete this.childChunkDict.game;
         AppModel._singleton = new Map();
     }
 

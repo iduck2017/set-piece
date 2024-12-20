@@ -214,7 +214,7 @@ export namespace Delegator {
                 set: (target, key, value) => {
                     const prev = target[key];
                     const next = target[key] = value;
-                    if (prev === next) return false;
+                    if (prev === next) return true;
                     listener({ 
                         key,
                         prev,
@@ -225,7 +225,7 @@ export namespace Delegator {
                 deleteProperty: (target, key: string) => {
                     const value = target[key];
                     delete target[key];
-                    if (value === undefined) return false;
+                    if (value === undefined) return true;
                     listener({
                         key,
                         prev: value,

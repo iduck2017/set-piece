@@ -1,4 +1,4 @@
-import { Base, CustomDef, Def, Factory, Model, NodeModel, Props } from "@/set-piece";
+import { Base, CustomDef, Factory, Model, NodeModel, Props } from "@/set-piece";
 
 export type CastableRule = {
     manaCost: number;

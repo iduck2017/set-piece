@@ -1,24 +1,23 @@
-import { CardRefer } from "../utils/refers/card";
+import { BoardModel } from "./board";
 import { CastableModel } from "./castable";
 import { FeatureListModel } from "./feature";
-import { Chunk, CustomDef, Def, Dict, Event, 
-    Model, NodeModel, Props, PureDef, StrictProps, Validator } from "@/set-piece";
-
-export type TargetCollector<T = any>  = {
-    hint: string;
-    uuid: string;
-    result?: T;
-    validator: (
-        target: Model, 
-        list: TargetCollector[]
-    ) => boolean;
-}
-
-export type TargetCollectorInfo = {
-    list: TargetCollector[];
-    index: number;
-    runner: (list: TargetCollector[]) => void;
-}
+import { 
+    Chunk, 
+    CustomDef, 
+    Def, 
+    Dict, 
+    Event,  
+    NodeModel, 
+    Props, 
+    PureDef, 
+    Validator 
+} from "@/set-piece";
+import { PlayerModel } from "./player";
+import { GameModel } from "./game";
+import { DeckModel } from "./deck";
+import { HandModel } from "./hand";
+import { GraveyardModel } from "./graveyard";
+import { TargetCollector, TargetCollectorInfo } from "../types/collector";
 
 export type CardDef<
     T extends Def = Def
@@ -36,7 +35,8 @@ export type CardDef<
     childDict: {
         castable: CastableModel,
         featureList: FeatureListModel,
-    }
+    },
+    parent: BoardModel | DeckModel | HandModel | GraveyardModel
 }> & T
 
 
@@ -46,6 +46,17 @@ export abstract class CardModel<
     _cardEventDict: Readonly<Event.Dict<
         Def.EventDict<CardDef<PureDef>>
     >> = this.eventDict;
+    
+    public get referDict() {
+        return {
+            board: this.queryParent<BoardModel>('board', true),
+            deck: this.queryParent<DeckModel>('deck', true),
+            hand: this.queryParent<HandModel>('hand', true),
+            graveyard: this.queryParent<GraveyardModel>('graveyard', true),
+            player: this.queryParent<PlayerModel>('player', true),
+            game: this.queryParent<GameModel>('game', true)
+        };
+    }
 
     static cardProps<T extends CardDef>(
         props: Props<T>
@@ -63,18 +74,10 @@ export abstract class CardModel<
         };
     }
 
-    readonly refer: CardRefer;
-
-    constructor(props: StrictProps<T>) {
-        super(props);
-        this.refer = new CardRefer(this);
-    }
-    
-    @Validator.useCondition(model => Boolean(model.refer.hand))
-    prepare(): TargetCollectorInfo | undefined {
+    @Validator.useCondition(model => Boolean(model.referDict.hand))
+    willPlay(): TargetCollectorInfo | undefined {
         const targetCollectorList: TargetCollector[] = [];
         this._cardEventDict.onTargetCheck(targetCollectorList);
-        console.log('[target collector list]', targetCollectorList);
         if (!targetCollectorList.length) {
             this.play([]);
             return undefined;
@@ -86,14 +89,20 @@ export abstract class CardModel<
         };
     }
 
-    @Validator.useCondition(model => Boolean(model.refer.hand))
+    @Validator.useCondition(model => Boolean(model.referDict.hand))
     play(collectorList: TargetCollector[]) {
-        this.refer.playerHand?.playCard(this);
+        collectorList;
+        const player = this.referDict.player;
+        const hand = player?.childDict.hand;
+        hand?.playCard(this);
     }
 
-    @Validator.useCondition(model => Boolean(model.refer.deck))
+    @Validator.useCondition(model => Boolean(model.referDict.deck))
     pick() {
-        this.refer.player?.childDict.deck.drawCard(this);
+        const player = this.referDict.player;
+        if (!player) return;
+        const deck = player.childDict.deck;
+        deck.drawCard(this);
     }
 
     debug() {

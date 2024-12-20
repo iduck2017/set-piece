@@ -25,6 +25,25 @@ export namespace NodeEvent {
 }
 
 export abstract class NodeModel<T extends Def> {
+    queryParent<T extends Model>(
+        code?: Model.Code<T>,
+        recursive?: boolean,
+        validator?: ((model: Model) => boolean),
+    ): T | undefined {
+        let target: Model | undefined = this.parent;
+        while (target) {
+            const flag = 
+                (!code || target.code.startsWith(code)) &&
+                (!validator || validator(target));
+            if (flag) {
+                const result: any = target;
+                return result;
+            }
+            if (recursive) {
+                target = target.parent;
+            } else return
+        }
+    }
 
     readonly code: Def.Code<T>;
     readonly parent: Def.Parent<T>;

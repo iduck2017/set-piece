@@ -23,12 +23,22 @@ export function CardComp(props: {
                 {!targetCollector && <>
                     <Link 
                         model={props.model} 
-                        action='prepare' 
+                        action='willPlay' 
                         then={(result) => {
-                            if (result) setTargetCollectorInfo(result);
+                            if (!result) return;
+                            setTargetCollectorInfo(result);
                         }}
                     />
                     <Link model={props.model} action='pick' />
+                    {/* {model.childDict.combatable instanceof CombatableModel && 
+                        <Link
+                            model={model.childDict.combatable}
+                            action='willAttack'
+                            then={(result) => {
+                                if (result) setTargetCollectorInfo(result);
+                            }}
+                        />
+                    } */}
                 </>}
                 {isTargetCollectable(props.model) && 
                     <div 

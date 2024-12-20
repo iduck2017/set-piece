@@ -1,7 +1,6 @@
 import { Model } from '@/set-piece';
 import React, { createContext, useEffect, useState } from 'react';
-import { TargetCollector, TargetCollectorInfo } from '../models/card';
-
+import { TargetCollectorInfo, TargetCollector } from '../types/collector';
 
 export type GameContextInfo = {
     handleTargetCollect: (target: Model) => void;
@@ -34,7 +33,7 @@ export const GameProvider: React.FC<{
             if (!prev) return;
             const next = { ...prev };
             const curCollector = next.list[next.index];
-            if (curCollector.validator(target, next.list)) {
+            if (curCollector.candidateList?.includes(target)) {
                 curCollector.result = target;
             }
             next.index++;
@@ -46,7 +45,7 @@ export const GameProvider: React.FC<{
     const isTargetCollectable = (target: Model) => {
         if (!targetCollectorInfo) return false;
         if (!targetCollector) return false;
-        if (targetCollector.validator(target, targetCollectorInfo.list)) {
+        if (targetCollector.candidateList?.includes(target)) {
             return true;
         }
         return false;

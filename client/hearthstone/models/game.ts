@@ -1,5 +1,8 @@
+import { RaceType } from "../services/database";
+import { AppModel } from "./app";
+import { MinionModel } from "./minion";
 import { PlayerModel } from "./player";
-import { CustomDef, Def, Factory, NodeModel, Props } from "@/set-piece";
+import { CustomDef, Factory, Model, NodeModel, Props } from "@/set-piece";
 
 type GameDef = CustomDef<{
     code: 'game',
@@ -14,6 +17,7 @@ type GameDef = CustomDef<{
         onRoundEnd: []
         onRoundStart: []
     }
+    parent: AppModel
 }>
 
 @Factory.useProduct('game')
@@ -38,5 +42,45 @@ export class GameModel extends NodeModel<GameDef> {
         this.eventDict.onRoundEnd();
         this.baseStateDict.round += 1;
         this.eventDict.onRoundStart();
+    }
+
+    queryTargetList(
+        options: {
+            excludeTarget?: MinionModel
+            excludePosition?: PlayerModel,
+            requiredRaces?: RaceType[]
+        }
+    ): Model[] {
+        const {
+            excludeTarget,
+            requiredRaces,
+            excludePosition
+        } = options;
+        const readPlayer = this.childDict.redPlayer;
+        const bluePlayer = this.childDict.bluePlayer;
+        const redBoard = readPlayer.childDict.board;
+        const blueBoard = bluePlayer.childDict.board;
+        let result: MinionModel[] = [
+            ...redBoard.childList,
+            ...blueBoard.childList
+        ];
+        if (excludePosition) {
+            result = result.filter(item => {
+                const player = item.queryParent('player', true);
+                if (!player) return false;
+                return player !== excludePosition;
+            });
+        }
+        if (excludeTarget) {
+            result = result.filter(item => item !== excludeTarget);
+        }
+        if (requiredRaces) {
+            result = result.filter((item: MinionModel) => {
+                const combatable = item.childDict.combatable;
+                const races = combatable.stateDict.races;
+                return requiredRaces.some(race => races.includes(race));
+            });
+        }
+        return result;
     }
 }

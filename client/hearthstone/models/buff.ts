@@ -1,4 +1,4 @@
-import { CustomDef, Def, Lifecycle, Model, Props } from "@/set-piece";
+import { CustomDef, Def, Lifecycle, Model, Props, Validator } from "@/set-piece";
 import { CombatableModel } from "./combatable";
 import { Mutable } from "utility-types";
 import { FeatureDef, FeatureModel } from "./feature";
@@ -27,10 +27,11 @@ export abstract class BuffModel<
     }
 
     @Lifecycle.useLoader()
+    @Validator.useCondition(model => Boolean(model.referDict.board))
     private _handleBuff() {
-        const combatable = this.refer.minionCombatable;
+        const minion = this.referDict.minion;
+        const combatable = minion?.childDict.combatable;
         if (!combatable) return;
-        console.log('[handle-buff]', this, combatable);
         this.bindEvent(
             combatable.eventEmitterDict.onParamCheck,
             this._buff
@@ -47,21 +48,22 @@ export abstract class BuffModel<
     }
 
     @Lifecycle.useLoader()
+    @Validator.useCondition(model => Boolean(model.referDict.minion))
     private _handleRoundEnd() {
-        const combatable = this.refer.minionCombatable;
-        const game = this.refer.game;
+        if (!this.stateDict.shouldDisposedOnRoundEnd) return;
+        const minion = this.referDict.minion;
+        const combatable = minion?.childDict.combatable;
+        const game = this.referDict.game;
         if (!combatable || !game) return;
-        if (this.stateDict.shouldDisposedOnRoundEnd) {
-            console.log('[handle-round-end]', this);
-            this.bindEvent(
-                game.eventEmitterDict.onRoundEnd,
-                () => {
-                    this.unbindEvent(
-                        combatable.eventEmitterDict.onParamCheck,
-                        this._buff
-                    );
-                }
-            );
-        }
+        console.log('[handle-round-end]', this);
+        this.bindEvent(
+            game.eventEmitterDict.onRoundEnd,
+            () => {
+                this.unbindEvent(
+                    combatable.eventEmitterDict.onParamCheck,
+                    this._buff
+                );
+            }
+        );
     }
 }

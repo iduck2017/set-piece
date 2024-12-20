@@ -3,8 +3,8 @@ import { HandModel } from "./hand";
 import { BoardModel } from "./board";
 import { GraveyardModel } from "./graveyard";
 import { CustomDef, Factory, NodeModel, Props } from "@/set-piece";
-import { PlayerRefer } from "../utils/refers/player";
 import { CombatableModel } from "./combatable";
+import { GameModel } from "./game";
 
 type PlayerDef = CustomDef<{
     code: 'player',
@@ -18,6 +18,7 @@ type PlayerDef = CustomDef<{
         combatable: CombatableModel
     },
     eventDict: {},
+    parent: GameModel
 }>
 
 @CombatableModel.useRule({
@@ -27,7 +28,17 @@ type PlayerDef = CustomDef<{
 })
 @Factory.useProduct('player')
 export class PlayerModel extends NodeModel<PlayerDef> {
-    readonly refer: PlayerRefer;
+    private get _opponent() {
+        const { redPlayer, bluePlayer } = this.parent.childDict;
+        if (redPlayer === this) return bluePlayer;
+        else return redPlayer;
+    }
+
+    get referDict() {
+        return {
+            opponent: this._opponent
+        };
+    }
 
     constructor(props: Props<PlayerDef>) {
         super({
@@ -44,6 +55,5 @@ export class PlayerModel extends NodeModel<PlayerDef> {
             stateDict: {},
             paramDict: {}
         });
-        this.refer = new PlayerRefer(this);
     }
 }

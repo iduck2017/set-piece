@@ -1,8 +1,20 @@
-import { CardDef, CardModel, TargetCollector } from "./card";
+import { TargetCollector } from "../types/collector";
+import { CardDef, CardModel } from "./card";
 import { CastableModel, CastableRule } from "./castable";
 import { CombatableModel, CombatableRule } from "./combatable";
 import { DataBase, RaceType } from "@/hearthstone/services/database";
-import { Base, Chunk, CustomDef, Def, Dict, Event, Lifecycle, Props, PureDef } from "@/set-piece";
+import { 
+    Base, 
+    Chunk, 
+    CustomDef, 
+    Def, 
+    Dict, 
+    Event, 
+    Lifecycle, 
+    Props, 
+    PureDef, 
+    Validator
+} from "@/set-piece";
 
 export type MinionRule = {
     readonly races: Readonly<RaceType[]>;
@@ -20,7 +32,7 @@ export type MinionDef<
         },
         childDict: {
             combatable: CombatableModel   
-        }
+        },
     }>
 > & T
 
@@ -64,16 +76,24 @@ export abstract class MinionModel<
     
     play(targetCollectorList: TargetCollector[]) {
         super.play(targetCollectorList);
-        const target = this.refer.playerBoard?.summonMinion(this.chunk);
-        target?._minionEventDict.onBattlecry(target, targetCollectorList);
+        const player = this.referDict.player;
+        const board = player?.childDict.board;
+        if (!board) return;
+        const target = board.summonMinion(this.chunk);
+        if (!target) return;
+        target._minionEventDict.onBattlecry(target, targetCollectorList);
     }
 
     @Lifecycle.useLoader()
+    @Validator.useCondition(model => Boolean(model.referDict.board))
     private _handleHealthAlter() {
         this.bindEvent(
             this.childDict.combatable.eventEmitterDict.onDie,
             () => {
-                this.refer.playerBoard?.disposeMinion(this);
+                const player = this.referDict.player;
+                const board = player?.childDict.board;
+                if (!board) return;
+                board?.disposeMinion(this);
             }
         );
     }
