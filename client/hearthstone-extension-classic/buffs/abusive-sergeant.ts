@@ -16,7 +16,7 @@ export type BuffAbusiveSergeantDef = BuffDef<
 >
 
 @FactoryService.useProduct('abusive-sergeant-buff-feature')
-export class BuffAbusiveSergeantModel extends BuffModel<BuffAbusiveSergeantDef> {
+export class AbusiveSergeantBuffModel extends BuffModel<BuffAbusiveSergeantDef> {
     constructor(props: Props<BuffAbusiveSergeantDef>) {
         const superProps = BuffModel.buffProps(props);
         super({

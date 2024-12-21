@@ -8,7 +8,7 @@ export type BuffBlessingOfKingsDef = BuffDef<
 >
 
 @FactoryService.useProduct('blessing-of-kings-buff-feature')
-export class BuffBlessingOfKingsModel extends BuffModel<BuffBlessingOfKingsDef> {
+export class BlessingOfKingsBuffModel extends BuffModel<BuffBlessingOfKingsDef> {
     constructor(props: Props<BuffBlessingOfKingsDef>) {
         const superProps = BuffModel.buffProps(props);
         super({

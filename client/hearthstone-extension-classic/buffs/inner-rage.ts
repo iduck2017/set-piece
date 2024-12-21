@@ -8,7 +8,7 @@ export type BuffInnerRageDef = BuffDef<
 >
 
 @FactoryService.useProduct('inner-rage-buff-feature')
-export class BuffInnerRageModel extends BuffModel<BuffInnerRageDef> {
+export class InnerRageBuffModel extends BuffModel<BuffInnerRageDef> {
     constructor(props: Props<BuffInnerRageDef>) {
         const superProps = BuffModel.buffProps(props);
         super({

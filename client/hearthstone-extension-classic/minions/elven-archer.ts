@@ -1,6 +1,6 @@
 import { CustomDef, Def, FactoryService, Props } from "@/set-piece";
 import { MinionDef, MinionModel } from "@/hearthstone/models/minion";
-import { BattlecryElvenArcherModel } from "../battlecry/elven-archer";
+import { ElvenArcherBattlecryModel } from "../battlecry/elven-archer";
 import { ClassNameType, ExpansionType, RarityType } from "@/hearthstone/services/database";
 
 /**
@@ -14,7 +14,7 @@ export type ElvenArcherDef = MinionDef<
     CustomDef<{
         code: 'elven-archer-minion-card',
         childDict: {
-            battlecry: BattlecryElvenArcherModel
+            battlecry: ElvenArcherBattlecryModel
         }
     }>
 >

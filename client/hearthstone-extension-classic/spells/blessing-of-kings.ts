@@ -4,7 +4,7 @@ import { SpellDef } from "@/hearthstone/models/spell";
 import { SpellModel } from "@/hearthstone/models/spell";
 import { TargetCollector } from "@/hearthstone/types/collector";
 import { MinionModel } from "@/hearthstone/models/minion";
-import { BuffBlessingOfKingsModel } from "../buffs/blessing-of-kings";
+import { BlessingOfKingsBuffModel } from "../buffs/blessing-of-kings";
 import { ClassNameType, ExpansionType, RarityType } from "@/hearthstone/services/database";
 
 export type SpellBlessingOfKingsDef = SpellDef<
@@ -42,7 +42,7 @@ export class BlessingOfKingsModel extends SpellModel<SpellBlessingOfKingsDef> {
         const target: MinionModel | undefined = targetCollectorList[0]?.result;
         if (!target) return;
         target.childDict.featureList.accessFeature<
-            BuffBlessingOfKingsModel
+            BlessingOfKingsBuffModel
         >('blessing-of-kings-buff-feature');
     }
 

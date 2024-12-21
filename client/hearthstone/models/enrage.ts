@@ -7,7 +7,7 @@ export type EnrageDef<
     T extends Def = Def
 > = FeatureDef<
     CustomDef<{
-        code: string;
+        code: `${string}-enrage-feature`;
         stateDict: {
             isEnraged: boolean;
         }

@@ -4,12 +4,12 @@ import { CustomDef, FactoryService, Props } from "@/set-piece";
 
 export type DebuffHuntersMarkDef = BuffDef<
     CustomDef<{
-        code: 'hunters-mark-debuff-feature',
+        code: 'hunters-mark-buff-feature',
     }>
 >
 
-@FactoryService.useProduct('hunters-mark-debuff-feature')
-export class DebuffHuntersMarkModel extends BuffModel<DebuffHuntersMarkDef> {
+@FactoryService.useProduct('hunters-mark-buff-feature')
+export class HuntersMarkDebuffModel extends BuffModel<DebuffHuntersMarkDef> {
     constructor(props: Props<DebuffHuntersMarkDef>) {
         const superProps = BuffModel.featureProps(props);
         super({

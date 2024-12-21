@@ -4,7 +4,7 @@ import { SpellDef } from "@/hearthstone/models/spell";
 import { SpellModel } from "@/hearthstone/models/spell";
 import { TargetCollector } from "@/hearthstone/types/collector";
 import { MinionModel } from "@/hearthstone/models/minion";
-import { BuffInnerRageModel } from "../buffs/inner-rage";
+import { InnerRageBuffModel } from "../buffs/inner-rage";
 import { ClassNameType, ExpansionType, RarityType } from "@/hearthstone/services/database";
 
 export type SpellInnerRageDef = SpellDef<
@@ -50,7 +50,7 @@ export class InnerRageModel extends SpellModel<SpellInnerRageDef> {
 
         // Then apply the attack buff
         target.childDict.featureList.accessFeature<
-            BuffInnerRageModel
+            InnerRageBuffModel
         >('inner-rage-buff-feature');
     }
 

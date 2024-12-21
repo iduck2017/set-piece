@@ -11,7 +11,7 @@ export type BattlecryElvenArcherDef = BattlecryDef<
 >
 
 @FactoryService.useProduct('elven-archer-battlecry-feature')
-export class BattlecryElvenArcherModel extends BattlecryModel<BattlecryElvenArcherDef> {
+export class ElvenArcherBattlecryModel extends BattlecryModel<BattlecryElvenArcherDef> {
     constructor(props: Props<BattlecryElvenArcherDef>) {
         super({
             ...props,

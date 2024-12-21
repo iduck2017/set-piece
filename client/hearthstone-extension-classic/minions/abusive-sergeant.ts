@@ -6,7 +6,7 @@
 import { CardDef, CardType } from "@/hearthstone/models/card";
 import { MinionModel } from "@/hearthstone/models/minion";
 import { MinionDef } from "@/hearthstone/models/minion";
-import { BattlecryAbusiveSergeantModel } from "../battlecry/abusive-sergeant";
+import { AbusiveSergeantBattlecryModel } from "../battlecry/abusive-sergeant";
 import { CustomDef, Def, FactoryService, Props } from "@/set-piece";
 import { ClassNameType } from "@/hearthstone/services/database";
 import { ExpansionType } from "@/hearthstone/services/database";
@@ -16,7 +16,7 @@ export type AbusiveSergeantDef = MinionDef<
     CustomDef<{
         code: 'abusive-sergeant-minion-card',
         childDict: {
-            battlecry: BattlecryAbusiveSergeantModel
+            battlecry: AbusiveSergeantBattlecryModel
         }
     }>
 >

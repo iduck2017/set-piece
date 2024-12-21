@@ -3,7 +3,7 @@ import { BattlecryModel } from "@/hearthstone/models/battlecry";
 import { FeatureDef } from "@/hearthstone/models/feature";
 import { TargetCollector } from "@/hearthstone/types/collector";
 import { CardModel } from "@/hearthstone/models/card";
-import { BuffAbusiveSergeantModel } from "../buffs/abusive-sergeant";
+import { AbusiveSergeantBuffModel } from "../buffs/abusive-sergeant";
 
 export type BattlecryAbusiveSergeantDef = FeatureDef<
     CustomDef<{
@@ -12,7 +12,7 @@ export type BattlecryAbusiveSergeantDef = FeatureDef<
 >
 
 @FactoryService.useProduct('abusive-sergeant-battlecry-feature')
-export class BattlecryAbusiveSergeantModel extends BattlecryModel<BattlecryAbusiveSergeantDef> {
+export class AbusiveSergeantBattlecryModel extends BattlecryModel<BattlecryAbusiveSergeantDef> {
     constructor(props: Props<BattlecryAbusiveSergeantDef>) {
         super({
             ...props,
@@ -37,7 +37,7 @@ export class BattlecryAbusiveSergeantModel extends BattlecryModel<BattlecryAbusi
         const result = targetCollector?.result;
         if (!result) return;
         result.childDict.featureList.accessFeature<
-            BuffAbusiveSergeantModel
+            AbusiveSergeantBuffModel
         >('abusive-sergeant-buff-feature');
     }
 

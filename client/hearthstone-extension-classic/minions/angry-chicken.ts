@@ -1,6 +1,6 @@
 import { CustomDef, Def, FactoryService, Props } from "@/set-piece";
 import { MinionDef, MinionModel } from "@/hearthstone/models/minion";
-import { FeatureAngryChickenModel } from "../features/angry-chicken";
+import { AngryChickenEnrageModel } from "../features/angry-chicken";
 import { ClassNameType, ExpansionType, RaceType, RarityType } from "@/hearthstone/services/database";
 
 /**
@@ -14,7 +14,7 @@ export type AngryChickenDef = MinionDef<
     CustomDef<{
         code: 'angry-chicken-minion-card',
         childDict: {
-            feature: FeatureAngryChickenModel
+            feature: AngryChickenEnrageModel
         }
     }>
 >
@@ -47,7 +47,7 @@ export class AngryChickenModel extends MinionModel<AngryChickenDef> {
             },
             stateDict: {},
             childDict: {
-                feature: { code: 'angry-chicken-feature' },
+                feature: { code: 'angry-chicken-enrage-feature' },
                 ...superProps.childDict
             }
         });
