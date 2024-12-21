@@ -62,6 +62,7 @@ export class DivineShieldModel extends FeatureModel<DivineShieldDef> {
             combative.eventEmitterDict.onDamageReceiveBefore,
             (target, mutator) => {
                 if (!mutator.editor.isEnabled) return;
+                if (!this.stateDict.isActived) return;
                 mutator.editor.isEnabled = false;
                 mutator.editor.isEnabled = AbortSignal;
                 this.baseStateDict.isActived = false;

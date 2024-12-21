@@ -5,11 +5,11 @@ he minion's attributes, effects, description, and flavor text are provided in th
 
 ### You need to follow these naming conventions:
 
-    + Cards: minion- hero- weapon-
+    + Cards: -minion-card -hero-card weapon-card
 
-    + Features: battlecry- deathwisp- feature-
+    + Features: battlecry-feature deathwisp-feature -enrage-feature -feature
 
-    + Effects: buff- debuff-, if you're unsure whether an effect is a buff or debuff, use effect-
+    + Effects: -buff -debuff, if you're unsure whether an effect is a buff or debuff, use effect-
    
 ### Development guidelines you need to follow:
 
@@ -24,6 +24,8 @@ he minion's attributes, effects, description, and flavor text are provided in th
     + Don't make assumptions about object properties, comment out uncertain code
 
     + When creating Def, do not define the parent property of the model
+
+    + Do not use suffix on file name
 
 ### Some interface usages:
 

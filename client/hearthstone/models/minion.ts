@@ -30,7 +30,7 @@ export type MinionDef<
         },
         childDict: {
             combative: CombativeModel   
-            divineShield?: DivineShieldModel
+            divineShield: DivineShieldModel
         },
     }>
 > & T
@@ -70,6 +70,7 @@ export abstract class MinionModel<
             ...superProps.childDict,
             castable: { code: 'castable' },
             combative: { code: 'combative-feature' },
+            divineShield: { code: 'divine-shield-feature' },
             ...props.childDict
         };
         return {
