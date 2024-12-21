@@ -45,7 +45,7 @@ export class BattlecryElvenArcherModel extends BattlecryModel<BattlecryElvenArch
     ) {
         const game = this.referDict.game;
         if (!game) return;
-        const candidateList = game.queryTargetList({
+        const candidateList = game.queryMinionAndPlayerList({
             excludeTarget: this.referDict.card
         });
         if (!candidateList.length) return;

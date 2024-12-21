@@ -58,8 +58,8 @@ export abstract class NodeModel<T extends Def> {
             this._onStateAlter.bind(this, false)
         );
         this._baseParamDict = props.paramDict;
-        this._prevStateDict = { ...this.baseStateDict };
         this._paramDict = { ...this._baseParamDict };
+        this._prevStateDict = this.stateDict;
 
         this.eventEmitterDict = Delegator.Automic({}, (key) => {
             return new EventEmitter(this, key, props.eventInfo?.[key]);

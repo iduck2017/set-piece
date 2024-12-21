@@ -13,7 +13,7 @@ he minion's attributes, effects, description, and flavor text are provided in th
    
 ### Development guidelines you need to follow:
 
-    + Do not use Chinese in the code, write in English
+    + Do not use Chinese Comment in the code, write in English
 
     + You need to add my prompts as block comments in the card file, translated to English
 

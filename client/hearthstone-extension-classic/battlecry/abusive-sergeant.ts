@@ -46,7 +46,7 @@ export class BattlecryAbusiveSergeantModel extends BattlecryModel<BattlecryAbusi
     ) {
         const game = this.referDict.game;
         if (!game) return;
-        const candidateList = game.queryTargetList({
+        const candidateList = game.queryMinionAndPlayerList({
             excludePlayer: true,
             excludeTarget: this.referDict.card
         });

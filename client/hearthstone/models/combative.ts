@@ -53,9 +53,15 @@ export type CombativeDef = FeatureDef<CustomDef<{
     }
     eventDict: {
         onDie: [CombativeModel] 
-        onDamageReceive: [CombativeModel, number]
+        onDamageReceive: [CombativeModel, {
+            source?: Model,
+            damage: number
+        }]
         onDamageReceiveBefore: [CombativeModel, Mutator<{ isEnabled: boolean }>]
-        onDamageDeal: [CombativeModel, number]
+        onDamageDeal: [CombativeModel, {
+            damage: number,
+            target?: Model
+        }]
         onAttack: [CombativeModel, CombativeModel]
         onDestroy: [CombativeModel]
     },
@@ -120,6 +126,8 @@ export class CombativeModel extends FeatureModel<CombativeDef> {
         this.bindEvent(
             this.eventEmitterDict.onStateAlter,
             (target: CombativeModel, prevState) => {
+                console.log('[listen-health-alter]', { ...prevState }, { ...target.stateDict });
+
                 if (
                     prevState.curHealth > 0 && 
                     target.stateDict.curHealth <= 0
@@ -157,7 +165,7 @@ export class CombativeModel extends FeatureModel<CombativeDef> {
     willAttack() {
         const game = this.referDict.game;
         if (!game) return;
-        const candidateList = game.queryTargetList({
+        const candidateList = game.queryMinionAndPlayerList({
             excludeTarget: this.referDict.card,
             excludePosition: this.referDict.player
         });
@@ -190,19 +198,24 @@ export class CombativeModel extends FeatureModel<CombativeDef> {
 
     private _dealDamage(target: CombativeModel) {
         const damage = this.stateDict.attack;
-        target.receiveDamage(damage, target);
-        this.eventDict.onDamageDeal(this, damage);
+        const source = target.parent;
+        target.receiveDamage(damage, source);
+        this.eventDict.onDamageDeal(this, {
+            damage,
+            target: this.parent
+        });
     }
 
     @ValidatorService.useCondition(model => model.stateDict.isAlive)
-    receiveDamage(damage: number, source: Model) {
-        source;
+    receiveDamage(damage: number, source?: Model) {
         const mutator = new Mutator({ isEnabled: true });
         this.eventDict.onDamageReceiveBefore(this, mutator);
-        console.log('[mutator]', { ...mutator.result });
         if (!mutator.result.isEnabled) return;
         this.baseStateDict.healthWaste += damage;
-        this.eventDict.onDamageReceive(this, damage);
+        this.eventDict.onDamageReceive(this, {
+            damage,
+            source
+        });
     }
 
     @ValidatorService.useCondition(model => model.stateDict.isAlive)

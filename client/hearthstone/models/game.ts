@@ -1,5 +1,6 @@
 import { RaceType } from "../services/database";
 import { AppModel } from "./app";
+import { CardModel } from "./card";
 import { MinionModel } from "./minion";
 import { PlayerModel } from "./player";
 import { CustomDef, FactoryService, Model, NodeModel, Props } from "@/set-piece";
@@ -44,14 +45,14 @@ export class GameModel extends NodeModel<GameDef> {
         this.eventDict.onRoundStart();
     }
 
-    queryTargetList(
+    queryMinionAndPlayerList(
         options: {
             excludePlayer?: boolean,
             excludeTarget?: Model,
             excludePosition?: PlayerModel,
             requiredRaces?: RaceType[]
         }
-    ): Model[] {
+    ): (MinionModel | PlayerModel)[] {
         const {
             excludeTarget,
             requiredRaces,
@@ -62,7 +63,7 @@ export class GameModel extends NodeModel<GameDef> {
         const bluePlayer = this.childDict.bluePlayer;
         const redBoard = readPlayer.childDict.board;
         const blueBoard = bluePlayer.childDict.board;
-        let result: Model[] = [
+        let result = [
             ...redBoard.childList,
             ...blueBoard.childList,
             readPlayer,

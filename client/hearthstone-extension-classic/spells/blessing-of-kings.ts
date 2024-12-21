@@ -43,7 +43,7 @@ export class SpellBlessingOfKingsModel extends SpellModel<SpellBlessingOfKingsDe
     handleCollectorCheck(targetCollectorList: TargetCollector[]) {
         const game = this.referDict.game;
         if (!game) return;
-        const candidateList = game.queryTargetList({
+        const candidateList = game.queryMinionAndPlayerList({
             excludePlayer: true,
         });
         if (!candidateList.length) return;
