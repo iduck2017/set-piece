@@ -17,13 +17,19 @@ type BoardDef = CustomDef<{
 
 @FactoryService.useProduct('board')
 export class BoardModel extends NodeModel<BoardDef> {
+
     constructor(props: Props<BoardDef>) {
+        const game = props.parent.parent;
         super({
             childList: [],
             ...props,
             childDict: {},
             stateDict: {},
-            paramDict: {}
+            paramDict: {},
+            eventInfo: {
+                onMinionSummon: [ game.eventEmitterDict.onMinionSummon ],
+                onMinionDispose: [ game.eventEmitterDict.onMinionDispose ]
+            }
         });
     }
     
@@ -34,19 +40,11 @@ export class BoardModel extends NodeModel<BoardDef> {
         return target;
     }
 
-    @ValidatorService.useCondition(model => Boolean(model.childList.length))
-    removeMinion(target?: MinionModel) {
-        target = target ?? this.childList[0];
-        const chunk = this.removeChild(target);
-        if (!chunk) return;
-        this.eventDict.onMinionRemove(target);
-        return chunk;
-    }
 
     @ValidatorService.useCondition(model => Boolean(model.childList.length))
-    disposeMinion(target: MinionModel) {
+    disposeMinion(target?: MinionModel) {
         target = target ?? this.childList[0];
-        const chunk = this.removeMinion(target);
+        const chunk = this.removeChild(target);
         const player = this.parent;
         const graveyard = player.childDict.graveyard;
         if (!chunk) return;
@@ -55,5 +53,4 @@ export class BoardModel extends NodeModel<BoardDef> {
         return chunk;
     }
 
-    
 }

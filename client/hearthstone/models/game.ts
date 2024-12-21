@@ -1,8 +1,9 @@
 import { RaceType } from "../services/database";
 import { AppModel } from "./app";
+import { CombativeModel } from "./combative";
 import { MinionModel } from "./minion";
 import { PlayerModel } from "./player";
-import { Base, CustomDef, FactoryService, Model, NodeModel, Props } from "@/set-piece";
+import { Base, CustomDef, FactoryService, LifecycleService, Model, NodeModel, Props } from "@/set-piece";
 
 type GameDef = CustomDef<{
     code: 'game',
@@ -16,6 +17,8 @@ type GameDef = CustomDef<{
     eventDict: {
         onTurnEnd: []
         onTurnStart: []
+        onMinionDispose: [MinionModel]
+        onMinionSummon: [MinionModel]
     }
     parent: AppModel
 }>
@@ -116,5 +119,15 @@ export class GameModel extends NodeModel<GameDef> {
             });
         }
         return result;
+    }
+
+    @LifecycleService.useLoader()
+    private _listenMinionSummon() {
+        this.bindEvent(
+            this.eventEmitterDict.onMinionSummon,
+            (minion) => {
+                console.log('[minion-summon]', minion);
+            }
+        );
     }
 }

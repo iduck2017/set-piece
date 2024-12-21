@@ -22,6 +22,7 @@ export enum RaceType {
 }
 
 export enum RarityType {
+    Free = 'free',
     Common = 'common',
     Rare = 'rare',
     Epic = 'epic',

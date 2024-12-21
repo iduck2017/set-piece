@@ -5,7 +5,9 @@ import { CardModel } from "./card";
 
 export type BattlecryDef<
     T extends Partial<Def> = Def
-> = FeatureDef<T>;
+> = FeatureDef<{
+    code: `${string}-battlecry-feature`;
+} & T>;
 
 export abstract class BattlecryModel<
     T extends BattlecryDef = BattlecryDef

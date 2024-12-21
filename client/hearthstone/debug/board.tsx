@@ -13,7 +13,7 @@ export function BoardComp(props: {
     return <ModelComp 
         model={props.model} 
         form={<>
-            <Link model={props.model} action='removeMinion' />
+            <Link model={props.model} action='disposeMinion' />
         </>}
         menu={model.childList.map(child => (
             <CardComp key={child.uuid} model={child} />

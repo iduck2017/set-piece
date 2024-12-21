@@ -19,7 +19,7 @@ export type SpellHuntersMarkDef = SpellDef<{
     },
     card: {
         expansion: ExpansionType.Classic,
-        rarity: RarityType.Common,
+        rarity: RarityType.Free,
         className: ClassNameType.Hunter
     }
 })

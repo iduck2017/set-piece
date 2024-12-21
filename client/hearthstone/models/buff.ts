@@ -7,11 +7,13 @@ export type BuffDef<
     T extends Partial<Def> = Def
 > = FeatureDef<{
     code: `${string}-buff-feature`;
+    stateDict: {
+    }
     paramDict: {
-        modAttack?: number;
-        modHealth?: number;
-        isReset?: boolean;
-        isTemperary?: boolean;
+        readonly modAttack?: number;
+        readonly modHealth?: number;
+        readonly isReset?: boolean;
+        readonly isTemperary?: boolean;
     }
 } & T>;
 
@@ -58,7 +60,7 @@ export abstract class BuffModel<
     }
 
     @LifecycleService.useLoader()
-    @ValidatorService.useCondition(model => Boolean(model.referDict.minion))
+    @ValidatorService.useCondition(model => Boolean(model.referDict.board))
     private _listenTurnEnd() {
         if (!this.stateDict.isTemperary) return;
         const minion = this.referDict.minion;
@@ -75,4 +77,5 @@ export abstract class BuffModel<
             }
         );
     }
+
 }

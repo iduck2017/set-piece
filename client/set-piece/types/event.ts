@@ -8,7 +8,7 @@ export namespace Event {
         [K in Dict.Key<T>]: Event<Required<T>[K]>;
     }
     export type EmitterInfo<T extends Base.Dict<Base.List>> = { 
-        [K in Dict.Key<T>]: Base.List<EventEmitter<Required<T>[K]>> 
+        [K in Dict.Key<T>]: Base.List<EventEmitter<Required<T>[K]> | undefined> 
     }
 
     export type EmitterDict<T extends Base.Dict<Base.List>> = { 

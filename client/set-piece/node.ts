@@ -30,7 +30,7 @@ export abstract class NodeModel<T extends Def> {
         recursive?: boolean,
         validator?: ((model: Model) => boolean),
     ): T | undefined {
-        let target: Model | undefined = this.parent;
+        let target: Model | undefined = this;
         while (target) {
             const flag = 
                 (!code || target.code.endsWith(code)) &&
@@ -62,7 +62,14 @@ export abstract class NodeModel<T extends Def> {
         this._prevStateDict = this.stateDict;
 
         this.eventEmitterDict = Delegator.Automic({}, (key) => {
-            return new EventEmitter(this, key, props.eventInfo?.[key]);
+            const eventEmitterList = props.eventInfo?.[key];
+            const eventEmitterAlias: EventEmitter[] = [];
+            for (const eventEmitter of eventEmitterList || []) {
+                if (eventEmitter) {
+                    eventEmitterAlias.push(eventEmitter);
+                }
+            }
+            return new EventEmitter(this, key, eventEmitterAlias);
         });
 
         const childList = Delegator.Observed(

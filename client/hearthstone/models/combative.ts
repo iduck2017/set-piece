@@ -13,6 +13,7 @@ import { TargetCollector } from "../types/collector";
 import { FeatureDef, FeatureModel } from "./feature";
 import { RuleService } from "../services/rule";
 import { Mutator } from "../../set-piece/utils/mutator";
+import { GameModel } from "./game";
 
 export type CombativeRule = {
     health: number;
@@ -119,7 +120,8 @@ export class CombativeModel extends FeatureModel<CombativeDef> {
                 races: races ?? [],
                 cantAttack: cantAttack ?? false 
             },
-            childDict: {}
+            childDict: {},
+            eventInfo: {}
         });
     }
 

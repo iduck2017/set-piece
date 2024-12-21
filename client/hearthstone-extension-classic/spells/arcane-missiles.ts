@@ -18,7 +18,7 @@ export type SpellArcaneMissilesDef = SpellDef<{
     },
     card: {
         expansion: ExpansionType.Classic,
-        rarity: RarityType.Common,
+        rarity: RarityType.Free,
         className: ClassNameType.Mage
     }
 })
