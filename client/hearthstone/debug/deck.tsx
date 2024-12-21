@@ -5,8 +5,8 @@ import { CardComp } from "./card";
 import { Link } from "./common";
 import { DeckModel } from "../models/deck";
 import { Select } from "./select";
-import { DataBase } from "../services/database";
-import { Factory } from "@/set-piece";
+import { DataBaseService } from "../services/database";
+import { FactoryService } from "@/set-piece";
 
 
 export function DeckComp(props: {
@@ -15,9 +15,9 @@ export function DeckComp(props: {
     const model = useModel(props.model);   
 
     const options = useMemo(() => {
-        return DataBase.cardProductInfo.selectAll.map(card => ({
-            label: Factory.productMap.get(card) || '',
-            value: Factory.productMap.get(card) || ''
+        return DataBaseService.cardProductInfo.selectAll.map(card => ({
+            label: FactoryService.productMap.get(card) || '',
+            value: FactoryService.productMap.get(card) || ''
         }));
     }, []);
 

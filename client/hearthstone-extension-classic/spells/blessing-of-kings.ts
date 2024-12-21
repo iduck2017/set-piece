@@ -1,5 +1,5 @@
 import { CustomDef, Props } from "@/set-piece";
-import { Factory } from "@/set-piece/services/factory";
+import { FactoryService } from "@/set-piece/services/factory";
 import { SpellDef } from "@/hearthstone/models/spell";
 import { SpellModel } from "@/hearthstone/models/spell";
 import { TargetCollector } from "@/hearthstone/types/collector";
@@ -13,9 +13,11 @@ export type SpellBlessingOfKingsDef = SpellDef<
 >
 
 @SpellModel.useRule({
-    manaCost: 4
+    castable: {
+        manaCost: 4
+    }
 })
-@Factory.useProduct('spell-blessing-of-kings')
+@FactoryService.useProduct('spell-blessing-of-kings')
 export class SpellBlessingOfKingsModel extends SpellModel<SpellBlessingOfKingsDef> {
     constructor(props: Props<SpellBlessingOfKingsDef>) {
         const superProps = SpellModel.spellProps(props);

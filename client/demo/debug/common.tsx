@@ -1,6 +1,6 @@
 import React from "react";
 import './index.css';
-import { Validator } from "@/set-piece/services/validator";
+import { ValidatorService } from "@/set-piece/services/validator";
 import { useModel } from "./use-model";
 import { Model } from "@/set-piece/types/model";
 import { Base, Dict } from "@/set-piece/types/base";
@@ -33,7 +33,7 @@ export function Link<
 }) {
     const { model, action, args = [], then } = props;
     
-    const visible = Validator.preCheck(model, action, ...args);
+    const visible = ValidatorService.preCheck(model, action, ...args);
     if (!visible) return null;
 
     const emit = () => {

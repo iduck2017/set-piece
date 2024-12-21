@@ -1,4 +1,4 @@
-import { CustomDef, Factory, Model, NodeModel, Props, Validator } from "@/set-piece";
+import { CustomDef, FactoryService, Model, NodeModel, Props, ValidatorService } from "@/set-piece";
 import { PlayerModel } from "./player";
 import { MinionModel } from "./minion";
 
@@ -15,7 +15,7 @@ type BoardDef = CustomDef<{
     parent: PlayerModel
 }>
 
-@Factory.useProduct('board')
+@FactoryService.useProduct('board')
 export class BoardModel extends NodeModel<BoardDef> {
     constructor(props: Props<BoardDef>) {
         super({
@@ -34,7 +34,7 @@ export class BoardModel extends NodeModel<BoardDef> {
         return target;
     }
 
-    @Validator.useCondition(model => Boolean(model.childList.length))
+    @ValidatorService.useCondition(model => Boolean(model.childList.length))
     removeMinion(target?: MinionModel) {
         target = target ?? this.childList[0];
         const chunk = this.removeChild(target);
@@ -43,7 +43,7 @@ export class BoardModel extends NodeModel<BoardDef> {
         return chunk;
     }
 
-    @Validator.useCondition(model => Boolean(model.childList.length))
+    @ValidatorService.useCondition(model => Boolean(model.childList.length))
     disposeMinion(target: MinionModel) {
         target = target ?? this.childList[0];
         const chunk = this.removeMinion(target);

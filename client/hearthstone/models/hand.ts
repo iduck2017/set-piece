@@ -1,6 +1,6 @@
 import { CardModel } from "./card";
 import { PlayerModel } from "./player";
-import { CustomDef, Factory, Model, NodeModel, Props, Validator } from "@/set-piece";
+import { CustomDef, FactoryService, Model, NodeModel, Props, ValidatorService } from "@/set-piece";
 
 type HandDef = CustomDef<{
     code: 'hand',
@@ -15,7 +15,7 @@ type HandDef = CustomDef<{
     parent: PlayerModel
 }>
 
-@Factory.useProduct('hand')
+@FactoryService.useProduct('hand')
 export class HandModel extends NodeModel<HandDef> {
     constructor(props: Props<HandDef>) {
         super({
@@ -34,7 +34,7 @@ export class HandModel extends NodeModel<HandDef> {
         return target;
     }
 
-    @Validator.useCondition(model => Boolean(model.childList.length))
+    @ValidatorService.useCondition(model => Boolean(model.childList.length))
     discardCard(target?: CardModel) {
         target = target ?? this.childList[0];
         const chunk = this.removeChild(target);

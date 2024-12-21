@@ -1,7 +1,7 @@
-import { CustomDef, Factory, Model, Props } from "@/set-piece";
+import { CustomDef, FactoryService, Model, Props } from "@/set-piece";
 import { EnrageDef, EnrageModel } from "@/hearthstone/models/enrage";
 import { AngryChickenModel } from "../minions/angry-chicken";
-import { CombatableModel } from "@/hearthstone/models/combatable";
+import { CombativeModel } from "@/hearthstone/models/combative";
 import { Mutable } from "utility-types";
 
 export type FeatureAngryChickenDef = EnrageDef<
@@ -13,7 +13,7 @@ export type FeatureAngryChickenDef = EnrageDef<
     }>
 >
 
-@Factory.useProduct('feature-angry-chicken')
+@FactoryService.useProduct('feature-angry-chicken')
 export class FeatureAngryChickenModel extends EnrageModel<FeatureAngryChickenDef> {
     constructor(props: Props<FeatureAngryChickenDef>) {
         super({
@@ -30,8 +30,8 @@ export class FeatureAngryChickenModel extends EnrageModel<FeatureAngryChickenDef
     }
 
     protected handleEnrage(
-        target: CombatableModel,
-        param: Mutable<Model.ParamDict<CombatableModel>>
+        target: CombativeModel,
+        param: Mutable<Model.ParamDict<CombativeModel>>
     ) {
         param.attack += 5;
     }

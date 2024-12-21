@@ -1,7 +1,7 @@
 import { Base } from "@/set-piece/types/base";
 import { Random } from "@/set-piece/utils/random";
 
-export class Factory {
+export class FactoryService {
     private static _timestamp = Date.now(); 
     private static _uuid = Random.number(
         36 ** 2, 
@@ -9,11 +9,11 @@ export class Factory {
     );
     static get uuid(): string {
         let now = Date.now();
-        const ticket = Factory._uuid;
-        Factory._uuid += 1;
-        if (Factory._uuid > 36 ** 3 - 1) {
-            Factory._uuid = 36 ** 2;
-            while (now === Factory._timestamp) {
+        const ticket = FactoryService._uuid;
+        FactoryService._uuid += 1;
+        if (FactoryService._uuid > 36 ** 3 - 1) {
+            FactoryService._uuid = 36 ** 2;
+            while (now === FactoryService._timestamp) {
                 now = Date.now();
             }
         }
@@ -23,18 +23,18 @@ export class Factory {
 
     private static _productDict: Record<string, Base.Class> = {};
     static get productDict() {
-        return { ...Factory._productDict };
+        return { ...FactoryService._productDict };
     }
 
     private static _productMap: Map<Base.Class, string> = new Map();
     static get productMap() {
-        return new Map(Factory._productMap);
+        return new Map(FactoryService._productMap);
     }
 
     static useProduct<T extends string>(code: T) {
         return function (Type: Base.Class<{ code: T }>) {
-            Factory._productDict[code] = Type;
-            Factory._productMap.set(Type, code);
+            FactoryService._productDict[code] = Type;
+            FactoryService._productMap.set(Type, code);
         };
     }
 

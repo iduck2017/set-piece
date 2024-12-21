@@ -1,4 +1,4 @@
-import { Factory } from '@/set-piece';
+import { FactoryService } from '@/set-piece';
 import React, { useCallback, useMemo, useRef, useState } from 'react';
 
 interface Option {
@@ -19,7 +19,7 @@ export const Select: React.FC<SelectProps> = ({
 }) => {
     const [ searchText, setSearchText ] = useState('');
     const [ isOpen, setIsOpen ] = useState(false);
-    const id = useRef(Factory.uuid);
+    const id = useRef(FactoryService.uuid);
 
     const selectedOption = useMemo(() => 
         options.find(option => option.value === value),

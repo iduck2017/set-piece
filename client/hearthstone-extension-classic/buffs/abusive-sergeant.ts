@@ -1,4 +1,4 @@
-import { Factory } from "@/set-piece/services/factory";
+import { FactoryService } from "@/set-piece/services/factory";
 import { Props } from "@/set-piece/types/props";
 import { CustomDef, Def } from "@/set-piece";
 import { BuffDef } from "@/hearthstone/models/buff";
@@ -10,7 +10,7 @@ export type BuffAbusiveSergeantDef = BuffDef<
     }>
 >
 
-@Factory.useProduct('buff-abusive-sergeant')
+@FactoryService.useProduct('buff-abusive-sergeant')
 export class BuffAbusiveSergeantModel extends BuffModel<BuffAbusiveSergeantDef> {
     constructor(props: Props<BuffAbusiveSergeantDef>) {
         const buffProps = BuffModel.buffProps(props);

@@ -2,7 +2,7 @@ import { RaceType } from "../services/database";
 import { AppModel } from "./app";
 import { MinionModel } from "./minion";
 import { PlayerModel } from "./player";
-import { CustomDef, Factory, Model, NodeModel, Props } from "@/set-piece";
+import { CustomDef, FactoryService, Model, NodeModel, Props } from "@/set-piece";
 
 type GameDef = CustomDef<{
     code: 'game',
@@ -20,7 +20,7 @@ type GameDef = CustomDef<{
     parent: AppModel
 }>
 
-@Factory.useProduct('game')
+@FactoryService.useProduct('game')
 export class GameModel extends NodeModel<GameDef> {
     constructor(props: Props<GameDef>) {
         super({
@@ -85,8 +85,8 @@ export class GameModel extends NodeModel<GameDef> {
         }
         if (requiredRaces) {
             result = result.filter((item: MinionModel) => {
-                const combatable = item.childDict.combatable;
-                const races = combatable.stateDict.races;
+                const combative = item.childDict.combative;
+                const races = combative.stateDict.races;
                 return requiredRaces.some(race => races.includes(race));
             });
         }

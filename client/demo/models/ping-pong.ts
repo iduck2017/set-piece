@@ -1,5 +1,5 @@
 import { Base, NodeEvent, Props, NodeModel, 
-    Factory, Random, Chunk, Lifecycle, 
+    FactoryService, Random, Chunk, LifecycleService, 
     CustomDef } from "@/set-piece";
 import { EventEmitter } from "@/set-piece/utils/event";
 
@@ -27,7 +27,7 @@ type PingPongDef = CustomDef<{
     },
 }>
 
-@Factory.useProduct('ping-pong')
+@FactoryService.useProduct('ping-pong')
 export class PingPongModel extends NodeModel<PingPongDef> {
     constructor(props: Props<PingPongDef>) {
         const parent = props.parent;
@@ -65,7 +65,7 @@ export class PingPongModel extends NodeModel<PingPongDef> {
         this.eventDict.onTrigger(this.stateDict.type);
     }
 
-    @Lifecycle.useLoader()    
+    @LifecycleService.useLoader()    
     private _listenTrigger() {
         if (this.parent instanceof PingPongModel) {
             this.bindEvent(
@@ -82,7 +82,7 @@ export class PingPongModel extends NodeModel<PingPongDef> {
     }
 
 
-    @Lifecycle.useUnloader()
+    @LifecycleService.useUnloader()
     private _listenPingPongCheck() {
         if (this.parent instanceof PingPongModel) {
             this.bindEvent(

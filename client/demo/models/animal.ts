@@ -1,4 +1,4 @@
-import { Props, Def, NodeModel, Validator, CustomDef } from "@/set-piece";
+import { Props, Def, NodeModel, ValidatorService, CustomDef } from "@/set-piece";
 
 export type AnimalDef<
     T extends Def = Def
@@ -39,12 +39,12 @@ export abstract class AnimalModel<
         };
     }
 
-    @Validator.useCondition(model => model.stateDict.isAlive)
+    @ValidatorService.useCondition(model => model.stateDict.isAlive)
     diagest() {
         this.baseStateDict.curCalories -= 1;
     }
 
-    @Validator.useCondition(model => model.stateDict.isAlive)
+    @ValidatorService.useCondition(model => model.stateDict.isAlive)
     growup() {
         this.baseStateDict.curAge += 1;
         if (this.stateDict.curAge >= this.stateDict.maxAge) {
@@ -84,7 +84,7 @@ export abstract class AvesModel<
         };
     }
 
-    @Validator.useCondition(model => model.stateDict.isAlive)
+    @ValidatorService.useCondition(model => model.stateDict.isAlive)
     fly() {
         this.baseStateDict.isFlying = true;
     }

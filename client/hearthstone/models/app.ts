@@ -1,7 +1,7 @@
-import { DataBase } from "../services/database";
-import { File } from "../services/file";
+import { DataBaseService } from "../services/database";
+import { FileService } from "../services/file";
 import { GameModel } from "./game";
-import { Validator, Factory, NodeModel, Base, CustomDef } from "@/set-piece";
+import { ValidatorService, FactoryService, NodeModel, Base, CustomDef } from "@/set-piece";
 
 type AppDef = CustomDef<{
     code: 'app',
@@ -51,19 +51,19 @@ export class AppModel extends NodeModel<AppDef> {
         });
     }
 
-    @Validator.useCondition(app => !app.childDict.game)
+    @ValidatorService.useCondition(app => !app.childDict.game)
     async start() {
-        const chunk = await File.loadChunk<GameModel>('game');
+        const chunk = await FileService.loadChunk<GameModel>('game');
         this.childChunkDict.game = chunk;
     }
 
-    @Validator.useCondition(app => Boolean(app.childDict.game))
+    @ValidatorService.useCondition(app => Boolean(app.childDict.game))
     async save() {
         if (!this.childDict.game) return;
-        await File.saveChunk<GameModel>(this.childDict.game);
+        await FileService.saveChunk<GameModel>(this.childDict.game);
     }
 
-    @Validator.useCondition(app => Boolean(app.childDict.game))
+    @ValidatorService.useCondition(app => Boolean(app.childDict.game))
     quit() {
         if (!this.childDict.game) return;
         delete this.childChunkDict.game;
@@ -71,7 +71,7 @@ export class AppModel extends NodeModel<AppDef> {
     }
 
     debug() {
-        console.log(Factory.productDict);
-        console.log(DataBase.cardProductInfo);
+        console.log(FactoryService.productDict);
+        console.log(DataBaseService.cardProductInfo);
     }
 }

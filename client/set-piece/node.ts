@@ -1,5 +1,5 @@
-import { Factory } from "@/set-piece/services/factory";
-import { Lifecycle } from "@/set-piece/services/lifecycle";
+import { FactoryService } from "@/set-piece/services/factory";
+import { LifecycleService } from "@/set-piece/services/lifecycle";
 import { Base, Dict } from "@/set-piece/types/base";
 import { Chunk, StrictChunk } from "@/set-piece/types/chunk";
 import { Def } from "@/set-piece/types/define";
@@ -51,7 +51,7 @@ export abstract class NodeModel<T extends Def> {
     constructor(props: StrictProps<T>) {
         this.code = props.code;
         this.parent = props.parent;
-        this.uuid = props.uuid || Factory.uuid;
+        this.uuid = props.uuid || FactoryService.uuid;
         
         this.baseStateDict = Delegator.Observed(
             props.stateDict,
@@ -128,7 +128,7 @@ export abstract class NodeModel<T extends Def> {
     protected appendChild(
         chunk: Model.Chunk<Def.ChildList<T>[number]>
     ): Def.ChildList<T>[number] | undefined {
-        const uuid = chunk.uuid || Factory.uuid;
+        const uuid = chunk.uuid || FactoryService.uuid;
         this.childChunkList.push({
             ...chunk,
             uuid
@@ -152,7 +152,7 @@ export abstract class NodeModel<T extends Def> {
     protected _createChild<M extends Model>(
         chunk: Model.Chunk<M>
     ): M | undefined {
-        const Type = Factory.productDict[chunk.code];
+        const Type = FactoryService.productDict[chunk.code];
         if (!Type) {
             console.error('[model-not-found]', { chunk });
             // throw new Error();
@@ -297,8 +297,8 @@ export abstract class NodeModel<T extends Def> {
     }
 
     
-    private readonly _loaderList: Base.Func[] = Lifecycle.getLoaderList(this);
-    private readonly _unloaderList: Base.Func[] = Lifecycle.getUnloaderList(this);
+    private readonly _loaderList: Base.Func[] = LifecycleService.getLoaderList(this);
+    private readonly _unloaderList: Base.Func[] = LifecycleService.getUnloaderList(this);
     private _load() {
         for (const loader of this._loaderList) loader.call(this);
         const childList: Model[] = [

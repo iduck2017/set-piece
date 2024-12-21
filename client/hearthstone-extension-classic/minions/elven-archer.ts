@@ -1,4 +1,4 @@
-import { CustomDef, Def, Factory, Props } from "@/set-piece";
+import { CustomDef, Def, FactoryService, Props } from "@/set-piece";
 import { MinionDef, MinionModel } from "@/hearthstone/models/minion";
 import { BattlecryElvenArcherModel } from "../battlecry/elven-archer";
 
@@ -19,12 +19,16 @@ export type ElvenArcherDef = MinionDef<
 >
 
 @MinionModel.useRule({
-    manaCost: 1,
-    health: 1,
-    attack: 1,
-    races: []
+    combative: {
+        health: 1,
+        attack: 1,
+        races: []
+    },
+    castable: {
+        manaCost: 1
+    }
 })
-@Factory.useProduct('minion-elven-archer')
+@FactoryService.useProduct('minion-elven-archer')
 export class ElvenArcherModel extends MinionModel<ElvenArcherDef> {
     constructor(props: Props<ElvenArcherDef>) {
         const superProps = MinionModel.minionProps(props);

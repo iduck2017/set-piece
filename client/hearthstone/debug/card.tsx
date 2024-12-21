@@ -5,7 +5,7 @@ import { Link, State } from "./common";
 import { CardModel } from "../models/card";
 import { MinionModel } from "../models/minion";
 import { GameContext } from "./use-context";
-import { CombatableComp } from "./combatable";
+import { CombativeComp } from "./combative";
 
 export function CardForm(props: {
     model: CardModel
@@ -58,7 +58,7 @@ export function MinionComp(props: {
         }
         menu={
             <>
-                <CombatableComp model={model.childDict.combatable} />
+                <CombativeComp model={model.childDict.combative} />
             </>
         }
     />;

@@ -1,4 +1,4 @@
-import { CustomDef, Def, Factory, Props } from "@/set-piece";
+import { CustomDef, Def, FactoryService, Props } from "@/set-piece";
 import { MinionDef, MinionModel } from "@/hearthstone/models/minion";
 
 /**
@@ -14,12 +14,16 @@ export type ChillwindYetiDef = MinionDef<
 >
 
 @MinionModel.useRule({
-    manaCost: 4,
-    health: 5,
-    attack: 4,
-    races: []
+    combative: {
+        health: 4,
+        attack: 4,
+        races: []
+    },
+    castable: {
+        manaCost: 5
+    }
 })
-@Factory.useProduct('minion-chillwind-yeti')
+@FactoryService.useProduct('minion-chillwind-yeti')
 export class ChillwindYetiModel extends MinionModel<ChillwindYetiDef> {
     constructor(props: Props<ChillwindYetiDef>) {
         const superProps = MinionModel.minionProps(props);

@@ -1,8 +1,8 @@
 import { TargetCollector } from "../types/collector";
 import { CardDef, CardModel, CardType } from "./card";
-import { CastableModel, CastableRule } from "./castable";
-import { CombatableModel, CombatableRule } from "./combatable";
-import { DataBase } from "@/hearthstone/services/database";
+import { CastableRule } from "./castable";
+import { CombativeModel, CombativeRule } from "./combative";
+import { DataBaseService } from "@/hearthstone/services/database";
 import { 
     Base, 
     Chunk, 
@@ -10,11 +10,13 @@ import {
     Def, 
     Dict, 
     Event, 
-    Lifecycle, 
+    LifecycleService, 
     Props, 
     PureDef, 
-    Validator
+    ValidatorService
 } from "@/set-piece";
+import { DivineShieldModel } from "./devine-shield";
+import { RuleService } from "../services/rule";
 
 export type MinionDef<
     T extends Def = Def
@@ -27,7 +29,8 @@ export type MinionDef<
             onBattlecry: [MinionModel, TargetCollector[]]
         },
         childDict: {
-            combatable: CombatableModel   
+            combative: CombativeModel   
+            divineShield?: DivineShieldModel
         },
     }>
 > & T
@@ -40,14 +43,16 @@ export abstract class MinionModel<
     >> = this.eventDict;
     
     static useRule(
-        rule: CombatableRule & CastableRule,
+        rule: {
+            combative: CombativeRule,
+            castable: CastableRule
+        },
         isDerived?: boolean
     ) {
         return function(Type: Base.Class) {
-            CombatableModel.useRule(rule)(Type);
-            CastableModel.useRule(rule)(Type);
+            RuleService.useRule(rule)(Type);
             if (isDerived) return;
-            DataBase.useCard({
+            DataBaseService.useCard({
                 ...rule,
                 type: CardType.Minion
             })(Type);
@@ -63,7 +68,7 @@ export abstract class MinionModel<
         >> = {
             ...superProps.childDict,
             castable: { code: 'castable' },
-            combatable: { code: 'combatable' },
+            combative: { code: 'combative' },
             ...props.childDict
         };
         return {
@@ -82,18 +87,18 @@ export abstract class MinionModel<
         target._minionEventDict.onBattlecry(target, targetCollectorList);
     }
 
-    @Validator.useCondition(model => Boolean(model.referDict.deck))
+    @ValidatorService.useCondition(model => Boolean(model.referDict.deck))
     recruit() {
         const player = this.referDict.player;
         const deck = player?.childDict.deck;
         deck?.recruitMinion(this);
     }
 
-    @Lifecycle.useLoader()
-    @Validator.useCondition(model => Boolean(model.referDict.board))
+    @LifecycleService.useLoader()
+    @ValidatorService.useCondition(model => Boolean(model.referDict.board))
     private _handleHealthAlter() {
         this.bindEvent(
-            this.childDict.combatable.eventEmitterDict.onDie,
+            this.childDict.combative.eventEmitterDict.onDie,
             () => {
                 const player = this.referDict.player;
                 const board = player?.childDict.board;

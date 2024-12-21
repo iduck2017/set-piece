@@ -1,5 +1,5 @@
-import { CustomDef, Def, Lifecycle, Model, Props, Validator } from "@/set-piece";
-import { CombatableModel } from "./combatable";
+import { CustomDef, Def, LifecycleService, Model, Props, ValidatorService } from "@/set-piece";
+import { CombativeModel } from "./combative";
 import { Mutable } from "utility-types";
 import { FeatureDef, FeatureModel } from "./feature";
 
@@ -26,41 +26,41 @@ export abstract class BuffModel<
         return FeatureModel.featureProps(props);
     }
 
-    @Lifecycle.useLoader()
-    @Validator.useCondition(model => Boolean(model.referDict.board))
+    @LifecycleService.useLoader()
+    @ValidatorService.useCondition(model => Boolean(model.referDict.board))
     private _listenParamCheck() {
         const minion = this.referDict.minion;
-        const combatable = minion?.childDict.combatable;
-        if (!combatable) return;
+        const combative = minion?.childDict.combative;
+        if (!combative) return;
         this.bindEvent(
-            combatable.eventEmitterDict.onParamCheck,
+            combative.eventEmitterDict.onParamCheck,
             this._handleBuff
         );
     }
 
     private _handleBuff(
-        target: CombatableModel, 
-        param: Mutable<Model.ParamDict<CombatableModel>>
+        target: CombativeModel, 
+        param: Mutable<Model.ParamDict<CombativeModel>>
     ) {
         console.log('[execute-buff]', param, this, this.stateDict);
         param.attack += this.stateDict.modAttack;
         param.maxHealth += this.stateDict.modHealth;
     }
 
-    @Lifecycle.useLoader()
-    @Validator.useCondition(model => Boolean(model.referDict.minion))
+    @LifecycleService.useLoader()
+    @ValidatorService.useCondition(model => Boolean(model.referDict.minion))
     private _listenRoundEnd() {
         if (!this.stateDict.shouldDisposedOnRoundEnd) return;
         const minion = this.referDict.minion;
-        const combatable = minion?.childDict.combatable;
+        const combative = minion?.childDict.combative;
         const game = this.referDict.game;
-        if (!combatable || !game) return;
+        if (!combative || !game) return;
         console.log('[handle-round-end]', this);
         this.bindEvent(
             game.eventEmitterDict.onRoundEnd,
             () => {
                 this.unbindEvent(
-                    combatable.eventEmitterDict.onParamCheck,
+                    combative.eventEmitterDict.onParamCheck,
                     this._handleBuff
                 );
             }

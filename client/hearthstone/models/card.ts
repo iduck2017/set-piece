@@ -10,7 +10,7 @@ import {
     NodeModel, 
     Props, 
     PureDef, 
-    Validator 
+    ValidatorService 
 } from "@/set-piece";
 import { PlayerModel } from "./player";
 import { GameModel } from "./game";
@@ -59,14 +59,21 @@ export abstract class CardModel<
         Def.EventDict<CardDef<PureDef>>
     >> = this.eventDict;
     
-    public get referDict() {
+    public get referDict(): {
+        board?: BoardModel,
+        deck?: DeckModel,
+        hand?: HandModel,
+        graveyard?: GraveyardModel,
+        player?: PlayerModel,
+        game?: GameModel
+        } {
         return {
-            board: this.queryParent<BoardModel>('board', true),
-            deck: this.queryParent<DeckModel>('deck', true),
-            hand: this.queryParent<HandModel>('hand', true),
-            graveyard: this.queryParent<GraveyardModel>('graveyard', true),
-            player: this.queryParent<PlayerModel>('player', true),
-            game: this.queryParent<GameModel>('game', true)
+            board: this.queryParent('board', true),
+            deck: this.queryParent('deck', true),
+            hand: this.queryParent('hand', true),
+            graveyard: this.queryParent('graveyard', true),
+            player: this.queryParent('player', true),
+            game: this.queryParent('game', true)
         };
     }
 
@@ -86,7 +93,7 @@ export abstract class CardModel<
         };
     }
 
-    @Validator.useCondition(model => Boolean(model.referDict.hand))
+    @ValidatorService.useCondition(model => Boolean(model.referDict.hand))
     willPlay(): TargetCollectorInfo | undefined {
         const targetCollectorList: TargetCollector[] = [];
         this._cardEventDict.onCollectorCheck(targetCollectorList);
@@ -101,7 +108,7 @@ export abstract class CardModel<
         };
     }
 
-    @Validator.useCondition(model => Boolean(model.referDict.hand))
+    @ValidatorService.useCondition(model => Boolean(model.referDict.hand))
     play(collectorList: TargetCollector[]) {
         collectorList;
         const player = this.referDict.player;
@@ -109,7 +116,7 @@ export abstract class CardModel<
         hand?.playCard(this);
     }
 
-    @Validator.useCondition(model => Boolean(model.referDict.deck))
+    @ValidatorService.useCondition(model => Boolean(model.referDict.deck))
     pick() {
         const player = this.referDict.player;
         if (!player) return;
@@ -119,6 +126,5 @@ export abstract class CardModel<
 
     debug() {
         super.debug();
-        this.childDict.combatable?.debug();
     }
 }

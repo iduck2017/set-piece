@@ -1,8 +1,8 @@
-import { DataBase } from "../services/database";
+import { DataBaseService } from "../services/database";
 import { CardDef, CardModel } from "./card";
 import { MinionModel } from "./minion";
 import { PlayerModel } from "./player";
-import { CustomDef, Factory, Model, NodeModel, Props, Validator } from "@/set-piece";
+import { CustomDef, FactoryService, Model, NodeModel, Props, ValidatorService } from "@/set-piece";
 
 type DeckDef = CustomDef<{
     code: 'deck',
@@ -20,7 +20,7 @@ type DeckDef = CustomDef<{
     parent: PlayerModel
 }>
 
-@Factory.useProduct('deck')
+@FactoryService.useProduct('deck')
 export class DeckModel extends NodeModel<DeckDef> {
     constructor(props: Props<DeckDef>) {
         super({
@@ -39,8 +39,8 @@ export class DeckModel extends NodeModel<DeckDef> {
     generateCard<T extends CardModel>(chunk?: Model.Chunk<T>) {
         chunk = this.stateDict.templateCode ?
             { code: this.stateDict.templateCode } :
-            chunk ?? DataBase.randomSelect<CardDef>(
-                DataBase.cardProductInfo.selectAll
+            chunk ?? DataBaseService.randomSelect<CardDef>(
+                DataBaseService.cardProductInfo.selectAll
             );
         const target = this.appendChild(chunk);
         if (!target) return;
@@ -48,7 +48,7 @@ export class DeckModel extends NodeModel<DeckDef> {
         return target;
     }
 
-    @Validator.useCondition(model => Boolean(model.childList.length))
+    @ValidatorService.useCondition(model => Boolean(model.childList.length))
     discardCard(target?: CardModel) {
         target = target ?? this.childList[0];
         const chunk = this.removeChild(target);
@@ -57,7 +57,7 @@ export class DeckModel extends NodeModel<DeckDef> {
         return chunk;
     }
 
-    @Validator.useCondition(model => Boolean(model.childList.length))
+    @ValidatorService.useCondition(model => Boolean(model.childList.length))
     drawCard(target?: CardModel) {
         target = target ?? this.childList[0];
         const chunk = this.removeChild(target);
@@ -69,7 +69,7 @@ export class DeckModel extends NodeModel<DeckDef> {
         return result;
     }
 
-    @Validator.useCondition(model => Boolean(model.childList.length))
+    @ValidatorService.useCondition(model => Boolean(model.childList.length))
     recruitMinion(target: MinionModel) {
         const chunk = this.removeChild(target);
         if (!chunk) return;

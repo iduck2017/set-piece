@@ -1,7 +1,7 @@
 import { Base } from "@/set-piece/types/base";
 import { Model } from "@/set-piece/types/model";
 
-export class Validator {
+export class ValidatorService {
     private static _conditionMap: Map<
         Function, 
         Record<string, Base.Func[]>
@@ -15,7 +15,7 @@ export class Validator {
         const conditionList: Base.Func[] = [];
         let constructor: any = target.constructor;
         while (constructor.__proto__ !== null) {
-            const curConditionList = Validator._conditionMap.get(constructor)?.[key] || [];
+            const curConditionList = ValidatorService._conditionMap.get(constructor)?.[key] || [];
             conditionList.push(...curConditionList);
             constructor = constructor.__proto__;
         }
@@ -31,10 +31,10 @@ export class Validator {
         key: string
     ) {
         const constructor = target.constructor;
-        const conditionList = Validator._conditionMap.get(constructor) || {};
+        const conditionList = ValidatorService._conditionMap.get(constructor) || {};
         conditionList[key] = conditionList[key] || [];
         conditionList[key].push(condition);
-        Validator._conditionMap.set(constructor, conditionList);
+        ValidatorService._conditionMap.set(constructor, conditionList);
     }
 
     static useCondition<N extends Record<string, any>, T extends any[]>(
@@ -46,7 +46,7 @@ export class Validator {
             key: string,
             descriptor: TypedPropertyDescriptor<Base.Func>
         ): TypedPropertyDescriptor<Base.Func> {
-            Validator._setCondition(condition, target, key);
+            ValidatorService._setCondition(condition, target, key);
             const handler = descriptor.value;
             descriptor.value = function(this: N, ...args: T) {
                 const result = condition(this, ...args);

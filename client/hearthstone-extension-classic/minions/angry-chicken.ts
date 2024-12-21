@@ -1,4 +1,4 @@
-import { CustomDef, Def, Factory, Props } from "@/set-piece";
+import { CustomDef, Def, FactoryService, Props } from "@/set-piece";
 import { MinionDef, MinionModel } from "@/hearthstone/models/minion";
 import { FeatureAngryChickenModel } from "../features/angry-chicken";
 import { RaceType } from "@/hearthstone/services/database";
@@ -20,12 +20,16 @@ export type AngryChickenDef = MinionDef<
 >
 
 @MinionModel.useRule({
-    manaCost: 1,
-    health: 1,
-    attack: 1,
-    races: [RaceType.Beast]
+    combative: {
+        health: 1,
+        attack: 1,
+        races: [RaceType.Beast]
+    },
+    castable: {
+        manaCost: 1
+    }
 })
-@Factory.useProduct('minion-angry-chicken')
+@FactoryService.useProduct('minion-angry-chicken')
 export class AngryChickenModel extends MinionModel<AngryChickenDef> {
     constructor(props: Props<AngryChickenDef>) {
         const superProps = MinionModel.minionProps(props);

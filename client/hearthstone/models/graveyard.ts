@@ -1,6 +1,6 @@
 import { CardModel } from "./card";
 import { PlayerModel } from "./player";
-import { CustomDef, Factory, Model, NodeModel, Props, Validator } from "@/set-piece";
+import { CustomDef, FactoryService, Model, NodeModel, Props, ValidatorService } from "@/set-piece";
 
 type GraveyardDef = CustomDef<{
     code: 'graveyard',
@@ -14,7 +14,7 @@ type GraveyardDef = CustomDef<{
     parent: PlayerModel
 }>
 
-@Factory.useProduct('graveyard')
+@FactoryService.useProduct('graveyard')
 export class GraveyardModel extends NodeModel<GraveyardDef> {
     constructor(props: Props<GraveyardDef>) {
         super({
@@ -33,7 +33,7 @@ export class GraveyardModel extends NodeModel<GraveyardDef> {
         return target;
     }
 
-    @Validator.useCondition(model => !model.childList.length)
+    @ValidatorService.useCondition(model => !model.childList.length)
     removeCard(target?: CardModel) {
         target = target ?? this.childList[0];
         const chunk = this.removeChild(target);

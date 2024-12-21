@@ -42,10 +42,14 @@ export type WispDef = MinionDef<
 >
 
 @MinionModel.useRule({
-    manaCost: 0,
-    health: 1,
-    attack: 1,
-    races: []
+    combative: {
+        health: 1,
+        attack: 1,
+        races: []
+    },
+    castable: {
+        manaCost: 0
+    }
 })
 @Factory.useProduct('minion-wisp') 
 export class WispModel extends MinionModel<WispDef> {

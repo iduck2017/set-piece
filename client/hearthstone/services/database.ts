@@ -1,5 +1,5 @@
-import { Base, Random, Chunk, Def, Factory } from "@/set-piece";
-import { CombatableRule } from "../models/combatable";
+import { Base, Random, Chunk, Def, FactoryService } from "@/set-piece";
+import { CombativeRule } from "../models/combative";
 import { CardModel, CardRule, CardType } from "../models/card";
 import { CastableRule } from "../models/castable";
 
@@ -19,7 +19,7 @@ export enum RaceType {
     Demon = 'demon',
 }
 
-export class DataBase {
+export class DataBaseService {
     private constructor() {}
 
     private static _cardProductInfo: {
@@ -40,14 +40,14 @@ export class DataBase {
             sortByType: {}
         };
     static get cardProductInfo() {
-        const result = { ...DataBase._cardProductInfo };
+        const result = { ...DataBaseService._cardProductInfo };
         return result;
     }
 
     static randomSelect<T extends Def>(list: Base.List<Base.Class>): Chunk<T> {
         const number = Random.number(0, list.length - 1);
         const Type = list[number];
-        const code = Factory.productMap.get(Type);
+        const code = FactoryService.productMap.get(Type);
         if (!code) {
             console.error('[model-not-found]');
             throw new Error();
@@ -62,7 +62,7 @@ export class DataBase {
     ) {
         if (!(dict instanceof Array)) {
             if (!dict[key]) dict[key] = [];
-            DataBase._register(Type, dict[key]);
+            DataBaseService._register(Type, dict[key]);
         } else {
             if (!dict.includes(Type)) {
                 dict.push(Type);
@@ -72,7 +72,7 @@ export class DataBase {
     
     static useCard(config: 
         Partial<
-            CombatableRule & 
+            CombativeRule & 
             CastableRule
         > & 
         CardRule) {
@@ -93,7 +93,7 @@ export class DataBase {
             const {
                 _register: register,
                 _cardProductInfo: cardProductInfo
-            } = DataBase;
+            } = DataBaseService;
             const {
                 selectAll,
                 sortByAttack,

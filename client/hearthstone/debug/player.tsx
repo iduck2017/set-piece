@@ -12,7 +12,7 @@ export function PlayerComp(props: {
     model: PlayerModel
 }) {
     const model = useModel(props.model);
-    useModel(model.childDict.combatable);
+    useModel(model.childDict.combative);
     const { 
         handleTargetCollect,
         isTargetCollectable
@@ -32,7 +32,7 @@ export function PlayerComp(props: {
                     </div>
                 }
                 <div className="link" onClick={model.refresh}>refresh</div>
-                <State model={model.childDict.combatable} />
+                <State model={model.childDict.combative} />
             </>
         }
         menu={

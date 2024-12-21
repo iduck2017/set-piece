@@ -1,12 +1,12 @@
 import React, { useContext } from "react";
 import { Link } from "@/demo/debug/common";
 import { ModelComp } from ".";
-import { CombatableModel } from "../models/combatable";
+import { CombativeModel } from "../models/combative";
 import { useModel } from "@/demo/debug/use-model";
 import { GameContext } from "./use-context";
 
-export function CombatableComp(props: {
-    model: CombatableModel
+export function CombativeComp(props: {
+    model: CombativeModel
 }) {
     useModel(props.model);
     const { 

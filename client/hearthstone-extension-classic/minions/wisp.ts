@@ -1,4 +1,4 @@
-import { CustomDef, Def, Factory, Props } from "@/set-piece";
+import { CustomDef, Def, FactoryService, Props } from "@/set-piece";
 import { MinionDef, MinionModel } from "@/hearthstone/models/minion";
 
 export type WispDef = MinionDef<
@@ -8,12 +8,16 @@ export type WispDef = MinionDef<
 >
 
 @MinionModel.useRule({
-    manaCost: 0,
-    health: 1,
-    attack: 1,
-    races: []
+    combative: {
+        health: 1,
+        attack: 1,
+        races: []
+    },
+    castable: {
+        manaCost: 0
+    }
 })
-@Factory.useProduct('minion-wisp') 
+@FactoryService.useProduct('minion-wisp') 
 export class WispModel extends MinionModel<WispDef> {
     constructor(props: Props<WispDef>) {
         const superProps = MinionModel.minionProps(props);

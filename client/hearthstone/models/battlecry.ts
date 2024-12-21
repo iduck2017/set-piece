@@ -1,4 +1,4 @@
-import { Def, Lifecycle, Props, Validator } from "@/set-piece";
+import { Def, LifecycleService, Props, ValidatorService } from "@/set-piece";
 import { FeatureDef, FeatureModel } from "./feature";
 import { TargetCollector } from "../types/collector";
 import { CardModel } from "./card";
@@ -20,8 +20,8 @@ export abstract class BattlecryModel<
     ): void;
 
 
-    @Lifecycle.useLoader()
-    @Validator.useCondition(model => Boolean(model.referDict.board))
+    @LifecycleService.useLoader()
+    @ValidatorService.useCondition(model => Boolean(model.referDict.board))
     private _listenBattlecry() {
         const minion = this.referDict.minion;
         if (!minion) return;
@@ -35,8 +35,8 @@ export abstract class BattlecryModel<
         targetCollectorList: TargetCollector[]
     ): void;
 
-    @Lifecycle.useLoader()
-    @Validator.useCondition(model => Boolean(model.referDict.hand))
+    @LifecycleService.useLoader()
+    @ValidatorService.useCondition(model => Boolean(model.referDict.hand))
     private _listenCollectorCheck() {
         const card = this.referDict.card;
         if (!card) return;

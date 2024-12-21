@@ -1,5 +1,5 @@
 import { AnimalModel } from "./animal";
-import { Def, Props, Model, NodeModel, Validator, Factory, Random, CustomDef } from "@/set-piece";
+import { Def, Props, Model, NodeModel, ValidatorService, FactoryService, Random, CustomDef } from "@/set-piece";
 
 export enum GenderType {
     Male = 'male',
@@ -16,7 +16,7 @@ type ReproductiveDef<T extends AnimalModel> = CustomDef<{
     parent: AnimalModel
 }>
 
-@Factory.useProduct('reproductive')
+@FactoryService.useProduct('reproductive')
 export class ReproductiveModel<
     T extends AnimalModel
 > extends NodeModel<ReproductiveDef<T>> {
@@ -32,8 +32,8 @@ export class ReproductiveModel<
         });
     }
 
-    @Validator.useCondition(model => model.parent.stateDict.isAlive)
-    @Validator.useCondition(model => model.stateDict.gender === GenderType.Female)
+    @ValidatorService.useCondition(model => model.parent.stateDict.isAlive)
+    @ValidatorService.useCondition(model => model.stateDict.gender === GenderType.Female)
     reproduceChild(chunk: Model.Chunk<T>): void {
         this.childChunkList.push(chunk);
     }

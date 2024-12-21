@@ -1,8 +1,18 @@
-import { Base, CustomDef, Def, Event, Lifecycle, Props, PureDef, Validator } from "@/set-piece";
+import { 
+    Base,
+    Def,
+    CustomDef,
+    Event,
+    Props,
+    PureDef,
+    LifecycleService,
+    ValidatorService
+} from "@/set-piece";
 import { CardDef, CardModel, CardType } from "./card";
-import { CastableModel, CastableRule } from "./castable";
+import { CastableRule } from "./castable";
 import { TargetCollector } from "../types/collector";
-import { DataBase } from "../services/database";
+import { DataBaseService } from "../services/database";
+import { RuleService } from "../services/rule";
 
 export type SpellDef<
     T extends Def = Def
@@ -28,13 +38,15 @@ export abstract class SpellModel<
     >> = this.eventEmitterDict;
 
     static useRule(
-        rule: CastableRule,
+        rule: {
+            castable: CastableRule
+        },
         isDerived?: boolean
     ) {
         return function(Type: Base.Class) {
-            CastableModel.useRule(rule)(Type);
+            RuleService.useRule(rule)(Type);
             if (isDerived) return;
-            DataBase.useCard({
+            DataBaseService.useCard({
                 ...rule,
                 type: CardType.Spell
             })(Type);
@@ -58,8 +70,8 @@ export abstract class SpellModel<
         targetCollectorList: TargetCollector[]
     ): void;
     
-    @Lifecycle.useLoader()
-    @Validator.useCondition(model => Boolean(model.referDict.hand))
+    @LifecycleService.useLoader()
+    @ValidatorService.useCondition(model => Boolean(model.referDict.hand))
     private _listenCollectorCheck() {
         this.bindEvent(
             this._spellEventEmitterDict.onCollectorCheck,

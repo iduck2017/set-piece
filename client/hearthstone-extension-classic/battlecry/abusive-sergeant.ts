@@ -1,4 +1,4 @@
-import { CustomDef, Def, Factory, Lifecycle, Props } from "@/set-piece";
+import { CustomDef, Def, FactoryService, LifecycleService, Props } from "@/set-piece";
 import { BattlecryModel } from "@/hearthstone/models/battlecry";
 import { FeatureDef } from "@/hearthstone/models/feature";
 import { TargetCollector } from "@/hearthstone/types/collector";
@@ -11,7 +11,7 @@ export type BattlecryAbusiveSergeantDef = FeatureDef<
     }>
 >
 
-@Factory.useProduct('battlecry-abusive-sergeant')
+@FactoryService.useProduct('battlecry-abusive-sergeant')
 export class BattlecryAbusiveSergeantModel extends BattlecryModel<BattlecryAbusiveSergeantDef> {
     constructor(props: Props<BattlecryAbusiveSergeantDef>) {
         super({

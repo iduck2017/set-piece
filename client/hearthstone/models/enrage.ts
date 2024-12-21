@@ -1,6 +1,6 @@
-import { CustomDef, Def, Lifecycle, Model, Props, Validator } from "@/set-piece";
+import { CustomDef, Def, LifecycleService, Model, Props, ValidatorService } from "@/set-piece";
 import { FeatureDef, FeatureModel } from "./feature";
-import { CombatableModel } from "./combatable";
+import { CombativeModel } from "./combative";
 import { Mutable } from "utility-types";
 
 export type EnrageDef<
@@ -22,32 +22,32 @@ export abstract class EnrageModel<
     }
 
     protected abstract handleEnrage(
-        target: CombatableModel,
-        param: Mutable<Model.ParamDict<CombatableModel>>
+        target: CombativeModel,
+        param: Mutable<Model.ParamDict<CombativeModel>>
     ): void;
 
-    @Lifecycle.useLoader()
-    @Validator.useCondition(model => Boolean(model.referDict.board))
+    @LifecycleService.useLoader()
+    @ValidatorService.useCondition(model => Boolean(model.referDict.board))
     private _listenEnrage() {
         const minion = this.referDict.minion;
-        const combatable = minion?.childDict.combatable;
-        if (!minion || !combatable) return;
+        const combative = minion?.childDict.combative;
+        if (!minion || !combative) return;
 
         this.bindEvent(
-            combatable.eventEmitterDict.onStateAlter,
+            combative.eventEmitterDict.onStateAlter,
             () => {
                 const isDamaged = 
-                    combatable.stateDict.curHealth < combatable.stateDict.maxHealth;
+                    combative.stateDict.curHealth < combative.stateDict.maxHealth;
                 if (isDamaged && !this.stateDict.isEnraged) {
                     this.baseStateDict.isEnraged = true;
                     this.bindEvent(
-                        combatable.eventEmitterDict.onParamCheck,
+                        combative.eventEmitterDict.onParamCheck,
                         this.handleEnrage
                     );
                 } else if (!isDamaged && this.stateDict.isEnraged) {
                     this.baseStateDict.isEnraged = false;
                     this.unbindEvent(
-                        combatable.eventEmitterDict.onParamCheck,
+                        combative.eventEmitterDict.onParamCheck,
                         this.handleEnrage
                     );
                 }

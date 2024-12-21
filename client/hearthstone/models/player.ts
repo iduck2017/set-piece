@@ -2,9 +2,10 @@ import { DeckModel } from "./deck";
 import { HandModel } from "./hand";
 import { BoardModel } from "./board";
 import { GraveyardModel } from "./graveyard";
-import { CustomDef, Factory, NodeModel, Props } from "@/set-piece";
-import { CombatableModel } from "./combatable";
+import { CustomDef, FactoryService, NodeModel, Props } from "@/set-piece";
+import { CombativeModel } from "./combative";
 import { GameModel } from "./game";
+import { RuleService } from "../services/rule";
 
 type PlayerDef = CustomDef<{
     code: 'player',
@@ -15,18 +16,20 @@ type PlayerDef = CustomDef<{
         hand: HandModel,
         board: BoardModel,
         graveyard: GraveyardModel,
-        combatable: CombatableModel
+        combative: CombativeModel
     },
     eventDict: {},
     parent: GameModel
 }>
 
-@CombatableModel.useRule({
-    health: 30,
-    attack: 0,
-    races: []
+@RuleService.useRule({
+    combative: {
+        health: 30,
+        attack: 0,
+        races: []
+    }
 })
-@Factory.useProduct('player')
+@FactoryService.useProduct('player')
 export class PlayerModel extends NodeModel<PlayerDef> {
     private get _opponent() {
         const { redPlayer, bluePlayer } = this.parent.childDict;
@@ -49,7 +52,7 @@ export class PlayerModel extends NodeModel<PlayerDef> {
                 hand: { code: 'hand' },
                 board: { code: 'board' },
                 graveyard: { code: 'graveyard' },
-                combatable: { code: 'combatable' },
+                combative: { code: 'combative' },
                 ...props.childDict
             },
             stateDict: {},

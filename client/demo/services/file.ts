@@ -1,6 +1,6 @@
 import { Model } from "@/set-piece";
 
-export class File {
+export class FileService {
     static async loadChunk<T extends Model>(
         code: Model.Code<T>
     ): Promise<Model.Chunk<T>> {

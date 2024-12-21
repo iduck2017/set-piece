@@ -1,4 +1,4 @@
-import { CustomDef, Factory, Props } from "@/set-piece";
+import { CustomDef, FactoryService, Props } from "@/set-piece";
 import { BattlecryDef, BattlecryModel } from "@/hearthstone/models/battlecry";
 import { TargetCollector } from "@/hearthstone/types/collector";
 import { CardModel } from "@/hearthstone/models/card";
@@ -10,7 +10,7 @@ export type BattlecryElvenArcherDef = BattlecryDef<
     }>
 >
 
-@Factory.useProduct('battlecry-elven-archer')
+@FactoryService.useProduct('battlecry-elven-archer')
 export class BattlecryElvenArcherModel extends BattlecryModel<BattlecryElvenArcherDef> {
     constructor(props: Props<BattlecryElvenArcherDef>) {
         super({
@@ -37,7 +37,7 @@ export class BattlecryElvenArcherModel extends BattlecryModel<BattlecryElvenArch
             );
         const result = targetCollector?.result;
         if (!result) return;
-        result.childDict.combatable.receiveDamage(1, minion);
+        result.childDict.combative.receiveDamage(1, minion);
     }
 
     protected handleCollectorCheck(

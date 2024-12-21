@@ -1,7 +1,7 @@
 import { 
     CustomDef,
     Def,
-    Factory,
+    FactoryService,
     Model,
     NodeModel,
     Props,
@@ -42,7 +42,7 @@ export type FeatureDef<
     parent: PlayerModel | CardModel | FeatureListModel
 }> & T;
 
-@Factory.useProduct('feature-list')
+@FactoryService.useProduct('feature-list')
 export class FeatureListModel extends NodeModel<FeatureListDef> {
     constructor(props: Props<FeatureListDef>) {
         super({

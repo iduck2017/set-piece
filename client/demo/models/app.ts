@@ -1,6 +1,6 @@
-import { Def, Base, NodeModel, Validator, Factory, CustomDef } from "@/set-piece";
+import { Def, Base, NodeModel, ValidatorService, FactoryService, CustomDef } from "@/set-piece";
 import { DemoModel } from "./demo";
-import { File } from "../services/file";
+import { FileService } from "../services/file";
 
 type AppDef = CustomDef<{
     code: 'app',
@@ -56,27 +56,27 @@ export class AppModel extends NodeModel<AppDef> {
         this.baseStateDict.count++;
     }
 
-    @Validator.useCondition(app => !app.childDict.demo)
+    @ValidatorService.useCondition(app => !app.childDict.demo)
     async start() {
-        const chunk = await File.loadChunk<DemoModel>('demo');
+        const chunk = await FileService.loadChunk<DemoModel>('demo');
         this.childChunkDict.demo = chunk;
     }
     
-    @Validator.useCondition(app => Boolean(app.childDict.demo))
+    @ValidatorService.useCondition(app => Boolean(app.childDict.demo))
     async save() {
         if (this.childDict.demo) {
-            await File.saveChunk<DemoModel>(this.childDict.demo);
+            await FileService.saveChunk<DemoModel>(this.childDict.demo);
         }
     }
 
-    @Validator.useCondition(app => Boolean(app.childDict.demo))
+    @ValidatorService.useCondition(app => Boolean(app.childDict.demo))
     quit() {
         if (this.childDict.demo) delete this.childChunkDict.demo;
         AppModel._singleton = new Map();
     }
 
     checkFactory() {
-        console.log(Factory.productDict);
-        console.log(Factory.productMap);
+        console.log(FactoryService.productDict);
+        console.log(FactoryService.productMap);
     }
 }
