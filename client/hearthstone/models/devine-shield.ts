@@ -2,7 +2,6 @@ import { CustomDef, FactoryService, LifecycleService, Props, ValidatorService } 
 import { MinionModel } from "./minion";
 import { FeatureDef, FeatureModel } from "./feature";
 import { RuleService } from "../services/rule";
-import { AbortSignal } from "../../set-piece/utils/mutator";
 
 export type DivineShieldRule = {
     isActived: boolean;

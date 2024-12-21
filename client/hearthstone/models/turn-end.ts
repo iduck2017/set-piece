@@ -1,9 +1,11 @@
-import { LifecycleService, ValidatorService, Props } from "@/set-piece";
+import { LifecycleService, ValidatorService, Props, Def } from "@/set-piece";
 import { FeatureDef, FeatureModel } from "./feature";
 
-export type TurnEndDef = FeatureDef<{
+export type TurnEndDef<
+    T extends Partial<Def> = Def
+> = FeatureDef<{
     code: `${string}-turn-end-feature`,
-}>
+} & T>
 
 export abstract class TurnEndModel<
     T extends TurnEndDef = TurnEndDef

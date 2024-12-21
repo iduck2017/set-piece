@@ -39,7 +39,7 @@ export class CircleOfHealingModel extends SpellModel<SpellCircleOfHealingDef> {
         const game = this.referDict.game;
         if (!game) return;
         // Get all minions on board
-        const targetList = game.queryMinionAndPlayerList({
+        const targetList = game.queryTargetList({
             excludePlayer: true
         });
         // Heal each minion for 4

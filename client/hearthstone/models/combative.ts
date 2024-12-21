@@ -169,7 +169,7 @@ export class CombativeModel extends FeatureModel<CombativeDef> {
     willAttack() {
         const game = this.referDict.game;
         if (!game) return;
-        const candidateList = game.queryMinionAndPlayerList({
+        const candidateList = game.queryTargetList({
             excludeTarget: this.referDict.card,
             excludePosition: this.referDict.player
         });

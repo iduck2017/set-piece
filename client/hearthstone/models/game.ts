@@ -2,7 +2,7 @@ import { RaceType } from "../services/database";
 import { AppModel } from "./app";
 import { MinionModel } from "./minion";
 import { PlayerModel } from "./player";
-import { CustomDef, FactoryService, Model, NodeModel, Props } from "@/set-piece";
+import { Base, CustomDef, FactoryService, Model, NodeModel, Props } from "@/set-piece";
 
 type GameDef = CustomDef<{
     code: 'game',
@@ -19,6 +19,13 @@ type GameDef = CustomDef<{
     }
     parent: AppModel
 }>
+
+type QueryTargetListOptions = {
+    excludePlayer?: boolean,
+    excludeTarget?: Model,
+    excludePosition?: PlayerModel,
+    requiredRaces?: RaceType[]
+}
 
 @FactoryService.useProduct('game')
 export class GameModel extends NodeModel<GameDef> {
@@ -44,14 +51,20 @@ export class GameModel extends NodeModel<GameDef> {
         this.eventDict.onTurnStart();
     }
 
-    queryMinionAndPlayerList(
-        options: {
-            excludePlayer?: boolean,
-            excludeTarget?: Model,
-            excludePosition?: PlayerModel,
-            requiredRaces?: RaceType[]
+    getOpponent(player?: PlayerModel) {
+        if (!player) return;
+        return player === this.childDict.redPlayer ?
+            this.childDict.bluePlayer :
+            this.childDict.redPlayer;
+    }
+
+    queryTargetList(
+        options: QueryTargetListOptions & {
+            excludePlayer: true
         }
-    ): (MinionModel | PlayerModel)[] {
+    ): Base.List<MinionModel>
+    queryTargetList(options: QueryTargetListOptions): Base.List<MinionModel>
+    queryTargetList(options: QueryTargetListOptions): Base.List<MinionModel | PlayerModel> {
         const {
             excludeTarget,
             requiredRaces,
@@ -81,7 +94,7 @@ export class GameModel extends NodeModel<GameDef> {
             result = result.filter(item => item !== excludeTarget);
         }
         if (excludePlayer) {
-            result = result.filter(item => !(item instanceof PlayerModel));
+            result = result.filter(item => item.code !== 'player');
         }
         if (requiredRaces) {
             result = result.filter((item: MinionModel) => {

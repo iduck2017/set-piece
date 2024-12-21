@@ -41,7 +41,7 @@ export class ArcaneMissilesModel extends SpellModel<SpellArcaneMissilesDef> {
         const game = this.referDict.game;
         if (!game) return;
         for (let i = 0; i < 3; i++) {
-            const candidateList = game.queryMinionAndPlayerList({
+            const candidateList = game.queryTargetList({
                 excludePosition: this.referDict.player,
             });
             if (!candidateList.length) return;

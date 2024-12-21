@@ -13,7 +13,7 @@ import { ClassNameType, ExpansionType, RaceType, RarityType } from "@/hearthston
 export type AngryChickenDef = MinionDef<{
     code: 'angry-chicken-minion-card',
     childDict: {
-        feature: AngryChickenEnrageModel
+        enrage: AngryChickenEnrageModel
     }
 }>
 
@@ -45,7 +45,7 @@ export class AngryChickenModel extends MinionModel<AngryChickenDef> {
             },
             stateDict: {},
             childDict: {
-                feature: { code: 'angry-chicken-enrage-feature' },
+                enrage: { code: 'angry-chicken-enrage-feature' },
                 ...superProps.childDict
             }
         });
