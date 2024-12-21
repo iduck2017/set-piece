@@ -18,15 +18,14 @@ export type BuffAbusiveSergeantDef = BuffDef<
 @FactoryService.useProduct('abusive-sergeant-buff-feature')
 export class BuffAbusiveSergeantModel extends BuffModel<BuffAbusiveSergeantDef> {
     constructor(props: Props<BuffAbusiveSergeantDef>) {
-        const buffProps = BuffModel.buffProps(props);
+        const superProps = BuffModel.buffProps(props);
         super({
-            ...buffProps,
+            ...superProps,
             paramDict: {
                 name: 'Abusive Sergeant\'s Buff',
                 desc: 'Give a minion +2 Attack this turn.',
                 modAttack: 2,
-                modHealth: 0,
-                shouldDisposedOnRoundEnd: true
+                isDisposedOnRoundEnd: true
             },
             stateDict: {},
             childDict: {}

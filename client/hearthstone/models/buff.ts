@@ -11,9 +11,10 @@ export type BuffDef<
         stateDict: {
         },
         paramDict: {
-            modAttack: number;
-            modHealth: number;
-            shouldDisposedOnRoundEnd?: boolean;
+            modAttack?: number;
+            modHealth?: number;
+            isFixed?: boolean;
+            isDisposedOnRoundEnd?: boolean;
         }
     }>
 > & T;
@@ -34,23 +35,36 @@ export abstract class BuffModel<
         if (!combative) return;
         this.bindEvent(
             combative.eventEmitterDict.onParamCheck,
-            this._handleBuff
+            this._buff
         );
     }
 
-    private _handleBuff(
+    private _buff(
         target: CombativeModel, 
         param: Mutable<Model.ParamDict<CombativeModel>>
     ) {
         console.log('[execute-buff]', param, this, this.stateDict);
-        param.attack += this.stateDict.modAttack;
-        param.maxHealth += this.stateDict.modHealth;
+        if (this.stateDict.isFixed) {
+            if (this.stateDict.modAttack !== undefined) {
+                param.attack = this.stateDict.modAttack;
+            }
+            if (this.stateDict.modHealth !== undefined) {
+                param.maxHealth = this.stateDict.modHealth;
+            }
+        } else {
+            if (this.stateDict.modAttack !== undefined) {
+                param.attack += this.stateDict.modAttack;
+            }
+            if (this.stateDict.modHealth !== undefined) {
+                param.maxHealth += this.stateDict.modHealth;
+            }
+        }
     }
 
     @LifecycleService.useLoader()
     @ValidatorService.useCondition(model => Boolean(model.referDict.minion))
     private _listenRoundEnd() {
-        if (!this.stateDict.shouldDisposedOnRoundEnd) return;
+        if (!this.stateDict.isDisposedOnRoundEnd) return;
         const minion = this.referDict.minion;
         const combative = minion?.childDict.combative;
         const game = this.referDict.game;
@@ -61,7 +75,7 @@ export abstract class BuffModel<
             () => {
                 this.unbindEvent(
                     combative.eventEmitterDict.onParamCheck,
-                    this._handleBuff
+                    this._buff
                 );
             }
         );

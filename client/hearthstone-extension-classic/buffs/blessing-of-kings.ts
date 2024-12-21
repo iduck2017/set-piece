@@ -10,9 +10,9 @@ export type BuffBlessingOfKingsDef = BuffDef<
 @FactoryService.useProduct('blessing-of-kings-buff-feature')
 export class BuffBlessingOfKingsModel extends BuffModel<BuffBlessingOfKingsDef> {
     constructor(props: Props<BuffBlessingOfKingsDef>) {
-        const buffProps = BuffModel.buffProps(props);
+        const superProps = BuffModel.buffProps(props);
         super({
-            ...buffProps,
+            ...superProps,
             paramDict: {
                 name: 'Blessing of Kings\' Buff',
                 desc: 'Give a minion +4/+4.',

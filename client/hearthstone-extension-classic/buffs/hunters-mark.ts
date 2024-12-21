@@ -1,0 +1,28 @@
+import { BuffDef, BuffModel } from "@/hearthstone/models/buff";
+import { FeatureDef, FeatureModel } from "@/hearthstone/models/feature";
+import { CustomDef, FactoryService, Props } from "@/set-piece";
+
+export type DebuffHuntersMarkDef = BuffDef<
+    CustomDef<{
+        code: 'hunters-mark-debuff-feature',
+    }>
+>
+
+@FactoryService.useProduct('hunters-mark-debuff-feature')
+export class DebuffHuntersMarkModel extends BuffModel<DebuffHuntersMarkDef> {
+    constructor(props: Props<DebuffHuntersMarkDef>) {
+        const superProps = BuffModel.featureProps(props);
+        super({
+            ...superProps,
+            stateDict: {},
+            childDict: {},
+            paramDict: {
+                name: "Hunter's Mark Debuff",
+                desc: "Health set to 1.",
+                isFixed: true,
+                modHealth: 1
+            }
+        });
+    }
+}
+
