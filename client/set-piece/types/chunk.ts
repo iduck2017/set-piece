@@ -11,7 +11,6 @@ export type Chunk<T extends Def> = {
     stateDict?: Partial<Def.StateDict<T>>,
 }
 
-
 export type StrictChunk<T extends Def> = {
     code: Def.Code<T>,
     uuid: string,

@@ -80,16 +80,15 @@ export abstract class FeatureModel<
         minion: MinionModel;
         card: CardModel;
     }> {
-        this.queryParent<CardModel>('card');
         return {
-            game: this.queryParent<GameModel>('game', true),
-            player: this.queryParent<PlayerModel>('player', true),
-            board: this.queryParent<BoardModel>('board', true),
-            hand: this.queryParent<HandModel>('hand', true),
-            deck: this.queryParent<DeckModel>('deck', true),
-            graveyard: this.queryParent<GraveyardModel>('graveyard', true),
-            minion: this.queryParent<MinionModel>('', true),
-            card: this.queryParent<CardModel>('card', true)
+            game: this.queryParent('game', true),
+            player: this.queryParent('player', true),
+            board: this.queryParent('board', true),
+            hand: this.queryParent('hand', true),
+            deck: this.queryParent('deck', true),
+            graveyard: this.queryParent('graveyard', true),
+            minion: this.queryParent('minion-card', true),
+            card: this.queryParent('card', true)
         };
     }
 

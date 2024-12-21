@@ -31,18 +31,6 @@ type PlayerDef = CustomDef<{
 })
 @FactoryService.useProduct('player')
 export class PlayerModel extends NodeModel<PlayerDef> {
-    private get _opponent() {
-        const { redPlayer, bluePlayer } = this.parent.childDict;
-        if (redPlayer === this) return bluePlayer;
-        else return redPlayer;
-    }
-
-    get referDict() {
-        return {
-            opponent: this._opponent
-        };
-    }
-
     constructor(props: Props<PlayerDef>) {
         super({
             ...props,

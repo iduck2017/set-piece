@@ -64,14 +64,14 @@ export abstract class CardModel<
         Def.EventDict<CardDef<PureDef>>
     >> = this.eventDict;
     
-    public get referDict(): {
-        board?: BoardModel,
-        deck?: DeckModel,
-        hand?: HandModel,
-        graveyard?: GraveyardModel,
-        player?: PlayerModel,
-        game?: GameModel
-        } {
+    public get referDict(): Partial<{
+        board: BoardModel,
+        deck: DeckModel,
+        hand: HandModel,
+        graveyard: GraveyardModel,
+        player: PlayerModel,
+        game: GameModel
+    }> {
         return {
             board: this.queryParent('board', true),
             deck: this.queryParent('deck', true),
