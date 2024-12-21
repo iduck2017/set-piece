@@ -45,7 +45,7 @@ export class MoonfireModel extends SpellModel<SpellMoonfireDef> {
         combative.receiveDamage(1, this);
     }
 
-    protected handleCollectorCheck(targetCollectorList: TargetCollector[]) {
+    protected handleCollectorInit(targetCollectorList: TargetCollector[]) {
         const game = this.referDict.game;
         if (!game) return;
         const candidateList = game.queryMinionAndPlayerList({});

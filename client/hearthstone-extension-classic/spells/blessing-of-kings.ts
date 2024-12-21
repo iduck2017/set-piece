@@ -44,7 +44,7 @@ export class BlessingOfKingsModel extends SpellModel<SpellBlessingOfKingsDef> {
         >('blessing-of-kings-buff-feature');
     }
 
-    handleCollectorCheck(targetCollectorList: TargetCollector[]) {
+    handleCollectorInit(targetCollectorList: TargetCollector[]) {
         const game = this.referDict.game;
         if (!game) return;
         const candidateList = game.queryMinionAndPlayerList({

@@ -1,7 +1,7 @@
 import { Def, LifecycleService, Model, Props, ValidatorService } from "@/set-piece";
 import { FeatureDef, FeatureModel } from "./feature";
 import { CombativeModel } from "./combative";
-import { Mutable } from "utility-types";
+import { Mutator } from "@/set-piece/utils/mutator";
 
 export type EnrageDef<
     T extends Partial<Def> = Def
@@ -21,7 +21,7 @@ export abstract class EnrageModel<
 
     protected abstract enrage(
         target: CombativeModel,
-        param: Mutable<Model.ParamDict<CombativeModel>>
+        param: Mutator<Model.ParamDict<CombativeModel>>
     ): void;
 
     @LifecycleService.useLoader()
@@ -39,13 +39,13 @@ export abstract class EnrageModel<
                 if (isDamaged && !this.stateDict.isEnraged) {
                     this.baseStateDict.isEnraged = true;
                     this.bindEvent(
-                        combative.eventEmitterDict.onParamCheck,
+                        combative.eventEmitterDict.onStateAlterBefore,
                         this.enrage
                     );
                 } else if (!isDamaged && this.stateDict.isEnraged) {
                     this.baseStateDict.isEnraged = false;
                     this.unbindEvent(
-                        combative.eventEmitterDict.onParamCheck,
+                        combative.eventEmitterDict.onStateAlterBefore,
                         this.enrage
                     );
                 }

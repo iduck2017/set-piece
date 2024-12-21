@@ -17,7 +17,7 @@ export class HuntersMarkDebuffModel extends BuffModel<DebuffHuntersMarkDef> {
             paramDict: {
                 name: "Hunter's Mark Debuff",
                 desc: "Health set to 1.",
-                isFixed: true,
+                isReset: true,
                 modHealth: 1
             }
         });

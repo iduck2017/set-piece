@@ -49,7 +49,7 @@ export class CircleOfHealingModel extends SpellModel<SpellCircleOfHealingDef> {
         });
     }
 
-    protected handleCollectorCheck(targetCollectorList: TargetCollector[]) {
+    protected handleCollectorInit(targetCollectorList: TargetCollector[]) {
         // No target selection needed
         return;
     }

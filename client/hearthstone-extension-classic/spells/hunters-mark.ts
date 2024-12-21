@@ -48,7 +48,7 @@ export class HuntersMarkModel extends SpellModel<SpellHuntersMarkDef> {
         >('hunters-mark-buff-feature');
     }
 
-    protected handleCollectorCheck(targetCollectorList: TargetCollector[]) {
+    protected handleCollectorInit(targetCollectorList: TargetCollector[]) {
         const game = this.referDict.game;
         if (!game) return;
         const candidateList = game.queryMinionAndPlayerList({

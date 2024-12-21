@@ -52,7 +52,7 @@ export class InnerRageModel extends SpellModel<SpellInnerRageDef> {
         >('inner-rage-buff-feature');
     }
 
-    protected handleCollectorCheck(targetCollectorList: TargetCollector[]) {
+    protected handleCollectorInit(targetCollectorList: TargetCollector[]) {
         const game = this.referDict.game;
         if (!game) return;
         const candidateList = game.queryMinionAndPlayerList({

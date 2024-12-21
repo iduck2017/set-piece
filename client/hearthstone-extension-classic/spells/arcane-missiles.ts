@@ -54,7 +54,7 @@ export class ArcaneMissilesModel extends SpellModel<SpellArcaneMissilesDef> {
         }
     }
 
-    protected handleCollectorCheck(targetCollectorList: TargetCollector[]) {
+    protected handleCollectorInit(targetCollectorList: TargetCollector[]) {
         // Arcane Missiles doesn't need target selection
         return;
     }

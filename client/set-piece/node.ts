@@ -8,11 +8,11 @@ import { Model } from "@/set-piece/types/model";
 import { StrictProps } from "@/set-piece/types/props";
 import { Delegator } from "@/set-piece/utils/proxy";
 import { EventEmitter, EventHandler } from "./utils/event";
-import { Mutable } from "utility-types";
+import { Mutator } from "./utils/mutator";
 
 export type NodeEvent<M extends Model> = {
     onStateAlter: NodeEvent.OnStateAlter<M>
-    onParamCheck: NodeEvent.OnParamCheck<M>
+    onStateAlterBefore: NodeEvent.OnStateAlterBefore<M>
     onChildSpawn: NodeEvent.OnChildSpawn<M>
 }
 
@@ -21,7 +21,7 @@ export namespace NodeEvent {
         M, Readonly<Model.StateDict<M>>
     ]
     export type OnChildSpawn<M extends Model> = [M]
-    export type OnParamCheck<M extends Model> = [M, Mutable<Model.ParamDict<M>>]
+    export type OnStateAlterBefore<M extends Model> = [M, Mutator<Model.ParamDict<M>>]
 }
 
 export abstract class NodeModel<T extends Def> {
@@ -260,9 +260,9 @@ export abstract class NodeModel<T extends Def> {
             ...this._prevStateDict,
             ...this._paramDict
         };
-        const nextParam = { ...this._baseParamDict };
-        this._baseEventDict.onParamCheck(this, nextParam);
-        this._paramDict = nextParam;
+        const mutator = new Mutator({ ...this._baseParamDict });
+        this._baseEventDict.onStateAlterBefore(this, mutator);
+        this._paramDict = mutator.data;
         this._prevStateDict = this.stateDict;
         this._baseEventDict.onStateAlter(this, prevState);
         if (recursive) {

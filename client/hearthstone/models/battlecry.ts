@@ -31,7 +31,7 @@ export abstract class BattlecryModel<
         );
     }
 
-    protected abstract handleCollectorCheck(
+    protected abstract handleCollectorInit(
         targetCollectorList: TargetCollector[]
     ): void;
 
@@ -41,8 +41,8 @@ export abstract class BattlecryModel<
         const card = this.referDict.card;
         if (!card) return;
         this.bindEvent(
-            card.eventEmitterDict.onCollectorCheck,
-            this.handleCollectorCheck
+            card.eventEmitterDict.onCollectorInit,
+            this.handleCollectorInit
         );
     }
 }

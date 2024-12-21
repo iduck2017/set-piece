@@ -46,7 +46,7 @@ export class ArcaneShotModel extends SpellModel<SpellArcaneShotDef> {
         combative.receiveDamage(2, this);
     }
 
-    protected handleCollectorCheck(targetCollectorList: TargetCollector[]) {
+    protected handleCollectorInit(targetCollectorList: TargetCollector[]) {
         const game = this.referDict.game;
         if (!game) return;
         const candidateList = game.queryMinionAndPlayerList({});

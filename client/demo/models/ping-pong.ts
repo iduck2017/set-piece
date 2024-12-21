@@ -19,7 +19,7 @@ type PingPongDef = CustomDef<{
     },
     childList: Base.List<PingPongModel>,
     eventDict: {
-        onChildParamCheck: NodeEvent.OnParamCheck<PingPongModel>
+        onChildParamCheck: NodeEvent.OnStateAlterBefore<PingPongModel>
         onChildTrigger: [PingPongType]
         onTrigger: [PingPongType],
         onChildAppend: [PingPongModel | undefined],
@@ -31,13 +31,13 @@ type PingPongDef = CustomDef<{
 export class PingPongModel extends NodeModel<PingPongDef> {
     constructor(props: Props<PingPongDef>) {
         const parent = props.parent;
-        const onChildParamCheckEmitterList: 
-            EventEmitter<NodeEvent.OnParamCheck<PingPongModel>>[] = [];
+        const onChildStateAlterBeforeEmitterList: 
+            EventEmitter<NodeEvent.OnStateAlterBefore<PingPongModel>>[] = [];
         const onTriggerEmitterList: EventEmitter<[PingPongType]>[] = [];
         // while (parent instanceof PingPongModel) {
         if (parent instanceof PingPongModel) {
             onTriggerEmitterList.push(parent.eventEmitterDict.onChildTrigger);
-            onChildParamCheckEmitterList.push(
+            onChildStateAlterBeforeEmitterList.push(
                 parent.eventEmitterDict.onChildParamCheck
             );
             // parent = parent.parent;
@@ -56,7 +56,7 @@ export class PingPongModel extends NodeModel<PingPongDef> {
             },
             eventInfo: {
                 onTrigger: onTriggerEmitterList,
-                onParamCheck: onChildParamCheckEmitterList
+                onStateAlterBefore: onChildStateAlterBeforeEmitterList
             }
         });
     }
@@ -88,7 +88,7 @@ export class PingPongModel extends NodeModel<PingPongDef> {
             this.bindEvent(
                 this.parent.eventEmitterDict.onChildParamCheck,
                 (model, state) => {
-                    state.count += 1;
+                    state.data.count += 1;
                 }
             );
         }

@@ -47,7 +47,7 @@ export type CardDef<
         readonly flavor: string;
     }
     eventDict: {
-        onCollectorCheck: [TargetCollector[]] 
+        onCollectorInit: [TargetCollector[]] 
     },
     childDict: {
         castable: CastableModel,
@@ -101,7 +101,7 @@ export abstract class CardModel<
     @ValidatorService.useCondition(model => Boolean(model.referDict.hand))
     willPlay(): TargetCollectorInfo | undefined {
         const targetCollectorList: TargetCollector[] = [];
-        this._cardEventDict.onCollectorCheck(targetCollectorList);
+        this._cardEventDict.onCollectorInit(targetCollectorList);
         if (!targetCollectorList.length) {
             this.play([]);
             return undefined;

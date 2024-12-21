@@ -67,7 +67,7 @@ export abstract class SpellModel<
         this._spellEventDict.onCast(this, targetCollectorList);
     }
 
-    protected abstract handleCollectorCheck(
+    protected abstract handleCollectorInit(
         targetCollectorList: TargetCollector[]
     ): void;
     
@@ -75,8 +75,8 @@ export abstract class SpellModel<
     @ValidatorService.useCondition(model => Boolean(model.referDict.hand))
     private _listenCollectorCheck() {
         this.bindEvent(
-            this._spellEventEmitterDict.onCollectorCheck,
-            this.handleCollectorCheck
+            this._spellEventEmitterDict.onCollectorInit,
+            this.handleCollectorInit
         );
     }
 

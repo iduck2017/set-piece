@@ -38,7 +38,7 @@ export class ElvenArcherBattlecryModel extends BattlecryModel<BattlecryElvenArch
         result.childDict.combative.receiveDamage(1, minion);
     }
 
-    protected handleCollectorCheck(
+    protected handleCollectorInit(
         targetCollectorList: TargetCollector[]
     ) {
         const game = this.referDict.game;

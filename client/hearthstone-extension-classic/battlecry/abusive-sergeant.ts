@@ -39,7 +39,7 @@ export class AbusiveSergeantBattlecryModel extends BattlecryModel<BattlecryAbusi
         >('abusive-sergeant-buff-feature');
     }
 
-    protected handleCollectorCheck(
+    protected handleCollectorInit(
         targetCollectorList: TargetCollector[]
     ) {
         const game = this.referDict.game;

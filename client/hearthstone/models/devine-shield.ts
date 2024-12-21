@@ -2,7 +2,7 @@ import { CustomDef, FactoryService, LifecycleService, Props, ValidatorService } 
 import { MinionModel } from "./minion";
 import { FeatureDef, FeatureModel } from "./feature";
 import { RuleService } from "../services/rule";
-import { AbortSignal } from "../utils/mutator";
+import { AbortSignal } from "../../set-piece/utils/mutator";
 
 export type DivineShieldRule = {
     isActived: boolean;
@@ -61,10 +61,10 @@ export class DivineShieldModel extends FeatureModel<DivineShieldDef> {
         this.bindEvent(
             combative.eventEmitterDict.onDamageReceiveBefore,
             (target, mutator) => {
-                if (!mutator.editor.isEnabled) return;
+                if (!mutator.data.isEnabled) return;
                 if (!this.stateDict.isActived) return;
-                mutator.editor.isEnabled = false;
-                mutator.editor.isEnabled = AbortSignal;
+                mutator.data.isEnabled = false;
+                mutator.data.isEnabled = AbortSignal;
                 this.baseStateDict.isActived = false;
                 this.eventDict.onBreak(minion);
             }

@@ -80,7 +80,7 @@ export class AbusiveSergeantBattlecryModel extends BattlecryModel<BattlecryAbusi
         });
     }
 
-    protected handleBattlecry(
+    protected battlecry(
         target: CardModel,
         targetCollectorList: TargetCollector[]
     ): void {
@@ -96,7 +96,7 @@ export class AbusiveSergeantBattlecryModel extends BattlecryModel<BattlecryAbusi
         >('abusive-sergeant-buff-feature');
     }
 
-    protected handleCollectorCheck(
+    protected handleCollectorInit(
         targetCollectorList: TargetCollector[]
     ) {
         const game = this.referDict.game;
@@ -140,7 +140,7 @@ export class AbusiveSergeantBuffModel extends BuffModel<BuffAbusiveSergeantDef> 
                 name: 'Abusive Sergeant\'s Buff',
                 desc: 'Give a minion +2 Attack this turn.',
                 modAttack: 2,
-                isDisposedOnTurnEnd: true
+                isTemperary: true
             },
             stateDict: {},
             childDict: {}
@@ -202,7 +202,7 @@ export class BlessingOfKingsModel extends SpellModel<SpellBlessingOfKingsDef> {
         >('blessing-of-kings-buff-feature');
     }
 
-    handleCollectorCheck(targetCollectorList: TargetCollector[]) {
+    handleCollectorInit(targetCollectorList: TargetCollector[]) {
         const game = this.referDict.game;
         if (!game) return;
         const candidateList = game.queryMinionAndPlayerList({

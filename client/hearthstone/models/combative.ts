@@ -12,7 +12,7 @@ import { PlayerModel } from "./player";
 import { TargetCollector } from "../types/collector";
 import { FeatureDef, FeatureModel } from "./feature";
 import { RuleService } from "../services/rule";
-import { Mutator } from "../utils/mutator";
+import { Mutator } from "../../set-piece/utils/mutator";
 
 export type CombativeRule = {
     health: number;
@@ -214,7 +214,7 @@ export class CombativeModel extends FeatureModel<CombativeDef> {
     receiveDamage(damage: number, source?: Model) {
         const mutator = new Mutator({ isEnabled: true });
         this.eventDict.onDamageReceiveBefore(this, mutator);
-        if (!mutator.result.isEnabled) return;
+        if (!mutator.data.isEnabled) return;
         this.baseStateDict.healthWaste += damage;
         this.eventDict.onDamageReceive(this, {
             damage,
@@ -226,7 +226,7 @@ export class CombativeModel extends FeatureModel<CombativeDef> {
     restoreHealth(health: number, source?: Model) {
         const mutator = new Mutator({ isEnabled: true });
         this.eventDict.onHealthRestoreBefore(this, mutator);
-        if (!mutator.result.isEnabled) return;
+        if (!mutator.data.isEnabled) return;
         if (health < 0) return;
         this.baseStateDict.healthWaste -= Math.min(
             health,
