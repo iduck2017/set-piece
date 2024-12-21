@@ -7,11 +7,9 @@ import { MinionModel } from "@/hearthstone/models/minion";
 import { PlayerModel } from "@/hearthstone/models/player";
 import { ClassNameType, ExpansionType, RarityType } from "@/hearthstone/services/database";
 
-export type SpellMoonfireDef = SpellDef<
-    CustomDef<{
-        code: 'moonfire-spell-card',
-    }>
->
+export type SpellMoonfireDef = SpellDef<{
+    code: 'moonfire-spell-card',
+}>
 
 @SpellModel.useRule({
     castable: {

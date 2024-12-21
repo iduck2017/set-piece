@@ -10,14 +10,12 @@ import { ClassNameType, ExpansionType, RaceType, RarityType } from "@/hearthston
  * Flavor Text: There is no beast more frightening (or ridiculous) than a fully enraged chicken.
  */
 
-export type AngryChickenDef = MinionDef<
-    CustomDef<{
-        code: 'angry-chicken-minion-card',
-        childDict: {
-            feature: AngryChickenEnrageModel
-        }
-    }>
->
+export type AngryChickenDef = MinionDef<{
+    code: 'angry-chicken-minion-card',
+    childDict: {
+        feature: AngryChickenEnrageModel
+    }
+}>
 
 @MinionModel.useRule({
     combative: {

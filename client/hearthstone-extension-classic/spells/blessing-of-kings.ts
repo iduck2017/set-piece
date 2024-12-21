@@ -7,11 +7,9 @@ import { MinionModel } from "@/hearthstone/models/minion";
 import { BlessingOfKingsBuffModel } from "../buffs/blessing-of-kings";
 import { ClassNameType, ExpansionType, RarityType } from "@/hearthstone/services/database";
 
-export type SpellBlessingOfKingsDef = SpellDef<
-    CustomDef<{
-        code: 'blessing-of-kings-spell-card',
-    }>
->
+export type SpellBlessingOfKingsDef = SpellDef<{
+    code: 'blessing-of-kings-spell-card',
+}>
 
 @SpellModel.useRule({
     castable: {

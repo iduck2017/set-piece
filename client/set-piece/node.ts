@@ -33,7 +33,7 @@ export abstract class NodeModel<T extends Def> {
         let target: Model | undefined = this.parent;
         while (target) {
             const flag = 
-                (!code || target.code.startsWith(code)) &&
+                (!code || target.code.endsWith(code)) &&
                 (!validator || validator(target));
             if (flag) {
                 const result: any = target;

@@ -8,11 +8,9 @@ import { PlayerModel } from "@/hearthstone/models/player";
 import { ExpansionType, RarityType } from "@/hearthstone/services/database";
 import { ClassNameType } from "@/hearthstone/services/database";
 
-export type SpellArcaneShotDef = SpellDef<
-    CustomDef<{
-        code: 'arcane-shot-spell-card',
-    }>
->
+export type SpellArcaneShotDef = SpellDef<{
+    code: 'arcane-shot-spell-card',
+}>
 
 @SpellModel.useRule({
     castable: {

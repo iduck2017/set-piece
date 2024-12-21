@@ -8,11 +8,9 @@ import { MinionModel } from "@/hearthstone/models/minion";
 import { PlayerModel } from "@/hearthstone/models/player";
 import { ClassNameType, ExpansionType, RarityType } from "@/hearthstone/services/database";
 
-export type SpellArcaneMissilesDef = SpellDef<
-    CustomDef<{
-        code: 'arcane-missiles-spell-card',
-    }>
->
+export type SpellArcaneMissilesDef = SpellDef<{
+    code: 'arcane-missiles-spell-card',
+}>
 
 @SpellModel.useRule({
     castable: {

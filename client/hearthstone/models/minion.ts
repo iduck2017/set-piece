@@ -6,7 +6,6 @@ import { DataBaseService } from "@/hearthstone/services/database";
 import { 
     Base, 
     Chunk, 
-    CustomDef, 
     Def, 
     Dict, 
     Event, 
@@ -19,21 +18,19 @@ import { DivineShieldModel, DivineShieldRule } from "./devine-shield";
 import { RuleService } from "../services/rule";
 
 export type MinionDef<
-    T extends Def = Def
-> = CardDef<
-    CustomDef<{
-        code: `${string}-minion-card`,
-        paramDict: {
-        },
-        eventDict: {
-            onBattlecry: [MinionModel, TargetCollector[]]
-        },
-        childDict: {
-            combative: CombativeModel   
-            divineShield: DivineShieldModel
-        },
-    }>
-> & T
+    T extends Partial<Def> = Def
+> = CardDef<{
+    code: `${string}-minion-card`,
+    paramDict: {
+    },
+    eventDict: {
+        onBattlecry: [MinionModel, TargetCollector[]]
+    },
+    childDict: {
+        combative: CombativeModel   
+        divineShield: DivineShieldModel
+    },
+} & T>
 
 export abstract class MinionModel<
     T extends MinionDef = MinionDef

@@ -5,17 +5,16 @@ import {
     Model,
     NodeModel,
     Props,
-    PureDef,
     StrictProps
 } from "@/set-piece";
-import { CardDef, CardModel } from "./card";
+import { CardModel } from "./card";
 import { GameModel } from "./game";
 import { PlayerModel } from "./player";
 import { BoardModel } from "./board";
 import { HandModel } from "./hand";
 import { DeckModel } from "./deck";
 import { GraveyardModel } from "./graveyard";
-import { MinionDef, MinionModel } from "./minion";
+import { MinionModel } from "./minion";
 
 export type FeatureListDef = CustomDef<{
     code: 'feature-list',
@@ -28,7 +27,7 @@ export type FeatureListDef = CustomDef<{
 }>
 
 export type FeatureDef<
-    T extends Def = Def
+    T extends Partial<Def> = Def
 > = CustomDef<{
     code: `${string}-feature`,
     stateDict: {
@@ -40,7 +39,7 @@ export type FeatureDef<
     childList: [],
     eventDict: {},
     parent: PlayerModel | CardModel | FeatureListModel
-}> & T;
+} & T>;
 
 @FactoryService.useProduct('feature-list')
 export class FeatureListModel extends NodeModel<FeatureListDef> {
@@ -70,23 +69,18 @@ export class FeatureListModel extends NodeModel<FeatureListDef> {
 export abstract class FeatureModel<
     T extends FeatureDef = FeatureDef
 > extends NodeModel<T> {
-    private get _minion(): MinionModel<MinionDef<PureDef>> | undefined {
-        return this.queryParent<MinionModel>(
-            undefined,
-            true,
-            (model) => model instanceof MinionModel
-        );
-    }
 
-    private get _card(): CardModel<CardDef<PureDef>> | undefined {
-        return this.queryParent<CardModel>(
-            undefined,
-            false,
-            (model) => model instanceof CardModel
-        );
-    }
-
-    get referDict() {
+    get referDict(): Partial<{
+        game: GameModel;
+        player: PlayerModel;
+        board: BoardModel;
+        hand: HandModel;
+        deck: DeckModel;
+        graveyard: GraveyardModel;
+        minion: MinionModel;
+        card: CardModel;
+    }> {
+        this.queryParent<CardModel>('card');
         return {
             game: this.queryParent<GameModel>('game', true),
             player: this.queryParent<PlayerModel>('player', true),
@@ -94,8 +88,8 @@ export abstract class FeatureModel<
             hand: this.queryParent<HandModel>('hand', true),
             deck: this.queryParent<DeckModel>('deck', true),
             graveyard: this.queryParent<GraveyardModel>('graveyard', true),
-            minion: this._minion,
-            card: this._card
+            minion: this.queryParent<MinionModel>('', true),
+            card: this.queryParent<CardModel>('card', true)
         };
     }
 

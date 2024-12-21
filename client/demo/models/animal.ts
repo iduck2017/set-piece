@@ -1,7 +1,7 @@
 import { Props, Def, NodeModel, ValidatorService, CustomDef } from "@/set-piece";
 
 export type AnimalDef<
-    T extends Def = Def
+    T extends Partial<Def> = Def
 > = CustomDef<{
     code: `${string}-animal`;
     stateDict: {
@@ -19,7 +19,7 @@ export type AnimalDef<
         onBorn: [AnimalModel];
         onDie: [AnimalModel];
     },
-}> & T
+} & T>
 
 export abstract class AnimalModel<
     T extends AnimalDef = AnimalDef
@@ -54,19 +54,17 @@ export abstract class AnimalModel<
 }
 
 export type AvesDef<
-    T extends Def = Def
-> = AnimalDef<
-    CustomDef<{
-        code: `${string}-aves-animal`;
-        stateDict: {
-            isFlying: boolean;
-        }
-        eventDict: {
-            onFly: [AvesModel];
-            onLand: [AvesModel];
-        }
-    }>
-> & T
+    T extends Partial<Def> = Def
+> = AnimalDef<{
+    code: `${string}-aves-animal`;
+    stateDict: {
+        isFlying: boolean;
+    }
+    eventDict: {
+        onFly: [AvesModel];
+        onLand: [AvesModel];
+    }
+} & T>
 
 export abstract class AvesModel<
     T extends AvesDef = AvesDef
@@ -90,17 +88,15 @@ export abstract class AvesModel<
     }
 }
 
-export type PenguinDef = AvesDef<
-    CustomDef<{
-        code: 'penguin-aves-animal';
-        stateDict: {
-            isSwimming: boolean;
-        },
-        eventDict: {
-            onSwim: [PenguinModel];
-        }
-    }>
->;
+export type PenguinDef = AvesDef<{
+    code: 'penguin-aves-animal';
+    stateDict: {
+        isSwimming: boolean;
+    },
+    eventDict: {
+        onSwim: [PenguinModel];
+    }
+}>;
 
 export class PenguinModel extends AvesModel<PenguinDef> {
     constructor(props: Props<PenguinDef>) {
@@ -122,5 +118,6 @@ export class PenguinModel extends AvesModel<PenguinDef> {
             }
         });
         this.queryParent<AnimalModel>('animal');
+        this.queryParent<AvesModel>('aves-啊');
     }
 }

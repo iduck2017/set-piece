@@ -36,7 +36,7 @@ export type CardRule = {
 }
 
 export type CardDef<
-    T extends Def = Def
+    T extends Partial<Def> = Def
 > = CustomDef<{
     code: `${string}-card`;
     stateDict: {
@@ -54,7 +54,7 @@ export type CardDef<
         featureList: FeatureListModel,
     },
     parent: BoardModel | DeckModel | HandModel | GraveyardModel
-}> & T
+} & T>
 
 
 export abstract class CardModel<

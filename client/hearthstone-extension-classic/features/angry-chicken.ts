@@ -4,14 +4,12 @@ import { AngryChickenModel } from "../minions/angry-chicken";
 import { CombativeModel } from "@/hearthstone/models/combative";
 import { Mutable } from "utility-types";
 
-export type FeatureAngryChickenDef = EnrageDef<
-    CustomDef<{
-        code: 'angry-chicken-enrage-feature',
-        stateDict: {
-            isEnraged: boolean
-        }
-    }>
->
+export type FeatureAngryChickenDef = EnrageDef<{
+    code: 'angry-chicken-enrage-feature',
+    stateDict: {
+        isEnraged: boolean
+    }
+}>
 
 @FactoryService.useProduct('angry-chicken-enrage-feature')
 export class AngryChickenEnrageModel extends EnrageModel<FeatureAngryChickenDef> {

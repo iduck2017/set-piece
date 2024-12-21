@@ -12,14 +12,12 @@ import { ClassNameType } from "@/hearthstone/services/database";
 import { ExpansionType } from "@/hearthstone/services/database";
 import { RarityType } from "@/hearthstone/services/database";
 
-export type AbusiveSergeantDef = MinionDef<
-    CustomDef<{
-        code: 'abusive-sergeant-minion-card',
-        childDict: {
-            battlecry: AbusiveSergeantBattlecryModel
-        }
-    }>
->
+export type AbusiveSergeantDef = MinionDef<{
+    code: 'abusive-sergeant-minion-card',
+    childDict: {
+        battlecry: AbusiveSergeantBattlecryModel
+    }
+}>
 
 @MinionModel.useRule({
     combative: {

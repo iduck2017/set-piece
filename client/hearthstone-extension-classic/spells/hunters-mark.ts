@@ -9,11 +9,9 @@ import { ExpansionType } from "@/hearthstone/services/database";
 import { RarityType } from "@/hearthstone/services/database";
 import { ClassNameType } from "@/hearthstone/services/database";
 
-export type SpellHuntersMarkDef = SpellDef<
-    CustomDef<{
-        code: 'hunters-mark-spell-card',
-    }>
->
+export type SpellHuntersMarkDef = SpellDef<{
+    code: 'hunters-mark-spell-card',
+}>
 
 @SpellModel.useRule({
     castable: {

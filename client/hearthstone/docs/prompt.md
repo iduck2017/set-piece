@@ -9,7 +9,7 @@ he minion's attributes, effects, description, and flavor text are provided in th
 
     + Features: battlecry-feature deathwisp-feature -enrage-feature -feature
 
-    + Effects: -buff -debuff, if you're unsure whether an effect is a buff or debuff, use effect-
+    + Effects: -buff-feature, -feature
    
 ### Development guidelines you need to follow:
 

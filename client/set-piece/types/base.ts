@@ -23,4 +23,4 @@ export namespace Dict {
 }
 
 export type SuffixOf<T extends string> = T extends `${string}-${infer F}`
-  ? T | F | SuffixOf<F> : T;
+  ? T | SuffixOf<F> : T;

@@ -3,11 +3,9 @@ import { MinionDef, MinionModel } from "@/hearthstone/models/minion";
 import { ClassNameType, RarityType } from "@/hearthstone/services/database";
 import { ExpansionType } from "@/hearthstone/services/database";
 
-export type WispDef = MinionDef<
-    CustomDef<{
-        code: 'wisp-minion-card',
-    }>
->
+export type WispDef = MinionDef<{
+    code: 'wisp-minion-card',
+}>
 
 @MinionModel.useRule({
     combative: {

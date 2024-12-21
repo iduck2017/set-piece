@@ -1,7 +1,6 @@
 import { 
     Base,
     Def,
-    CustomDef,
     Event,
     Props,
     PureDef,
@@ -15,17 +14,15 @@ import { DataBaseService } from "../services/database";
 import { RuleService } from "../services/rule";
 
 export type SpellDef<
-    T extends Def = Def
-> = CardDef<
-    CustomDef<{
-        code: `${string}-spell-card`,
-        paramDict: {
-        },
-        eventDict: {
-            onCast: [SpellModel, TargetCollector[]]
-        },
-    }>
-> & T
+    T extends Partial<Def> = Def
+> = CardDef<{
+    code: `${string}-spell-card`,
+    paramDict: {
+    },
+    eventDict: {
+        onCast: [SpellModel, TargetCollector[]]
+    },
+} & T>
 
 export abstract class SpellModel<
     T extends SpellDef = SpellDef

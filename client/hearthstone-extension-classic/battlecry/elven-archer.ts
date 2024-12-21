@@ -4,11 +4,9 @@ import { TargetCollector } from "@/hearthstone/types/collector";
 import { CardModel } from "@/hearthstone/models/card";
 import { MinionModel } from "@/hearthstone/models/minion";
 
-export type BattlecryElvenArcherDef = BattlecryDef<
-    CustomDef<{
-        code: 'elven-archer-battlecry-feature'
-    }>
->
+export type BattlecryElvenArcherDef = BattlecryDef<{
+    code: 'elven-archer-battlecry-feature'
+}>
 
 @FactoryService.useProduct('elven-archer-battlecry-feature')
 export class ElvenArcherBattlecryModel extends BattlecryModel<BattlecryElvenArcherDef> {

@@ -10,14 +10,12 @@ import { ClassNameType, ExpansionType, RarityType } from "@/hearthstone/services
  * Flavor Text: Don't bother asking her out on a date. She'll shoot you down.
  */
 
-export type ElvenArcherDef = MinionDef<
-    CustomDef<{
-        code: 'elven-archer-minion-card',
-        childDict: {
-            battlecry: ElvenArcherBattlecryModel
-        }
-    }>
->
+export type ElvenArcherDef = MinionDef<{
+    code: 'elven-archer-minion-card',
+    childDict: {
+        battlecry: ElvenArcherBattlecryModel
+    }
+}>
 
 @MinionModel.useRule({
     combative: {

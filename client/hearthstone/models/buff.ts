@@ -1,23 +1,19 @@
-import { CustomDef, Def, LifecycleService, Model, Props, ValidatorService } from "@/set-piece";
+import { Def, LifecycleService, Model, Props, ValidatorService } from "@/set-piece";
 import { CombativeModel } from "./combative";
 import { Mutable } from "utility-types";
 import { FeatureDef, FeatureModel } from "./feature";
 
 export type BuffDef<
-    T extends Def = Def
-> = FeatureDef<
-    CustomDef<{
-        code: `${string}-buff-feature`;
-        stateDict: {
-        },
-        paramDict: {
-            modAttack?: number;
-            modHealth?: number;
-            isFixed?: boolean;
-            isDisposedOnRoundEnd?: boolean;
-        }
-    }>
-> & T;
+    T extends Partial<Def> = Def
+> = FeatureDef<{
+    code: `${string}-buff-feature`;
+    paramDict: {
+        modAttack?: number;
+        modHealth?: number;
+        isFixed?: boolean;
+        isDisposedOnRoundEnd?: boolean;
+    }
+} & T>;
 
 
 export abstract class BuffModel<

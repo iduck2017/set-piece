@@ -8,11 +8,9 @@ import { ClassNameType, ExpansionType, RarityType } from "@/hearthstone/services
  * Flavor: He always dreamed of coming down from the mountains and opening a noodle shop, but he never got the nerve.
  */
 
-export type ChillwindYetiDef = MinionDef<
-    CustomDef<{
-        code: 'chillwind-yeti-minion-card'
-    }>
->
+export type ChillwindYetiDef = MinionDef<{
+    code: 'chillwind-yeti-minion-card'
+}>
 
 @MinionModel.useRule({
     combative: {

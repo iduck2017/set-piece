@@ -6,11 +6,9 @@ import { TargetCollector } from "@/hearthstone/types/collector";
 import { ClassNameType, ExpansionType } from "@/hearthstone/services/database";
 import { RarityType } from "@/hearthstone/services/database";
 
-export type SpellCircleOfHealingDef = SpellDef<
-    CustomDef<{
-        code: 'circle-of-healing-spell-card',
-    }>
->
+export type SpellCircleOfHealingDef = SpellDef<{
+    code: 'circle-of-healing-spell-card',
+}>
 
 @SpellModel.useRule({
     castable: {

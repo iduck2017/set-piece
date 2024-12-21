@@ -2,11 +2,9 @@ import { BuffDef, BuffModel } from "@/hearthstone/models/buff";
 import { FeatureDef, FeatureModel } from "@/hearthstone/models/feature";
 import { CustomDef, FactoryService, Props } from "@/set-piece";
 
-export type DebuffHuntersMarkDef = BuffDef<
-    CustomDef<{
-        code: 'hunters-mark-buff-feature',
-    }>
->
+export type DebuffHuntersMarkDef = BuffDef<{
+    code: 'hunters-mark-buff-feature',
+}>
 
 @FactoryService.useProduct('hunters-mark-buff-feature')
 export class HuntersMarkDebuffModel extends BuffModel<DebuffHuntersMarkDef> {

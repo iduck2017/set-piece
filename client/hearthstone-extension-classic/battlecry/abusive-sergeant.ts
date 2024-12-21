@@ -5,11 +5,9 @@ import { TargetCollector } from "@/hearthstone/types/collector";
 import { CardModel } from "@/hearthstone/models/card";
 import { AbusiveSergeantBuffModel } from "../buffs/abusive-sergeant";
 
-export type BattlecryAbusiveSergeantDef = FeatureDef<
-    CustomDef<{
-        code: 'abusive-sergeant-battlecry-feature',
-    }>
->
+export type BattlecryAbusiveSergeantDef = FeatureDef<{
+    code: 'abusive-sergeant-battlecry-feature',
+}>
 
 @FactoryService.useProduct('abusive-sergeant-battlecry-feature')
 export class AbusiveSergeantBattlecryModel extends BattlecryModel<BattlecryAbusiveSergeantDef> {

@@ -7,11 +7,9 @@ import { MinionModel } from "@/hearthstone/models/minion";
 import { InnerRageBuffModel } from "../buffs/inner-rage";
 import { ClassNameType, ExpansionType, RarityType } from "@/hearthstone/services/database";
 
-export type SpellInnerRageDef = SpellDef<
-    CustomDef<{
-        code: 'inner-rage-spell-card',
-    }>
->
+export type SpellInnerRageDef = SpellDef<{
+    code: 'inner-rage-spell-card',
+}>
 
 @SpellModel.useRule({
     castable: {

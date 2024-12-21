@@ -1,6 +1,5 @@
 import { RaceType } from "../services/database";
 import { AppModel } from "./app";
-import { CardModel } from "./card";
 import { MinionModel } from "./minion";
 import { PlayerModel } from "./player";
 import { CustomDef, FactoryService, Model, NodeModel, Props } from "@/set-piece";

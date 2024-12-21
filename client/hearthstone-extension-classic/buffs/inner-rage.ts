@@ -1,11 +1,9 @@
 import { BuffDef, BuffModel } from "@/hearthstone/models/buff";
 import { CustomDef, FactoryService, Props } from "@/set-piece";
 
-export type BuffInnerRageDef = BuffDef<
-    CustomDef<{
-        code: 'inner-rage-buff-feature',
-    }>
->
+export type BuffInnerRageDef = BuffDef<{
+    code: 'inner-rage-buff-feature',
+}>
 
 @FactoryService.useProduct('inner-rage-buff-feature')
 export class InnerRageBuffModel extends BuffModel<BuffInnerRageDef> {

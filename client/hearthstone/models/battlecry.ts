@@ -4,7 +4,7 @@ import { TargetCollector } from "../types/collector";
 import { CardModel } from "./card";
 
 export type BattlecryDef<
-    T extends Def = Def
+    T extends Partial<Def> = Def
 > = FeatureDef<T>;
 
 export abstract class BattlecryModel<

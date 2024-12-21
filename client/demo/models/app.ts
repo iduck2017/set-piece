@@ -1,4 +1,4 @@
-import { Def, Base, NodeModel, ValidatorService, FactoryService, CustomDef } from "@/set-piece";
+import { Base, NodeModel, ValidatorService, FactoryService, CustomDef } from "@/set-piece";
 import { DemoModel } from "./demo";
 import { FileService } from "../services/file";
 

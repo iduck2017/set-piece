@@ -11,6 +11,8 @@
 
 import { CustomDef, Def, FactoryService, Props } from "@/set-piece";
 import { MinionDef, MinionModel } from "@/hearthstone/models/minion";
+import { ClassNameType, RarityType } from "@/hearthstone/services/database";
+import { ExpansionType } from "@/hearthstone/services/database";
 
 export type WispDef = MinionDef<
     CustomDef<{
@@ -26,6 +28,11 @@ export type WispDef = MinionDef<
     },
     castable: {
         manaCost: 0
+    },
+    card: {
+        expansion: ExpansionType.Classic,
+        rarity: RarityType.Common,
+        className: ClassNameType.Neutral
     }
 })
 @FactoryService.useProduct('wisp-minion-card') 
@@ -55,7 +62,7 @@ import { BattlecryModel } from "@/hearthstone/models/battlecry";
 import { FeatureDef } from "@/hearthstone/models/feature";
 import { TargetCollector } from "@/hearthstone/types/collector";
 import { CardModel } from "@/hearthstone/models/card";
-import { BuffAbusiveSergeantModel } from "../buffs/abusive-sergeant";
+import { AbusiveSergeantBuffModel } from "../buffs/abusive-sergeant";
 
 export type BattlecryAbusiveSergeantDef = FeatureDef<
     CustomDef<{
@@ -64,7 +71,7 @@ export type BattlecryAbusiveSergeantDef = FeatureDef<
 >
 
 @FactoryService.useProduct('abusive-sergeant-battlecry-feature')
-export class BattlecryAbusiveSergeantModel extends BattlecryModel<BattlecryAbusiveSergeantDef> {
+export class AbusiveSergeantBattlecryModel extends BattlecryModel<BattlecryAbusiveSergeantDef> {
     constructor(props: Props<BattlecryAbusiveSergeantDef>) {
         super({
             ...props,
@@ -89,7 +96,7 @@ export class BattlecryAbusiveSergeantModel extends BattlecryModel<BattlecryAbusi
         const result = targetCollector?.result;
         if (!result) return;
         result.childDict.featureList.accessFeature<
-            BuffAbusiveSergeantModel
+            AbusiveSergeantBuffModel
         >('abusive-sergeant-buff-feature');
     }
 
@@ -135,7 +142,7 @@ export type BuffAbusiveSergeantDef = BuffDef<
 >
 
 @FactoryService.useProduct('abusive-sergeant-buff-feature')
-export class BuffAbusiveSergeantModel extends BuffModel<BuffAbusiveSergeantDef> {
+export class AbusiveSergeantBuffModel extends BuffModel<BuffAbusiveSergeantDef> {
     constructor(props: Props<BuffAbusiveSergeantDef>) {
         const superProps = BuffModel.buffProps(props);
         super({
@@ -166,7 +173,8 @@ import { SpellDef } from "@/hearthstone/models/spell";
 import { SpellModel } from "@/hearthstone/models/spell";
 import { TargetCollector } from "@/hearthstone/types/collector";
 import { MinionModel } from "@/hearthstone/models/minion";
-import { BuffBlessingOfKingsModel } from "../buffs/blessing-of-kings";
+import { BlessingOfKingsBuffModel } from "../buffs/blessing-of-kings";
+import { ClassNameType, ExpansionType, RarityType } from "@/hearthstone/services/database";
 
 export type SpellBlessingOfKingsDef = SpellDef<
     CustomDef<{
@@ -177,6 +185,11 @@ export type SpellBlessingOfKingsDef = SpellDef<
 @SpellModel.useRule({
     castable: {
         manaCost: 4
+    },
+    card: {
+        expansion: ExpansionType.Classic,
+        rarity: RarityType.Common,
+        className: ClassNameType.Paladin
     }
 })
 @FactoryService.useProduct('blessing-of-kings-spell-card')
@@ -198,7 +211,7 @@ export class BlessingOfKingsModel extends SpellModel<SpellBlessingOfKingsDef> {
         const target: MinionModel | undefined = targetCollectorList[0]?.result;
         if (!target) return;
         target.childDict.featureList.accessFeature<
-            BuffBlessingOfKingsModel
+            BlessingOfKingsBuffModel
         >('blessing-of-kings-buff-feature');
     }
 

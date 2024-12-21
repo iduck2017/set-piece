@@ -1,11 +1,9 @@
 import { CustomDef, FactoryService, Props } from "@/set-piece";
 import { BuffDef, BuffModel } from "@/hearthstone/models/buff";
 
-export type BuffBlessingOfKingsDef = BuffDef<
-    CustomDef<{
-        code: 'blessing-of-kings-buff-feature'
-    }>
->
+export type BuffBlessingOfKingsDef = BuffDef<{
+    code: 'blessing-of-kings-buff-feature'
+}>
 
 @FactoryService.useProduct('blessing-of-kings-buff-feature')
 export class BlessingOfKingsBuffModel extends BuffModel<BuffBlessingOfKingsDef> {

@@ -2,11 +2,9 @@ import { CustomDef, FactoryService, Props } from "@/set-piece";
 import { MinionDef, MinionModel } from "@/hearthstone/models/minion";
 import { ClassNameType, ExpansionType, RarityType } from "@/hearthstone/services/database";
 
-export type ArgentSquireDef = MinionDef<
-   CustomDef<{
-       code: 'argent-squire-minion-card',
-   }>
->
+export type ArgentSquireDef = MinionDef<{
+    code: 'argent-squire-minion-card',
+}>
 
 @MinionModel.useRule({
    combative: {

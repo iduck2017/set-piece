@@ -1,18 +1,16 @@
-import { CustomDef, Def, LifecycleService, Model, Props, ValidatorService } from "@/set-piece";
+import { Def, LifecycleService, Model, Props, ValidatorService } from "@/set-piece";
 import { FeatureDef, FeatureModel } from "./feature";
 import { CombativeModel } from "./combative";
 import { Mutable } from "utility-types";
 
 export type EnrageDef<
-    T extends Def = Def
-> = FeatureDef<
-    CustomDef<{
-        code: `${string}-enrage-feature`;
-        stateDict: {
-            isEnraged: boolean;
-        }
-    }>
-> & T;
+    T extends Partial<Def> = Def
+> = FeatureDef<{
+    code: `${string}-enrage-feature`;
+    stateDict: {
+        isEnraged: boolean;
+    }
+} & T>;
 
 export abstract class EnrageModel<
     T extends EnrageDef = EnrageDef
