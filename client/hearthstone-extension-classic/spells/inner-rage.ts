@@ -5,6 +5,7 @@ import { SpellModel } from "@/hearthstone/models/spell";
 import { TargetCollector } from "@/hearthstone/types/collector";
 import { MinionModel } from "@/hearthstone/models/minion";
 import { BuffInnerRageModel } from "../buffs/inner-rage";
+import { ClassNameType, ExpansionType, RarityType } from "@/hearthstone/services/database";
 
 export type SpellInnerRageDef = SpellDef<
     CustomDef<{
@@ -15,6 +16,11 @@ export type SpellInnerRageDef = SpellDef<
 @SpellModel.useRule({
     castable: {
         manaCost: 0
+    },
+    card: {
+        expansion: ExpansionType.Classic,
+        rarity: RarityType.Common,
+        className: ClassNameType.Warrior
     }
 })
 @FactoryService.useProduct('inner-rage-spell-card')

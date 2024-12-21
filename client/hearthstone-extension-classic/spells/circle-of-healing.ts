@@ -3,6 +3,8 @@ import { FactoryService } from "@/set-piece/services/factory";
 import { SpellDef } from "@/hearthstone/models/spell";
 import { SpellModel } from "@/hearthstone/models/spell";
 import { TargetCollector } from "@/hearthstone/types/collector";
+import { ClassNameType, ExpansionType } from "@/hearthstone/services/database";
+import { RarityType } from "@/hearthstone/services/database";
 
 export type SpellCircleOfHealingDef = SpellDef<
     CustomDef<{
@@ -13,6 +15,11 @@ export type SpellCircleOfHealingDef = SpellDef<
 @SpellModel.useRule({
     castable: {
         manaCost: 0
+    },
+    card: {
+        expansion: ExpansionType.Classic,
+        rarity: RarityType.Common,
+        className: ClassNameType.Neutral
     }
 })
 @FactoryService.useProduct('circle-of-healing-spell-card')

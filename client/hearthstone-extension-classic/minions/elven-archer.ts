@@ -1,6 +1,7 @@
 import { CustomDef, Def, FactoryService, Props } from "@/set-piece";
 import { MinionDef, MinionModel } from "@/hearthstone/models/minion";
 import { BattlecryElvenArcherModel } from "../battlecry/elven-archer";
+import { ClassNameType, ExpansionType, RarityType } from "@/hearthstone/services/database";
 
 /**
  * @prompt
@@ -26,6 +27,11 @@ export type ElvenArcherDef = MinionDef<
     },
     castable: {
         manaCost: 1
+    },
+    card: {
+        expansion: ExpansionType.Classic,
+        rarity: RarityType.Common,
+        className: ClassNameType.Neutral
     }
 })
 @FactoryService.useProduct('elven-archer-minion-card')

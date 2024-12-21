@@ -1,7 +1,7 @@
 import { CustomDef, Def, FactoryService, Props } from "@/set-piece";
 import { MinionDef, MinionModel } from "@/hearthstone/models/minion";
 import { FeatureAngryChickenModel } from "../features/angry-chicken";
-import { RaceType } from "@/hearthstone/services/database";
+import { ClassNameType, ExpansionType, RaceType, RarityType } from "@/hearthstone/services/database";
 
 /**
  * @prompt
@@ -27,6 +27,11 @@ export type AngryChickenDef = MinionDef<
     },
     castable: {
         manaCost: 1
+    },
+    card: {
+        expansion: ExpansionType.Classic,
+        rarity: RarityType.Common,
+        className: ClassNameType.Neutral
     }
 })
 @FactoryService.useProduct('angry-chicken-minion-card')

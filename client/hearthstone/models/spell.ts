@@ -8,7 +8,7 @@ import {
     LifecycleService,
     ValidatorService
 } from "@/set-piece";
-import { CardDef, CardModel, CardType } from "./card";
+import { CardDef, CardModel, CardRule, CardType } from "./card";
 import { CastableRule } from "./castable";
 import { TargetCollector } from "../types/collector";
 import { DataBaseService } from "../services/database";
@@ -39,7 +39,8 @@ export abstract class SpellModel<
 
     static useRule(
         rule: {
-            castable: CastableRule
+            castable: CastableRule,
+            card: Omit<CardRule, 'type'>
         },
         isDerived?: boolean
     ) {
@@ -48,7 +49,10 @@ export abstract class SpellModel<
             if (isDerived) return;
             DataBaseService.useCard({
                 ...rule,
-                type: CardType.Spell
+                card: {
+                    ...rule.card,
+                    type: CardType.Spell
+                }
             })(Type);
         };
     }

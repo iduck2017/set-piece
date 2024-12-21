@@ -5,6 +5,7 @@ import { SpellModel } from "@/hearthstone/models/spell";
 import { TargetCollector } from "@/hearthstone/types/collector";
 import { MinionModel } from "@/hearthstone/models/minion";
 import { PlayerModel } from "@/hearthstone/models/player";
+import { ClassNameType, ExpansionType, RarityType } from "@/hearthstone/services/database";
 
 export type SpellMoonfireDef = SpellDef<
     CustomDef<{
@@ -15,6 +16,11 @@ export type SpellMoonfireDef = SpellDef<
 @SpellModel.useRule({
     castable: {
         manaCost: 0
+    },
+    card: {
+        expansion: ExpansionType.Classic,
+        rarity: RarityType.Common,
+        className: ClassNameType.Druid
     }
 })
 @FactoryService.useProduct('moonfire-spell-card')

@@ -6,6 +6,7 @@ import { TargetCollector } from "@/hearthstone/types/collector";
 import { CardModel } from "@/hearthstone/models/card";
 import { MinionModel } from "@/hearthstone/models/minion";
 import { PlayerModel } from "@/hearthstone/models/player";
+import { ClassNameType, ExpansionType, RarityType } from "@/hearthstone/services/database";
 
 export type SpellArcaneMissilesDef = SpellDef<
     CustomDef<{
@@ -16,6 +17,11 @@ export type SpellArcaneMissilesDef = SpellDef<
 @SpellModel.useRule({
     castable: {
         manaCost: 1
+    },
+    card: {
+        expansion: ExpansionType.Classic,
+        rarity: RarityType.Common,
+        className: ClassNameType.Mage
     }
 })
 @FactoryService.useProduct('arcane-missiles-spell-card')

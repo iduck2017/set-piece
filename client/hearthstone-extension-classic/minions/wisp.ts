@@ -1,5 +1,7 @@
 import { CustomDef, Def, FactoryService, Props } from "@/set-piece";
 import { MinionDef, MinionModel } from "@/hearthstone/models/minion";
+import { ClassNameType, RarityType } from "@/hearthstone/services/database";
+import { ExpansionType } from "@/hearthstone/services/database";
 
 export type WispDef = MinionDef<
     CustomDef<{
@@ -15,6 +17,11 @@ export type WispDef = MinionDef<
     },
     castable: {
         manaCost: 0
+    },
+    card: {
+        expansion: ExpansionType.Classic,
+        rarity: RarityType.Common,
+        className: ClassNameType.Neutral
     }
 })
 @FactoryService.useProduct('wisp-minion-card') 

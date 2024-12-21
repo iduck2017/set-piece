@@ -5,6 +5,8 @@ import { SpellModel } from "@/hearthstone/models/spell";
 import { TargetCollector } from "@/hearthstone/types/collector";
 import { MinionModel } from "@/hearthstone/models/minion";
 import { PlayerModel } from "@/hearthstone/models/player";
+import { ExpansionType, RarityType } from "@/hearthstone/services/database";
+import { ClassNameType } from "@/hearthstone/services/database";
 
 export type SpellArcaneShotDef = SpellDef<
     CustomDef<{
@@ -15,6 +17,11 @@ export type SpellArcaneShotDef = SpellDef<
 @SpellModel.useRule({
     castable: {
         manaCost: 1
+    },
+    card: {
+        expansion: ExpansionType.Classic,
+        rarity: RarityType.Common,
+        className: ClassNameType.Hunter
     }
 })
 @FactoryService.useProduct('arcane-shot-spell-card')

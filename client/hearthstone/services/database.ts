@@ -20,8 +20,19 @@ export enum RaceType {
     Demon = 'demon',
 }
 
+export enum RarityType {
+    Common = 'common',
+    Rare = 'rare',
+    Epic = 'epic',
+    Legendary = 'legendary',
+}
+
+export enum ExpansionType {
+    Classic = 'classic',
+}
 
 export enum ClassNameType {
+    Neutral = 'neutral',
     Warrior = 'warrior',
     Paladin = 'paladin',
     Hunter = 'hunter',
@@ -92,14 +103,14 @@ export class DataBaseService {
             combative: CombativeRule,
             castable: CastableRule,
             divineShield: DivineShieldRule
-        }> & 
-        CardRule) {
+            card: CardRule
+        }>) {
         return function (Type: Base.Class<CardModel>) {
             const { 
                 combative,
                 castable,
                 divineShield,
-                type
+                card
             } = config;
             const {
                 health,
@@ -108,6 +119,9 @@ export class DataBaseService {
             const {
                 manaCost
             } = castable || {};
+            const {
+                type
+            } = card || {};
 
             const {
                 _register: register,

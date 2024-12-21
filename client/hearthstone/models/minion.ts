@@ -1,5 +1,5 @@
 import { TargetCollector } from "../types/collector";
-import { CardDef, CardModel, CardType } from "./card";
+import { CardDef, CardModel, CardRule, CardType } from "./card";
 import { CastableRule } from "./castable";
 import { CombativeModel, CombativeRule } from "./combative";
 import { DataBaseService } from "@/hearthstone/services/database";
@@ -47,15 +47,18 @@ export abstract class MinionModel<
             combative: CombativeRule,
             castable: CastableRule,
             divineShield?: DivineShieldRule
-        },
-        isDerived?: boolean
+            card: Omit<CardRule, 'type'>
+        }
     ) {
         return function(Type: Base.Class) {
             RuleService.useRule(rule)(Type);
-            if (isDerived) return;
+            if (rule.card.isDerived) return;
             DataBaseService.useCard({
                 ...rule,
-                type: CardType.Minion
+                card: {
+                    ...rule.card,
+                    type: CardType.Minion
+                }
             })(Type);
         };
     }

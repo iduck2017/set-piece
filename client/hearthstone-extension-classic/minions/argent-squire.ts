@@ -1,5 +1,6 @@
 import { CustomDef, FactoryService, Props } from "@/set-piece";
 import { MinionDef, MinionModel } from "@/hearthstone/models/minion";
+import { ClassNameType, ExpansionType, RarityType } from "@/hearthstone/services/database";
 
 export type ArgentSquireDef = MinionDef<
    CustomDef<{
@@ -18,6 +19,11 @@ export type ArgentSquireDef = MinionDef<
    },
    divineShield: {
        isActived: true
+   },
+   card: {
+        expansion: ExpansionType.Classic,
+        rarity: RarityType.Common,
+        className: ClassNameType.Neutral
    }
 })
 @FactoryService.useProduct('argent-squire-minion-card')

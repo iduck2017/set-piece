@@ -5,6 +5,9 @@ import { SpellModel } from "@/hearthstone/models/spell";
 import { TargetCollector } from "@/hearthstone/types/collector";
 import { MinionModel } from "@/hearthstone/models/minion";
 import { DebuffHuntersMarkModel } from "../buffs/hunters-mark";
+import { ExpansionType } from "@/hearthstone/services/database";
+import { RarityType } from "@/hearthstone/services/database";
+import { ClassNameType } from "@/hearthstone/services/database";
 
 export type SpellHuntersMarkDef = SpellDef<
     CustomDef<{
@@ -15,6 +18,11 @@ export type SpellHuntersMarkDef = SpellDef<
 @SpellModel.useRule({
     castable: {
         manaCost: 0
+    },
+    card: {
+        expansion: ExpansionType.Classic,
+        rarity: RarityType.Common,
+        className: ClassNameType.Hunter
     }
 })
 @FactoryService.useProduct('hunters-mark-spell-card')

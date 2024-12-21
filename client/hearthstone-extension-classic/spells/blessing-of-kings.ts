@@ -5,6 +5,7 @@ import { SpellModel } from "@/hearthstone/models/spell";
 import { TargetCollector } from "@/hearthstone/types/collector";
 import { MinionModel } from "@/hearthstone/models/minion";
 import { BuffBlessingOfKingsModel } from "../buffs/blessing-of-kings";
+import { ClassNameType, ExpansionType, RarityType } from "@/hearthstone/services/database";
 
 export type SpellBlessingOfKingsDef = SpellDef<
     CustomDef<{
@@ -15,6 +16,11 @@ export type SpellBlessingOfKingsDef = SpellDef<
 @SpellModel.useRule({
     castable: {
         manaCost: 4
+    },
+    card: {
+        expansion: ExpansionType.Classic,
+        rarity: RarityType.Common,
+        className: ClassNameType.Paladin
     }
 })
 @FactoryService.useProduct('blessing-of-kings-spell-card')

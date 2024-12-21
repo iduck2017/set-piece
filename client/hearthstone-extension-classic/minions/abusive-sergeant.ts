@@ -3,11 +3,14 @@
  * Abusive Sergeant 1/2/1 Battlecry: Give a minion +2 Attack this turn
  * use GameModel event onRoundEnd 
  */
-import { CardDef } from "@/hearthstone/models/card";
+import { CardDef, CardType } from "@/hearthstone/models/card";
 import { MinionModel } from "@/hearthstone/models/minion";
 import { MinionDef } from "@/hearthstone/models/minion";
 import { BattlecryAbusiveSergeantModel } from "../battlecry/abusive-sergeant";
 import { CustomDef, Def, FactoryService, Props } from "@/set-piece";
+import { ClassNameType } from "@/hearthstone/services/database";
+import { ExpansionType } from "@/hearthstone/services/database";
+import { RarityType } from "@/hearthstone/services/database";
 
 export type AbusiveSergeantDef = MinionDef<
     CustomDef<{
@@ -26,6 +29,11 @@ export type AbusiveSergeantDef = MinionDef<
     },
     castable: {
         manaCost: 1
+    },
+    card: {
+        expansion: ExpansionType.Classic,
+        rarity: RarityType.Common,
+        className: ClassNameType.Neutral
     }
 })
 @FactoryService.useProduct('abusive-sergeant-minion-card')

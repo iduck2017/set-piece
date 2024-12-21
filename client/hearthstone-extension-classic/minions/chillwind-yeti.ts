@@ -1,5 +1,6 @@
 import { CustomDef, Def, FactoryService, Props } from "@/set-piece";
 import { MinionDef, MinionModel } from "@/hearthstone/models/minion";
+import { ClassNameType, ExpansionType, RarityType } from "@/hearthstone/services/database";
 
 /**
  * @prompt
@@ -21,6 +22,11 @@ export type ChillwindYetiDef = MinionDef<
     },
     castable: {
         manaCost: 4
+    },
+    card: {
+        expansion: ExpansionType.Classic,
+        rarity: RarityType.Common,
+        className: ClassNameType.Neutral
     }
 })
 @FactoryService.useProduct('chillwind-yeti-minion-card')
