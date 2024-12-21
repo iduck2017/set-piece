@@ -101,7 +101,7 @@ export class AbusiveSergeantBattlecryModel extends BattlecryModel<BattlecryAbusi
     ) {
         const game = this.referDict.game;
         if (!game) return;
-        const candidateList = game.queryMinionAndPlayerList({
+        const candidateList = game.queryTargetList({
             excludePlayer: true,
             excludeTarget: this.referDict.card
         });
@@ -205,7 +205,7 @@ export class BlessingOfKingsModel extends SpellModel<SpellBlessingOfKingsDef> {
     handleCollectorInit(targetCollectorList: TargetCollector[]) {
         const game = this.referDict.game;
         if (!game) return;
-        const candidateList = game.queryMinionAndPlayerList({
+        const candidateList = game.queryTargetList({
             excludePlayer: true,
         });
         if (!candidateList.length) return;

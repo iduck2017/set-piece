@@ -171,7 +171,8 @@ export class CombativeModel extends FeatureModel<CombativeDef> {
         if (!game) return;
         const candidateList = game.queryTargetList({
             excludeTarget: this.referDict.card,
-            excludePosition: this.referDict.player
+            excludePosition: this.referDict.player,
+            considerTaunt: true
         });
         console.log('[candidate-list]', candidateList);
         if (!candidateList.length) return;

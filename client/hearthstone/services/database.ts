@@ -3,6 +3,7 @@ import { CombativeRule } from "../models/combative";
 import { CardModel, CardRule, CardType } from "../models/card";
 import { CastableRule } from "../models/castable";
 import { DivineShieldRule } from "../models/devine-shield";
+import { TauntRule } from "../models/taunt";
 
 export enum KeywordType {
     Battlecry = 'battlecry',
@@ -102,8 +103,9 @@ export class DataBaseService {
             type: CardType,
             combative: CombativeRule,
             castable: CastableRule,
-            divineShield: DivineShieldRule
-            card: CardRule
+            divineShield: DivineShieldRule,
+            taunt: TauntRule,
+            card: CardRule,
         }>) {
         return function (Type: Base.Class<CardModel>) {
             const { 

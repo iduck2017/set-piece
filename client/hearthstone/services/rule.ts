@@ -2,11 +2,13 @@ import { Base } from "@/set-piece";
 import { CombativeRule } from "../models/combative";
 import { CastableRule } from "../models/castable";
 import { DivineShieldRule } from "../models/devine-shield";
+import { TauntRule } from "../models/taunt";
 
 export type RuleDict = {
     combative: CombativeRule,
     castable: CastableRule,
     divineShield: DivineShieldRule,
+    taunt: TauntRule
 }
 
 export class RuleService {

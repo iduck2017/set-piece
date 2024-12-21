@@ -16,6 +16,7 @@ import {
 } from "@/set-piece";
 import { DivineShieldModel, DivineShieldRule } from "./devine-shield";
 import { RuleService } from "../services/rule";
+import { TauntModel, TauntRule } from "./taunt";
 
 export type MinionDef<
     T extends Partial<Def> = Def
@@ -29,6 +30,7 @@ export type MinionDef<
     childDict: {
         combative: CombativeModel   
         divineShield: DivineShieldModel
+        taunt: TauntModel
     },
 } & T>
 
@@ -43,7 +45,8 @@ export abstract class MinionModel<
         rule: {
             combative: CombativeRule,
             castable: CastableRule,
-            divineShield?: DivineShieldRule
+            divineShield?: DivineShieldRule,
+            taunt?: TauntRule,
             card: Omit<CardRule, 'type'>
         }
     ) {
@@ -71,6 +74,7 @@ export abstract class MinionModel<
             castable: { code: 'castable' },
             combative: { code: 'combative-feature' },
             divineShield: { code: 'divine-shield-feature' },
+            taunt: { code: 'taunt-feature' },
             ...props.childDict
         };
         return {

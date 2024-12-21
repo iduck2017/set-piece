@@ -15,7 +15,7 @@ he minion's attributes, effects, description, and flavor text are provided in th
 
     + Do not use Chinese Comment in the code, write in English
 
-    + You need to add my prompts as block comments in the card file, translated to English
+    + You **must** add my prompts as block comments in the card file, translated to English
 
     + You can only modify files under hearthstone-extension-classic, modifying files in other directories is forbidden
     

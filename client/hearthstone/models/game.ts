@@ -24,7 +24,8 @@ type QueryTargetListOptions = {
     excludePlayer?: boolean,
     excludeTarget?: Model,
     excludePosition?: PlayerModel,
-    requiredRaces?: RaceType[]
+    requiredRaces?: RaceType[],
+    considerTaunt?: boolean
 }
 
 @FactoryService.useProduct('game')
@@ -69,7 +70,8 @@ export class GameModel extends NodeModel<GameDef> {
             excludeTarget,
             requiredRaces,
             excludePosition,
-            excludePlayer
+            excludePlayer,
+            considerTaunt
         } = options;
         const readPlayer = this.childDict.redPlayer;
         const bluePlayer = this.childDict.bluePlayer;
@@ -95,6 +97,16 @@ export class GameModel extends NodeModel<GameDef> {
         }
         if (excludePlayer) {
             result = result.filter(item => item.code !== 'player');
+        }
+        if (considerTaunt) {
+            const tauntMinionList = result.filter(item => {
+                if (item.code === 'player') return true;
+                const taunt = item.childDict.taunt;
+                return taunt.stateDict.isActived;
+            });
+            if (tauntMinionList.length) {
+                result = tauntMinionList;
+            }
         }
         if (requiredRaces) {
             result = result.filter((item: MinionModel) => {
