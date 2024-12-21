@@ -18,7 +18,7 @@ export type SpellBlessingOfKingsDef = SpellDef<
     }
 })
 @FactoryService.useProduct('blessing-of-kings-spell-card')
-export class SpellBlessingOfKingsModel extends SpellModel<SpellBlessingOfKingsDef> {
+export class BlessingOfKingsModel extends SpellModel<SpellBlessingOfKingsDef> {
     constructor(props: Props<SpellBlessingOfKingsDef>) {
         const superProps = SpellModel.spellProps(props);
         super({

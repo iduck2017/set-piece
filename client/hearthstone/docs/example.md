@@ -98,7 +98,7 @@ export class BattlecryAbusiveSergeantModel extends BattlecryModel<BattlecryAbusi
     ) {
         const game = this.referDict.game;
         if (!game) return;
-        const candidateList = game.queryTargetList({
+        const candidateList = game.queryMinionAndPlayerList({
             excludePlayer: true,
             excludeTarget: this.referDict.card
         });
@@ -181,7 +181,7 @@ export type SpellBlessingOfKingsDef = SpellDef<
     }
 })
 @FactoryService.useProduct('blessing-of-kings-spell-card')
-export class SpellBlessingOfKingsModel extends SpellModel<SpellBlessingOfKingsDef> {
+export class BlessingOfKingsModel extends SpellModel<SpellBlessingOfKingsDef> {
     constructor(props: Props<SpellBlessingOfKingsDef>) {
         const superProps = SpellModel.spellProps(props);
         super({
@@ -206,7 +206,7 @@ export class SpellBlessingOfKingsModel extends SpellModel<SpellBlessingOfKingsDe
     handleCollectorCheck(targetCollectorList: TargetCollector[]) {
         const game = this.referDict.game;
         if (!game) return;
-        const candidateList = game.queryTargetList({
+        const candidateList = game.queryMinionAndPlayerList({
             excludePlayer: true,
         });
         if (!candidateList.length) return;

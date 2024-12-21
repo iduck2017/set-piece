@@ -19,7 +19,7 @@ export type SpellArcaneMissilesDef = SpellDef<
     }
 })
 @FactoryService.useProduct('arcane-missiles-spell-card')
-export class SpellArcaneMissilesModel extends SpellModel<SpellArcaneMissilesDef> {
+export class ArcaneMissilesModel extends SpellModel<SpellArcaneMissilesDef> {
     constructor(props: Props<SpellArcaneMissilesDef>) {
         const superProps = SpellModel.spellProps(props);
         super({
@@ -33,7 +33,7 @@ export class SpellArcaneMissilesModel extends SpellModel<SpellArcaneMissilesDef>
         });
     }
 
-    protected cast(targetCollectorList: TargetCollector[]) {
+    protected cast() {
         const game = this.referDict.game;
         if (!game) return;
         for (let i = 0; i < 3; i++) {

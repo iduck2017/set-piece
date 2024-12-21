@@ -18,16 +18,13 @@ export type CombativeRule = {
     health: number;
     attack: number;
     races: Readonly<RaceType[]>;
-
     isRush?: boolean;
     isCharge?: boolean;
     isWindfury?: boolean;
     isTaunt?: boolean;
     isStealth?: boolean;
     isFrozen?: boolean;
-
     cantAttack?: boolean;
-    hasDivineShield?: boolean;
 }
 
 
@@ -41,7 +38,6 @@ export type CombativeDef = FeatureDef<CustomDef<{
         isAlive: boolean;
         isStealth: boolean;
         isFrozen: boolean;
-        hasDivineShield: boolean;
     };
     paramDict: {
         maxHealth: number;
@@ -86,7 +82,6 @@ export class CombativeModel extends FeatureModel<CombativeDef> {
         const {
             health, 
             attack, 
-            hasDivineShield, 
             races,
             isRush, 
             isCharge, 
@@ -100,7 +95,6 @@ export class CombativeModel extends FeatureModel<CombativeDef> {
             stateDict: {
                 healthWaste: 0,
                 isAlive: true,
-                hasDivineShield: hasDivineShield ?? false,
                 actionPoint: (isRush || isCharge) ? 1 : 0,
                 isStealth: isStealth ?? false,
                 isFrozen: false,

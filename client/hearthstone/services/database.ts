@@ -2,6 +2,7 @@ import { Base, Random, Chunk, Def, FactoryService } from "@/set-piece";
 import { CombativeRule } from "../models/combative";
 import { CardModel, CardRule, CardType } from "../models/card";
 import { CastableRule } from "../models/castable";
+import { DivineShieldRule } from "../models/devine-shield";
 
 export enum KeywordType {
     Battlecry = 'battlecry',
@@ -71,25 +72,28 @@ export class DataBaseService {
     }
     
     static useCard(config: 
-        Partial<
-            CombativeRule & 
-            CastableRule
-        > & 
+        Partial<{
+            type: CardType,
+            combative: CombativeRule,
+            castable: CastableRule,
+            divineShield: DivineShieldRule
+        }> & 
         CardRule) {
         return function (Type: Base.Class<CardModel>) {
-  
             const { 
-                races = [],
-                manaCost, 
-                attack, 
-                health,
-                isCharge,
-                isRush,
-                isWindfury,
-                isTaunt,
-                hasDivineShield,
+                combative,
+                castable,
+                divineShield,
                 type
             } = config;
+            const {
+                health,
+                attack
+            } = combative || {};
+            const {
+                manaCost
+            } = castable || {};
+
             const {
                 _register: register,
                 _cardProductInfo: cardProductInfo
@@ -99,19 +103,13 @@ export class DataBaseService {
                 sortByAttack,
                 sortByHealth,
                 sortByManaCost,
-                sortByRace,
                 sortByType
             } = cardProductInfo;
 
             const keywordList = [];
-            if (isCharge) keywordList.push(KeywordType.Charge);
-            if (isRush) keywordList.push(KeywordType.Rush);
-            if (isWindfury) keywordList.push(KeywordType.Windfury);
-            if (isTaunt) keywordList.push(KeywordType.Taunt);
-            if (hasDivineShield) keywordList.push(KeywordType.DivineShield);
+            if (divineShield?.isActived) keywordList.push(KeywordType.DivineShield);
 
             register(Type, selectAll);
-            for (const race of races) register(Type, sortByRace, race);
             if (manaCost !== undefined) register(Type, sortByManaCost, manaCost);
             if (attack !== undefined) register(Type, sortByAttack, attack);
             if (health !== undefined) register(Type, sortByHealth, health);

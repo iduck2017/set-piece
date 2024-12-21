@@ -35,7 +35,7 @@ export class CastableModel extends NodeModel<CastableDef> {
                 ...props.stateDict
             },
             paramDict: {
-                curManaCost: props.stateDict?.fixManaCost || manaCost || 1
+                curManaCost: props.stateDict?.fixManaCost ?? manaCost ?? 1
             },
             childDict: {}
         });
