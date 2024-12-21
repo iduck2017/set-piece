@@ -30,7 +30,7 @@ export abstract class BuffModel<
         const combative = minion?.childDict.combative;
         if (!combative) return;
         this.bindEvent(
-            combative.eventEmitterDict.onStateAlterBefore,
+            combative.eventEmitterDict.onStateCheck,
             this._buff
         );
     }
@@ -69,7 +69,7 @@ export abstract class BuffModel<
             game.eventEmitterDict.onTurnEnd,
             () => {
                 this.unbindEvent(
-                    combative.eventEmitterDict.onStateAlterBefore,
+                    combative.eventEmitterDict.onStateCheck,
                     this._buff
                 );
             }

@@ -53,7 +53,7 @@ export type CombativeDef = FeatureDef<CustomDef<{
             source?: Model,
             damage: number
         }]
-        onDamageReceiveBefore: [CombativeModel, Mutator<{ 
+        onDamagePredict: [CombativeModel, Mutator<{ 
             isEnabled: boolean 
         }>]
         onDamageDeal: [CombativeModel, {
@@ -64,7 +64,7 @@ export type CombativeDef = FeatureDef<CustomDef<{
             health: number,
             source?: Model
         }],
-        onHealthRestoreBefore: [CombativeModel, Mutator<{ 
+        onRestorePredict: [CombativeModel, Mutator<{ 
             isEnabled: boolean 
         }>]
         onAttack: [CombativeModel, CombativeModel]
@@ -213,7 +213,7 @@ export class CombativeModel extends FeatureModel<CombativeDef> {
     @ValidatorService.useCondition(model => model.stateDict.isAlive)
     receiveDamage(damage: number, source?: Model) {
         const mutator = new Mutator({ isEnabled: true });
-        this.eventDict.onDamageReceiveBefore(this, mutator);
+        this.eventDict.onDamagePredict(this, mutator);
         if (!mutator.data.isEnabled) return;
         this.baseStateDict.healthWaste += damage;
         this.eventDict.onDamageReceive(this, {
@@ -225,7 +225,7 @@ export class CombativeModel extends FeatureModel<CombativeDef> {
     @ValidatorService.useCondition(model => model.stateDict.isAlive)
     restoreHealth(health: number, source?: Model) {
         const mutator = new Mutator({ isEnabled: true });
-        this.eventDict.onHealthRestoreBefore(this, mutator);
+        this.eventDict.onRestorePredict(this, mutator);
         if (!mutator.data.isEnabled) return;
         if (health < 0) return;
         this.baseStateDict.healthWaste -= Math.min(

@@ -54,17 +54,17 @@ export class DivineShieldModel extends FeatureModel<DivineShieldDef> {
 
     @LifecycleService.useLoader()
     @ValidatorService.useCondition(model => Boolean(model.referDict.board))
-    private _listenDamageReceiveBefore() {
+    private _listenDamagePredict() {
         const minion = this.referDict.minion;
         const combative = minion?.childDict.combative;
         if (!combative) return;
         this.bindEvent(
-            combative.eventEmitterDict.onDamageReceiveBefore,
+            combative.eventEmitterDict.onDamagePredict,
             (target, mutator) => {
                 if (!mutator.data.isEnabled) return;
                 if (!this.stateDict.isActived) return;
                 mutator.data.isEnabled = false;
-                mutator.data.isEnabled = AbortSignal;
+                mutator.lock.isEnabled = true;
                 this.baseStateDict.isActived = false;
                 this.eventDict.onBreak(minion);
             }

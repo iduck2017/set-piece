@@ -39,13 +39,13 @@ export abstract class EnrageModel<
                 if (isDamaged && !this.stateDict.isEnraged) {
                     this.baseStateDict.isEnraged = true;
                     this.bindEvent(
-                        combative.eventEmitterDict.onStateAlterBefore,
+                        combative.eventEmitterDict.onStateCheck,
                         this.enrage
                     );
                 } else if (!isDamaged && this.stateDict.isEnraged) {
                     this.baseStateDict.isEnraged = false;
                     this.unbindEvent(
-                        combative.eventEmitterDict.onStateAlterBefore,
+                        combative.eventEmitterDict.onStateCheck,
                         this.enrage
                     );
                 }

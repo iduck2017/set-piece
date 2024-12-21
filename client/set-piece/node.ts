@@ -12,7 +12,7 @@ import { Mutator } from "./utils/mutator";
 
 export type NodeEvent<M extends Model> = {
     onStateAlter: NodeEvent.OnStateAlter<M>
-    onStateAlterBefore: NodeEvent.OnStateAlterBefore<M>
+    onStateCheck: NodeEvent.OnStateCheck<M>
     onChildSpawn: NodeEvent.OnChildSpawn<M>
 }
 
@@ -21,7 +21,7 @@ export namespace NodeEvent {
         M, Readonly<Model.StateDict<M>>
     ]
     export type OnChildSpawn<M extends Model> = [M]
-    export type OnStateAlterBefore<M extends Model> = [M, Mutator<Model.ParamDict<M>>]
+    export type OnStateCheck<M extends Model> = [M, Mutator<Model.ParamDict<M>>]
 }
 
 export abstract class NodeModel<T extends Def> {
@@ -261,8 +261,11 @@ export abstract class NodeModel<T extends Def> {
             ...this._paramDict
         };
         const mutator = new Mutator({ ...this._baseParamDict });
-        this._baseEventDict.onStateAlterBefore(this, mutator);
+        this._baseEventDict.onStateCheck(this, mutator);
         this._paramDict = mutator.data;
+        if (this.code === 'combative') {
+            console.log('[combative-state-alter]', this._paramDict);
+        }
         this._prevStateDict = this.stateDict;
         this._baseEventDict.onStateAlter(this, prevState);
         if (recursive) {
