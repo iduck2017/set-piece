@@ -1,11 +1,12 @@
 import { Base } from "@/set-piece";
 import { CombativeRule } from "../models/combative";
 import { CastableRule } from "../models/castable";
+import { DivineShieldRule } from "../models/devine-shield";
 
 export type RuleDict = {
     combative: CombativeRule,
     castable: CastableRule,
-    // divineShield: DivineShieldRule,
+    divineShield: DivineShieldRule,
 }
 
 export class RuleService {

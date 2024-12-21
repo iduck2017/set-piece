@@ -15,7 +15,7 @@ import {
     PureDef, 
     ValidatorService
 } from "@/set-piece";
-import { DivineShieldModel } from "./devine-shield";
+import { DivineShieldModel, DivineShieldRule } from "./devine-shield";
 import { RuleService } from "../services/rule";
 
 export type MinionDef<
@@ -45,7 +45,8 @@ export abstract class MinionModel<
     static useRule(
         rule: {
             combative: CombativeRule,
-            castable: CastableRule
+            castable: CastableRule,
+            divineShield?: DivineShieldRule
         },
         isDerived?: boolean
     ) {

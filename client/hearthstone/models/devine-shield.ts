@@ -1,6 +1,12 @@
 import { CustomDef, FactoryService, LifecycleService, Props, ValidatorService } from "@/set-piece";
 import { MinionModel } from "./minion";
 import { FeatureDef, FeatureModel } from "./feature";
+import { RuleService } from "../services/rule";
+import { AbortSignal } from "../utils/mutator";
+
+export type DivineShieldRule = {
+    isActived: boolean;
+}
 
 export type DivineShieldDef = FeatureDef<CustomDef<{
     code: 'divine-shield-feature',
@@ -17,10 +23,16 @@ export type DivineShieldDef = FeatureDef<CustomDef<{
 @FactoryService.useProduct('divine-shield-feature')
 export class DivineShieldModel extends FeatureModel<DivineShieldDef> {
     constructor(props: Props<DivineShieldDef>) {
+        const rule = RuleService.ruleInfo.get(
+            props.parent.constructor
+        )?.divineShield;
+        const {
+            isActived
+        } = rule || {};
         super({
             ...props,
             stateDict: {
-                isActived: false
+                isActived: isActived ?? false
             },
             paramDict: {
                 name: 'Divine Shield',
@@ -41,9 +53,20 @@ export class DivineShieldModel extends FeatureModel<DivineShieldDef> {
     }
 
     @LifecycleService.useLoader()
-    private _listenDamageReceive(options: { enable: boolean }) {
+    @ValidatorService.useCondition(model => Boolean(model.referDict.board))
+    private _listenDamageReceiveBefore() {
         const minion = this.referDict.minion;
-        if (!minion) return;
-        const combative = minion.childDict.combative;
+        const combative = minion?.childDict.combative;
+        if (!combative) return;
+        this.bindEvent(
+            combative.eventEmitterDict.onDamageReceiveBefore,
+            (target, mutator) => {
+                if (!mutator.editor.isEnabled) return;
+                mutator.editor.isEnabled = false;
+                mutator.editor.isEnabled = AbortSignal;
+                this.baseStateDict.isActived = false;
+                this.eventDict.onBreak(minion);
+            }
+        );
     }
 }

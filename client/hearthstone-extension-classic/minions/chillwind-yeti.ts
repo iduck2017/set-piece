@@ -15,12 +15,12 @@ export type ChillwindYetiDef = MinionDef<
 
 @MinionModel.useRule({
     combative: {
-        health: 4,
+        health: 5,
         attack: 4,
         races: []
     },
     castable: {
-        manaCost: 5
+        manaCost: 4
     }
 })
 @FactoryService.useProduct('chillwind-yeti-minion-card')

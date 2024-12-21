@@ -12,6 +12,7 @@ import { PlayerModel } from "./player";
 import { TargetCollector } from "../types/collector";
 import { FeatureDef, FeatureModel } from "./feature";
 import { RuleService } from "../services/rule";
+import { Mutator } from "../utils/mutator";
 
 export type CombativeRule = {
     health: number;
@@ -28,6 +29,7 @@ export type CombativeRule = {
     cantAttack?: boolean;
     hasDivineShield?: boolean;
 }
+
 
 export type CombativeDef = FeatureDef<CustomDef<{
     code: 'combative-feature';
@@ -52,6 +54,7 @@ export type CombativeDef = FeatureDef<CustomDef<{
     eventDict: {
         onDie: [CombativeModel] 
         onDamageReceive: [CombativeModel, number]
+        onDamageReceiveBefore: [CombativeModel, Mutator<{ isEnabled: boolean }>]
         onDamageDeal: [CombativeModel, number]
         onAttack: [CombativeModel, CombativeModel]
         onDestroy: [CombativeModel]
@@ -71,7 +74,9 @@ export class CombativeModel extends FeatureModel<CombativeDef> {
     }
 
     constructor(props: Props<CombativeDef>) {
-        const rule = RuleService.ruleInfo.get(props.parent.constructor)?.combative;
+        const rule = RuleService.ruleInfo.get(
+            props.parent.constructor
+        )?.combative;
         const {
             health, 
             attack, 
@@ -192,6 +197,10 @@ export class CombativeModel extends FeatureModel<CombativeDef> {
     @ValidatorService.useCondition(model => model.stateDict.isAlive)
     receiveDamage(damage: number, source: Model) {
         source;
+        const mutator = new Mutator({ isEnabled: true });
+        this.eventDict.onDamageReceiveBefore(this, mutator);
+        console.log('[mutator]', { ...mutator.result });
+        if (!mutator.result.isEnabled) return;
         this.baseStateDict.healthWaste += damage;
         this.eventDict.onDamageReceive(this, damage);
     }

@@ -14,23 +14,16 @@ interface SelectProps {
 
 export const Select: React.FC<SelectProps> = ({
     options,
-    value,
     onChange
 }) => {
     const [ searchText, setSearchText ] = useState('');
     const [ isOpen, setIsOpen ] = useState(false);
     const id = useRef(FactoryService.uuid);
 
-    const selectedOption = useMemo(() => 
-        options.find(option => option.value === value),
-    [ options, value ]);
-
     const filteredOptions = useMemo(() => 
         options.filter(option => 
             option.label.toLowerCase().includes(searchText.toLowerCase())),
     [ options, searchText ]);
-
-    console.log(selectedOption, filteredOptions);
 
     const handleSelect = useCallback((value: string) => {
         onChange?.(value);
