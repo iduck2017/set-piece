@@ -11,7 +11,7 @@ export type BuffDef<
         modAttack?: number;
         modHealth?: number;
         isFixed?: boolean;
-        isDisposedOnRoundEnd?: boolean;
+        isDisposedOnTurnEnd?: boolean;
     }
 } & T>;
 
@@ -59,15 +59,14 @@ export abstract class BuffModel<
 
     @LifecycleService.useLoader()
     @ValidatorService.useCondition(model => Boolean(model.referDict.minion))
-    private _listenRoundEnd() {
-        if (!this.stateDict.isDisposedOnRoundEnd) return;
+    private _listenTurnEnd() {
+        if (!this.stateDict.isDisposedOnTurnEnd) return;
         const minion = this.referDict.minion;
         const combative = minion?.childDict.combative;
         const game = this.referDict.game;
         if (!combative || !game) return;
-        console.log('[handle-round-end]', this);
         this.bindEvent(
-            game.eventEmitterDict.onRoundEnd,
+            game.eventEmitterDict.onTurnEnd,
             () => {
                 this.unbindEvent(
                     combative.eventEmitterDict.onParamCheck,

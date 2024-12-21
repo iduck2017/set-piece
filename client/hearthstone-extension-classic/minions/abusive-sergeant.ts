@@ -1,7 +1,7 @@
 /**
  * @propmt
  * Abusive Sergeant 1/2/1 Battlecry: Give a minion +2 Attack this turn
- * use GameModel event onRoundEnd 
+ * use GameModel event onTurnEnd 
  */
 import { CardDef, CardType } from "@/hearthstone/models/card";
 import { MinionModel } from "@/hearthstone/models/minion";

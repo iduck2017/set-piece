@@ -27,7 +27,7 @@ export class AngryChickenEnrageModel extends EnrageModel<FeatureAngryChickenDef>
         });
     }
 
-    protected handleEnrage(
+    protected enrage(
         target: CombativeModel,
         param: Mutable<Model.ParamDict<CombativeModel>>
     ) {

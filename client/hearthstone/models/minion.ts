@@ -98,7 +98,7 @@ export abstract class MinionModel<
 
     @LifecycleService.useLoader()
     @ValidatorService.useCondition(model => Boolean(model.referDict.board))
-    private _handleHealthAlter() {
+    private _listenHealthAlter() {
         this.bindEvent(
             this.childDict.combative.eventEmitterDict.onDie,
             () => {

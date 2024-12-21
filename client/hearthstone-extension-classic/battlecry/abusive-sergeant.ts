@@ -23,7 +23,7 @@ export class AbusiveSergeantBattlecryModel extends BattlecryModel<BattlecryAbusi
         });
     }
 
-    protected handleBattlecry(
+    protected battlecry(
         target: CardModel,
         targetCollectorList: TargetCollector[]
     ): void {

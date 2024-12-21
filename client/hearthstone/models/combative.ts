@@ -144,11 +144,11 @@ export class CombativeModel extends FeatureModel<CombativeDef> {
     
     @LifecycleService.useLoader()
     @ValidatorService.useCondition(model => Boolean(model.referDict.game))
-    private _listenRoundStart() {
+    private _listenTurnStart() {
         const game = this.referDict.game;
         if (!game) return;
         this.bindEvent(
-            game.eventEmitterDict.onRoundStart,
+            game.eventEmitterDict.onTurnEnd,
             () => {
                 this.baseStateDict.actionPoint = 
                     this.stateDict.maxActionPoint;

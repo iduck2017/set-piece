@@ -7,15 +7,15 @@ import { CustomDef, FactoryService, Model, NodeModel, Props } from "@/set-piece"
 type GameDef = CustomDef<{
     code: 'game',
     stateDict: {
-        round: number
+        turn: number
     }
     childDict: {
         redPlayer: PlayerModel,
         bluePlayer: PlayerModel
     }
     eventDict: {
-        onRoundEnd: []
-        onRoundStart: []
+        onTurnEnd: []
+        onTurnStart: []
     }
     parent: AppModel
 }>
@@ -31,17 +31,17 @@ export class GameModel extends NodeModel<GameDef> {
                 ...props.childDict
             },
             stateDict: {
-                round: 0,
+                turn: 0,
                 ...props.stateDict
             },
             paramDict: {}
         });
     } 
 
-    nextRound() {
-        this.eventDict.onRoundEnd();
-        this.baseStateDict.round += 1;
-        this.eventDict.onRoundStart();
+    nextTurn() {
+        this.eventDict.onTurnEnd();
+        this.baseStateDict.turn += 1;
+        this.eventDict.onTurnStart();
     }
 
     queryMinionAndPlayerList(

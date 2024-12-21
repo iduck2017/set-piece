@@ -18,7 +18,7 @@ export class AbusiveSergeantBuffModel extends BuffModel<BuffAbusiveSergeantDef> 
                 name: 'Abusive Sergeant\'s Buff',
                 desc: 'Give a minion +2 Attack this turn.',
                 modAttack: 2,
-                isDisposedOnRoundEnd: true
+                isDisposedOnTurnEnd: true
             },
             stateDict: {},
             childDict: {}

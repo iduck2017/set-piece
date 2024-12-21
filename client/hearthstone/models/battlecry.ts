@@ -14,7 +14,7 @@ export abstract class BattlecryModel<
         return FeatureModel.featureProps(props);
     }
 
-    protected abstract handleBattlecry(
+    protected abstract battlecry(
         target: CardModel,
         targetCollectorList: TargetCollector[]
     ): void;
@@ -27,7 +27,7 @@ export abstract class BattlecryModel<
         if (!minion) return;
         this.bindEvent(
             minion.eventEmitterDict.onBattlecry,
-            this.handleBattlecry
+            this.battlecry
         );
     }
 

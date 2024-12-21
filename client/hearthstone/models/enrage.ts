@@ -19,7 +19,7 @@ export abstract class EnrageModel<
         return FeatureModel.featureProps(props);
     }
 
-    protected abstract handleEnrage(
+    protected abstract enrage(
         target: CombativeModel,
         param: Mutable<Model.ParamDict<CombativeModel>>
     ): void;
@@ -40,13 +40,13 @@ export abstract class EnrageModel<
                     this.baseStateDict.isEnraged = true;
                     this.bindEvent(
                         combative.eventEmitterDict.onParamCheck,
-                        this.handleEnrage
+                        this.enrage
                     );
                 } else if (!isDamaged && this.stateDict.isEnraged) {
                     this.baseStateDict.isEnraged = false;
                     this.unbindEvent(
                         combative.eventEmitterDict.onParamCheck,
-                        this.handleEnrage
+                        this.enrage
                     );
                 }
             }

@@ -22,7 +22,7 @@ export class ElvenArcherBattlecryModel extends BattlecryModel<BattlecryElvenArch
         });
     }
 
-    protected handleBattlecry(
+    protected battlecry(
         target: CardModel,
         targetCollectorList: TargetCollector[]
     ) {
