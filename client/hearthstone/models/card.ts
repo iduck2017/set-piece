@@ -18,6 +18,7 @@ import { DeckModel } from "./deck";
 import { HandModel } from "./hand";
 import { GraveyardModel } from "./graveyard";
 import { TargetCollector, TargetCollectorInfo } from "../types/collector";
+import { ClassNameType } from "../services/database";
 
 export enum CardType {
     Minion = 'minion',

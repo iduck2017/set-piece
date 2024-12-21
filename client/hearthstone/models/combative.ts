@@ -53,11 +53,20 @@ export type CombativeDef = FeatureDef<CustomDef<{
             source?: Model,
             damage: number
         }]
-        onDamageReceiveBefore: [CombativeModel, Mutator<{ isEnabled: boolean }>]
+        onDamageReceiveBefore: [CombativeModel, Mutator<{ 
+            isEnabled: boolean 
+        }>]
         onDamageDeal: [CombativeModel, {
             damage: number,
             target?: Model
         }]
+        onHealthRestore: [CombativeModel, {
+            health: number,
+            source?: Model
+        }],
+        onHealthRestoreBefore: [CombativeModel, Mutator<{ 
+            isEnabled: boolean 
+        }>]
         onAttack: [CombativeModel, CombativeModel]
         onDestroy: [CombativeModel]
     },
@@ -113,6 +122,7 @@ export class CombativeModel extends FeatureModel<CombativeDef> {
             childDict: {}
         });
     }
+
 
     @LifecycleService.useLoader()
     @ValidatorService.useCondition(model => Boolean(model.referDict.board))
@@ -208,6 +218,22 @@ export class CombativeModel extends FeatureModel<CombativeDef> {
         this.baseStateDict.healthWaste += damage;
         this.eventDict.onDamageReceive(this, {
             damage,
+            source
+        });
+    }
+
+    @ValidatorService.useCondition(model => model.stateDict.isAlive)
+    restoreHealth(health: number, source?: Model) {
+        const mutator = new Mutator({ isEnabled: true });
+        this.eventDict.onHealthRestoreBefore(this, mutator);
+        if (!mutator.result.isEnabled) return;
+        if (health < 0) return;
+        this.baseStateDict.healthWaste -= Math.min(
+            health,
+            this.stateDict.healthWaste
+        );
+        this.eventDict.onHealthRestore(this, {
+            health,
             source
         });
     }

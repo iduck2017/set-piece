@@ -20,6 +20,19 @@ export enum RaceType {
     Demon = 'demon',
 }
 
+
+export enum ClassNameType {
+    Warrior = 'warrior',
+    Paladin = 'paladin',
+    Hunter = 'hunter',
+    Rogue = 'rogue',
+    Priest = 'priest',
+    Shaman = 'shaman',
+    Mage = 'mage',
+    Warlock = 'warlock',
+    Druid = 'druid',
+}
+
 export class DataBaseService {
     private constructor() {}
 
@@ -31,6 +44,7 @@ export class DataBaseService {
         sortByHealth: Record<string, Base.List<Base.Class>>,
         sortByKeyword: Partial<Record<KeywordType, Base.List<Base.Class>>>,
         sortByType: Partial<Record<CardType, Base.List<Base.Class>>>,
+        sortByClassName: Partial<Record<ClassNameType, Base.List<Base.Class>>>
     } = {   
             selectAll: [],
             sortByRace: {},
@@ -38,7 +52,8 @@ export class DataBaseService {
             sortByAttack: {},
             sortByHealth: {},
             sortByKeyword: {},
-            sortByType: {}
+            sortByType: {},
+            sortByClassName: {}
         };
     static get cardProductInfo() {
         const result = { ...DataBaseService._cardProductInfo };
