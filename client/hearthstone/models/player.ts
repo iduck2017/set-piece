@@ -52,7 +52,7 @@ export class PlayerModel extends NodeModel<PlayerDef> {
                 hand: { code: 'hand' },
                 board: { code: 'board' },
                 graveyard: { code: 'graveyard' },
-                combative: { code: 'combative' },
+                combative: { code: 'combative-feature' },
                 ...props.childDict
             },
             stateDict: {},

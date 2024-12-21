@@ -1,4 +1,4 @@
-import { Base, CustomDef, FactoryService, Model, NodeModel, Props } from "@/set-piece";
+import { CustomDef, FactoryService, Model, NodeModel, Props } from "@/set-piece";
 import { RuleService } from "../services/rule";
 
 export type CastableRule = {

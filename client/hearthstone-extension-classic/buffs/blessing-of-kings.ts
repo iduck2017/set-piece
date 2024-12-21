@@ -3,11 +3,11 @@ import { BuffDef, BuffModel } from "@/hearthstone/models/buff";
 
 export type BuffBlessingOfKingsDef = BuffDef<
     CustomDef<{
-        code: 'buff-blessing-of-kings'
+        code: 'blessing-of-kings-buff-feature'
     }>
 >
 
-@FactoryService.useProduct('buff-blessing-of-kings')
+@FactoryService.useProduct('blessing-of-kings-buff-feature')
 export class BuffBlessingOfKingsModel extends BuffModel<BuffBlessingOfKingsDef> {
     constructor(props: Props<BuffBlessingOfKingsDef>) {
         const buffProps = BuffModel.buffProps(props);

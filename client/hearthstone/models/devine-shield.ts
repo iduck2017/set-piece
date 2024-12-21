@@ -3,7 +3,7 @@ import { MinionModel } from "./minion";
 import { FeatureDef, FeatureModel } from "./feature";
 
 export type DivineShieldDef = FeatureDef<CustomDef<{
-    code: 'divine-shield',
+    code: 'divine-shield-feature',
     stateDict: {
         isActived: boolean;
     },
@@ -14,7 +14,7 @@ export type DivineShieldDef = FeatureDef<CustomDef<{
     parent: MinionModel
 }>>
 
-@FactoryService.useProduct('divine-shield')
+@FactoryService.useProduct('divine-shield-feature')
 export class DivineShieldModel extends FeatureModel<DivineShieldDef> {
     constructor(props: Props<DivineShieldDef>) {
         super({

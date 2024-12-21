@@ -30,7 +30,7 @@ export type CombativeRule = {
 }
 
 export type CombativeDef = FeatureDef<CustomDef<{
-    code: 'combative';
+    code: 'combative-feature';
     stateDict: {
         readonly fixHealth?: number;
         readonly fixAttack?: number;
@@ -59,7 +59,7 @@ export type CombativeDef = FeatureDef<CustomDef<{
     parent: PlayerModel | MinionModel
 }>>
 
-@FactoryService.useProduct('combative')
+@FactoryService.useProduct('combative-feature')
 export class CombativeModel extends FeatureModel<CombativeDef> {
 
     public get stateDict() {

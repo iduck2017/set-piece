@@ -6,14 +6,14 @@ import { Mutable } from "utility-types";
 
 export type FeatureAngryChickenDef = EnrageDef<
     CustomDef<{
-        code: 'feature-angry-chicken',
+        code: 'angry-chicken-feature',
         stateDict: {
             isEnraged: boolean
         }
     }>
 >
 
-@FactoryService.useProduct('feature-angry-chicken')
+@FactoryService.useProduct('angry-chicken-feature')
 export class FeatureAngryChickenModel extends EnrageModel<FeatureAngryChickenDef> {
     constructor(props: Props<FeatureAngryChickenDef>) {
         super({

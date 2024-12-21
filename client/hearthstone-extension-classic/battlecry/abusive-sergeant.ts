@@ -7,11 +7,11 @@ import { BuffAbusiveSergeantModel } from "../buffs/abusive-sergeant";
 
 export type BattlecryAbusiveSergeantDef = FeatureDef<
     CustomDef<{
-        code: 'battlecry-abusive-sergeant',
+        code: 'abusive-sergeant-battlecry-feature',
     }>
 >
 
-@FactoryService.useProduct('battlecry-abusive-sergeant')
+@FactoryService.useProduct('abusive-sergeant-battlecry-feature')
 export class BattlecryAbusiveSergeantModel extends BattlecryModel<BattlecryAbusiveSergeantDef> {
     constructor(props: Props<BattlecryAbusiveSergeantDef>) {
         super({
@@ -38,7 +38,7 @@ export class BattlecryAbusiveSergeantModel extends BattlecryModel<BattlecryAbusi
         if (!result) return;
         result.childDict.featureList.accessFeature<
             BuffAbusiveSergeantModel
-        >('buff-abusive-sergeant');
+        >('abusive-sergeant-buff-feature');
     }
 
     protected handleCollectorCheck(

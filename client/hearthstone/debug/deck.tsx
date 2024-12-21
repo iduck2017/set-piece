@@ -8,7 +8,6 @@ import { Select } from "./select";
 import { DataBaseService } from "../services/database";
 import { FactoryService } from "@/set-piece";
 
-
 export function DeckComp(props: {
     model: DeckModel
 }) {
@@ -27,7 +26,7 @@ export function DeckComp(props: {
             <>
                 <Select 
                     options={options}
-                    onChange={(value) => {
+                    onChange={(value: `${string}-card`) => {
                         console.log(value);
                         props.model.setTemplateCode(value);
                     }}

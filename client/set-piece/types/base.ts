@@ -21,3 +21,6 @@ export namespace Dict {
         { [K in RequiredKeys<M> as M[K] extends never ? never : K]: M[K] } & 
         { [K in OptionalKeys<M> as M[K] extends never ? never : K]?: M[K] }
 }
+
+export type SuffixOf<T extends string> = T extends `${string}-${infer F}`
+  ? T | F | SuffixOf<F> : T;

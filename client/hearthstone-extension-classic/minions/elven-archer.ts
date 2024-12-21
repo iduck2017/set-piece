@@ -11,7 +11,7 @@ import { BattlecryElvenArcherModel } from "../battlecry/elven-archer";
 
 export type ElvenArcherDef = MinionDef<
     CustomDef<{
-        code: 'minion-elven-archer',
+        code: 'elven-archer-minion-card',
         childDict: {
             battlecry: BattlecryElvenArcherModel
         }
@@ -28,7 +28,7 @@ export type ElvenArcherDef = MinionDef<
         manaCost: 1
     }
 })
-@FactoryService.useProduct('minion-elven-archer')
+@FactoryService.useProduct('elven-archer-minion-card')
 export class ElvenArcherModel extends MinionModel<ElvenArcherDef> {
     constructor(props: Props<ElvenArcherDef>) {
         const superProps = MinionModel.minionProps(props);
@@ -41,7 +41,7 @@ export class ElvenArcherModel extends MinionModel<ElvenArcherDef> {
             },
             stateDict: {},
             childDict: {
-                battlecry: { code: 'battlecry-elven-archer' },
+                battlecry: { code: 'elven-archer-battlecry-feature' },
                 ...superProps.childDict
             }
         });

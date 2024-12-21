@@ -33,7 +33,7 @@ export type CardRule = {
 export type CardDef<
     T extends Def = Def
 > = CustomDef<{
-    code: string;
+    code: `${string}-card`;
     stateDict: {
     },
     paramDict: {

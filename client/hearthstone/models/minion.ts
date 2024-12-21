@@ -22,7 +22,7 @@ export type MinionDef<
     T extends Def = Def
 > = CardDef<
     CustomDef<{
-        code: string,
+        code: `${string}-minion-card`,
         paramDict: {
         },
         eventDict: {
@@ -68,7 +68,7 @@ export abstract class MinionModel<
         >> = {
             ...superProps.childDict,
             castable: { code: 'castable' },
-            combative: { code: 'combative' },
+            combative: { code: 'combative-feature' },
             ...props.childDict
         };
         return {

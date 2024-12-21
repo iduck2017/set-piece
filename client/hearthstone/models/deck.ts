@@ -7,7 +7,7 @@ import { CustomDef, FactoryService, Model, NodeModel, Props, ValidatorService } 
 type DeckDef = CustomDef<{
     code: 'deck',
     stateDict: {
-        templateCode?: string,
+        templateCode?: `${string}-card`,
     },
     paramDict: {},
     childList: CardModel[],
@@ -32,7 +32,7 @@ export class DeckModel extends NodeModel<DeckDef> {
         });
     }
 
-    setTemplateCode(templateCode: string) {
+    setTemplateCode(templateCode: `${string}-card`) {
         this.baseStateDict.templateCode = templateCode;
     }
 

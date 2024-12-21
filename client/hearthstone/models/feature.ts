@@ -30,7 +30,7 @@ export type FeatureListDef = CustomDef<{
 export type FeatureDef<
     T extends Def = Def
 > = CustomDef<{
-    code: string,
+    code: `${string}-feature`,
     stateDict: {
     },
     paramDict: {
@@ -70,7 +70,6 @@ export class FeatureListModel extends NodeModel<FeatureListDef> {
 export abstract class FeatureModel<
     T extends FeatureDef = FeatureDef
 > extends NodeModel<T> {
-    
     private get _minion(): MinionModel<MinionDef<PureDef>> | undefined {
         return this.queryParent<MinionModel>(
             undefined,

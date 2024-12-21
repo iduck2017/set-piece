@@ -6,11 +6,11 @@ import { MinionModel } from "@/hearthstone/models/minion";
 
 export type BattlecryElvenArcherDef = BattlecryDef<
     CustomDef<{
-        code: 'battlecry-elven-archer'
+        code: 'elven-archer-battlecry-feature'
     }>
 >
 
-@FactoryService.useProduct('battlecry-elven-archer')
+@FactoryService.useProduct('elven-archer-battlecry-feature')
 export class BattlecryElvenArcherModel extends BattlecryModel<BattlecryElvenArcherDef> {
     constructor(props: Props<BattlecryElvenArcherDef>) {
         super({

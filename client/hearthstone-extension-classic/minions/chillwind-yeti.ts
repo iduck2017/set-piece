@@ -9,7 +9,7 @@ import { MinionDef, MinionModel } from "@/hearthstone/models/minion";
 
 export type ChillwindYetiDef = MinionDef<
     CustomDef<{
-        code: 'minion-chillwind-yeti'
+        code: 'chillwind-yeti-minion-card'
     }>
 >
 
@@ -23,7 +23,7 @@ export type ChillwindYetiDef = MinionDef<
         manaCost: 5
     }
 })
-@FactoryService.useProduct('minion-chillwind-yeti')
+@FactoryService.useProduct('chillwind-yeti-minion-card')
 export class ChillwindYetiModel extends MinionModel<ChillwindYetiDef> {
     constructor(props: Props<ChillwindYetiDef>) {
         const superProps = MinionModel.minionProps(props);

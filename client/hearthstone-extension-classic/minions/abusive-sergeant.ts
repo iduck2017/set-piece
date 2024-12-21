@@ -11,7 +11,7 @@ import { CustomDef, Def, FactoryService, Props } from "@/set-piece";
 
 export type AbusiveSergeantDef = MinionDef<
     CustomDef<{
-        code: 'minion-abusive-sergeant',
+        code: 'abusive-sergeant-minion-card',
         childDict: {
             battlecry: BattlecryAbusiveSergeantModel
         }
@@ -28,7 +28,7 @@ export type AbusiveSergeantDef = MinionDef<
         manaCost: 1
     }
 })
-@FactoryService.useProduct('minion-abusive-sergeant')
+@FactoryService.useProduct('abusive-sergeant-minion-card')
 export class AbusiveSergeantModel extends MinionModel<AbusiveSergeantDef> {
     constructor(props: Props<AbusiveSergeantDef & CardDef & MinionDef>) {
         const superProps = MinionModel.minionProps(props);
@@ -41,7 +41,7 @@ export class AbusiveSergeantModel extends MinionModel<AbusiveSergeantDef> {
                 flavor: 'ADD ME TO YOUR DECK, MAGGOT!'
             },
             childDict: {
-                battlecry: { code: 'battlecry-abusive-sergeant' },
+                battlecry: { code: 'abusive-sergeant-battlecry-feature' },
                 ...superProps.childDict
             }
         });

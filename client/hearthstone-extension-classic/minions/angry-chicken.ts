@@ -12,7 +12,7 @@ import { RaceType } from "@/hearthstone/services/database";
 
 export type AngryChickenDef = MinionDef<
     CustomDef<{
-        code: 'minion-angry-chicken',
+        code: 'angry-chicken-minion-card',
         childDict: {
             feature: FeatureAngryChickenModel
         }
@@ -29,7 +29,7 @@ export type AngryChickenDef = MinionDef<
         manaCost: 1
     }
 })
-@FactoryService.useProduct('minion-angry-chicken')
+@FactoryService.useProduct('angry-chicken-minion-card')
 export class AngryChickenModel extends MinionModel<AngryChickenDef> {
     constructor(props: Props<AngryChickenDef>) {
         const superProps = MinionModel.minionProps(props);
@@ -42,7 +42,7 @@ export class AngryChickenModel extends MinionModel<AngryChickenDef> {
             },
             stateDict: {},
             childDict: {
-                feature: { code: 'feature-angry-chicken' },
+                feature: { code: 'angry-chicken-feature' },
                 ...superProps.childDict
             }
         });

@@ -23,7 +23,7 @@ export class DemoModel extends NodeModel<DemoDef> {
             ...props,
             childDict: { 
                 bunny: { 
-                    code: 'animal-bunny', 
+                    code: 'bunny-animal', 
                     childDict: {
                         reproductive: {
                             code: 'reproductive',

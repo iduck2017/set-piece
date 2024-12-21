@@ -18,7 +18,7 @@ export type SpellDef<
     T extends Def = Def
 > = CardDef<
     CustomDef<{
-        code: string,
+        code: `${string}-spell-card`,
         paramDict: {
         },
         eventDict: {

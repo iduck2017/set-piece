@@ -3,7 +3,7 @@ import { MinionDef, MinionModel } from "@/hearthstone/models/minion";
 
 export type WispDef = MinionDef<
     CustomDef<{
-        code: 'minion-wisp',
+        code: 'wisp-minion-card',
     }>
 >
 
@@ -17,7 +17,7 @@ export type WispDef = MinionDef<
         manaCost: 0
     }
 })
-@FactoryService.useProduct('minion-wisp') 
+@FactoryService.useProduct('wisp-minion-card') 
 export class WispModel extends MinionModel<WispDef> {
     constructor(props: Props<WispDef>) {
         const superProps = MinionModel.minionProps(props);

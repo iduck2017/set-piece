@@ -8,7 +8,7 @@ import { BuffBlessingOfKingsModel } from "../buffs/blessing-of-kings";
 
 export type SpellBlessingOfKingsDef = SpellDef<
     CustomDef<{
-        code: 'spell-blessing-of-kings',
+        code: 'blessing-of-kings-spell-card',
     }>
 >
 
@@ -17,7 +17,7 @@ export type SpellBlessingOfKingsDef = SpellDef<
         manaCost: 4
     }
 })
-@FactoryService.useProduct('spell-blessing-of-kings')
+@FactoryService.useProduct('blessing-of-kings-spell-card')
 export class SpellBlessingOfKingsModel extends SpellModel<SpellBlessingOfKingsDef> {
     constructor(props: Props<SpellBlessingOfKingsDef>) {
         const superProps = SpellModel.spellProps(props);
@@ -37,7 +37,7 @@ export class SpellBlessingOfKingsModel extends SpellModel<SpellBlessingOfKingsDe
         if (!target) return;
         target.childDict.featureList.accessFeature<
             BuffBlessingOfKingsModel
-        >('buff-blessing-of-kings');
+        >('blessing-of-kings-buff-feature');
     }
 
     handleCollectorCheck(targetCollectorList: TargetCollector[]) {

@@ -1,6 +1,6 @@
 import { FactoryService } from "@/set-piece/services/factory";
 import { LifecycleService } from "@/set-piece/services/lifecycle";
-import { Base, Dict } from "@/set-piece/types/base";
+import { Base, Dict, SuffixOf } from "@/set-piece/types/base";
 import { Chunk, StrictChunk } from "@/set-piece/types/chunk";
 import { Def } from "@/set-piece/types/define";
 import { Event } from "@/set-piece/types/event";
@@ -26,7 +26,7 @@ export namespace NodeEvent {
 
 export abstract class NodeModel<T extends Def> {
     queryParent<T extends Model>(
-        code?: Model.Code<T>,
+        code?: SuffixOf<Model.Code<T>>,
         recursive?: boolean,
         validator?: ((model: Model) => boolean),
     ): T | undefined {
@@ -140,9 +140,9 @@ export abstract class NodeModel<T extends Def> {
         }
         return undefined;
     }
-    protected removeChild(
-        target: Def.ChildList<T>[number]
-    ): Model.Chunk<Def.ChildList<T>[number]> | undefined {
+    protected removeChild<C extends Def.ChildList<T>[number]>(
+        target: C
+    ): Model.Chunk<C> | undefined {
         const index = this.childList.indexOf(target);
         this.childChunkList.splice(index, 1);
         return target.chunk;

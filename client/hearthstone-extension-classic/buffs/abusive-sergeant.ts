@@ -6,11 +6,11 @@ import { BuffModel } from "@/hearthstone/models/buff";
 
 export type BuffAbusiveSergeantDef = BuffDef<
     CustomDef<{
-        code: 'buff-abusive-sergeant',
+        code: 'abusive-sergeant-buff-feature',
     }>
 >
 
-@FactoryService.useProduct('buff-abusive-sergeant')
+@FactoryService.useProduct('abusive-sergeant-buff-feature')
 export class BuffAbusiveSergeantModel extends BuffModel<BuffAbusiveSergeantDef> {
     constructor(props: Props<BuffAbusiveSergeantDef>) {
         const buffProps = BuffModel.buffProps(props);
