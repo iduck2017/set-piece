@@ -11,7 +11,7 @@ export type FeatureAngryChickenDef = EnrageDef<{
 }>
 
 @FactoryService.useProduct('angry-chicken-enrage-feature')
-export class AngryChickenEnrageModel extends EnrageModel<FeatureAngryChickenDef> {
+export class AngryChickenFeatureModel extends EnrageModel<FeatureAngryChickenDef> {
     constructor(props: Props<FeatureAngryChickenDef>) {
         super({
             ...props,

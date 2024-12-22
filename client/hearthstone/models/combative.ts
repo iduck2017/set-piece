@@ -132,8 +132,6 @@ export class CombativeModel extends FeatureModel<CombativeDef> {
         this.bindEvent(
             this.eventEmitterDict.onStateAlter,
             (target: CombativeModel, prevState) => {
-                console.log('[listen-health-alter]', { ...prevState }, { ...target.stateDict });
-
                 if (
                     prevState.curHealth > 0 && 
                     target.stateDict.curHealth <= 0
@@ -246,5 +244,12 @@ export class CombativeModel extends FeatureModel<CombativeDef> {
         this._die();
         this.eventDict.onDestroy(this);
     }
-    
+
+
+    public override debug(): void {
+        super.debug({
+            eventDependency: true,
+            childDict: true
+        });
+    }
 }

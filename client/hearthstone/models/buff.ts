@@ -8,6 +8,7 @@ export type BuffDef<
 > = FeatureDef<{
     code: `${string}-buff-feature`;
     stateDict: {
+        isActived: boolean;
     }
     paramDict: {
         readonly modAttack?: number;
@@ -22,7 +23,14 @@ export abstract class BuffModel<
     T extends BuffDef = BuffDef
 > extends FeatureModel<T> {
     static buffProps<T extends BuffDef>(props: Props<T>) {
-        return FeatureModel.featureProps(props);
+        const superProps = FeatureModel.featureProps(props);
+        return {
+            ...superProps,
+            stateDict: {
+                isActived: true,
+                ...superProps.stateDict
+            }
+        };
     }
 
     @LifecycleService.useLoader()
@@ -37,6 +45,7 @@ export abstract class BuffModel<
         );
     }
 
+    @ValidatorService.useCondition(model => model.stateDict.isActived)
     private _buff(
         target: CombativeModel, 
         param: Mutator<Model.ParamDict<CombativeModel>>
@@ -70,6 +79,7 @@ export abstract class BuffModel<
         this.bindEvent(
             game.eventEmitterDict.onTurnEnd,
             () => {
+                this.baseStateDict.isActived = false;
                 this.unbindEvent(
                     combative.eventEmitterDict.onStateCheck,
                     this._buff
@@ -77,5 +87,6 @@ export abstract class BuffModel<
             }
         );
     }
+
 
 }

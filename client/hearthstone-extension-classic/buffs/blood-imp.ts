@@ -17,7 +17,6 @@ export class BloodImpBuffModel extends BuffModel<BuffBloodImpDef> {
                 modAttack: 0,
                 modHealth: 1
             },
-            stateDict: {},
             childDict: {}
         });
     }

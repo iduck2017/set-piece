@@ -1,6 +1,5 @@
 import { Def, LifecycleService, Props, ValidatorService } from "@/set-piece";
 import { FeatureDef, FeatureModel } from "./feature";
-import { CombativeModel } from "./combative";
 import { MinionModel } from "./minion";
 
 export type OngoingEffectDef<
@@ -16,13 +15,30 @@ export abstract class OngoingEffectModel<
         return FeatureModel.featureProps(props);
     }
 
-    protected abstract handleOngoingEffect(
+    protected abstract registerOngoingEffect(
         minion: MinionModel
     ): void;
 
     protected abstract disposeOngoingEffect(
         minion: MinionModel
     ): void;
+
+    protected abstract getTargetList(): MinionModel[]
+
+    private _handleMinionSummon(minion: MinionModel) {
+        const targetList = this.getTargetList();
+        if (targetList.includes(minion)) {
+            this.registerOngoingEffect(minion);
+        }
+    }
+
+    private _handleMinionDie(minion: MinionModel) {
+        console.log('[handle-minion-die]', minion);
+        const targetList = this.getTargetList();
+        if (targetList.includes(minion)) {
+            this.disposeOngoingEffect(minion);
+        }
+    }
 
     @LifecycleService.useLoader()
     @ValidatorService.useCondition(model => Boolean(model.referDict.board))
@@ -31,7 +47,7 @@ export abstract class OngoingEffectModel<
         if (!game) return;
         this.bindEvent(
             game.eventEmitterDict.onMinionDispose,
-            this.disposeOngoingEffect
+            this._handleMinionDie
         );
     }
 
@@ -39,10 +55,26 @@ export abstract class OngoingEffectModel<
     @ValidatorService.useCondition(model => Boolean(model.referDict.board))
     private _listenMinionSummon() {
         const game = this.referDict.game;
+        const targetList = this.getTargetList();
+        for (const target of targetList) {
+            this.registerOngoingEffect(target);
+        }
         if (!game) return;
-        this.unbindEvent(
+        this.bindEvent(
             game.eventEmitterDict.onMinionSummon,
-            this.handleOngoingEffect
+            this._handleMinionSummon
         );
+    }
+
+    @LifecycleService.useLoader()
+    @ValidatorService.useCondition(model => Boolean(model.referDict.board))
+    private _handleLoad() {
+        console.log('[load-buff]', this.uuid, this.parent.uuid);
+    }
+    
+    @LifecycleService.useUnloader()
+    @ValidatorService.useCondition(model => Boolean(model.referDict.board))
+    private _handleUnload() {
+        console.log('[unload-buff]', this.uuid);
     }
 }

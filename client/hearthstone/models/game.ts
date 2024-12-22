@@ -25,6 +25,7 @@ type GameDef = CustomDef<{
 
 type QueryTargetListOptions = {
     excludePlayer?: boolean,
+    excludeMinion?: boolean,
     excludeTarget?: Model,
     excludePosition?: PlayerModel,
     requiredRaces?: RaceType[],
@@ -67,7 +68,12 @@ export class GameModel extends NodeModel<GameDef> {
             excludePlayer: true
         }
     ): Base.List<MinionModel>
-    queryTargetList(options: QueryTargetListOptions): Base.List<MinionModel>
+    queryTargetList(
+        options: QueryTargetListOptions & {
+            excludeMinion: true
+        }
+    ): Base.List<PlayerModel>
+    queryTargetList(options: QueryTargetListOptions): Base.List<MinionModel | PlayerModel>
     queryTargetList(options: QueryTargetListOptions): Base.List<MinionModel | PlayerModel> {
         const {
             excludeTarget,
@@ -103,7 +109,7 @@ export class GameModel extends NodeModel<GameDef> {
         }
         if (considerTaunt) {
             const tauntMinionList = result.filter(item => {
-                if (item.code === 'player') return true;
+                if (item.code === 'player') return false;
                 const taunt = item.childDict.taunt;
                 return taunt.stateDict.isActived;
             });

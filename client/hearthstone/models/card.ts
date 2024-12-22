@@ -128,8 +128,4 @@ export abstract class CardModel<
         const deck = player.childDict.deck;
         deck.drawCard(this);
     }
-
-    debug() {
-        super.debug();
-    }
 }

@@ -17,7 +17,6 @@ export class InnerRageBuffModel extends BuffModel<BuffInnerRageDef> {
                 modAttack: 2,
                 modHealth: 0
             },
-            stateDict: {},
             childDict: {}
         });
     }

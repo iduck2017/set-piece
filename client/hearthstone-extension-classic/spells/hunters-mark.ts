@@ -4,7 +4,7 @@ import { SpellDef } from "@/hearthstone/models/spell";
 import { SpellModel } from "@/hearthstone/models/spell";
 import { TargetCollector } from "@/hearthstone/types/collector";
 import { MinionModel } from "@/hearthstone/models/minion";
-import { HuntersMarkDebuffModel } from "../buffs/hunters-mark";
+import { HuntersMarkBuffModel } from "../buffs/hunters-mark";
 import { ExpansionType } from "@/hearthstone/services/database";
 import { RarityType } from "@/hearthstone/services/database";
 import { ClassNameType } from "@/hearthstone/services/database";
@@ -44,7 +44,7 @@ export class HuntersMarkModel extends SpellModel<SpellHuntersMarkDef> {
         const target = targetCollectorList[0]?.result;
         if (!target) return;
         target.childDict.featureList.accessFeature<
-            HuntersMarkDebuffModel
+            HuntersMarkBuffModel
         >('hunters-mark-buff-feature');
     }
 

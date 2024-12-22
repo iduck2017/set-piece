@@ -20,7 +20,6 @@ export class AbusiveSergeantBuffModel extends BuffModel<BuffAbusiveSergeantDef> 
                 modAttack: 2,
                 isTemperary: true
             },
-            stateDict: {},
             childDict: {}
         });
     }

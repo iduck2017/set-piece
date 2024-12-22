@@ -102,13 +102,32 @@ export abstract class NodeModel<T extends Def> {
         );
     }
     
-    public debug() {
-        console.log(
-            this, 
-            { ...this.stateDict }, 
-            { ...this.childDict },
-            [ ...this.childList ]
-        );
+    public debug(options?: {
+        stateDict?: boolean,
+        childDict?: boolean,
+        childList?: boolean,
+        eventDependency?: boolean,
+        model?: boolean
+    }) {
+        const {
+            stateDict,
+            childDict,
+            childList,
+            eventDependency,
+            model
+        } = options || {};
+        if (stateDict) console.log(this.stateDict);
+        if (childDict) console.log({ ...this.childDict});
+        if (childList) console.log(this.childList);
+        if (model) console.log(this);
+        if (eventDependency) {
+            // for (const [eventEntity, value] of this._eventDependencyMap) {
+            //     if (eventEntity.key === 'onStateCheck') {
+            //         console.log(eventEntity, value.map(eventHandler => eventHandler.target.uuid));
+            //     }
+            // }
+            console.log(this._eventDependencyMap);
+        }
     }
 
     readonly childList: Readonly<Def.ChildList<T>>;    
@@ -229,7 +248,7 @@ export abstract class NodeModel<T extends Def> {
         const eventHandler = this._eventHandlerMap.get(handler);
         if (eventHandler) {
             const eventEmitterList = this._eventDependencyMap.get(eventHandler) || [];
-            for (const curEventEmitter of eventEmitterList) {
+            for (const curEventEmitter of [...eventEmitterList]) {
                 if (eventEmitter && curEventEmitter !== eventEmitter) continue;
                 const { target } = curEventEmitter;
                 const eventHandlerList = target._eventDependencyMap.get(curEventEmitter) || [];
@@ -240,9 +259,10 @@ export abstract class NodeModel<T extends Def> {
                 if (curEventEmitter.key.endsWith('Check')) {
                     target._onStateAlter(true);
                 }
+                const index = eventEmitterList.indexOf(curEventEmitter);
+                if (index !== -1) eventEmitterList.splice(index, 1);
             }
-            this._eventDependencyMap.delete(eventHandler);
-            this._eventHandlerMap.delete(handler);
+            this._eventDependencyMap.set(eventHandler, eventEmitterList);
         }
     }
     
@@ -270,9 +290,6 @@ export abstract class NodeModel<T extends Def> {
         const mutator = new Mutator({ ...this._baseParamDict });
         this._baseEventDict.onStateCheck(this, mutator);
         this._paramDict = mutator.data;
-        if (this.code === 'combative') {
-            console.log('[combative-state-alter]', this._paramDict);
-        }
         this._prevStateDict = this.stateDict;
         this._baseEventDict.onStateAlter(this, prevState);
         if (recursive) {

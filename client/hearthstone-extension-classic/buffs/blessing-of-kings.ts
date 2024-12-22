@@ -17,7 +17,6 @@ export class BlessingOfKingsBuffModel extends BuffModel<BuffBlessingOfKingsDef> 
                 modAttack: 4,
                 modHealth: 4,
             },
-            stateDict: {},
             childDict: {}
         });
     }

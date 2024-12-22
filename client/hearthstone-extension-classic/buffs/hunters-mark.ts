@@ -7,12 +7,11 @@ export type DebuffHuntersMarkDef = BuffDef<{
 }>
 
 @FactoryService.useProduct('hunters-mark-buff-feature')
-export class HuntersMarkDebuffModel extends BuffModel<DebuffHuntersMarkDef> {
+export class HuntersMarkBuffModel extends BuffModel<DebuffHuntersMarkDef> {
     constructor(props: Props<DebuffHuntersMarkDef>) {
-        const superProps = BuffModel.featureProps(props);
+        const superProps = BuffModel.buffProps(props);
         super({
             ...superProps,
-            stateDict: {},
             childDict: {},
             paramDict: {
                 name: "Hunter's Mark Debuff",

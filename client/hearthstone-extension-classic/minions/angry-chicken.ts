@@ -1,6 +1,6 @@
 import { CustomDef, Def, FactoryService, Props } from "@/set-piece";
 import { MinionDef, MinionModel } from "@/hearthstone/models/minion";
-import { AngryChickenEnrageModel } from "../features/angry-chicken";
+import { AngryChickenFeatureModel } from "../features/angry-chicken";
 import { ClassNameType, ExpansionType, RaceType, RarityType } from "@/hearthstone/services/database";
 
 /**
@@ -13,7 +13,7 @@ import { ClassNameType, ExpansionType, RaceType, RarityType } from "@/hearthston
 export type AngryChickenDef = MinionDef<{
     code: 'angry-chicken-minion-card',
     childDict: {
-        enrage: AngryChickenEnrageModel
+        enrage: AngryChickenFeatureModel
     }
 }>
 
