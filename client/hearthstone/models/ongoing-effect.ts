@@ -33,7 +33,6 @@ export abstract class OngoingEffectModel<
     }
 
     private _handleMinionDie(minion: MinionModel) {
-        console.log('[handle-minion-die]', minion);
         const targetList = this.getTargetList();
         if (targetList.includes(minion)) {
             this.disposeOngoingEffect(minion);

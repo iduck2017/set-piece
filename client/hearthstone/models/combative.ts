@@ -174,7 +174,6 @@ export class CombativeModel extends FeatureModel<CombativeDef> {
             excludePosition: this.referDict.player,
             considerTaunt: true
         });
-        console.log('[candidate-list]', candidateList);
         if (!candidateList.length) return;
         const targetCollectorList: TargetCollector[] = [ {
             hint: 'Choose a target',
@@ -196,13 +195,14 @@ export class CombativeModel extends FeatureModel<CombativeDef> {
         const target = result?.childDict.combative;
         if (!target) return;
         this.baseStateDict.actionPoint -= 1;
-        this._dealDamage(target);
-        target._dealDamage(this);
+        const attack = this.stateDict.attack;
+        const targetAttack = target.stateDict.attack;
+        this._dealDamage(attack, target);
+        target._dealDamage(targetAttack, this);
         this.eventDict.onAttack(this, target);
     }
 
-    private _dealDamage(target: CombativeModel) {
-        const damage = this.stateDict.attack;
+    private _dealDamage(damage: number, target: CombativeModel) {
         const source = target.parent;
         target.receiveDamage(damage, source);
         this.eventDict.onDamageDeal(this, {
@@ -248,8 +248,7 @@ export class CombativeModel extends FeatureModel<CombativeDef> {
 
     public override debug(): void {
         super.debug({
-            eventDependency: true,
-            childDict: true
+            stateDict: true
         });
     }
 }
