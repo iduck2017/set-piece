@@ -44,7 +44,6 @@ export class GrimscaleOracleFeatureModel extends OngoingEffectModel<FeatureGrims
     }
 
     protected override disposeOngoingEffect(minion: MinionModel<MinionDef<{}>>): void {
-        console.log('[dispose-ongoing-effect]', minion);
         const game = this.referDict.game;
         if (!game) return;
         const combative = minion.childDict.combative;
@@ -63,6 +62,7 @@ export class GrimscaleOracleFeatureModel extends OngoingEffectModel<FeatureGrims
             excludePlayer: true,
             excludeTarget: this.referDict.card,
             excludePosition: opponet,
+            requiredRaces: [RaceType.Murloc]
         });
         return result;
     }
