@@ -34,7 +34,7 @@ export class MurlocTidecallerFeatureModel extends FeatureModel<FeatureMurlocTide
         target: CombativeModel,
         mutator: Mutator<Model.StateDict<CombativeModel>>
     ) {
-        mutator.data.attack += this.stateDict.modAttack;
+        mutator.data.curAttack += this.stateDict.modAttack;
     }
 
     @LifecycleService.useLoader()

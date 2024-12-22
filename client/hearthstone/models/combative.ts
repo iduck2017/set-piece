@@ -1,9 +1,9 @@
 import { 
+    Model, 
+    Props, 
     CustomDef, 
     FactoryService, 
     LifecycleService, 
-    Model, 
-    Props, 
     ValidatorService 
 } from "@/set-piece";
 import { RaceType } from "../services/database";
@@ -18,15 +18,7 @@ export type CombativeRule = {
     health: number;
     attack: number;
     races: Readonly<RaceType[]>;
-    isRush?: boolean;
-    isCharge?: boolean;
-    isWindfury?: boolean;
-    isTaunt?: boolean;
-    isStealth?: boolean;
-    isFrozen?: boolean;
-    isAttackDisable?: boolean;
 }
-
 
 export type CombativeDef = FeatureDef<CustomDef<{
     code: 'combative-feature';
@@ -34,41 +26,31 @@ export type CombativeDef = FeatureDef<CustomDef<{
         readonly fixHealth?: number;
         readonly fixAttack?: number;
         healthWaste: number;
-        actionPoint: number;
+        curAction: number;
         isAlive: boolean;
-        isStealth: boolean;
-        isFrozen: boolean;
     };
     paramDict: {
         maxHealth: number;
-        attack: number;
-        isTaunt: boolean;
-        maxActionPoint: number;
+        curAttack: number;
+        maxAction: number;
+        isAttackable: boolean;
+        
+        onlyTaunt: boolean;
+        excludePlayer: boolean;
+        excludeStealth: boolean;
+
         races: Readonly<RaceType[]>;
-        isAttackDisable: boolean;
     }
     eventDict: {
         onDie: [CombativeModel] 
-        onDamageReceive: [CombativeModel, {
-            source?: Model,
-            damage: number
-        }]
-        onDamagePredict: [CombativeModel, Mutator<{ 
-            isEnabled: boolean 
-        }>]
-        onDamageDeal: [CombativeModel, {
-            damage: number,
-            target?: Model
-        }]
-        onHealthRestore: [CombativeModel, {
-            health: number,
-            source?: Model
-        }],
-        onRestorePredict: [CombativeModel, Mutator<{ 
-            isEnabled: boolean 
-        }>]
+        onDamageReceive: [CombativeModel, { source?: Model, damage: number }]
+        onDamagePredict: [CombativeModel, Mutator<{ isEnabled: boolean }>]
+        onDamageDeal: [CombativeModel, { damage: number, target?: Model }]
+        onHealthRestore: [CombativeModel, { health: number, source?: Model }]
+        onRestorePredict: [CombativeModel, Mutator<{ isEnabled: boolean }>],
         onAttack: [CombativeModel, CombativeModel]
         onDestroy: [CombativeModel]
+        onActionAccess: [CombativeModel]
     },
     parent: PlayerModel | MinionModel
 }>>
@@ -87,43 +69,39 @@ export class CombativeModel extends FeatureModel<CombativeDef> {
     constructor(props: Props<CombativeDef>) {
         const rule = RuleService.ruleInfo.get(
             props.parent.constructor
-        )?.combative;
-        const {
-            health, 
-            attack, 
-            races,
-            isRush, 
-            isCharge, 
-            isWindfury, 
-            isTaunt, 
-            isStealth, 
-            isAttackDisable
-        } = rule || {};
+        );
+        const { health, attack, races } = rule?.combative || {};
+
         super({
             ...props,
             stateDict: {
                 healthWaste: 0,
+                curAction: 0,
                 isAlive: true,
-                actionPoint: (isRush || isCharge) ? 1 : 0,
-                isStealth: isStealth ?? false,
-                isFrozen: false,
                 ...props.stateDict
             },
             paramDict: {
                 name: 'Combative',
                 desc: '',
                 maxHealth: health ?? props.stateDict?.fixAttack ?? 1,
-                attack: attack ?? props.stateDict?.fixAttack ?? 1,
-                maxActionPoint: isWindfury ? 2 : 1,
-                isTaunt: isTaunt ?? false,
+                curAttack: attack ?? props.stateDict?.fixAttack ?? 1,
+                maxAction: 1,
                 races: races ?? [],
-                isAttackDisable: isAttackDisable ?? false
+
+                isAttackable: true,
+                onlyTaunt: false,
+                excludePlayer: false,
+                excludeStealth: false
             },
             childDict: {},
             eventInfo: {}
         });
     }
 
+    getAction() {
+        this.baseStateDict.curAction += 1;
+        this.eventDict.onActionAccess(this);
+    }
 
     @LifecycleService.useLoader()
     @ValidatorService.useCondition(model => Boolean(model.referDict.board))
@@ -149,8 +127,8 @@ export class CombativeModel extends FeatureModel<CombativeDef> {
         this.bindEvent(
             game.eventEmitterDict.onTurnEnd,
             () => {
-                this.baseStateDict.actionPoint = 
-                    this.stateDict.maxActionPoint;
+                this.baseStateDict.curAction = 
+                    this.stateDict.maxAction;
             }
         );
     }
@@ -164,8 +142,8 @@ export class CombativeModel extends FeatureModel<CombativeDef> {
 
     @ValidatorService.useCondition(model => Boolean(model.referDict.board))
     @ValidatorService.useCondition(model => model.stateDict.isAlive)
-    @ValidatorService.useCondition(model => model.stateDict.actionPoint > 0)
-    @ValidatorService.useCondition(model => !model.stateDict.isAttackDisable)
+    @ValidatorService.useCondition(model => model.stateDict.curAction > 0)
+    @ValidatorService.useCondition(model => model.stateDict.isAttackable)
     willAttack() {
         const game = this.referDict.game;
         if (!game) return;
@@ -188,15 +166,15 @@ export class CombativeModel extends FeatureModel<CombativeDef> {
     }
 
     @ValidatorService.useCondition(model => model.stateDict.isAlive)
-    @ValidatorService.useCondition(model => model.stateDict.actionPoint > 0)
+    @ValidatorService.useCondition(model => model.stateDict.curAction > 0)
     attack(collectorList: TargetCollector<MinionModel>[]) {
         const collector = collectorList[0];
         const result = collector?.result;
         const target = result?.childDict.combative;
         if (!target) return;
-        this.baseStateDict.actionPoint -= 1;
-        const attack = this.stateDict.attack;
-        const targetAttack = target.stateDict.attack;
+        this.baseStateDict.curAction -= 1;
+        const attack = this.stateDict.curAttack;
+        const targetAttack = target.stateDict.curAttack;
         this._dealDamage(attack, target);
         target._dealDamage(targetAttack, this);
         this.eventDict.onAttack(this, target);
@@ -217,9 +195,9 @@ export class CombativeModel extends FeatureModel<CombativeDef> {
         this.eventDict.onDamagePredict(this, mutator);
         if (!mutator.data.isEnabled) return;
         this.baseStateDict.healthWaste += damage;
-        this.eventDict.onDamageReceive(this, {
+        this.eventDict.onDamageReceive(this, { 
             damage,
-            source
+            source 
         });
     }
 
@@ -243,12 +221,5 @@ export class CombativeModel extends FeatureModel<CombativeDef> {
     destroy() {
         this._die();
         this.eventDict.onDestroy(this);
-    }
-
-
-    public override debug(): void {
-        super.debug({
-            stateDict: true
-        });
     }
 }

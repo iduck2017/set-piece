@@ -53,14 +53,14 @@ export abstract class BuffModel<
         console.log('[execute-buff]', param, this, this.stateDict);
         if (this.stateDict.isReset) {
             if (this.stateDict.modAttack !== undefined) {
-                param.data.attack = this.stateDict.modAttack;
+                param.data.curAttack = this.stateDict.modAttack;
             }
             if (this.stateDict.modHealth !== undefined) {
                 param.data.maxHealth = this.stateDict.modHealth;
             }
         } else {
             if (this.stateDict.modAttack !== undefined) {
-                param.data.attack += this.stateDict.modAttack;
+                param.data.curAttack += this.stateDict.modAttack;
             }
             if (this.stateDict.modHealth !== undefined) {
                 param.data.maxHealth += this.stateDict.modHealth;

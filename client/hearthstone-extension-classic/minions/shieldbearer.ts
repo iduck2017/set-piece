@@ -21,7 +21,6 @@ export type ShieldbearerDef = MinionDef<{
         health: 4,
         attack: 0,
         races: [],
-        isTaunt: true
     },
     taunt: {
         isActived: true

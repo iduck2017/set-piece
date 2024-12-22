@@ -4,26 +4,26 @@ import { MinionDef, MinionModel } from "@/hearthstone/models/minion";
 import { ClassNameType, ExpansionType, RarityType, RaceType } from "@/hearthstone/services/database";
 
 /**
- * Card: Voidwalker
+ * Card: Stonetusk Boar
  * Cost: 1
  * Attack: 1
- * Health: 3
- * Race: Demon
- * Text: Taunt
- * Flavor: No relation to "The Voidsteppers", the popular Void-based dance troupe.
+ * Health: 1
+ * Race: Beast
+ * Text: Charge
+ * Flavor: This card is boaring.
  */
 
-export type VoidwalkerDef = MinionDef<{
-    code: 'voidwalker-minion-card',
+export type StonetuskBoarDef = MinionDef<{
+    code: 'stonetusk-boar-minion-card',
 }>
 
 @MinionModel.useRule({
     combative: {
-        health: 3,
+        health: 1,
         attack: 1,
-        races: [RaceType.Demon],
+        races: [RaceType.Beast]
     },
-    taunt: {
+    charge: {
         isActived: true
     },
     castable: {
@@ -32,19 +32,19 @@ export type VoidwalkerDef = MinionDef<{
     card: {
         expansion: ExpansionType.Classic,
         rarity: RarityType.Free,
-        className: ClassNameType.Warlock
+        className: ClassNameType.Neutral
     }
 })
-@FactoryService.useProduct('voidwalker-minion-card')
-export class VoidwalkerModel extends MinionModel<VoidwalkerDef> {
-    constructor(props: Props<VoidwalkerDef>) {
+@FactoryService.useProduct('stonetusk-boar-minion-card')
+export class StonetuskBoarModel extends MinionModel<StonetuskBoarDef> {
+    constructor(props: Props<StonetuskBoarDef>) {
         const superProps = MinionModel.minionProps(props);
         super({
             ...superProps,
             paramDict: {
-                name: 'Voidwalker',
-                desc: 'Taunt',
-                flavor: 'No relation to "The Voidsteppers", the popular Void-based dance troupe.'
+                name: 'Stonetusk Boar',
+                desc: 'Charge',
+                flavor: 'This card is boaring.'
             },
             stateDict: {},
             childDict: {

@@ -30,7 +30,7 @@ export class GrimscaleOracleFeatureModel extends OngoingEffectModel<FeatureGrims
         target: CombativeModel,
         mutator: Mutator<Model.StateDict<CombativeModel>>
     ) {
-        mutator.data.attack += 1;
+        mutator.data.curAttack += 1;
     }
 
     protected override registerOngoingEffect(minion: MinionModel<MinionDef<{}>>): void {

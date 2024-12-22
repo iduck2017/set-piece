@@ -30,6 +30,6 @@ export class AmaniBerserkerFeatureModel extends EnrageModel<FeatureAmaniBerserke
         target: CombativeModel,
         param: Mutator<Model.ParamDict<CombativeModel>>
     ) {
-        param.data.attack += 3;
+        param.data.curAttack += 3;
     }
 } 

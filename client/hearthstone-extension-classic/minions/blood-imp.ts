@@ -30,7 +30,6 @@ export type BloodImpDef = MinionDef<{
         health: 1,
         attack: 0,
         races: [],
-        isStealth: true
     },
     castable: {
         manaCost: 1

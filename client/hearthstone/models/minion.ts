@@ -17,20 +17,20 @@ import {
 import { DivineShieldModel, DivineShieldRule } from "./devine-shield";
 import { RuleService } from "../services/rule";
 import { TauntModel, TauntRule } from "./taunt";
+import { ChargeModel, ChargeRule } from "./charge";
 
 export type MinionDef<
     T extends Partial<Def> = Def
 > = CardDef<{
     code: `${string}-minion-card`,
-    paramDict: {
-    },
     eventDict: {
         onBattlecry: [MinionModel, TargetCollector[]]
     },
     childDict: {
         combative: CombativeModel   
         divineShield: DivineShieldModel
-        taunt: TauntModel
+        taunt: TauntModel,
+        charge: ChargeModel
     },
 } & T>
 
@@ -43,10 +43,11 @@ export abstract class MinionModel<
     
     static useRule(
         rule: {
+            taunt?: TauntRule,
+            charge?: ChargeRule,
             combative: CombativeRule,
             castable: CastableRule,
             divineShield?: DivineShieldRule,
-            taunt?: TauntRule,
             card: Omit<CardRule, 'type'>
         }
     ) {
@@ -71,10 +72,11 @@ export abstract class MinionModel<
             Def.ChildDict<MinionDef<PureDef>>
         >> = {
             ...superProps.childDict,
+            taunt: { code: 'taunt-feature' },
+            charge: { code: 'charge-feature' },
             castable: { code: 'castable' },
             combative: { code: 'combative-feature' },
             divineShield: { code: 'divine-shield-feature' },
-            taunt: { code: 'taunt-feature' },
             ...props.childDict
         };
         return {

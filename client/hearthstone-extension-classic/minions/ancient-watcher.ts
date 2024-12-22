@@ -14,6 +14,9 @@ import { ClassNameType, ExpansionType, RarityType } from "@/hearthstone/services
 
 export type AncientWatcherDef = MinionDef<{
     code: 'ancient-watcher-minion-card',
+    childDict: {
+        feature: AncientWatcherModel;
+    }
 }>
 
 @MinionModel.useRule({
@@ -21,7 +24,6 @@ export type AncientWatcherDef = MinionDef<{
         health: 5,
         attack: 4,
         races: [],
-        isAttackDisable: true
     },
     castable: {
         manaCost: 2
@@ -45,6 +47,7 @@ export class AncientWatcherModel extends MinionModel<AncientWatcherDef> {
             },
             stateDict: {},
             childDict: {
+                feature: { code: 'ancient-watcher-minion-card' },
                 ...superProps.childDict
             }
         });

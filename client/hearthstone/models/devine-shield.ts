@@ -24,10 +24,9 @@ export class DivineShieldModel extends FeatureModel<DivineShieldDef> {
     constructor(props: Props<DivineShieldDef>) {
         const rule = RuleService.ruleInfo.get(
             props.parent.constructor
-        )?.divineShield;
-        const {
-            isActived
-        } = rule || {};
+        );
+        const { isActived } = rule?.divineShield || {};
+        
         super({
             ...props,
             stateDict: {

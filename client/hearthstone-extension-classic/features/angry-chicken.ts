@@ -30,6 +30,6 @@ export class AngryChickenFeatureModel extends EnrageModel<FeatureAngryChickenDef
         target: CombativeModel,
         param: Mutator<Model.ParamDict<CombativeModel>>
     ) {
-        param.data.attack += 5;
+        param.data.curAttack += 5;
     }
 } 

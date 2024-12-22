@@ -38,7 +38,7 @@ export class ValidatorService {
     }
 
     static useCondition<N extends Record<string, any>, T extends any[]>(
-        condition: (target: N, ...args: T) => boolean,
+        condition: (target: N, ...args: T) => any,
         isStrict?: boolean
     ) {
         return function (

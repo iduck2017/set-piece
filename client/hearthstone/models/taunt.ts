@@ -18,10 +18,9 @@ export class TauntModel extends FeatureModel<TauntDef> {
     constructor(props: Props<TauntDef>) {
         const rule = RuleService.ruleInfo.get(
             props.parent.constructor
-        )?.taunt;
-        const {
-            isActived
-        } = rule || {};
+        );
+        const { isActived } = rule?.taunt || {};
+        
         super({
             ...props,
             paramDict: {

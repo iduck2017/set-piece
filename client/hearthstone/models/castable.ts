@@ -29,6 +29,7 @@ export class CastableModel extends NodeModel<CastableDef> {
             target = target.parent;
         }
         const { manaCost } = rule || {};
+        
         super({
             ...props,
             stateDict: {

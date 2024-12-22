@@ -25,7 +25,6 @@ export type GoldshireFootmanDef = MinionDef<{
         health: 2,
         attack: 1,
         races: [],
-        isTaunt: true
     },
     taunt: {
         isActived: true
