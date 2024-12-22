@@ -55,7 +55,7 @@ export abstract class NodeModel<T extends Def> {
         
         this.baseStateDict = Delegator.Observed(
             props.stateDict,
-            this._onStateAlter.bind(this, false)
+            this.onStateAlter.bind(this, false)
         );
         this._baseParamDict = props.paramDict;
         this._paramDict = { ...this._baseParamDict };
@@ -238,7 +238,7 @@ export abstract class NodeModel<T extends Def> {
         this._eventDependencyMap.set(eventHandler, eventEmitterList);
 
         if (eventEmitter.key.endsWith('Check')) {
-            target._onStateAlter(true);
+            target.onStateAlter(true);
         }
     }
     protected unbindEvent<E extends Base.List>(
@@ -257,7 +257,7 @@ export abstract class NodeModel<T extends Def> {
                     eventHandlerList.filter(target => target !== eventHandler)
                 );
                 if (curEventEmitter.key.endsWith('Check')) {
-                    target._onStateAlter(true);
+                    target.onStateAlter(true);
                 }
                 const index = eventEmitterList.indexOf(curEventEmitter);
                 if (index !== -1) eventEmitterList.splice(index, 1);
@@ -282,7 +282,7 @@ export abstract class NodeModel<T extends Def> {
             ...this._paramDict 
         };
     }
-    private _onStateAlter(recursive?: boolean) {
+    onStateAlter(recursive?: boolean) {
         const prevState = {
             ...this._prevStateDict,
             ...this._paramDict
@@ -297,7 +297,7 @@ export abstract class NodeModel<T extends Def> {
                 ...Object.values(this.childDict).filter(Boolean),
                 ...this.childList
             ];
-            for (const child of childList) child._onStateAlter();
+            for (const child of childList) child.onStateAlter();
         }
     }
     public useState(setter: Event<NodeEvent.OnStateAlter<typeof this>>){
