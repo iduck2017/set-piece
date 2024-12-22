@@ -13,7 +13,6 @@ import { TargetCollector } from "../types/collector";
 import { FeatureDef, FeatureModel } from "./feature";
 import { RuleService } from "../services/rule";
 import { Mutator } from "../../set-piece/utils/mutator";
-import { GameModel } from "./game";
 
 export type CombativeRule = {
     health: number;
@@ -25,7 +24,7 @@ export type CombativeRule = {
     isTaunt?: boolean;
     isStealth?: boolean;
     isFrozen?: boolean;
-    cantAttack?: boolean;
+    isAttackDisable?: boolean;
 }
 
 
@@ -45,8 +44,8 @@ export type CombativeDef = FeatureDef<CustomDef<{
         attack: number;
         isTaunt: boolean;
         maxActionPoint: number;
-        cantAttack: boolean;
         races: Readonly<RaceType[]>;
+        isAttackDisable: boolean;
     }
     eventDict: {
         onDie: [CombativeModel] 
@@ -98,7 +97,7 @@ export class CombativeModel extends FeatureModel<CombativeDef> {
             isWindfury, 
             isTaunt, 
             isStealth, 
-            cantAttack
+            isAttackDisable
         } = rule || {};
         super({
             ...props,
@@ -118,7 +117,7 @@ export class CombativeModel extends FeatureModel<CombativeDef> {
                 maxActionPoint: isWindfury ? 2 : 1,
                 isTaunt: isTaunt ?? false,
                 races: races ?? [],
-                cantAttack: cantAttack ?? false 
+                isAttackDisable: isAttackDisable ?? false
             },
             childDict: {},
             eventInfo: {}
@@ -166,6 +165,7 @@ export class CombativeModel extends FeatureModel<CombativeDef> {
     @ValidatorService.useCondition(model => Boolean(model.referDict.board))
     @ValidatorService.useCondition(model => model.stateDict.isAlive)
     @ValidatorService.useCondition(model => model.stateDict.actionPoint > 0)
+    @ValidatorService.useCondition(model => !model.stateDict.isAttackDisable)
     willAttack() {
         const game = this.referDict.game;
         if (!game) return;

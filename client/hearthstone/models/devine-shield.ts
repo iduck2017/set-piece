@@ -41,8 +41,9 @@ export class DivineShieldModel extends FeatureModel<DivineShieldDef> {
         });
     }
 
-    @ValidatorService.useCondition(model => model.stateDict.isActived)
+    @ValidatorService.useCondition(model => !model.stateDict.isActived)
     getDevineShield() {
+        console.log('[get-divine-shield]', this.stateDict.isActived);
         const minion = this.referDict.minion;
         if (!minion) return;
         if (!this.stateDict.isActived) {
