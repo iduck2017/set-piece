@@ -1,0 +1,60 @@
+body {
+    font-size: 12px;
+}
+
+.model {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+
+    .child {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 4px;
+        flex-direction: column;
+    }
+        
+    .state {
+        width: 200px;
+        display: flex;
+        flex-direction: column;
+        user-select: none;
+
+        &>div {
+            padding: 0 8px;
+        }
+        &>div:nth-of-type(odd) {
+            background: #cbe0bb;
+        }
+        &>div:nth-of-type(even) {
+            background: #d4e1ca;
+        }
+
+        &.fold {
+            &>div:nth-of-type(odd) {
+                background: #d0d0d0;
+            }
+            &>div:nth-of-type(even) {
+                background: #d8d8d8;
+            }
+        }
+    
+        .title {
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            font-weight: bold;
+        }
+    
+        .link {
+            cursor: pointer;
+            text-decoration: underline;
+            color: #4d6aff;
+        }
+
+        .mark {
+            color: #ff0000;
+        }
+
+    }
+}
