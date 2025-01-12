@@ -14,7 +14,21 @@ module.exports = {
             umdNamedDefine: true
         },
         globalObject: 'this',
-        clean: true
+        clean: true,
+    },
+    externals: {
+        'react': {
+          commonjs: 'react',
+          commonjs2: 'react',
+          amd: 'react',
+          root: 'React'
+        },
+        'react-dom': {
+          commonjs: 'react-dom',
+          commonjs2: 'react-dom',
+          amd: 'react-dom',
+          root: 'ReactDOM'
+        }
     },
     devServer: {
         historyApiFallback: true,
@@ -27,6 +41,9 @@ module.exports = {
         },
         extensions: ['.js', '.json', '.ts', '.tsx'],
     },
+    optimization: {
+        minimize: false,
+    },
     module: {
       rules: [
         {
@@ -37,8 +54,12 @@ module.exports = {
             }, 
         },
         {
-            test: /\.css$/i,
-            use: ["style-loader", "css-loader"],
+            test: /\.scss$/,
+            use: [
+                'style-loader',
+                'css-loader',
+                'sass-loader'
+            ]
         },
         {
             test: /\.(svg|jpg|gif|png)/,

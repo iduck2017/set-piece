@@ -1,4 +1,4 @@
-import { Model } from "@/models";
+import { Model } from "../model";
 import Joi from "joi";
 
 export class FactoryService {
