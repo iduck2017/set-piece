@@ -1,0 +1,55 @@
+body {
+    font-size: 12px;
+}
+
+.model {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+}
+
+.state {
+    width: 200px;
+    display: flex;
+    flex-direction: column;
+    user-select: none;
+}
+
+.state>div {
+    padding: 0 8px;
+}
+
+.state>div:nth-of-type(odd) {
+    background: #cbe0bb;
+}
+.state>div:nth-of-type(even) {
+    background: #d4e1ca;
+}
+.state.fold>div:nth-of-type(odd) {
+    background: #d0d0d0;
+}
+.state.fold>div:nth-of-type(even) {
+    background: #d8d8d8;
+}
+
+.state>div.title {
+    cursor: pointer;
+    display: flex;
+    justify-content: center;
+    font-weight: bold;
+}
+.state>div.link {
+    cursor: pointer;
+    text-decoration: underline;
+    color: #4d6aff;
+}
+.state>div.mark {
+    color: #ff0000;
+}
+
+.child {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    flex-direction: column;
+}

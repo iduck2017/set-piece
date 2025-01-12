@@ -1,21 +1,25 @@
 {
     "compilerOptions": {
       "outDir": "./dist/",
+      "declarationDir": "./types",
       "noImplicitAny": true,
+      "declaration": true,
       "module": "ESNext",
+      "lib": ["ES2018", "DOM"],
       "target": "ESNext",
       "jsx": "react",
       "allowJs": true,
       "allowSyntheticDefaultImports": true,
       "moduleResolution": "node",
       "strict": true,
-      "paths": {
-        "@/*": ["./client/*"],
-      },
       "experimentalDecorators": true,
-      "strictFunctionTypes": false
+      "strictFunctionTypes": true,
+      "paths": {
+        "@/*": ["./src/*"],
+      },
+      "baseUrl": "."
     },
     "include": [
-      "client/**/*"
+      "src/**/*"
     ],
 }
