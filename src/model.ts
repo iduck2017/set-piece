@@ -1,29 +1,30 @@
 import { Event, childUpdateEvent, StateUpdateEvent } from "./event";
-import { Value } from "./types";
+import { KeyOf, Value } from "./types";
 import { FactoryService } from "@/services/factory";
+
+type Constructor<T> = new (...args: any[]) => T;
+type EventHandler<E = any> = (event: E) => void
+type StateHandler<S = any> = (state: S) => S
+type Strict<T> = T & { _never?: never }
 
 export class Model<
     S extends Record<string, Value> = {},
     E extends Record<string, Event> = {},
     C extends Record<string, Model> | Model[] = any,
-    P extends Model | undefined = any
+    P extends Model | undefined = any,
 > {
     constructor(props: Readonly<{
         uuid?: string,
-        state: Readonly<S> & { _never?: never },
-        child: Readonly<C> & { _never?: never }
+        state: Strict<Readonly<S>>,
+        child: Strict<Readonly<C>>
     }>) {
 
-        // Assign unique id 
         this.uuid = props.uuid || FactoryService.uuid;
 
-        // Delegate state, observe update
-        this.stateDraft = new Proxy(props.state, {
+        this.stateProxy = new Proxy(props.state, {
             get: (origin, key) => {
-                if (!this._isStateLocked) {
-                    return Reflect.get(origin, key);
-                }
-                return Reflect.get(this._stateCache, key);
+                if (!this._isStateReset) return Reflect.get(origin, key);
+                return Reflect.get(this._stateDraft, key);
             },
             set: (origin, key, value) => {
                 Reflect.set(origin, key, value);
@@ -38,7 +39,8 @@ export class Model<
         })
 
         // Init state cache
-        this._stateCache = { ...this.stateDraft }
+        this._stateDraft = { ...this.stateProxy }
+        this._stateCache = { ...this.stateProxy }
 
         // Precheck child
         const childOrigin: any = props.child instanceof Array ? [] : {};
@@ -52,7 +54,7 @@ export class Model<
         }
 
         // delegate child, observe update
-        this.childDraft = new Proxy(childOrigin, {
+        this.childProxy = new Proxy(childOrigin, {
             get: (origin, key: string) => {
                 // delegate all array methods with side effects
                 const value = Reflect.get(origin, key);
@@ -64,7 +66,7 @@ export class Model<
                         return result;
                     }
                 }
-                if (!this._isChildLocked) return Reflect.get(origin, key);
+                if (!this._isChildReset) return Reflect.get(origin, key);
                 return Reflect.get(this._childCache, key);
             },
             set: (origin, key, value) => {
@@ -79,10 +81,10 @@ export class Model<
             }
         })
         
-        this._childCache = this._copyChild(this.childDraft);
-
-        this._isStateLocked = true;
-        this._isChildLocked = true;
+        this._childCache = this._copyChild(this.childProxy);
+        
+        this._isStateReset = true;
+        this._isChildReset = true;
     }
 
     debug() {
@@ -98,7 +100,7 @@ export class Model<
      * @param setter 
      * @returns 
      */
-    addObserver(setter: (event: { target: Model }) => void) {
+    useModel(setter: EventHandler<{ target: Model }>) {
         this.bindEvent(this.event.onChildUpdate, setter);
         this.bindEvent(this.event.onStateUpdate, setter);
         return () => {
@@ -117,13 +119,13 @@ export class Model<
      */
     get props(): Readonly<{
         uuid?: string,
-        state?: Readonly<Partial<S>> & { _never?: never },
-        child?: C extends any[] ? Readonly<C> : Readonly<Partial<C>> & { _never?: never }
+        state?: Strict<Readonly<Partial<S>>>,
+        child?: C extends any[] ? Readonly<C> : Readonly<Readonly<Partial<C>>>
     }> {
         return {
             uuid: this.uuid,
             child: this.child,
-            state: this.state,
+            state: { ...this._stateDraft },
         }
     }
 
@@ -147,8 +149,8 @@ export class Model<
      * @decorator
      * @feature factory
      */
-    private static _root: new (...args: any[]) => Model;
-    protected static asRoot<T extends new (...args: any[]) => Model>() {
+    private static _root: Constructor<Model>;
+    protected static asRoot<T extends Constructor<Model>>() {
         return function (constructor: T): T {
             Model._root = constructor;
             return class extends constructor {
@@ -182,9 +184,9 @@ export class Model<
             return Reflect.get(target, key)
         }
     })
-    private readonly _eventHandlers = new Map<Event, (event: any) => unknown>()
+    private readonly _eventHandlers = new Map<Event, EventHandler>()
     private readonly _eventProducers = new Map<Event, string>()
-    private readonly _eventConsumers = new Map<(event: any) => unknown, Event>()
+    private readonly _eventConsumers = new Map<EventHandler, Event>()
     private readonly _eventChannels = new Map<Event, Event[]>()
 
     /**
@@ -206,7 +208,7 @@ export class Model<
     
     protected bindEvent<E>(
         producer: Event<E>, 
-        handler: (event: E) => unknown
+        handler: EventHandler<E>,
     ) {
         if (!this._isInited && !this._isIniting) return;
         const { target } = producer;
@@ -226,7 +228,7 @@ export class Model<
 
     protected unbindEvent<E>(
         producer: Event<E> | undefined,
-        handler: (event: E) => unknown
+        handler: EventHandler<E>,
     ) {
         if (!this._isInited && !this._isIniting) return;
         const consumer = this._eventConsumers.get(handler);
@@ -254,17 +256,121 @@ export class Model<
     get state(): Readonly<S> {
         return { ...this._stateCache }
     }
+    private _stateDraft: Readonly<S>
     private _stateCache: Readonly<S>
-    protected readonly stateDraft: S
+    protected readonly stateProxy: S
+
+    private _stateHandlers: Map<Event, StateHandler> & Map<StateHandler, Event> = new Map()
+    private _stateChannels: Map<Model, Event[]> & Map<Event, Model[]> = new Map()
+
+    private static _decorKeys: Map<Constructor<Model>, string[]> = new Map();
+    protected static useDecor<T extends Model>(
+        state: Partial<Record<KeyOf<T['state']>, boolean>>
+    ) {
+        return function (constructor: Constructor<T>) {
+            Model._decorKeys.set(constructor, Object.keys(state));
+        };
+    }
+
+    protected bindDecor<M extends Model>(
+        target: M,
+        handler: StateHandler<M['state']>,
+        uuid?: string,  
+        lane?: number,
+    ) {
+        if (!this._isInited && !this._isIniting) return;
+        if (!uuid) uuid = FactoryService.uuid;
+        if (!lane) lane = 0;
+
+        const consumer = this._stateHandlers.get(handler) ?? new Event(this);
+        this._stateHandlers.set(consumer, handler);
+        this._stateHandlers.set(handler, consumer);
+
+        const models = this._stateChannels.get(consumer) || [];
+        models.push(target);
+        this._stateChannels.set(consumer, models);
+
+        const consumers = target._stateChannels.get(target) || [];
+        consumers.push(consumer);
+        target._stateChannels.set(target, consumers);
+        target.resetState()
+    }
+
+    
+    protected unbindDecor<M extends Model>(
+        target: M | undefined,
+        handler: StateHandler<M['state']>,
+    ) {
+        const consumer = this._stateHandlers.get(handler);
+        if (!consumer) return;
+
+        const models = this._stateChannels.get(consumer) || [];
+        for (const curModel of [...models]) {
+            if (target && curModel !== target) continue;
+            
+            let consumers = curModel._stateChannels.get(curModel) || [];
+            consumers = consumers.filter(target => target !== consumer);
+            curModel._stateChannels.set(curModel, consumers);
+            curModel.resetState();
+
+            const index = models.indexOf(curModel);
+            if (index !== -1) models.splice(index, 1);
+        }
+
+        this._stateChannels.set(consumer, models);
+    }
+
+    private _emitDecor() {
+        if (!this._isInited) return;
+
+        const decorKeys = [];
+        let constructor: any = this.constructor;
+        while (constructor.__proto__ !== null) {
+            if (Model._decorKeys.has(constructor)) {
+                decorKeys.push(...Model._decorKeys.get(constructor) || []);
+            }
+            constructor = constructor.__proto__;
+        }
+        if (!decorKeys.length) return;
+
+
+        let stateDraft = { ...this.stateProxy };
+        const consumers = this._stateChannels.get(this) || [];
+        consumers.sort((a, b) => {
+            if (a.lane !== b.lane) return a.lane - b.lane;
+            return a.uuid > b.uuid ? 1 : -1;
+        });
+
+        for (const consumer of [...consumers]) {
+            const { target } = consumer;
+            const handler = target._stateHandlers.get(consumer);
+            if (!handler) continue;
+            stateDraft = handler(stateDraft);
+        }
+
+        const stateCache = { ...this.stateProxy };
+        for (const key of decorKeys) {
+            Reflect.set(stateCache, key, Reflect.get(stateDraft, key));
+        }
+
+        this._stateCache = stateCache;
+    }
+
 
     resetState() {
         if (this._isAutomic) return;
 
-        this._isStateLocked = false;
+        this._isStateReset = false;
+        
         const statePrev = this.state;
-        this._stateCache = { ...this.stateDraft };
+
+        this._stateDraft = { ...this.stateProxy };
+        this._stateCache = { ...this.stateProxy };
+
+        this._emitDecor();
+
         const stateNext = this.state;
-        this._isStateLocked = true;
+        this._isStateReset = true;
         
         this.emitEvent(this.event.onStateUpdate, { 
             target: this, 
@@ -281,9 +387,7 @@ export class Model<
     private _parent?: P
     public get parent() { return this._parent; }
 
-    protected queryParent<T extends Model>(
-        type: new (...args: any[]) => T
-    ): T | undefined {
+    protected queryParent<T extends Model>(type: Constructor<T>): T | undefined {
         let target: Model | undefined = this.parent;
         while (target) {
             if (target instanceof type) return target;
@@ -292,17 +396,6 @@ export class Model<
         return undefined;
     }
 
-
-    /**
-     * child is initializing in transaction
-     * @feature lifecycle
-     */
-    private _isAutomic = false;
-    private _isReserved = false;
-    private _isInited = false;
-    private _isIniting = false;
-    private _isStateLocked = false;
-    private _isChildLocked = false;
 
     
 
@@ -314,7 +407,7 @@ export class Model<
         return this._copyChild(this._childCache) 
     }
     private _childCache: Readonly<C>
-    protected readonly childDraft: C
+    protected readonly childProxy: C
     private readonly _childRefer: Record<string, Model> = {}
 
     private _copyChild(origin: C): C extends any[] ? Readonly<C> : Readonly<C> {
@@ -339,17 +432,16 @@ export class Model<
 
     protected removeChild(model?: Model): Model | undefined {
         if (!model) return;
-        if (this.childDraft instanceof Array) {
-            const index = this.childDraft.indexOf(model);
-            console.log('Remove child', model, index)
+        if (this.childProxy instanceof Array) {
+            const index = this.childProxy.indexOf(model);
             if (index === -1) return;
-            this.childDraft.splice(index, 1);
+            this.childProxy.splice(index, 1);
             return model;
         } else {
-            for (const key of Object.keys(this.childDraft)) {
-                const value = Reflect.get(this.childDraft, key);
+            for (const key of Object.keys(this.childProxy)) {
+                const value = Reflect.get(this.childProxy, key);
                 if (value !== model) continue;
-                Reflect.deleteProperty(this.childDraft, key);
+                Reflect.deleteProperty(this.childProxy, key);
                 return model;
             }
         }
@@ -387,14 +479,14 @@ export class Model<
      */
     resetChild() {
         if (this._isAutomic) return;
-        if (!this._isChildLocked) return;
+        if (!this._isChildReset) return;
 
-        this._isChildLocked = false;
+        this._isChildReset = false;
         this._precheckChild();
         const childPrev = this.child;
-        this._childCache = this._copyChild(this.childDraft);
+        this._childCache = this._copyChild(this.childProxy);
         const childNext = this.child;
-        this._isChildLocked = true;
+        this._isChildReset = true;
         
         this.emitEvent(this.event.onChildUpdate, { 
             target: this, 
@@ -405,15 +497,15 @@ export class Model<
 
     private _precheckChild() {
         // Replace all invalid models with copies
-        for (const key in Object.keys(this.childDraft)) {
-            const value = Reflect.get(this.childDraft, key);
+        for (const key in Object.keys(this.childProxy)) {
+            const value = Reflect.get(this.childProxy, key);
             if (!(value instanceof Model)) continue;
             const model = value._isReserved ? value.copy() : value;
-            Reflect.set(this.childDraft, key, model);
+            Reflect.set(this.childProxy, key, model);
             model._isReserved = true;
         }
         
-        const childNext = this._listChild(this.childDraft);
+        const childNext = this._listChild(this.childProxy);
         const childPrev = this._listChild(this.child);
         const childAdd = childNext.filter(child => !childPrev.includes(child));
         const childDel = childPrev.filter(child => !childNext.includes(child));
@@ -424,11 +516,20 @@ export class Model<
     }
 
     
-    private static readonly _hooksInit = new Map<Function, string[]>()
-    private static readonly _hooksUninit = new Map<Function, string[]>()
-    private static readonly _hooksChildInit = new Map<Function, string[]>()
-    private static readonly _hooksChildUninit = new Map<Function, string[]>()
 
+    /**
+     * child is initializing in transaction
+     * @feature lifecycle
+     */
+    private _isAutomic = false;
+    private _isReserved = false;
+    private _isInited = false;
+    private _isIniting = false;
+    private _isStateReset = false;
+    private _isChildReset = false;
+
+    private static readonly _hooksInit = new Map<Function, string[]>()
+    private static readonly _hooksChildInit = new Map<Function, string[]>()
 
     private _init(parent?: P) {
         if (this._isInited) return;
@@ -442,7 +543,7 @@ export class Model<
         }
 
         // Initialize child first
-        for (const child of this._listChild(this.childDraft)) {
+        for (const child of this._listChild(this.childProxy)) {
             child._init(this);
         }
 
@@ -474,6 +575,8 @@ export class Model<
         
         this._isIniting = false;
         this._isInited = true;
+
+        this.resetState();
     }
 
 
@@ -488,7 +591,7 @@ export class Model<
         this._isIniting = true;
 
         // Uninitialize child first
-        for (const child of this._listChild(this.childDraft)) {
+        for (const child of this._listChild(this.childProxy)) {
             child._uninit();
         }
 
@@ -511,32 +614,22 @@ export class Model<
             }
         }
 
-         // Trigger child uninit hooks of all ancestor nodes
-        let ancestor: Model | undefined = this._parent;
-        while (ancestor) {
-            let constructor: any = ancestor.constructor;
-            while (constructor.__proto__ !== null) {
-                const keys = Model._hooksChildUninit.get(constructor) || [];
-                for (const key of keys) {
-                    const uniniter = Reflect.get(ancestor, key);
-                    if (typeof uniniter === 'function') uniniter.call(ancestor);
+        // Unbind all decor
+        for (const channel of this._stateChannels) {
+            const entity = channel[0];
+            if (entity instanceof Model) {
+                const consumers = channel[1];
+                for (const consumer of consumers) {
+                    const target = consumer.target;
+                    const handler = target._stateHandlers.get(consumer);
+                    if (!handler) continue;
+                    target.unbindDecor(this, handler);
                 }
-                constructor = constructor.__proto__;
+            } else {
+                const handler = this._stateHandlers.get(entity);
+                if (handler) this.unbindDecor(this, handler);
             }
-            ancestor = ancestor.parent;
         }
-
-        // Trigger uninit hooks
-        let constructor: any = this.constructor;
-        while (constructor.__proto__ !== null) {
-            const keys = Model._hooksUninit.get(constructor) || [];
-            for (const key of keys) {
-                const uniniter = Reflect.get(this, key);
-                if (typeof uniniter === 'function') uniniter.call(this);
-            }
-            constructor = constructor.__proto__;
-        }
-
         
         const parent = this._parent;
         if (parent) {
@@ -621,23 +714,6 @@ export class Model<
         };
     }
 
-    /**
-     * Trigger when the model is uninitialized
-     * @decorator
-     * @feature lifecycle
-     */
-    static onUninit() {
-        return function(
-            target: Model,
-            key: string,
-            descriptor: TypedPropertyDescriptor<() => unknown>
-        ): TypedPropertyDescriptor<() => unknown> {
-            const keys = Model._hooksUninit.get(target.constructor) || [];
-            keys.push(key);
-            Model._hooksUninit.set(target.constructor, keys);
-            return descriptor;
-        };
-    }
 
     /**
      * Trigger when the model's descendant node is initialized
@@ -653,24 +729,6 @@ export class Model<
             const keys = Model._hooksChildInit.get(target.constructor) || [];
             keys.push(key);
             Model._hooksChildInit.set(target.constructor, keys);
-            return descriptor;
-        };
-    }
-
-    /**
-     * Trigger when the model's descendant node is uninitialized
-     * @decorator
-     * @feature lifecycle
-     */
-    static onChildUninit() {
-        return function(
-            target: Model,
-            key: string,
-            descriptor: TypedPropertyDescriptor<(child: Model) => unknown>
-        ): TypedPropertyDescriptor<(child: Model) => unknown> {
-            const keys = Model._hooksChildUninit.get(target.constructor) || [];
-            keys.push(key);
-            Model._hooksChildUninit.set(target.constructor, keys);
             return descriptor;
         };
     }

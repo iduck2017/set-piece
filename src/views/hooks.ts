@@ -11,7 +11,7 @@ export function useModel<M extends Model>(model?: M): {
 
     useEffect(() => {
         refresh();
-        return model?.addObserver((event) => {
+        return model?.useModel((event) => {
             setState(event.target.state);
             setChild(event.target.child);
         })

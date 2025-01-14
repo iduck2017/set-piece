@@ -1,6 +1,6 @@
 {
   "name": "set-piece",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "main": "dist/index.js",
   "module": "dist/index.esm.js",
   "types": "types/index.d.ts",
@@ -60,7 +60,6 @@
   "scripts": {
     "watch": "webpack -w",
     "build": "webpack --mode production",
-    "serve": "webpack serve",
     "prepublishOnly": "npm run build",
     "build:types": "tsc --emitDeclarationOnly",
     "build:clean": "rm -rf dist"

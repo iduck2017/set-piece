@@ -1,8 +1,21 @@
 import { Value } from "./types"
 import { Model } from "./model"
+import { FactoryService } from "./services/factory";
 
 export class Event<E = any> {
-    constructor(public readonly target: Model) {}
+    public readonly lane: number;
+    public readonly uuid: string;
+    public readonly target: Model
+
+    constructor(
+        target: Model,
+        lane?: number,
+        uuid?: string,
+    ) {
+        this.target = target;
+        this.lane = lane ?? 0;
+        this.uuid = uuid ?? FactoryService.uuid;
+    }
 }
 
 export type childUpdateEvent<
