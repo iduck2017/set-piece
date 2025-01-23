@@ -40,7 +40,7 @@ export class Model<
         this._childDraft = this._copyChild(child);
         this._child = this._copyChild(child);
 
-        if (this.meta._isRoot) this._load();
+        if (this.meta._isRoot) this._load(undefined as any);
     }
 
 
@@ -461,7 +461,7 @@ export class Model<
         const _childPrev = this._listChild(childPrev)
         const _childNext = this._listChild(childNext)
         const childAdd = _childNext.filter(child => !_childPrev.includes(child));
-        for (const child of childAdd) child._load();
+        for (const child of childAdd) child._load(this);
     }
 
     @Model.ifStatus(ModelStatus.LOADED)
@@ -533,13 +533,13 @@ export class Model<
 
     @Model.useLogger()
     @Model.ifStatus(ModelStatus.INITED)
-    private _load(parent?: P) {
+    private _load(parent: P) {
         this._status = ModelStatus.LOADING;
 
         this._parent = parent;
         if (parent) parent._childRefer[this.uuid] = this;
 
-        for (const child of this._listChild(this.child)) child._load();
+        for (const child of this._listChild(this.child)) child._load(this);
 
         let ancestor: Model | undefined = this._parent;
         while (ancestor) {
