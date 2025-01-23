@@ -1,105 +1,111 @@
-import { Event, childUpdateEvent, StateUpdateEvent } from "./event";
+import { Event, ChildUpdateEvent, StateUpdateEvent } from "./types";
 import { KeyOf, Value } from "./types";
 import { FactoryService } from "@/services/factory";
 
-type Constructor<T> = new (...args: any[]) => T;
 type EventHandler<E = any> = (event: E) => void
 type StateHandler<S = any> = (state: S) => S
 type Strict<T> = T & { _never?: never }
+type Callback<T = any, P extends any[] = any[]> = (...args: P) => T
+type Constructor<T> = new (...args: any[]) => T
+
+export enum ModelStatus {
+    INITED,
+    LOADING,
+    LOADED,
+    UNLOADING,
+}
 
 export class Model<
     S extends Record<string, Value> = {},
     E extends Record<string, Event> = {},
     C extends Record<string, Model> | Model[] = any,
-    P extends Model | undefined = any,
+    P extends Model | undefined = any | undefined,
 > {
+    get meta(): typeof Model {
+        return this.constructor as typeof Model;
+    }
+
     constructor(props: Readonly<{
         uuid?: string,
         state: Strict<Readonly<S>>,
         child: Strict<Readonly<C>>
     }>) {
-
         this.uuid = props.uuid || FactoryService.uuid;
 
-        this.stateProxy = new Proxy(props.state, {
-            get: (origin, key) => {
-                if (!this._isStateReset) return Reflect.get(origin, key);
-                return Reflect.get(this._stateDraft, key);
-            },
-            set: (origin, key, value) => {
-                Reflect.set(origin, key, value);
-                this.resetState();
-                return true;
-            },
-            deleteProperty: (origin, key) => {
-                Reflect.deleteProperty(origin, key);
-                this.resetState();
-                return true;
-            }
-        })
+        this._stateDraft = { ...props.state }
+        this._stateCache = { ...props.state }
+        this._state = { ...props.state }
+        
+        const child = this._prepareChild(props.child);
+        this._childDraft = this._copyChild(child);
+        this._child = this._copyChild(child);
 
-        // Init state cache
-        this._stateDraft = { ...this.stateProxy }
-        this._stateCache = { ...this.stateProxy }
+        if (this.meta._isRoot) this._load();
+    }
 
-        // Precheck child
-        const childOrigin: any = props.child instanceof Array ? [] : {};
-        for (const key of Object.keys(props.child)) {
-            const value = Reflect.get(props.child, key);
-            if (value instanceof Model) {
-                const model = value._isReserved ? value.copy() : value;
-                Reflect.set(childOrigin, key, model);
-                model._isReserved = true;
-            }
+
+    private _prepareChild(child: Strict<Readonly<C>>) {
+        const origin: any = child instanceof Array ? [] : {};
+        for (const key of Object.keys(child)) {
+            const value = Reflect.get(child, key);
+            if (!(value instanceof Model)) continue;
+            const model = value._isOrdered ? value.copy() : value;
+            Reflect.set(origin, key, model);
+            model._isOrdered = true;
         }
+        return origin;
+    }
 
-        // delegate child, observe update
-        this.childProxy = new Proxy(childOrigin, {
-            get: (origin, key: string) => {
-                // delegate all array methods with side effects
-                const value = Reflect.get(origin, key);
-                if (typeof key === 'string' && typeof value === 'function') {
-                    return (...args: any[]) => {
-                        const handler = Reflect.get(origin, key);
-                        const result = handler.call(origin, ...args);
-                        this.resetChild();
-                        return result;
-                    }
-                }
-                if (!this._isChildReset) return Reflect.get(origin, key);
-                return Reflect.get(this._childCache, key);
-            },
-            set: (origin, key, value) => {
-                Reflect.set(origin, key, value);
-                this.resetChild();
-                return true;
-            },
-            deleteProperty: (target, key) => {
-                Reflect.deleteProperty(target, key);
-                this.resetChild();
-                return true;
-            }
-        })
-        
-        this._childCache = this._copyChild(this.childProxy);
-        
-        this._isStateReset = true;
-        this._isChildReset = true;
+    @Model.useAutomic()
+    @Model.useLogger()
+    protected setState(handler: (prev: S) => S) {
+        const stateNext = handler(this._stateDraft);
+        this._stateDraft = { ...stateNext };
+    }
+
+    @Model.useAutomic()
+    @Model.useLogger()
+    private _setState(origin: S, key: string, value: Value) {
+        Reflect.set(this._stateDraft, key, value);
+        return true;
+    }
+    
+    @Model.useAutomic()
+    @Model.useLogger()
+    private _deleteState(origin: S, key: KeyOf<S>) {
+        Reflect.deleteProperty(this._stateDraft, key);
+        return true;
+    }
+
+    @Model.useAutomic()
+    @Model.useLogger()
+    private _setChild(origin: C, key: KeyOf<C>, value: Model) {
+        Reflect.set(this._childDraft, key, value);
+        return true;
+    }
+
+    @Model.useAutomic()
+    @Model.useLogger()
+    private _deleteChild(origin: C, key: KeyOf<C>) {
+        Reflect.deleteProperty(this._childDraft, key);
+        return true;
+    }
+
+    @Model.useAutomic()
+    @Model.useLogger()
+    private _delegateChild(key: string, ...args: any[]) {
+        const handler = Reflect.get(this._childDraft, key);
+        if (typeof handler !== 'function') return;
+        return handler.call(this._childDraft, ...args);
     }
 
     debug() {
-        console.log(this.name);
+        console.log(this.constructor.name);
         console.log(this.state);
         console.log(this.child);
-        console.log(this._eventChannels);
     }
 
-    /**
-     * Observe state and child update
-     * @feature debug
-     * @param setter 
-     * @returns 
-     */
+    @Model.useLogger()
     useModel(setter: EventHandler<{ target: Model }>) {
         this.bindEvent(this.event.onChildUpdate, setter);
         this.bindEvent(this.event.onStateUpdate, setter);
@@ -109,32 +115,19 @@ export class Model<
         }
     }
     
-    /**
-     * Get props, also used as constructor parameters
-     * @feature factory
-     * @returns props
-     * @returns props.uuid - unique id
-     * @returns props.state - state
-     * @returns props.child - child
-     */
     get props(): Readonly<{
         uuid?: string,
         state?: Strict<Readonly<Partial<S>>>,
-        child?: C extends any[] ? Readonly<C> : Readonly<Readonly<Partial<C>>>
+        child?: C extends any[] ? Readonly<C> : Strict<Readonly<Partial<C>>>
     }> {
         return {
             uuid: this.uuid,
             child: this.child,
-            state: { ...this._stateDraft },
+            state: { ...this._stateCache },
         }
     }
 
-    /**
-     * Create a duplication of current model
-     * @feature factory
-     * @param uuid - unique id, auto generate if not provided
-     * @returns cloned model
-     */
+    @Model.useLogger()
     copy(uuid?: string): this {
         const constructor: any = this.constructor;
         const props = this.props;
@@ -144,234 +137,213 @@ export class Model<
         })
     }
 
-    /**
-     * Declare model as root, it will be initialized immediately
-     * @decorator
-     * @feature factory
-     */
-    private static _root: Constructor<Model>;
-    protected static asRoot<T extends Constructor<Model>>() {
-        return function (constructor: T): T {
-            Model._root = constructor;
-            return class extends constructor {
-                constructor(...args: any[]) {
-                    super(...args);
-                    if (Model._root !== constructor) return;
-                    this._init();
-                }
-            }
+    private static _isRoot: boolean = false;
+    protected static useRoot() {
+        return function (constructor: Constructor<Model>) {
+            const model: Model = constructor.prototype;
+            model.meta._isRoot = true;
         };
     }
 
+    private get _root(): Model | undefined {
+        let root: Model | undefined = this;
+        while (root?.parent) root = root.parent;
+        return root;
+    }
 
-    /**
-     * Delegate event
-     * @proxy
-     * @feature event
-     */
     readonly event: E & {
-        onChildUpdate: childUpdateEvent<S, C>
+        onChildUpdate: ChildUpdateEvent<S, C>
         onStateUpdate: StateUpdateEvent<S>
     } = new Proxy({} as any, {
         deleteProperty: () => false,
         set: () => false,
         get: (target, key: string) => {
-            if (!Reflect.has(target, key)) {
-                const event = new Event(this);
-                Reflect.set(target, key, event);
-                this._eventProducers.set(event, key);
-            }
-            return Reflect.get(target, key)
+            const event = new Event(this);
+            if (!Reflect.has(target, key)) Reflect.set(target, key, event);
+            return Reflect.get(target, key);
         }
     })
-    private readonly _eventHandlers = new Map<Event, EventHandler>()
-    private readonly _eventProducers = new Map<Event, string>()
-    private readonly _eventConsumers = new Map<EventHandler, Event>()
-    private readonly _eventChannels = new Map<Event, Event[]>()
 
-    /**
-     * Emit event
-     * @feature event
-     * @param producer - event producer
-     * @param event - event
-     */
+    private readonly _eventHandlersByConsumer = new Map<Event, EventHandler>()
+    private readonly _eventConsumersByHandler = new Map<EventHandler, Event>()
+    private readonly _eventConsumersByProducer = new Map<Event, Event[]>()
+    private readonly _eventProducersByConsumer = new Map<Event, Event[]>()
+
+    @Model.ifStatus(ModelStatus.LOADED)
     protected emitEvent<E>(producer: Event<E>, event: E) {
-        if (!this._isInited) return;
-        const consumers = this._eventChannels.get(producer) || [];
+        const _consumers = this._eventConsumersByProducer.get(producer) || [];
+        const consumers = [..._consumers];
+        consumers.sort((a, b) => a.target.uuid > b.target.uuid ? 1 : -1);
+
         for (const consumer of consumers) {
             const { target } = consumer;
-            const handler = target._eventHandlers.get(consumer);
+            const handler = target._eventHandlersByConsumer.get(consumer);
             if (handler) handler.call(target, event);
             else console.warn('Event handler not found');
         }
     }
     
+
+    @Model.ifStatus(ModelStatus.LOADED, ModelStatus.LOADING)
+    @Model.useLogger()
     protected bindEvent<E>(
         producer: Event<E>, 
         handler: EventHandler<E>,
     ) {
-        if (!this._isInited && !this._isIniting) return;
         const { target } = producer;
+        if (target._root !== this._root) return;
 
-        const consumer = this._eventConsumers.get(handler) ?? new Event(this);
-        this._eventConsumers.set(handler, consumer);
-        this._eventHandlers.set(consumer, handler);
+        const consumer = this._eventConsumersByHandler.get(handler) ?? new Event(this);
+        this._eventConsumersByHandler.set(handler, consumer);
+        this._eventHandlersByConsumer.set(consumer, handler);
 
-        const consumers = target._eventChannels.get(producer) || [];
+        const consumers = target._eventConsumersByProducer.get(producer) || [];
         consumers.push(consumer);
-        target._eventChannels.set(producer, consumers);
+        target._eventConsumersByProducer.set(producer, consumers);
 
-        const producers = this._eventChannels.get(consumer) || [];
+        const producers = this._eventProducersByConsumer.get(consumer) || [];
         producers.push(producer);
-        this._eventChannels.set(consumer, producers);
+        this._eventProducersByConsumer.set(consumer, producers);
     }
 
+    @Model.ifStatus(ModelStatus.LOADED, ModelStatus.UNLOADING)
+    @Model.useLogger()
     protected unbindEvent<E>(
         producer: Event<E> | undefined,
         handler: EventHandler<E>,
     ) {
-        if (!this._isInited && !this._isIniting) return;
-        const consumer = this._eventConsumers.get(handler);
+        const consumer = this._eventConsumersByHandler.get(handler);
         if (!consumer) return;
 
-        const producers = this._eventChannels.get(consumer) || [];
-        for (const curProducer of [...producers]) {
-            if (producer && curProducer !== producer) continue;
+        const producers = this._eventProducersByConsumer.get(consumer) || [];
+        for (const _producer of [...producers]) {
+            if (producer && _producer !== producer) continue;
             
-            const { target } = curProducer;
-            
-            let consumers = target._eventChannels.get(curProducer) || [];
+            const { target } = _producer;
+            let consumers = target._eventConsumersByProducer.get(_producer) || [];
             consumers = consumers.filter(target => target !== consumer);
-            target._eventChannels.set(curProducer, consumers);
+            target._eventConsumersByProducer.set(_producer, consumers);
 
-            const index = producers.indexOf(curProducer);
+            const index = producers.indexOf(_producer);
             if (index !== -1) producers.splice(index, 1);
         }
 
-        this._eventChannels.set(consumer, producers);
+        this._eventProducersByConsumer.set(consumer, producers);
     }
 
 
-    /** @feature state */
     get state(): Readonly<S> {
-        return { ...this._stateCache }
+        return { ...this._state }
     }
     private _stateDraft: Readonly<S>
     private _stateCache: Readonly<S>
-    protected readonly stateProxy: S
+    private _state: Readonly<S>
+    protected readonly stateProxy: S = new Proxy({} as any, {
+        deleteProperty: this._deleteState.bind(this),
+        set: this._setState.bind(this),
+        get: (origin, key) => Reflect.get(this._stateCache, key)
+    })
 
-    private _stateHandlers: Map<Event, StateHandler> & Map<StateHandler, Event> = new Map()
-    private _stateChannels: Map<Model, Event[]> & Map<Event, Model[]> = new Map()
+    private _stateModifiersByHandler = new Map<StateHandler, Event>()
+    private _stateHandlersByModifier = new Map<Event, StateHandler>()
+    private _stateModifiers: Event[] = [];
+    private _stateProducersByModifier = new Map<Event, Model[]>()
 
-    private static _decorKeys: Map<Constructor<Model>, string[]> = new Map();
-    protected static useDecor<T extends Model>(
-        state: Partial<Record<KeyOf<T['state']>, boolean>>
-    ) {
-        return function (constructor: Constructor<T>) {
-            Model._decorKeys.set(constructor, Object.keys(state));
+    private static _isModifyEnabled: boolean = false;
+    protected static useModifier() {
+        return function (constructor: Constructor<Model>) {
+            const model: Model = constructor.prototype;
+            model.meta._isModifyEnabled = true;
         };
     }
 
-    protected bindDecor<M extends Model>(
-        target: M,
-        handler: StateHandler<M['state']>,
-        uuid?: string,  
-        lane?: number,
-    ) {
-        if (!this._isInited && !this._isIniting) return;
-        if (!uuid) uuid = FactoryService.uuid;
-        if (!lane) lane = 0;
-
-        const consumer = this._stateHandlers.get(handler) ?? new Event(this);
-        this._stateHandlers.set(consumer, handler);
-        this._stateHandlers.set(handler, consumer);
-
-        const models = this._stateChannels.get(consumer) || [];
-        models.push(target);
-        this._stateChannels.set(consumer, models);
-
-        const consumers = target._stateChannels.get(target) || [];
-        consumers.push(consumer);
-        target._stateChannels.set(target, consumers);
-        target.resetState()
-    }
-
-    
-    protected unbindDecor<M extends Model>(
-        target: M | undefined,
-        handler: StateHandler<M['state']>,
-    ) {
-        const consumer = this._stateHandlers.get(handler);
-        if (!consumer) return;
-
-        const models = this._stateChannels.get(consumer) || [];
-        for (const curModel of [...models]) {
-            if (target && curModel !== target) continue;
-            
-            let consumers = curModel._stateChannels.get(curModel) || [];
-            consumers = consumers.filter(target => target !== consumer);
-            curModel._stateChannels.set(curModel, consumers);
-            curModel.resetState();
-
-            const index = models.indexOf(curModel);
-            if (index !== -1) models.splice(index, 1);
-        }
-
-        this._stateChannels.set(consumer, models);
-    }
-
-    private _emitDecor() {
-        if (!this._isInited) return;
-
-        const decorKeys = [];
-        let constructor: any = this.constructor;
-        while (constructor.__proto__ !== null) {
-            if (Model._decorKeys.has(constructor)) {
-                decorKeys.push(...Model._decorKeys.get(constructor) || []);
+    protected static ifModifyEnabled<R>(flag: boolean) {
+        return function (
+            target: Model,
+            key: string,
+            descriptor: TypedPropertyDescriptor<Callback<R | undefined>>
+        ): TypedPropertyDescriptor<Callback<R | undefined>> {
+            const handler = descriptor.value;
+            if (!handler) return descriptor;
+            descriptor.value = function(this: Model, ...args: any[]) {
+                if (this.meta._isModifyEnabled !== Boolean(flag)) return;
+                return handler.call(this, ...args);
             }
-            constructor = constructor.__proto__;
+            return descriptor;
+        };
+    }
+
+    @Model.ifStatus(ModelStatus.LOADED, ModelStatus.LOADING)
+    @Model.useLogger()
+    protected bindState<S extends Record<string, Value>>(
+        target: Model<S>,
+        handler: StateHandler<S>
+    ) {
+        if (target._root !== this._root) return
+
+        const modifier = this._stateModifiersByHandler.get(handler) ?? new Event(this);
+        this._stateHandlersByModifier.set(modifier, handler);
+        this._stateModifiersByHandler.set(handler, modifier);
+
+        const producers = this._stateProducersByModifier.get(modifier) || [];
+        producers.push(target);
+        this._stateProducersByModifier.set(modifier, producers);
+
+        target._stateModifiers.push(modifier);
+        target._reloadState()
+    }
+
+    @Model.ifStatus(ModelStatus.LOADED, ModelStatus.UNLOADING)
+    @Model.useLogger()
+    protected unbindState<S extends Record<string, Value>>(
+        target: Model<S> | undefined,
+        handler: StateHandler<S>,
+    ) {
+        const modifier = this._stateModifiersByHandler.get(handler);
+        if (!modifier) return;
+
+        const producers = this._stateProducersByModifier.get(modifier) || [];
+        for (const _producer of [...producers]) {
+            if (target && _producer !== target) continue;
+            
+            let modifiers = _producer._stateModifiers;
+            const modifierIndex = modifiers.indexOf(modifier);
+            if (modifierIndex === -1) continue;
+            modifiers.splice(modifierIndex, 1);
+            
+            _producer._reloadState();
+
+            const producerIndex = producers.indexOf(_producer);
+            if (producerIndex !== -1) producers.splice(producerIndex, 1);
         }
-        if (!decorKeys.length) return;
 
+        this._stateProducersByModifier.set(modifier, producers);
+    }
 
-        let stateDraft = { ...this.stateProxy };
-        const consumers = this._stateChannels.get(this) || [];
-        consumers.sort((a, b) => {
-            if (a.lane !== b.lane) return a.lane - b.lane;
-            return a.uuid > b.uuid ? 1 : -1;
-        });
+    @Model.ifStatus(ModelStatus.LOADED)
+    @Model.ifModifyEnabled(true)
+    @Model.useLogger()
+    private _modifyState(): S | undefined {
+        let stateDraft = { ...this._stateDraft };
+        const modifiers = [ ...this._stateModifiers ];
+        modifiers.sort((a, b) => a.target.uuid > b.target.uuid ? 1 : -1);
 
-        for (const consumer of [...consumers]) {
-            const { target } = consumer;
-            const handler = target._stateHandlers.get(consumer);
+        for (const modifier of modifiers) {
+            const { target } = modifier;
+            const handler = target._stateHandlersByModifier.get(modifier);
             if (!handler) continue;
             stateDraft = handler(stateDraft);
         }
-
-        const stateCache = { ...this.stateProxy };
-        for (const key of decorKeys) {
-            Reflect.set(stateCache, key, Reflect.get(stateDraft, key));
-        }
-
-        this._stateCache = stateCache;
+        return stateDraft;
     }
 
-
-    resetState() {
-        if (this._isAutomic) return;
-
-        this._isStateReset = false;
-        
+    @Model.ifAutomic(false)
+    @Model.useLogger()
+    private _reloadState() {
         const statePrev = this.state;
-
-        this._stateDraft = { ...this.stateProxy };
-        this._stateCache = { ...this.stateProxy };
-
-        this._emitDecor();
-
+        this._state = this._modifyState() || { ...this._stateDraft };
+        this._stateCache = { ...this._stateDraft };
         const stateNext = this.state;
-        this._isStateReset = true;
-        
         this.emitEvent(this.event.onStateUpdate, { 
             target: this, 
             statePrev,
@@ -379,35 +351,24 @@ export class Model<
         });
     }
 
-    /**
-     * Parent node, specified in initialization
-     * For root node, there is no parent
-     * @feature parent
-     */
     private _parent?: P
     public get parent() { return this._parent; }
 
-    protected queryParent<T extends Model>(type: Constructor<T>): T | undefined {
-        let target: Model | undefined = this.parent;
-        while (target) {
-            if (target instanceof type) return target;
-            target = target.parent;
-        }
-        return undefined;
-    }
-
-
-    
-
-    /**
-     * Child accesser
-     * @feature child
-     */
     get child(): C extends any[] ? Readonly<C> : Readonly<C> { 
-        return this._copyChild(this._childCache) 
+        return this._copyChild(this._child) 
     }
-    private _childCache: Readonly<C>
-    protected readonly childProxy: C
+    private readonly _childDraft: Readonly<C>
+    private _child: Readonly<C>
+    protected readonly childProxy: C = new Proxy({} as any, {
+        deleteProperty: this._deleteChild.bind(this),
+        set: this._setChild.bind(this),
+        get: (origin, key) => {
+            const value = Reflect.get(this._child, key);
+            if (typeof value !== 'function') return value;
+            if (typeof key === 'symbol') return value;
+            return this._delegateChild.bind(this, key);
+        }
+    })
     private readonly _childRefer: Record<string, Model> = {}
 
     private _copyChild(origin: C): C extends any[] ? Readonly<C> : Readonly<C> {
@@ -430,6 +391,7 @@ export class Model<
         return list;
     }
 
+    @Model.useAutomic()
     protected removeChild(model?: Model): Model | undefined {
         if (!model) return;
         if (this.childProxy instanceof Array) {
@@ -437,21 +399,15 @@ export class Model<
             if (index === -1) return;
             this.childProxy.splice(index, 1);
             return model;
-        } else {
-            for (const key of Object.keys(this.childProxy)) {
-                const value = Reflect.get(this.childProxy, key);
-                if (value !== model) continue;
-                Reflect.deleteProperty(this.childProxy, key);
-                return model;
-            }
+        } 
+        for (const key of Object.keys(this.childProxy)) {
+            const value = Reflect.get(this.childProxy, key);
+            if (value !== model) continue;
+            Reflect.deleteProperty(this.childProxy, key);
+            return model;
         }
     }
 
-    /**
-     * Operate child in transaction, reset child at the end
-     * @decorator
-     * @feature lifecycle, child
-     */
     protected static useAutomic() {
         return function(
             target: Model,
@@ -460,34 +416,35 @@ export class Model<
         ) {
             const handler = descriptor.value;
             if (!handler) return descriptor;
-            descriptor.value = function(this: Model, ...args: any[]) {
-                if (this._isAutomic) return handler.apply(this, args);
-                this._isAutomic = true;
-                const result = handler.apply(this, args);
-                this._isAutomic = false;
-                this.resetState();
-                this.resetChild();
-                return result;
+            const instance = {
+                [key](this: Model, ...args: any[]) {
+                    if (this._isAutomic) return handler.apply(this, args);
+                    this._isAutomic = true;
+                    console.log('Automic+ ============')
+                    const result = handler.apply(this, args);
+                    console.log('Automic- ============')
+                    this._isAutomic = false;
+                    this._reloadState();
+                    this._reloadChild();
+                    return result;
+                }
             }
+            descriptor.value = instance[key];
             return descriptor;
         }
     }
 
-    /**
-     * Reset child
-     * @feature lifecycle
-     */
-    resetChild() {
-        if (this._isAutomic) return;
-        if (!this._isChildReset) return;
-
-        this._isChildReset = false;
+    @Model.ifAutomic(false)
+    @Model.useLogger()
+    private _reloadChild() {
         this._precheckChild();
         const childPrev = this.child;
-        this._childCache = this._copyChild(this.childProxy);
-        const childNext = this.child;
-        this._isChildReset = true;
-        
+        const childNext = this._copyChild(this._childDraft);
+
+        this._unloadChild(childPrev, childNext);
+        this._child = this._copyChild(this._childDraft);
+        this._loadChild(childPrev, childNext);
+
         this.emitEvent(this.event.onChildUpdate, { 
             target: this, 
             childPrev,
@@ -495,181 +452,179 @@ export class Model<
         })
     }
 
-    private _precheckChild() {
-        // Replace all invalid models with copies
-        for (const key in Object.keys(this.childProxy)) {
-            const value = Reflect.get(this.childProxy, key);
-            if (!(value instanceof Model)) continue;
-            const model = value._isReserved ? value.copy() : value;
-            Reflect.set(this.childProxy, key, model);
-            model._isReserved = true;
-        }
-        
-        const childNext = this._listChild(this.childProxy);
-        const childPrev = this._listChild(this.child);
-        const childAdd = childNext.filter(child => !childPrev.includes(child));
-        const childDel = childPrev.filter(child => !childNext.includes(child));
-
-        if (!this._isIniting && !this._isInited) return;
-        for (const child of childAdd) child._init(this);
-        for (const child of childDel) child._uninit();
+    @Model.ifStatus(ModelStatus.LOADED)
+    @Model.useLogger()
+    private _loadChild(
+        childPrev: Readonly<C>,
+        childNext: Readonly<C>,
+    ) {
+        const _childPrev = this._listChild(childPrev)
+        const _childNext = this._listChild(childNext)
+        const childAdd = _childNext.filter(child => !_childPrev.includes(child));
+        for (const child of childAdd) child._load();
     }
 
+    @Model.ifStatus(ModelStatus.LOADED)
+    @Model.useLogger()
+    private _unloadChild(
+        childPrev: Readonly<C>,
+        childNext: Readonly<C>,
+    ) {
+        const _childPrev = this._listChild(childPrev)
+        const _childNext = this._listChild(childNext)
+        const childDel = _childPrev.filter(child => !_childNext.includes(child));
+        for (const child of childDel) child._unload();
+    }
+
+    @Model.useLogger()
+    private _precheckChild() {
+        const childPrev = this._listChild(this.child);
+        for (const key of Object.keys(this.childProxy)) {
+            let value = Reflect.get(this.childProxy, key);
+            if (!(value instanceof Model)) continue;
+            if (childPrev.includes(value)) continue;
+            const model = value._isOrdered ? value.copy() : value;
+            if (model !== value) Reflect.set(this.childProxy, key, model);
+            model._isOrdered = true;
+        }
+    }
     
-
-    /**
-     * child is initializing in transaction
-     * @feature lifecycle
-     */
+    private _isOrdered = false;
     private _isAutomic = false;
-    private _isReserved = false;
-    private _isInited = false;
-    private _isIniting = false;
-    private _isStateReset = false;
-    private _isChildReset = false;
 
-    private static readonly _hooksInit = new Map<Function, string[]>()
-    private static readonly _hooksChildInit = new Map<Function, string[]>()
-
-    private _init(parent?: P) {
-        if (this._isInited) return;
-        if (this._isIniting) return;
-
-        this._isIniting = true;
-
-        if (parent) {
-            this._parent = parent;
-            this._parent._childRefer[this.uuid] = this;
+    private static ifAutomic(flag: boolean) {
+        return function(
+            target: Model,
+            key: string,
+            descriptor: TypedPropertyDescriptor<Callback>
+        ): TypedPropertyDescriptor<Callback> {
+            const handler = descriptor.value;
+            if (!handler) return descriptor;
+            descriptor.value = function(this: Model, ...args: any[]) {
+                if (this._isAutomic !== Boolean(flag)) return;
+                return handler.call(this, ...args);
+            }
+            return descriptor;
         }
+    }
 
-        // Initialize child first
-        for (const child of this._listChild(this.childProxy)) {
-            child._init(this);
-        }
+    private _status: ModelStatus = ModelStatus.INITED;
+    protected static ifStatus<R>(...status: ModelStatus[]) {
+        return function(
+            target: Model,
+            key: string,
+            descriptor: TypedPropertyDescriptor<Callback<R | undefined>>
+        ): TypedPropertyDescriptor<Callback<R | undefined>> {
+            const handler = descriptor.value;
+            if (!handler) return descriptor;
+            descriptor.value = function(this: Model,...args: any[]) {
+                const _status = status instanceof Array ? status : [status];
+                if (!_status.includes(this._status)) return;
+                return handler.call(this, ...args);
+            }
+            return descriptor;
+        };
+    }
 
-        // Trigger child init hooks of all ancestor nodes
+    private static readonly _hooksLoad: string[] = []
+    private static readonly _hooksUnload: string[] = []
+    private static readonly _hooksChildLoad: string[] = []
+    private static readonly _hooksChildUnload: string[] = []
+
+    @Model.useLogger()
+    @Model.ifStatus(ModelStatus.INITED)
+    private _load(parent?: P) {
+        this._status = ModelStatus.LOADING;
+
+        this._parent = parent;
+        if (parent) parent._childRefer[this.uuid] = this;
+
+        for (const child of this._listChild(this.child)) child._load();
+
         let ancestor: Model | undefined = this._parent;
         while (ancestor) {
-            let constructor: any = ancestor.constructor;
-            while (constructor.__proto__ !== null) {
-                const keys = Model._hooksChildInit.get(constructor) || [];
-                for (const key of keys) {
-                    const initer = Reflect.get(ancestor, key);
-                    if (typeof initer === 'function') initer.call(ancestor, this);
-                }
-                constructor = constructor.__proto__;
+            const keys = this.meta._hooksChildLoad;
+            for (const key of keys) {
+                const handler = Reflect.get(ancestor, key);
+                if (!(typeof handler === 'function')) continue;
+                handler.call(ancestor, this);
             }
             ancestor = ancestor.parent;
         }
 
-        // Trigger init hooks
-        let constructor: any = this.constructor;
-        while (constructor.__proto__ !== null) {
-            const keys = Model._hooksInit.get(constructor) || [];
+        for (const key of this.meta._hooksLoad) {
+            const handler = Reflect.get(this, key);
+            if (!(typeof handler === 'function')) continue;
+            handler.call(this);
+        }
+
+        this._status = ModelStatus.LOADED;
+        this._reloadState();
+    }
+
+    @Model.useLogger()
+    @Model.ifStatus(ModelStatus.LOADED)
+    private _unload() {
+        this._status = ModelStatus.UNLOADING;
+        
+        let ancestor: Model | undefined = this._parent;
+        while (ancestor) {
+            const keys = this.meta._hooksChildUnload;
             for (const key of keys) {
-                const initer = Reflect.get(this, key);
-                if (typeof initer === 'function') initer.call(this);
+                const handler = Reflect.get(ancestor, key);
+                if (!(typeof handler === 'function')) continue;
+                handler.call(ancestor, this);
             }
-            constructor = constructor.__proto__;
+            ancestor = ancestor.parent;
         }
-        
-        this._isIniting = false;
-        this._isInited = true;
-
-        this.resetState();
-    }
-
-
-    /**
-     * Uninitialize model, it will uninitialize all child nodes and clear all event bindings
-     * @feature lifecycle
-     */
-    private _uninit() {
-        if (!this._isInited) return;
-        if (this._isIniting) return;
-
-        this._isIniting = true;
-
-        // Uninitialize child first
-        for (const child of this._listChild(this.childProxy)) {
-            child._uninit();
+        const keys = this.meta._hooksUnload;
+        for (const key of keys) {
+            const handler = Reflect.get(this, key);
+            if (!(typeof handler === 'function')) continue;
+            handler.call(this);
         }
 
-        // Unbind all event
-        for (const channel of this._eventChannels) {
-            const entity = channel[0];
-
-            // Unbind all event consumer
-            const handler = this._eventHandlers.get(entity);
-            if (handler) this.unbindEvent(undefined, handler)
-                
-            // Unbind all event producer
-            else if (this._eventProducers.has(entity)) {
-                const [ producer, consumers ] = channel;
-                consumers.forEach(consumer => {
-                    const handler = consumer.target._eventHandlers.get(consumer);
-                    if (!handler) return;
-                    consumer.target.unbindEvent(producer, handler)
-                });
-            }
-        }
-
-        // Unbind all decor
-        for (const channel of this._stateChannels) {
-            const entity = channel[0];
-            if (entity instanceof Model) {
-                const consumers = channel[1];
-                for (const consumer of consumers) {
-                    const target = consumer.target;
-                    const handler = target._stateHandlers.get(consumer);
-                    if (!handler) continue;
-                    target.unbindDecor(this, handler);
-                }
-            } else {
-                const handler = this._stateHandlers.get(entity);
-                if (handler) this.unbindDecor(this, handler);
-            }
-        }
-        
         const parent = this._parent;
-        if (parent) {
-            this._parent = undefined;
-            parent._childRefer[this.uuid] = this;
+        this._parent = undefined;
+        if (parent) delete parent._childRefer[this.uuid];
+
+        for (const child of this._listChild(this.child)) child._unload();
+
+        for (const channel of this._eventConsumersByProducer) {
+            const [ consumer ] = channel;
+            const handler = this._eventHandlersByConsumer.get(consumer);
+            if (!handler) continue;
+            this.unbindEvent(undefined, handler)
+        }
+        for (const channel of this._eventProducersByConsumer) {
+            const [ producer, consumers ] = channel;
+            consumers.forEach(consumer => {
+                const target = consumer.target;
+                const handler = target._eventHandlersByConsumer.get(consumer);
+                if (!handler) return;
+                target.unbindEvent(producer, handler)
+            });
+        }
+        for (const modifier of this._stateModifiers) {
+            const target = modifier.target;
+            const handler = target._stateHandlersByModifier.get(modifier);
+            if (!handler) continue;
+            target.unbindState(this, handler);
+        }
+        for (const channel of this._stateProducersByModifier) {
+            const [ modifier ] = channel;
+            const handler = this._stateHandlersByModifier.get(modifier);
+            if (!handler) continue;
+            this.unbindState(undefined, handler);
         }
 
-        this._isIniting = false;
-        this._isInited = false;
+        this._status = ModelStatus.INITED;
+        this._reloadState();
     }
 
-    /**
-     * Get constructor name
-     * Sometimes, the constructor is anonymous, access the name from the prototype chain
-     * @feature factory
-     */
-    get name() {
-        let constructor: any = this.constructor;
-        while (constructor.__proto__ !== null) {
-            if (constructor.name) return constructor.name;
-            constructor = constructor.__proto__;
-        }
-        return constructor.name;
-    }
-
-
-    /**
-     * Unique id of model
-     * @feature uuid
-     */
     readonly uuid: string;
 
-    /**
-     * Accessor the path from the root node to the current model
-     * If the model is not initialized, it will only return it's uuid
-     * @feature uuid
-     * @returns path
-     */
     get path(): string[] | undefined {
-        if (!this._isInited || this._isIniting) return undefined;
         const result: string[] = [];
         let ancestor: Model | undefined = this;
         while (ancestor) {
@@ -679,12 +634,6 @@ export class Model<
         return result;
     }
 
-    /**
-     * Query child by path
-     * @feature uuid
-     * @param path - path
-     * @returns child
-     */
     queryChild(path: string[] | string): Model | undefined {
         if (typeof path === 'string') return this._childRefer[path];
         for (const uuid of path) {
@@ -696,42 +645,110 @@ export class Model<
         return undefined;
     }
 
-    /**
-     * Trigger when the model is initialized
-     * @decorator
-     * @feature lifecycle
-    */
-    static onInit() {
+    protected static onLoad() {
         return function(
             target: Model,
             key: string,
-            descriptor: TypedPropertyDescriptor<() => unknown>
-        ): TypedPropertyDescriptor<() => unknown> {
-            const keys = Model._hooksInit.get(target.constructor) || [];
-            keys.push(key);
-            Model._hooksInit.set(target.constructor, keys);
+            descriptor: TypedPropertyDescriptor<Callback>
+        ): TypedPropertyDescriptor<Callback> {
+            target.meta._hooksLoad.push(key);
             return descriptor;
         };
     }
 
-
-    /**
-     * Trigger when the model's descendant node is initialized
-     * @decorator
-     * @feature lifecycle
-     */
-    static onChildInit() {
+    protected static onUnload() {
         return function(
             target: Model,
             key: string,
-            descriptor: TypedPropertyDescriptor<(child: Model) => unknown>
-        ): TypedPropertyDescriptor<(child: Model) => unknown> {
-            const keys = Model._hooksChildInit.get(target.constructor) || [];
-            keys.push(key);
-            Model._hooksChildInit.set(target.constructor, keys);
+            descriptor: TypedPropertyDescriptor<Callback>
+        ): TypedPropertyDescriptor<Callback> {
+            target.meta._hooksUnload.push(key);
+            return descriptor;
+        };
+    }
+
+    protected static onChildLoad() {
+        return function(
+            target: Model,
+            key: string,
+            descriptor: TypedPropertyDescriptor<Callback<unknown, [Model]>>
+        ): TypedPropertyDescriptor<Callback<unknown, [Model]>> {
+            target.meta._hooksChildLoad.push(key);
+            return descriptor;
+        };
+    }
+
+    protected static onChildUnload() {
+        return function(
+            target: Model,
+            key: string,
+            descriptor: TypedPropertyDescriptor<Callback<unknown, [Model]>>
+        ): TypedPropertyDescriptor<Callback<unknown, [Model]>> {
+            target.meta._hooksChildUnload.push(key);
+            return descriptor;
+        };
+    }
+
+    static precheck<F extends Callback>(target: Model, method: F, ...args: Parameters<F>) {
+        const _validators = Model._validators.get(method) || [];
+        for (const validator of _validators) {
+            const result = validator(target, ...args);
+            if (!result) return false;
+        }
+        return true;
+    }
+
+    private static _validators: Map<Callback, Callback[]> = new Map();
+    protected static if<M extends Model, R = any, P extends any[] = any[]>(
+        validator: (target: M, ...args: P) => any,
+        error?: string | Error,
+    ) {
+        return function (
+            target: M,
+            key: string,
+            descriptor: TypedPropertyDescriptor<Callback<R | undefined, P>>
+        ): TypedPropertyDescriptor<Callback<R | undefined, P>> {
+            const handler = descriptor.value;
+            const instance = {
+                [key](this: M, ...args: P) {
+                    const result = validator(this, ...args);
+                    if (result && handler) return handler.apply(this, args);
+                    if (error instanceof Error) throw error;
+                    if (error) console.warn(error);
+                    return
+                }
+            }
+            descriptor.value = instance[key];
+            const _validators = Model._validators.get(descriptor.value) || [];
+            _validators.push(validator);
+            Model._validators.set(descriptor.value, _validators);
+            return descriptor;
+        };
+    }
+
+    private static _stack: string[] = []
+    protected static useLogger() {
+        return function(
+            target: Model,
+            key: string,
+            descriptor: TypedPropertyDescriptor<Callback>
+        ): TypedPropertyDescriptor<Callback> {
+            const handler = descriptor.value;
+            if (!handler) return descriptor;
+            const instance = {
+                [key](this: Model, ...args: any[]) {
+                    console.log(
+                        new Array(Model._stack.length).fill('  ').join(''),
+                        this.constructor.name + '::' + key
+                    )
+                    Model._stack.push(key);
+                    const result = handler.call(this, ...args);
+                    Model._stack.pop();
+                    return result;
+                }
+            }
+            descriptor.value = instance[key];
             return descriptor;
         };
     }
 }
-
-

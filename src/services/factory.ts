@@ -3,27 +3,13 @@ import Joi from "joi";
 
 export class FactoryService {
     
-    /**
-     * Map from product code to model constructor
-     */
-    private static _products: Map<string, any> = new Map();
-
+    private static _productsByCode: Map<string, any> = new Map();
+    private static _codesByProduct: Map<Function, string> = new Map();
     
-    /**
-     * Map from model constructor to product code
-     */
-    private static _identifiers: Map<Function, string> = new Map();
-    
-    /**
-     * Register model as product
-     * @decorator
-     * @param code 
-     * @returns 
-     */
     static useProduct<T extends string>(code: T) {
         return function (constructor: new (...args: any[]) => Model) {
-            FactoryService._products.set(code, constructor);
-            FactoryService._identifiers.set(constructor, code);
+            FactoryService._productsByCode.set(code, constructor);
+            FactoryService._codesByProduct.set(constructor, code);
         };
     }
 
@@ -42,14 +28,8 @@ export class FactoryService {
         return now.toString(36) + ticket.toString(36);
     }
   
-
-    /**
-     * Serialize model to json data (chunk)
-     * @param model - model 
-     * @returns chunk
-     */
     static serialize(model: Model) {
-        const code = FactoryService._identifiers.get(model.constructor);
+        const code = FactoryService._codesByProduct.get(model.constructor);
         if (!code) return undefined;
         const props = model.props;
         const child = props.child instanceof Array ? [] : {};
@@ -69,12 +49,6 @@ export class FactoryService {
         }
     }
 
-
-    /**
-     * Deserialize json data to model
-     * @param chunk - json data
-     * @returns model
-     */
     static deserialize(chunk: {
         code: string,
         uuid: string,
@@ -83,7 +57,6 @@ export class FactoryService {
     }) {
         if (!chunk) return undefined;
         
-        // Validate chunk schema
         const schema = Joi.object({
             uuid: Joi.string().optional(),
             code: Joi.string().required(),
@@ -96,8 +69,7 @@ export class FactoryService {
         const { error } = schema.validate(chunk);
         if (error) return undefined;
 
-        // Get model type
-        const constructor = FactoryService._products.get(chunk.code);
+        const constructor = FactoryService._productsByCode.get(chunk.code);
         if (!constructor) return undefined;
 
         let child: any;
@@ -117,8 +89,6 @@ export class FactoryService {
                 Reflect.set(child, key, model);
             }
         }
-
-        // Create model
         return new constructor({
             code: chunk.code,
             uuid: chunk.uuid,

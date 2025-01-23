@@ -16,24 +16,15 @@ export function View<M extends Model>(props: {
     if (!model) return null;
 
     let name = model.constructor.name;
-    let constructor: any = model.constructor;
-    while (!name && constructor.__proto__ !== null) {
-        constructor = constructor.__proto__;
-        name = constructor.name;
-    }
 
     return <div className="model">
         <div className={`state ${isFold ? 'fold' : ''}`}>
-            <div 
-                className="title" 
-                onClick={() => setIsFold(!isFold)}
-            >
+            <div className="title" onClick={() => setIsFold(!isFold)}>
                 {name}
             </div>
             <div>uuid: {model.uuid}</div>
-            <Link model={model} action="debug"  />
-            {!isFold && state}
-            {!isFold && <State model={model} />}
+            <Link model={model} method={model.debug}  />
+            {!isFold && (state ?? <State model={model} />)}
         </div>
         {!isFold && <div className="child">
             {child ?? <Child model={model} />}
