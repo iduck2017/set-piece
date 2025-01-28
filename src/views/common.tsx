@@ -10,13 +10,12 @@ export function Link<
 >(props: {
     model?: M,
     method?: F,
-    args?: Parameters<F>,
+    args: Parameters<F>,
     thener?: (result: ReturnType<F>) => void,
 }) {
     const { model, method, args, thener } = props;
     if (!model) return null;
     if (!method) return null;
-    if (!args) return null;
 
     const result = Model.precheck(model, method, ...args);
     if (!result) return null;

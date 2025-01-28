@@ -23,7 +23,7 @@ export function View<M extends Model>(props: {
                 {name}
             </div>
             <div>uuid: {model.uuid}</div>
-            <Link model={model} method={model.debug}  />
+            <Link model={model} method={model.debug} args={[]} />
             {!isFold && (state ?? <State model={model} />)}
         </div>
         {!isFold && <div className="child">

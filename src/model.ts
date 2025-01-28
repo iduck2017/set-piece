@@ -1,5 +1,5 @@
 import { Event, ChildUpdateEvent, StateUpdateEvent } from "./types";
-import { KeyOf, Value } from "./types";
+import { Value } from "./types";
 import { FactoryService } from "@/services/factory";
 
 type EventHandler<E = any> = (event: E) => void
@@ -7,6 +7,7 @@ type StateHandler<S = any> = (state: S) => S
 type Strict<T> = T & { _never?: never }
 type Callback<T = any, P extends any[] = any[]> = (...args: P) => T
 type Constructor<T> = new (...args: any[]) => T
+type KeyOf<T> = keyof T & string
 
 export enum ModelStatus {
     INITED,
@@ -21,10 +22,11 @@ export class Model<
     C extends Record<string, Model> | Model[] = any,
     P extends Model | undefined = any | undefined,
 > {
-    get meta(): typeof Model {
-        return this.constructor as typeof Model;
+    private get _constructor(): typeof Model {
+        const constructor: any = this.constructor;
+        return constructor;
     }
-
+    
     constructor(props: Readonly<{
         uuid?: string,
         state: Strict<Readonly<S>>,
@@ -39,8 +41,30 @@ export class Model<
         const child = this._prepareChild(props.child);
         this._childDraft = this._copyChild(child);
         this._child = this._copyChild(child);
+        this.childProxy = new Proxy(this._childDraft, {
+            deleteProperty: this._deleteChild.bind(this),
+            set: this._setChild.bind(this),
+            get: (origin, key: string) => {
+                const value = Reflect.get(this._child, key);
+                if (!(this._childDraft instanceof Array)) return value;
+                if (typeof value !== 'function') return value;
+                if (key === 'push') return this._delegateChild.bind(this, key);
+                if (key === 'pop') return this._delegateChild.bind(this, key);
+                if (key === 'shift') return this._delegateChild.bind(this, key);
+                if (key === 'unshift') return this._delegateChild.bind(this, key);
+                if (key === 'splice') return this._delegateChild.bind(this, key);
+                if (key === 'sort') return this._delegateChild.bind(this, key);
+                if (key === 'reverse') return this._delegateChild.bind(this, key);
+                if (key === 'fill') return this._delegateChild.bind(this, key);
+                return this._observeChild.bind(this, key);
+            }
+        })
 
-        if (this.meta._isRoot) this._load(undefined as any);
+        if (this._constructor._isRoot) {
+            const parent: any = undefined;
+            this._isOrdered = true;
+            this._load(parent);
+        }
     }
 
 
@@ -99,13 +123,22 @@ export class Model<
         return handler.call(this._childDraft, ...args);
     }
 
-    debug() {
-        console.log(this.constructor.name);
-        console.log(this.state);
-        console.log(this.child);
+    @Model.useLogger()
+    private _observeChild(key: string, ...args: any[]) {
+        const handler = Reflect.get(this._child, key);
+        if (typeof handler !== 'function') return;
+        return handler.call(this._child, ...args);
     }
 
-    @Model.useLogger()
+    debug() {
+        console.log(this.constructor.name);
+        console.log(this._isOrdered)
+        console.log(this._constructor._hooksChildLoad)
+        // console.log(this.state);
+        // console.log(this.child);
+    }
+
+    // @Model.useLogger()
     useModel(setter: EventHandler<{ target: Model }>) {
         this.bindEvent(this.event.onChildUpdate, setter);
         this.bindEvent(this.event.onStateUpdate, setter);
@@ -141,7 +174,7 @@ export class Model<
     protected static useRoot() {
         return function (constructor: Constructor<Model>) {
             const model: Model = constructor.prototype;
-            model.meta._isRoot = true;
+            model._constructor._isRoot = true;
         };
     }
 
@@ -170,6 +203,7 @@ export class Model<
     private readonly _eventProducersByConsumer = new Map<Event, Event[]>()
 
     @Model.ifStatus(ModelStatus.LOADED)
+    @Model.useLogger()
     protected emitEvent<E>(producer: Event<E>, event: E) {
         const _consumers = this._eventConsumersByProducer.get(producer) || [];
         const consumers = [..._consumers];
@@ -185,7 +219,7 @@ export class Model<
     
 
     @Model.ifStatus(ModelStatus.LOADED, ModelStatus.LOADING)
-    @Model.useLogger()
+    // @Model.useLogger()
     protected bindEvent<E>(
         producer: Event<E>, 
         handler: EventHandler<E>,
@@ -207,7 +241,7 @@ export class Model<
     }
 
     @Model.ifStatus(ModelStatus.LOADED, ModelStatus.UNLOADING)
-    @Model.useLogger()
+    // @Model.useLogger()
     protected unbindEvent<E>(
         producer: Event<E> | undefined,
         handler: EventHandler<E>,
@@ -249,15 +283,15 @@ export class Model<
     private _stateModifiers: Event[] = [];
     private _stateProducersByModifier = new Map<Event, Model[]>()
 
-    private static _isModifyEnabled: boolean = false;
+    private static _isModifiable: boolean = false;
     protected static useModifier() {
         return function (constructor: Constructor<Model>) {
             const model: Model = constructor.prototype;
-            model.meta._isModifyEnabled = true;
+            model._constructor._isModifiable = true;
         };
     }
 
-    protected static ifModifyEnabled<R>(flag: boolean) {
+    protected static ifModifiable<R>(flag: boolean) {
         return function (
             target: Model,
             key: string,
@@ -266,7 +300,7 @@ export class Model<
             const handler = descriptor.value;
             if (!handler) return descriptor;
             descriptor.value = function(this: Model, ...args: any[]) {
-                if (this.meta._isModifyEnabled !== Boolean(flag)) return;
+                if (this._constructor._isModifiable !== Boolean(flag)) return;
                 return handler.call(this, ...args);
             }
             return descriptor;
@@ -290,7 +324,7 @@ export class Model<
         this._stateProducersByModifier.set(modifier, producers);
 
         target._stateModifiers.push(modifier);
-        target._reloadState()
+        target.reloadState()
     }
 
     @Model.ifStatus(ModelStatus.LOADED, ModelStatus.UNLOADING)
@@ -311,7 +345,7 @@ export class Model<
             if (modifierIndex === -1) continue;
             modifiers.splice(modifierIndex, 1);
             
-            _producer._reloadState();
+            _producer.reloadState();
 
             const producerIndex = producers.indexOf(_producer);
             if (producerIndex !== -1) producers.splice(producerIndex, 1);
@@ -321,7 +355,7 @@ export class Model<
     }
 
     @Model.ifStatus(ModelStatus.LOADED)
-    @Model.ifModifyEnabled(true)
+    @Model.ifModifiable(true)
     @Model.useLogger()
     private _modifyState(): S | undefined {
         let stateDraft = { ...this._stateDraft };
@@ -339,7 +373,7 @@ export class Model<
 
     @Model.ifAutomic(false)
     @Model.useLogger()
-    private _reloadState() {
+    reloadState() {
         const statePrev = this.state;
         this._state = this._modifyState() || { ...this._stateDraft };
         this._stateCache = { ...this._stateDraft };
@@ -359,17 +393,8 @@ export class Model<
     }
     private readonly _childDraft: Readonly<C>
     private _child: Readonly<C>
-    protected readonly childProxy: C = new Proxy({} as any, {
-        deleteProperty: this._deleteChild.bind(this),
-        set: this._setChild.bind(this),
-        get: (origin, key) => {
-            const value = Reflect.get(this._child, key);
-            if (typeof value !== 'function') return value;
-            if (typeof key === 'symbol') return value;
-            return this._delegateChild.bind(this, key);
-        }
-    })
-    private readonly _childRefer: Record<string, Model> = {}
+    protected readonly childProxy: C
+    private readonly _childByUuid: Record<string, Model> = {}
 
     private _copyChild(origin: C): C extends any[] ? Readonly<C> : Readonly<C> {
         const child: any = origin instanceof Array ? [] : {};
@@ -392,6 +417,7 @@ export class Model<
     }
 
     @Model.useAutomic()
+    @Model.useLogger()
     protected removeChild(model?: Model): Model | undefined {
         if (!model) return;
         if (this.childProxy instanceof Array) {
@@ -406,6 +432,7 @@ export class Model<
             Reflect.deleteProperty(this.childProxy, key);
             return model;
         }
+        return
     }
 
     protected static useAutomic() {
@@ -424,8 +451,8 @@ export class Model<
                     const result = handler.apply(this, args);
                     console.log('Automic- ============')
                     this._isAutomic = false;
-                    this._reloadState();
-                    this._reloadChild();
+                    this.reloadState();
+                    this.reloadChild();
                     return result;
                 }
             }
@@ -436,7 +463,7 @@ export class Model<
 
     @Model.ifAutomic(false)
     @Model.useLogger()
-    private _reloadChild() {
+    reloadChild() {
         this._precheckChild();
         const childPrev = this.child;
         const childNext = this._copyChild(this._childDraft);
@@ -479,18 +506,23 @@ export class Model<
     @Model.useLogger()
     private _precheckChild() {
         const childPrev = this._listChild(this.child);
-        for (const key of Object.keys(this.childProxy)) {
-            let value = Reflect.get(this.childProxy, key);
+        for (const key of Object.keys(this._childDraft)) {
+            let value = Reflect.get(this._childDraft, key);
             if (!(value instanceof Model)) continue;
-            if (childPrev.includes(value)) continue;
+            if (childPrev.includes(value)) {
+                const index = childPrev.indexOf(value);
+                if (index !== -1) childPrev.splice(index, 1);
+                continue;
+            }
             const model = value._isOrdered ? value.copy() : value;
-            if (model !== value) Reflect.set(this.childProxy, key, model);
+            if (model !== value) Reflect.set(this._childDraft, key, model);
             model._isOrdered = true;
         }
     }
     
     private _isOrdered = false;
     private _isAutomic = false;
+    private _is = false;
 
     private static ifAutomic(flag: boolean) {
         return function(
@@ -526,10 +558,10 @@ export class Model<
         };
     }
 
-    private static readonly _hooksLoad: string[] = []
-    private static readonly _hooksUnload: string[] = []
-    private static readonly _hooksChildLoad: string[] = []
-    private static readonly _hooksChildUnload: string[] = []
+    private static _hooksLoad: Readonly<string[]> = []
+    private static _hooksUnload: Readonly<string[]> = []
+    private static _hooksChildLoad: Readonly<string[]> = []
+    private static _hooksChildUnload: Readonly<string[]> = []
 
     @Model.useLogger()
     @Model.ifStatus(ModelStatus.INITED)
@@ -537,13 +569,13 @@ export class Model<
         this._status = ModelStatus.LOADING;
 
         this._parent = parent;
-        if (parent) parent._childRefer[this.uuid] = this;
+        if (parent) parent._childByUuid[this.uuid] = this;
 
         for (const child of this._listChild(this.child)) child._load(this);
 
         let ancestor: Model | undefined = this._parent;
         while (ancestor) {
-            const keys = this.meta._hooksChildLoad;
+            const keys = ancestor._constructor._hooksChildLoad;
             for (const key of keys) {
                 const handler = Reflect.get(ancestor, key);
                 if (!(typeof handler === 'function')) continue;
@@ -552,14 +584,14 @@ export class Model<
             ancestor = ancestor.parent;
         }
 
-        for (const key of this.meta._hooksLoad) {
+        for (const key of this._constructor._hooksLoad) {
             const handler = Reflect.get(this, key);
             if (!(typeof handler === 'function')) continue;
             handler.call(this);
         }
 
         this._status = ModelStatus.LOADED;
-        this._reloadState();
+        this.reloadState();
     }
 
     @Model.useLogger()
@@ -569,7 +601,7 @@ export class Model<
         
         let ancestor: Model | undefined = this._parent;
         while (ancestor) {
-            const keys = this.meta._hooksChildUnload;
+            const keys = this._constructor._hooksChildUnload;
             for (const key of keys) {
                 const handler = Reflect.get(ancestor, key);
                 if (!(typeof handler === 'function')) continue;
@@ -577,7 +609,7 @@ export class Model<
             }
             ancestor = ancestor.parent;
         }
-        const keys = this.meta._hooksUnload;
+        const keys = this._constructor._hooksUnload;
         for (const key of keys) {
             const handler = Reflect.get(this, key);
             if (!(typeof handler === 'function')) continue;
@@ -586,7 +618,7 @@ export class Model<
 
         const parent = this._parent;
         this._parent = undefined;
-        if (parent) delete parent._childRefer[this.uuid];
+        if (parent) delete parent._childByUuid[this.uuid];
 
         for (const child of this._listChild(this.child)) child._unload();
 
@@ -619,7 +651,7 @@ export class Model<
         }
 
         this._status = ModelStatus.INITED;
-        this._reloadState();
+        this.reloadState();
     }
 
     readonly uuid: string;
@@ -635,9 +667,9 @@ export class Model<
     }
 
     queryChild(path: string[] | string): Model | undefined {
-        if (typeof path === 'string') return this._childRefer[path];
+        if (typeof path === 'string') return this._childByUuid[path];
         for (const uuid of path) {
-            const target = this._childRefer[uuid];
+            const target = this._childByUuid[uuid];
             if (!target) continue;
             const index = path.indexOf(uuid) + 1;
             return target.queryChild(path.slice(index));
@@ -651,7 +683,7 @@ export class Model<
             key: string,
             descriptor: TypedPropertyDescriptor<Callback>
         ): TypedPropertyDescriptor<Callback> {
-            target.meta._hooksLoad.push(key);
+            target._constructor._hooksLoad = [...target._constructor._hooksLoad, key];
             return descriptor;
         };
     }
@@ -662,7 +694,7 @@ export class Model<
             key: string,
             descriptor: TypedPropertyDescriptor<Callback>
         ): TypedPropertyDescriptor<Callback> {
-            target.meta._hooksUnload.push(key);
+            target._constructor._hooksUnload = [...target._constructor._hooksUnload, key];
             return descriptor;
         };
     }
@@ -673,7 +705,7 @@ export class Model<
             key: string,
             descriptor: TypedPropertyDescriptor<Callback<unknown, [Model]>>
         ): TypedPropertyDescriptor<Callback<unknown, [Model]>> {
-            target.meta._hooksChildLoad.push(key);
+            target._constructor._hooksChildLoad = [...target._constructor._hooksChildLoad, key];
             return descriptor;
         };
     }
@@ -684,13 +716,13 @@ export class Model<
             key: string,
             descriptor: TypedPropertyDescriptor<Callback<unknown, [Model]>>
         ): TypedPropertyDescriptor<Callback<unknown, [Model]>> {
-            target.meta._hooksChildUnload.push(key);
+            target._constructor._hooksChildUnload = [...target._constructor._hooksChildUnload, key];
             return descriptor;
         };
     }
 
     static precheck<F extends Callback>(target: Model, method: F, ...args: Parameters<F>) {
-        const _validators = Model._validators.get(method) || [];
+        const _validators = target._constructor._validators[method.name] || [];
         for (const validator of _validators) {
             const result = validator(target, ...args);
             if (!result) return false;
@@ -698,7 +730,7 @@ export class Model<
         return true;
     }
 
-    private static _validators: Map<Callback, Callback[]> = new Map();
+    private static _validators: Readonly<Record<string, Readonly<Callback[]>>> = {};
     protected static if<M extends Model, R = any, P extends any[] = any[]>(
         validator: (target: M, ...args: P) => any,
         error?: string | Error,
@@ -719,13 +751,16 @@ export class Model<
                 }
             }
             descriptor.value = instance[key];
-            const _validators = Model._validators.get(descriptor.value) || [];
-            _validators.push(validator);
-            Model._validators.set(descriptor.value, _validators);
+            const _validators = { ...target._constructor._validators };
+            _validators[key] = _validators[key] || [];
+            _validators[key] = [..._validators[key], validator];
+            target._constructor._validators = _validators;
             return descriptor;
         };
     }
 
+
+    
     private static _stack: string[] = []
     protected static useLogger() {
         return function(
