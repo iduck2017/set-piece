@@ -19,7 +19,7 @@ export enum ModelStatus {
 export class Model<
     S extends Record<string, Value> = {},
     E extends Record<string, Event> = {},
-    C extends Record<string, Model> | Model[] = any,
+    C extends Record<string, Model> | Model[] = {},
     P extends Model | undefined = any | undefined,
 > {
     private get _constructor(): typeof Model {
@@ -35,40 +35,50 @@ export class Model<
         this.uuid = props.uuid || FactoryService.uuid;
 
         this._stateDraft = { ...props.state }
+        this._stateFixed = { ...props.state }
         this._stateCache = { ...props.state }
         this._state = { ...props.state }
         
-        const child = this._prepareChild(props.child);
+        const child = this._initChild(props.child);
         this._childDraft = this._copyChild(child);
+        this._childCache = this._copyChild(child);
         this._child = this._copyChild(child);
+       
         this.childProxy = new Proxy(this._childDraft, {
-            deleteProperty: this._deleteChild.bind(this),
+            deleteProperty: this._delChild.bind(this),
             set: this._setChild.bind(this),
             get: (origin, key: string) => {
                 const value = Reflect.get(this._child, key);
-                if (!(this._childDraft instanceof Array)) return value;
                 if (typeof value !== 'function') return value;
-                if (key === 'push') return this._delegateChild.bind(this, key);
-                if (key === 'pop') return this._delegateChild.bind(this, key);
-                if (key === 'shift') return this._delegateChild.bind(this, key);
-                if (key === 'unshift') return this._delegateChild.bind(this, key);
-                if (key === 'splice') return this._delegateChild.bind(this, key);
-                if (key === 'sort') return this._delegateChild.bind(this, key);
-                if (key === 'reverse') return this._delegateChild.bind(this, key);
-                if (key === 'fill') return this._delegateChild.bind(this, key);
-                return this._observeChild.bind(this, key);
+                if (!Array.isArray(this._child)) return value;
+
+                if (key === 'pop') return this._popChild.bind(this);
+                if (key === 'push') return this._pushChild.bind(this);
+                if (key === 'shift') return this._shiftChild.bind(this);
+                if (key === 'unshift') return this._unshiftChild.bind(this);
+                if (key === 'splice') return this._spliceChild.bind(this);
+                if (key === 'sort') return this._sortChild.bind(this);
+                if (key === 'reverse') return this._reverseChild.bind(this);
+                if (key === 'fill') return this._fillChild.bind(this);
+
+                return value.bind(this._child);
             }
         })
 
-        if (this._constructor._isRoot) {
-            const parent: any = undefined;
-            this._isOrdered = true;
-            this._load(parent);
-        }
+        this._loadRoot()
     }
 
+    @Model.if(model => model._constructor._isRoot)
+    @Model.useFiber()
+    @Model.useLogger()
+    private _loadRoot() {
+        if (!this._constructor._isRoot) return;
+        const parent: any = undefined;
+        this._isOrdered = true;
+        this._load(parent);
+    }
 
-    private _prepareChild(child: Strict<Readonly<C>>) {
+    private _initChild(child: Strict<Readonly<C>>) {
         const origin: any = child instanceof Array ? [] : {};
         for (const key of Object.keys(child)) {
             const value = Reflect.get(child, key);
@@ -80,62 +90,147 @@ export class Model<
         return origin;
     }
 
-    @Model.useAutomic()
+    @Model.useFiber()
     @Model.useLogger()
     protected setState(handler: (prev: S) => S) {
         const stateNext = handler(this._stateDraft);
         this._stateDraft = { ...stateNext };
     }
 
-    @Model.useAutomic()
+    @Model.useFiber()
     @Model.useLogger()
     private _setState(origin: S, key: string, value: Value) {
         Reflect.set(this._stateDraft, key, value);
         return true;
     }
     
-    @Model.useAutomic()
+    @Model.useFiber()
     @Model.useLogger()
-    private _deleteState(origin: S, key: KeyOf<S>) {
+    private _delState(origin: S, key: KeyOf<S>) {
         Reflect.deleteProperty(this._stateDraft, key);
         return true;
     }
 
-    @Model.useAutomic()
+    @Model.useFiber()
     @Model.useLogger()
-    private _setChild(origin: C, key: KeyOf<C>, value: Model) {
-        Reflect.set(this._childDraft, key, value);
+    private _setChild(origin: C, key: KeyOf<C>, model: Model) {
+        const _model = model._isOrdered ? model.copy() : model;
+        Reflect.set(this._childDraft, key, _model);
+        _model._isOrdered = true;
         return true;
     }
 
-    @Model.useAutomic()
+    @Model.useFiber()
     @Model.useLogger()
-    private _deleteChild(origin: C, key: KeyOf<C>) {
+    private _delChild(origin: C, key: KeyOf<C>) {
+        const model = Reflect.get(this._childDraft, key);
         Reflect.deleteProperty(this._childDraft, key);
+        if (!(model instanceof Model)) return true;
+        model._isOrdered = false;
         return true;
     }
 
-    @Model.useAutomic()
+    @Model.useFiber()
     @Model.useLogger()
-    private _delegateChild(key: string, ...args: any[]) {
-        const handler = Reflect.get(this._childDraft, key);
-        if (typeof handler !== 'function') return;
-        return handler.call(this._childDraft, ...args);
+    private _popChild() {
+        if (!Array.isArray(this._childDraft)) return;
+        const result: Model | undefined = this._childDraft.pop();
+        if (result) result._isOrdered = false;
+        return result;
     }
 
+    @Model.useFiber()
     @Model.useLogger()
-    private _observeChild(key: string, ...args: any[]) {
-        const handler = Reflect.get(this._child, key);
-        if (typeof handler !== 'function') return;
-        return handler.call(this._child, ...args);
+    private _shiftChild() {
+        if (!Array.isArray(this._childDraft)) return;
+        const result: Model | undefined = this._childDraft.shift();
+        if (result) result._isOrdered = false;
+        return result;
+    }
+
+    @Model.useFiber()
+    @Model.useLogger()
+    private _pushChild(...args: Model[]) {
+        if (!Array.isArray(this._childDraft)) return 0;
+        const _args: Model[] = [];
+        for (const model of args) {
+            let _model: Model = model;
+            if (model._constructor._isRoot) _model = model.copy();
+            else if (model._isOrdered) _model = model.copy();
+            _args.push(_model);
+            _model._isOrdered = true;
+        }
+        const result = this._childDraft.push(..._args);
+        return result;
+    }
+
+    @Model.useFiber()
+    @Model.useLogger()
+    private _unshiftChild(...args: Model[]) {
+        if (!Array.isArray(this._childDraft)) return 0;
+        const _args: Model[] = [];
+        for (const model of args) {
+            let _model: Model = model;
+            if (model._constructor._isRoot) _model = model.copy();
+            else if (model._isOrdered) _model = model.copy();
+            _args.push(_model);
+            _model._isOrdered = true;
+        }
+        const result = this._childDraft.unshift(..._args);
+        return result;
+    }
+
+    @Model.useFiber()
+    @Model.useLogger()
+    private _spliceChild(index: number, count: number, ...args: Model[]) {
+        if (!Array.isArray(this._childDraft)) return [];
+        const _args: Model[] = [];
+        for (const model of args) {
+            let _model: Model = model;
+            if (model._constructor._isRoot) _model = model.copy();
+            else if (model._isOrdered) _model = model.copy();
+            _args.push(_model);
+            _model._isOrdered = true;
+        }
+        const result = this._childDraft.splice(index, count, ..._args);
+        result.forEach((model: Model) => model._isOrdered = false)
+        return result;
+    }
+
+    @Model.useFiber()
+    @Model.useLogger()
+    private _sortChild() {
+        if (!Array.isArray(this._childDraft)) return;
+        return this._childDraft.sort();
+    }
+
+    @Model.useFiber()
+    @Model.useLogger()
+    private _reverseChild() {
+        if (!Array.isArray(this._childDraft)) return;
+        return this._childDraft.reverse();
+    }
+
+    @Model.useFiber()
+    @Model.useLogger()
+    private _fillChild(sample: Model) {
+        if (!Array.isArray(this._childDraft)) return this._childDraft;
+        const length = this._childDraft.length;
+        for (let index = 0; index < length; index++) {
+            const prev: Model | undefined = this._childDraft[index];
+            if (prev) prev._isOrdered = false;
+            const model = sample.copy();
+            model._isOrdered = true;
+            this._childDraft[index] = model;
+        }
+        return this._childDraft;
     }
 
     debug() {
         console.log(this.constructor.name);
         console.log(this._isOrdered)
-        console.log(this._constructor._hooksChildLoad)
-        // console.log(this.state);
-        // console.log(this.child);
+        console.log(this.state);
+        console.log(this.child);
     }
 
     // @Model.useLogger()
@@ -156,7 +251,7 @@ export class Model<
         return {
             uuid: this.uuid,
             child: this.child,
-            state: { ...this._stateCache },
+            state: { ...this._stateFixed },
         }
     }
 
@@ -270,12 +365,13 @@ export class Model<
         return { ...this._state }
     }
     private _stateDraft: Readonly<S>
+    private _stateFixed: Readonly<S>
     private _stateCache: Readonly<S>
     private _state: Readonly<S>
     protected readonly stateProxy: S = new Proxy({} as any, {
-        deleteProperty: this._deleteState.bind(this),
+        deleteProperty: this._delState.bind(this),
         set: this._setState.bind(this),
-        get: (origin, key) => Reflect.get(this._stateCache, key)
+        get: (origin, key) => Reflect.get(this._stateFixed, key)
     })
 
     private _stateModifiersByHandler = new Map<StateHandler, Event>()
@@ -307,6 +403,11 @@ export class Model<
         };
     }
 
+    @Model.ifFiberic(true)
+    private _refresh() {
+        Model._fibers.push(this);
+    }
+
     @Model.ifStatus(ModelStatus.LOADED, ModelStatus.LOADING)
     @Model.useLogger()
     protected bindState<S extends Record<string, Value>>(
@@ -324,7 +425,7 @@ export class Model<
         this._stateProducersByModifier.set(modifier, producers);
 
         target._stateModifiers.push(modifier);
-        target.reloadState()
+        target._refresh();
     }
 
     @Model.ifStatus(ModelStatus.LOADED, ModelStatus.UNLOADING)
@@ -345,7 +446,7 @@ export class Model<
             if (modifierIndex === -1) continue;
             modifiers.splice(modifierIndex, 1);
             
-            _producer.reloadState();
+            _producer._refresh();
 
             const producerIndex = producers.indexOf(_producer);
             if (producerIndex !== -1) producers.splice(producerIndex, 1);
@@ -355,10 +456,10 @@ export class Model<
     }
 
     @Model.ifStatus(ModelStatus.LOADED)
-    @Model.ifModifiable(true)
     @Model.useLogger()
     private _modifyState(): S | undefined {
         let stateDraft = { ...this._stateDraft };
+
         const modifiers = [ ...this._stateModifiers ];
         modifiers.sort((a, b) => a.target.uuid > b.target.uuid ? 1 : -1);
 
@@ -371,18 +472,18 @@ export class Model<
         return stateDraft;
     }
 
-    @Model.ifAutomic(false)
+    @Model.ifFiberic(true)
     @Model.useLogger()
-    reloadState() {
-        const statePrev = this.state;
-        this._state = this._modifyState() || { ...this._stateDraft };
-        this._stateCache = { ...this._stateDraft };
-        const stateNext = this.state;
-        this.emitEvent(this.event.onStateUpdate, { 
-            target: this, 
-            statePrev,
-            stateNext
-        });
+    private _commitState() {
+        const state = this._modifyState()
+        this._state = state ?? { ...this._stateDraft };
+        this._stateFixed = { ...this._stateDraft };
+    }
+
+    @Model.ifFiberic(true)
+    @Model.useLogger()
+    private _commitChild() {
+        this._child = this._copyChild(this._childDraft);
     }
 
     private _parent?: P
@@ -392,7 +493,9 @@ export class Model<
         return this._copyChild(this._child) 
     }
     private readonly _childDraft: Readonly<C>
+    private _childCache: Readonly<C>
     private _child: Readonly<C>
+    public readonly childAgent!: C extends any[] ? C[number] : Partial<C> | undefined
     protected readonly childProxy: C
     private readonly _childByUuid: Record<string, Model> = {}
 
@@ -416,7 +519,7 @@ export class Model<
         return list;
     }
 
-    @Model.useAutomic()
+    @Model.useFiber()
     @Model.useLogger()
     protected removeChild(model?: Model): Model | undefined {
         if (!model) return;
@@ -435,24 +538,33 @@ export class Model<
         return
     }
 
-    protected static useAutomic() {
+    private static _isFiberic = false;
+    private static _fibers: Model[] = [];
+    protected static useFiber() {
         return function(
             target: Model,
             key: string,
-            descriptor: TypedPropertyDescriptor<(...args: any[]) => any>
-        ) {
+            descriptor: TypedPropertyDescriptor<Callback>
+        ): TypedPropertyDescriptor<Callback> {
             const handler = descriptor.value;
             if (!handler) return descriptor;
             const instance = {
                 [key](this: Model, ...args: any[]) {
-                    if (this._isAutomic) return handler.apply(this, args);
-                    this._isAutomic = true;
-                    console.log('Automic+ ============')
+                    Model._fibers.push(this);
+                    if (Model._isFiberic) return handler.apply(this, args);
+                    Model._isFiberic = true;
+                    console.log('Fiberic+ ============')
                     const result = handler.apply(this, args);
-                    console.log('Automic- ============')
-                    this._isAutomic = false;
-                    this.reloadState();
-                    this.reloadChild();
+                    Model._fibers.forEach(model => model._cache());
+                    Model._fibers.forEach(model => model._unloadChild());
+                    Model._fibers.forEach(model => model._commitChild());
+                    Model._fibers.forEach(model => model._loadChild());
+                    Model._fibers.forEach(model => model._disposeChild());
+                    Model._fibers.forEach(model => model._commitState());
+                    Model._fibers.forEach(model => model._commit());
+                    console.log('Fiberic- ============')
+                    Model._fibers = [];
+                    Model._isFiberic = false;
                     return result;
                 }
             }
@@ -461,70 +573,84 @@ export class Model<
         }
     }
 
-    @Model.ifAutomic(false)
+    @Model.ifFiberic(true)
     @Model.useLogger()
-    reloadChild() {
-        this._precheckChild();
-        const childPrev = this.child;
-        const childNext = this._copyChild(this._childDraft);
+    private _commit() {
+        this.emitEvent(this.event.onChildUpdate, {
+            target: this,
+            childPrev: this._childCache,
+            childNext: this._childDraft
+        });
+        this.emitEvent(this.event.onStateUpdate, {
+            target: this,
+            statePrev: this._stateCache,
+            stateNext: this._stateDraft
+        });
+    }
 
-        this._unloadChild(childPrev, childNext);
-        this._child = this._copyChild(this._childDraft);
-        this._loadChild(childPrev, childNext);
+    @Model.ifFiberic(true)
+    @Model.useLogger()
+    private _disposeChild() {
+        const childPrev = this._listChild(this._childCache);
+        const childNext = this._listChild(this._childDraft);
+        const childDel = childPrev.filter(child => !childNext.includes(child));
+        for (const child of childDel) {
+            if (child._isOrdered) continue;
+            child._dispose();
+        }
+    }
 
-        this.emitEvent(this.event.onChildUpdate, { 
-            target: this, 
-            childPrev,
-            childNext
-        })
+    @Model.ifFiberic(true)
+    @Model.ifStatus(ModelStatus.INITED)
+    @Model.useLogger()
+    private _dispose() {
+        for (const channel of this._eventProducersByConsumer) {
+            const [ producer, consumers ] = channel;
+            consumers.forEach(consumer => {
+                const target = consumer.target;
+                const handler = target._eventHandlersByConsumer.get(consumer);
+                if (!handler) return;
+                target.unbindEvent(producer, handler)
+            });
+        }
+        for (const modifier of this._stateModifiers) {
+            const target = modifier.target;
+            const handler = target._stateHandlersByModifier.get(modifier);
+            if (!handler) continue;
+            target.unbindState(this, handler);
+        }
     }
 
     @Model.ifStatus(ModelStatus.LOADED)
+    @Model.ifFiberic(true)
     @Model.useLogger()
-    private _loadChild(
-        childPrev: Readonly<C>,
-        childNext: Readonly<C>,
-    ) {
-        const _childPrev = this._listChild(childPrev)
-        const _childNext = this._listChild(childNext)
-        const childAdd = _childNext.filter(child => !_childPrev.includes(child));
+    private _loadChild() {
+        const childPrev = this._listChild(this._childCache);
+        const childNext = this._listChild(this._childDraft);
+        const childAdd = childNext.filter(child => !childPrev.includes(child));
         for (const child of childAdd) child._load(this);
     }
 
     @Model.ifStatus(ModelStatus.LOADED)
+    @Model.ifFiberic(true)
     @Model.useLogger()
-    private _unloadChild(
-        childPrev: Readonly<C>,
-        childNext: Readonly<C>,
-    ) {
-        const _childPrev = this._listChild(childPrev)
-        const _childNext = this._listChild(childNext)
-        const childDel = _childPrev.filter(child => !_childNext.includes(child));
+    private _unloadChild() {
+        const childPrev = this._listChild(this._childCache);
+        const childNext = this._listChild(this._childDraft);
+        const childDel = childPrev.filter(child => !childNext.includes(child));
         for (const child of childDel) child._unload();
     }
 
+    @Model.ifFiberic(true)
     @Model.useLogger()
-    private _precheckChild() {
-        const childPrev = this._listChild(this.child);
-        for (const key of Object.keys(this._childDraft)) {
-            let value = Reflect.get(this._childDraft, key);
-            if (!(value instanceof Model)) continue;
-            if (childPrev.includes(value)) {
-                const index = childPrev.indexOf(value);
-                if (index !== -1) childPrev.splice(index, 1);
-                continue;
-            }
-            const model = value._isOrdered ? value.copy() : value;
-            if (model !== value) Reflect.set(this._childDraft, key, model);
-            model._isOrdered = true;
-        }
+    private _cache() {
+        this._stateCache = this.state;
+        this._childCache = this.child;
     }
     
     private _isOrdered = false;
-    private _isAutomic = false;
-    private _is = false;
 
-    private static ifAutomic(flag: boolean) {
+    private static ifFiberic(flag: boolean) {
         return function(
             target: Model,
             key: string,
@@ -533,7 +659,7 @@ export class Model<
             const handler = descriptor.value;
             if (!handler) return descriptor;
             descriptor.value = function(this: Model, ...args: any[]) {
-                if (this._isAutomic !== Boolean(flag)) return;
+                if (Model._isFiberic !== Boolean(flag)) return;
                 return handler.call(this, ...args);
             }
             return descriptor;
@@ -558,13 +684,9 @@ export class Model<
         };
     }
 
-    private static _hooksLoad: Readonly<string[]> = []
-    private static _hooksUnload: Readonly<string[]> = []
-    private static _hooksChildLoad: Readonly<string[]> = []
-    private static _hooksChildUnload: Readonly<string[]> = []
-
-    @Model.useLogger()
+    @Model.ifFiberic(true)
     @Model.ifStatus(ModelStatus.INITED)
+    @Model.useLogger()
     private _load(parent: P) {
         this._status = ModelStatus.LOADING;
 
@@ -573,48 +695,37 @@ export class Model<
 
         for (const child of this._listChild(this.child)) child._load(this);
 
-        let ancestor: Model | undefined = this._parent;
-        while (ancestor) {
-            const keys = ancestor._constructor._hooksChildLoad;
-            for (const key of keys) {
-                const handler = Reflect.get(ancestor, key);
-                if (!(typeof handler === 'function')) continue;
-                handler.call(ancestor, this);
+        const eventKeys = Object.keys(this._constructor._hooksEvent);
+        for (const key of eventKeys) {
+            const locators = this._constructor._hooksEvent[key];
+            for (const locator of locators) {
+                const events: Event | Event[] | undefined = locator(this);
+                if (!events) continue;
+                const handler: any = Reflect.get(this, key);
+                const _events = Array.isArray(events) ? events : [events];
+                _events.forEach(event => this.bindEvent(event, handler));
             }
-            ancestor = ancestor.parent;
         }
-
-        for (const key of this._constructor._hooksLoad) {
-            const handler = Reflect.get(this, key);
-            if (!(typeof handler === 'function')) continue;
-            handler.call(this);
+        const decorKeys = Object.keys(this._constructor._hooksDecor);
+        for (const key of decorKeys) {
+            const locators = this._constructor._hooksDecor[key];
+            for (const locator of locators) {
+                const models = locator(this);
+                if (!models) continue;
+                const handler: any = Reflect.get(this, key);
+                const _models = Array.isArray(models) ? models : [models];
+                _models.forEach(model => this.bindState(model, handler));
+            }
         }
+        
 
         this._status = ModelStatus.LOADED;
-        this.reloadState();
     }
 
-    @Model.useLogger()
     @Model.ifStatus(ModelStatus.LOADED)
+    @Model.useLogger()
     private _unload() {
         this._status = ModelStatus.UNLOADING;
-        
-        let ancestor: Model | undefined = this._parent;
-        while (ancestor) {
-            const keys = this._constructor._hooksChildUnload;
-            for (const key of keys) {
-                const handler = Reflect.get(ancestor, key);
-                if (!(typeof handler === 'function')) continue;
-                handler.call(ancestor, this);
-            }
-            ancestor = ancestor.parent;
-        }
-        const keys = this._constructor._hooksUnload;
-        for (const key of keys) {
-            const handler = Reflect.get(this, key);
-            if (!(typeof handler === 'function')) continue;
-            handler.call(this);
-        }
 
         const parent = this._parent;
         this._parent = undefined;
@@ -628,21 +739,7 @@ export class Model<
             if (!handler) continue;
             this.unbindEvent(undefined, handler)
         }
-        for (const channel of this._eventProducersByConsumer) {
-            const [ producer, consumers ] = channel;
-            consumers.forEach(consumer => {
-                const target = consumer.target;
-                const handler = target._eventHandlersByConsumer.get(consumer);
-                if (!handler) return;
-                target.unbindEvent(producer, handler)
-            });
-        }
-        for (const modifier of this._stateModifiers) {
-            const target = modifier.target;
-            const handler = target._stateHandlersByModifier.get(modifier);
-            if (!handler) continue;
-            target.unbindState(this, handler);
-        }
+       
         for (const channel of this._stateProducersByModifier) {
             const [ modifier ] = channel;
             const handler = this._stateHandlersByModifier.get(modifier);
@@ -651,7 +748,6 @@ export class Model<
         }
 
         this._status = ModelStatus.INITED;
-        this.reloadState();
     }
 
     readonly uuid: string;
@@ -677,46 +773,35 @@ export class Model<
         return undefined;
     }
 
-    protected static onLoad() {
+    private static _hooksEvent: Readonly<Record<string, Readonly<Callback[]>>> = {};
+    private static _hooksDecor: Readonly<Record<string, Readonly<Callback[]>>> = {};
+
+    protected static useEvent<E, M extends Model>(
+        locator: (model: M) => Event<E> | Event<E>[] | undefined
+    ) {
         return function(
-            target: Model,
+            target: M,
             key: string,
-            descriptor: TypedPropertyDescriptor<Callback>
-        ): TypedPropertyDescriptor<Callback> {
-            target._constructor._hooksLoad = [...target._constructor._hooksLoad, key];
+            descriptor: TypedPropertyDescriptor<EventHandler<E>>
+        ): TypedPropertyDescriptor<EventHandler<E>> {
+            const hooksEvent = { ...target._constructor._hooksEvent };
+            hooksEvent[key] = [...(hooksEvent[key] ?? []), locator];
+            target._constructor._hooksEvent = hooksEvent;
             return descriptor;
         };
     }
 
-    protected static onUnload() {
+    protected static useDecor<M extends Model<S>, S extends Record<string, Value>, >(
+        locator: (model: Model) => M | M[] | undefined
+    ) {
         return function(
             target: Model,
             key: string,
-            descriptor: TypedPropertyDescriptor<Callback>
-        ): TypedPropertyDescriptor<Callback> {
-            target._constructor._hooksUnload = [...target._constructor._hooksUnload, key];
-            return descriptor;
-        };
-    }
-
-    protected static onChildLoad() {
-        return function(
-            target: Model,
-            key: string,
-            descriptor: TypedPropertyDescriptor<Callback<unknown, [Model]>>
-        ): TypedPropertyDescriptor<Callback<unknown, [Model]>> {
-            target._constructor._hooksChildLoad = [...target._constructor._hooksChildLoad, key];
-            return descriptor;
-        };
-    }
-
-    protected static onChildUnload() {
-        return function(
-            target: Model,
-            key: string,
-            descriptor: TypedPropertyDescriptor<Callback<unknown, [Model]>>
-        ): TypedPropertyDescriptor<Callback<unknown, [Model]>> {
-            target._constructor._hooksChildUnload = [...target._constructor._hooksChildUnload, key];
+            descriptor: TypedPropertyDescriptor<StateHandler<S>>
+        ): TypedPropertyDescriptor<StateHandler<S>> {
+            const hooksDecor = { ...target._constructor._hooksDecor };
+            hooksDecor[key] = [...(hooksDecor[key] ?? []), locator];
+            target._constructor._hooksDecor = hooksDecor;
             return descriptor;
         };
     }
@@ -787,3 +872,4 @@ export class Model<
         };
     }
 }
+

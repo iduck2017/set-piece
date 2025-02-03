@@ -14,12 +14,14 @@
       "strict": true,
       "experimentalDecorators": true,
       "strictFunctionTypes": true,
+      "stripInternal": true,
       "paths": {
-        "@/*": ["./src/*"],
+        "@/*": ["./src/*"]
       },
       "baseUrl": "."
     },
     "include": [
-      "src/**/*"
-    ],
+      "src/**/*",
+      "test/**/*"
+    ]
 }
