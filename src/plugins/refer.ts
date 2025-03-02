@@ -1,4 +1,7 @@
-import { BaseModel, Model } from "."
+import { DebugService } from "@/services/debug";
+import { BaseModel, Model } from "../model"
+import { FiberService } from "@/services/fiber";
+import { Plugin } from ".";
 
 export type ChildUpdateEvent<C> = Readonly<{ 
     target: BaseModel, 
@@ -6,89 +9,111 @@ export type ChildUpdateEvent<C> = Readonly<{
     childNext: Readonly<C> 
 }>
 
-type Constructor<T> = new (...args: any[]) => T;
-
-export abstract class ReferPlugin<
+export class ReferPlugin<
     C extends Record<string, BaseModel> | BaseModel[],
-    P extends BaseModel | undefined
-> {
+    P extends BaseModel | null,
+    R extends Record<string, BaseModel | Readonly<BaseModel[]>>
+> extends Plugin {
     private static _roots: Function[] = [];
     static useRoot() {
         return function (constructor: Function) {
             ReferPlugin._roots.push(constructor);
         };
     }
+
+    private _root?: BaseModel;
+    private _parent?: P;
+    private _key?: string | number;
     
-    protected readonly _model: BaseModel;
+    readonly childProxy: Readonly<C>;
 
-    root: BaseModel;
-    
-    parent?: P;
+    private readonly self: BaseModel;
+    private readonly _childNext: Readonly<C>;
+    private _childPrev: Readonly<C>;
 
-    childPrev: Readonly<C>;
-    readonly childDelegator: C;
+    private _childModified: string[] = [];
+    protected _childCurrent: Readonly<C>;
+    protected _referCurrent?: Readonly<R>;
 
-    readonly childDraft: C;
-    _child: C;
-    get child(): C { return this.copyChild(this._child) }
+    get childCurrent() { return this.copyChild(this._childCurrent) }
+    get referCurrent() { return { ...this._referCurrent } }
+    get parent() { return this._parent }
+    get root() { return this._root }
+    get isLoad() { return this._isLoad }
+
+    private _isLoad: boolean = false;
+    private _isBind: boolean = false;
 
     constructor(
         child: Readonly<C>,
-        model: BaseModel
+        self: BaseModel
     ) {
-        this._model = model;
-        this._child = this.copyChild(child);
-        this.childPrev = this.copyChild(child);
-        this.childDraft = this.copyChild(child);
-    }
+        super(self);
 
-    abstract listChild(child: C): BaseModel[]
-    abstract copyChild(child: C): Readonly<C>
-}
-
-export class DictChildPlugin<
-    C extends Record<string, BaseModel>,
-    P extends BaseModel | undefined
-> extends ReferPlugin<C, P> {
-    constructor(
-        child: Readonly<C>,
-        model: BaseModel,
-    ) {
-        const _child: any = {};
         for (const key of Object.keys(child)) {
-            const model: BaseModel | undefined = Reflect.get(child, key);
-            if (!model) continue;
-            const _model = model.refer.isReserved ? model.copy() : model;
-            _model.refer.parentMemory = _model;
-            Reflect.set(_child, key, _model);
-        }
-        super(_child, model);
+            let value = Reflect.get(child, key);
+            if (!(value instanceof Model)) continue;
+            const refer = value.plugins.refer;
+            if (refer._isLoad) value = value.copy();
 
+            Reflect.set(child, key, value);
+        }
+        this.childProxy = new Proxy(child, {
+            get: this.getChild.bind(this),
+            set: this._setChild.bind(this),
+            deleteProperty: this._deleteChild.bind(this),
+        })
+        
+        this._childNext = this.copyChild(child);
+        this._childPrev = this.copyChild(child);
+        this._childCurrent = this.copyChild(child);
     }
 
-    copyChild(child: C): Readonly<C> { return { ...child } }
-    listChild(child: C): BaseModel[] { return Object.values(child) }
-}
 
-export class ListChildPlugin<
-    C extends BaseModel[],
-    P extends BaseModel | undefined
-> extends ReferPlugin<C, P> {
-
-    constructor(
-        child: Readonly<C>,
-        model: BaseModel
-    ) {
-        const _child: any = [];
-        for (const model of child) {
-            if (!model) continue;
-            const _model = model.refer.isReserved ? model.copy() : model;
-            _model.refer.parentMemory = _model;
-            _child.push(_model);
-        }
-        super(_child, model);
+    @DebugService.useStack()
+    private _setChild(origin: C, key: string, next: BaseModel) {
+        Reflect.set(this._childNext, key, next);
+        return true;
     }
 
-    copyChild(child: C): Readonly<C> { return [ ...child ] }
-    listChild(child: C): BaseModel[] { return [ ...child ] }
+    @DebugService.useStack()
+    private _deleteChild(origin: C, key: string) {
+        Reflect.deleteProperty(this._childNext, key);
+        return true;
+    }
+
+    protected getChild(origin: C, key: string) {
+        origin = this._childNext;
+        const keys = [ 'pop', 'push', 'shift', 'unshift', 'splice', 'sort', 'reverse', 'fill' ];
+        if (!(this._childCurrent instanceof Array)) origin = this._childCurrent;
+        if (!keys.includes(key)) origin = this._childCurrent;
+        let value = Reflect.get(origin, key);
+        if (typeof value === 'function') value = value.bind(origin);
+        return value;
+    }
+    
+    private _operateChild(origin: C, key: string, value: any) {
+        
+    }
+
+    listChild(child: C) { return Object.values(child); }
+    
+    copyChild(child: C): Readonly<C> {
+        const constructor: any = child.constructor;
+        const result = new constructor();
+        for (const key of Object.keys(result)) {
+            const value = Reflect.get(result, key);
+            Reflect.set(result, key, value);
+        }
+        return result;
+    }
+
+    private diffChild(): Readonly<[
+        Readonly<BaseModel[]>,
+        Readonly<BaseModel[]>
+    ]> {
+
+    }
 }
+
+

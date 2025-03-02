@@ -1,6 +1,6 @@
 import { Random } from "random";
 
-export class SyncService {
+export class AsyncService {
 
     public static random = new Random()
     

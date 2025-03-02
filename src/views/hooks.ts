@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
-import { Model } from "../model";
+import { BaseModel } from "../model";
 
-export function useModel<M extends Model>(model?: M): {
+export function useModel<M extends BaseModel>(model?: M): {
     state?: M['state'], 
     child?: M['child'],
     refresh: () => void

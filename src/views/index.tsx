@@ -1,10 +1,11 @@
 import React, { useState, ReactNode } from "react";
-import { Model } from "../model";
 import { Child, Link } from "./common";
 import { State } from "./common";
+import { BaseModel } from "@/model";
+
 import './index.scss';
 
-export function View<M extends Model>(props: {
+export function View<M extends BaseModel>(props: {
     model?: M,
     child?: ReactNode | ReactNode[],
     state?: ReactNode | ReactNode[],

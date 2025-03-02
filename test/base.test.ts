@@ -1,5 +1,5 @@
 import { Event } from '@/types';
-import { Model } from '../src/model';
+import { Model } from '../src/model.bk';
 
 @Model.useRoot()
 class DemoModel extends Model<{
