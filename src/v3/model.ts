@@ -1,53 +1,63 @@
 import { Agent } from "./agent";
 import { ChildChunk, ChildGroupChunk, Chunk } from "./chunk";
+import { BaseValue } from "./common";
 import { DecorReceiver, DecorReceivers, DecorUpdater } from "./decor";
-import { SuperDef, Def } from "./define";
 import { EventEmitters, EventHandler, EventProducer, EventProducers } from "./event";
 import { BaseProps, Props } from "./props";
 import { ReferAddrs, ReferGroupAddrs } from "./refer";
 
-export class BaseModel<T extends Def = Def> {
-    readonly state!: Readonly<Def.State<T> & Def.StateInner<T>>
-    private stateOrigin!: Def.State<T> & Def.StateInner<T>
-    protected stateAgent!: Def.State<T> & Def.StateInner<T>
+export class Model<
+    I extends string,
+    E extends Record<string, any> = {},
+    S extends Record<string, BaseValue> = {},
+    D extends Record<string, BaseValue> = {},
+    C extends Record<string, BaseModel> = {},
+    G extends Record<string, BaseModel[]> = {},
+    R extends Record<string, BaseModel> = {},
+    Q extends Record<string, BaseModel[]> = {},
+    P extends BaseModel | undefined = BaseModel,
+> {
+    readonly state!: Readonly<S & D>
+    private stateOrigin!: S & D
+    protected stateAgent!: S & D
 
-    readonly child!: Readonly<Def.Child<T>>
-    private childOrigin!: Def.Child<T>
-    protected childAgent!: ChildChunk<T>
+    readonly child!: Readonly<C>
+    private childOrigin!: C
+    protected childAgent!: ChildChunk<C>
     
-    readonly event!: EventProducers<T, this>
-    protected eventEmitters!: EventEmitters<T>
+    readonly event!: EventProducers<E, this>
+    protected eventEmitters!: EventEmitters<E>
     private eventConsumers!: Map<EventHandler, BaseModel>
     private eventForward!: Map<EventHandler, EventProducer[]>
     private eventBacktrack!: Map<EventProducer, EventHandler[]>
 
-    readonly decor!: DecorReceivers<T, this>
+    readonly decor!: DecorReceivers<D, this>
     protected decorProviders!: Map<DecorReceiver, BaseModel>;
-    private decorReceivers!: Map<DecorUpdater, DecorReceivers<T, this>>;
+    private decorReceivers!: Map<DecorUpdater, DecorReceivers<D, this>>;
 
-    readonly refer!: Def.Refer<T>;
-    private refOrigin!: ReferAddrs<T>;
-    protected referAgent!: Def.Refer<T>;
+    readonly refer!: R;
+    private refOrigin!: ReferAddrs<R>;
+    protected referAgent!: R;
 
-    readonly referGroup!: Def.ReferGroup<T>;
-    private refGroupOrigin!: ReferGroupAddrs<T>;
-    protected referGroupAgent!: Def.ReferGroup<T>;
+    readonly referGroup!: Q;
+    private referGroupOrigin!: ReferGroupAddrs<Q>;
+    protected referGroupAgent!: Q;
 
-    readonly childGroup!: Def.ChildGroup<T>;
-    private childGroupOrigin!: Def.ChildGroup<T>;
-    protected childGroupAgent!: ChildGroupChunk<T>;
+    readonly childGroup!: G;
+    private childGroupOrigin!: G;
+    protected childGroupAgent!: ChildGroupChunk<G>;
 
-    readonly props!: Props<T>
-    readonly chunk!: Chunk<T>
+    readonly props!: Props<I, S, D, C, G, P>
+    readonly chunk!: Chunk<I, S, D, C, G>
 
-    readonly agent!: Agent<T, this>
+    readonly agent!: Agent<E, C, G, D, this>
 
     readonly uuid: string;
     readonly code: string;
 
-    readonly parent: Def.Parent<T>
+    readonly parent: P
 
-    constructor(props: BaseProps<T>) {
+    constructor(props: BaseProps<I, S, D, C, G, P>) {
         this.parent = props.parent;
         this.uuid = props.uuid;
         this.code = props.code;
@@ -73,17 +83,29 @@ export class BaseModel<T extends Def = Def> {
     }
 }
 
-export class Model<T extends Partial<Def>> extends BaseModel<T & {
-    code: string;
-    state: {},
-    child: {},
-    refer: {},
-    event: {},
-    stateInner: {},
-    referGroup: {},
-    childGroup: {},
-    parent: BaseModel | undefined
-}> {}
+export type BaseModel = Model<
+    string,
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    BaseModel | undefined
+>
+
+// export class Model<T extends Partial<Def>> extends BaseModel<T & {
+//     code: string;
+//     state: {},
+//     child: {},
+//     refer: {},
+//     event: {},
+//     stateInner: {},
+//     referGroup: {},
+//     childGroup: {},
+//     parent: BaseModel | undefined
+// }> {}
 
 export namespace Model {
     export type Chunk<M extends BaseModel> = M['chunk']
