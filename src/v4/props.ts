@@ -17,6 +17,7 @@ export type Props<
     parent: P;
     refer?: Partial<ReferAddrs<R>>;
     referGroup?: string[][];
+    key?: string;
 }
 
 export type StrictProps<
@@ -34,4 +35,5 @@ export type StrictProps<
     parent: P;
     refer: ReferAddrs<R>;
     referGroup: string[][];
+    key?: string;
 }

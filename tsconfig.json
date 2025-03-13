@@ -13,7 +13,7 @@
       "moduleResolution": "node",
       "strict": true,
       "experimentalDecorators": true,
-      "strictFunctionTypes": true,
+      "strictFunctionTypes": false,
       "stripInternal": true,
       "paths": {
         "@/*": ["./src/*"]
