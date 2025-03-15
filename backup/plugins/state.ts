@@ -1,6 +1,6 @@
 import { Value } from "@/types"
 import { BaseModel } from "../model"
-import { StoreService } from "@/services/store"
+import { StoreService } from "backup/plugins/store"
 import { Plugin } from "."
 
 export type DecorHandler<S = any> = (statePrev: S) => S

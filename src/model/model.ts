@@ -1,9 +1,10 @@
 import { Agent } from "./agent"
+import { Cache } from "./cache"
 import { ChildChunk, Chunk, ReferAddrs, StrictChunk } from "./chunk"
 import { DecorProvider, DecorReceiver, DecorReceivers, DecorUpdater } from "./decor"
 import { BaseEvent, EventConsumer, EventEmitters, EventHandler, EventProducer, EventProducers } from "./event"
 import { Props, StrictProps } from "./props"
-import { BaseValue } from "./types"
+import { Value } from "./types"
 
 type BaseModel = Model<{}, {}, {}, {}, BaseModel | undefined, BaseModel, {}, BaseModel>
 
@@ -14,14 +15,14 @@ export namespace Model {
     export type State<M extends Model> = M['state']
     export type Child<M extends Model> = M['child']
     export type Refer<M extends Model> = M['refer']
-    export type ChildGroup<M extends Model> = M['childGroup']
-    export type ReferGroup<M extends Model> = M['referGroup']
+    // export type ChildGroup<M extends Model> = M['childGroup']
+    // export type ReferGroup<M extends Model> = M['referGroup']
 }
 
 export abstract class Model<
     E extends Record<string, any> = {},
-    S extends Record<string, BaseValue> = {},
-    D extends Record<string, BaseValue> = {},
+    S extends Record<string, Value> = {},
+    D extends Record<string, Value> = {},
     C extends Record<string, Model> = {},
     P extends Model | undefined = BaseModel | undefined,
     I extends Model = BaseModel,
@@ -32,13 +33,23 @@ export abstract class Model<
     private readonly stateOrigin: S & D
     protected readonly stateAgent: S & D
 
-    get child(): Readonly<C> { return { ...this.childOrigin } }
-    private readonly childOrigin: Readonly<C>;
-    protected readonly childAgent: ChildChunk<C>;
+    copyChild(origin: any) {
+        const result: any = [];
+        Object.keys(origin).forEach((key) => {
+            const value = Reflect.get(origin, key);
+            Reflect.set(result, key, value);
+        });
+        result.length = origin.length;
+        return result;
+    }
+
+    get child(): Readonly<C> & I[] { return this.copyChild(this.childOrigin) }
+    private readonly childOrigin: Readonly<C> & I[];
+    protected readonly childAgent: ChildChunk<C> & Model.Chunk<I>[];
     
-    get childGroup(): Readonly<I[]> { return [...this.childGroupOrigin] }
-    private readonly childGroupOrigin: Readonly<I[]>;
-    protected readonly childGroupAgent: Model.Chunk<I>[];
+    // get childGroup(): Readonly<I[]> { return [...this.childGroupOrigin] }
+    // private readonly childGroupOrigin: Readonly<I[]>;
+    // protected readonly childGroupAgent: Model.Chunk<I>[];
 
     readonly parent: P;
     readonly root: Model;
@@ -60,15 +71,16 @@ export abstract class Model<
     private readonly referOrigin: ReferAddrs<R>;
     protected readonly referAgent: Partial<R>;
 
-    readonly referGroup!: Readonly<Q[]>;
-    private readonly referGroupOrigin!: string[];
-    protected readonly referGroupAgent!: Q[];
+    get referGroup(): Readonly<Q[]> { return [ ...this.referGroupAgent ] }
+    private readonly referGroupOrigin: string[];
+    protected readonly referGroupAgent: Q[];
 
     private readonly referConsumers: Model[];
 
     readonly agent: Agent<E, S, C, I, this>
-    // readonly cache: 
-    
+    private cache: Cache<S, D, C, I, R, Q> | undefined
+
+
     get props(): Readonly<Props<S, D, C, P, I, R>> {
         const result: StrictProps<S, D, C, P, I, R> = {
             uuid: this.uuid,
@@ -82,6 +94,7 @@ export abstract class Model<
         }
         return result;
     }
+
 
     get chunk(): Readonly<Chunk<S, D, C, P, I, R, this>> {
         const result: StrictChunk<S, D, C, P, I, R, this> = {
@@ -149,6 +162,12 @@ export abstract class Model<
             set: this.setRefer.bind(this),
             deleteProperty: this.deleteRefer.bind(this),
         })
+        this.referGroupOrigin = [ ...props.referGroup ]; 
+        this.referGroupAgent = new Proxy([] as any, {
+            // get: this.getRefer.bind(this),
+            // set: this.getRefer.bind(this),
+            // deleteProperty: this.getRefer.bind(this),
+        })
         this.agent = new Agent();
     }
 
@@ -190,14 +209,15 @@ export abstract class Model<
         const value = origin[key];
         if (value instanceof Model) return value.chunk;
         if (typeof value === 'function' && typeof key === 'string') {
-            // return array operation
+            return this.operateChild.bind(origin, key);
         } 
         return origin[key].chunk;
     }
 
     @Model.useFiber()
-    private operateChild() {
-
+    private operateChild(origin: any, key: string, ...args: any[]) {
+        const operator = origin[key];
+        return operator.call(origin, ...args);
     }
 
     @Model.useFiber()
@@ -230,6 +250,11 @@ export abstract class Model<
         Reflect.set(origin, key, value); return true;
     }
 
+    @Model.useFiber()
+    private markState(key: keyof S & keyof D) {
+        
+    }
+
     private getEvent<
         K extends keyof T & string,
         T extends Record<string, EventProducer>
@@ -248,22 +273,22 @@ export abstract class Model<
         return this.emitEvent.bind(this, key);
     }
 
-    private emitEvent<E>(key: keyof E & string, event: E) {
+    private emitEvent<E>(key: string, event: E) {
         const consumers = this.eventConsumers.get(key) ?? [];
         for (const consumer of consumers) {
             const { target, handler } = consumer;
             handler.call(target, this, event);
         }
         let parent: Model | undefined = this.parent;
-        let path = `${this.key}/${key}`;
-        // bubble
+        let path: string = key;
         while (parent) {
+            const key = isNaN(Number(parent.key)) ? parent.key : '0';
+            path = `${key}/${path}`
             const consumers = parent.eventConsumers.get(path) ?? [];
             for (const consumer of consumers) {
                 const { target, handler } = consumer;
                 handler.call(target, this, event);
             }
-            path = `${parent.key}/${path}`
             parent = parent.parent;
         }
     }
@@ -385,9 +410,22 @@ export abstract class Model<
             const [ updater ] = channel;
             this.unbindDecor(undefined, updater);
         }
+    }
 
-        
+    private refresh() {
+        if (!this.cache) return;
+        const childPrev = this.cache.child;
+        const childNext = this.child;
+        const childGroupPrev = this.cache.childGroup;
+        const childGroupNext = this.childGroup;
+        const referPrev = this.cache.refer;
+        const referNext = this.refer;
+        const referGroupPrev = this.cache.referGroup;
+        const referGroupNext = this.referGroup;
 
+        this.emitEvent('onChildChange', { prev: childPrev, next: childNext, prevGroup: childGroupPrev, nextGroup: childGroupNext });
+        this.emitEvent('onReferChange', { prev: referPrev, next: referNext, prevGroup: referGroupPrev, nextGroup: referGroupNext });
+        this.emitEvent('onStateChange', { prev: this.state, next: this.state });
     }
 
 
@@ -434,10 +472,21 @@ export abstract class Model<
                 [key](this: Model, ...args: any[]) {
                     if (Model.fibers.includes(this)) return handler.apply(this, args);
                     Model.fibers.push(this);
+                    this.cache = {
+                        state: { ...this.stateOrigin },
+                        child: { ...this.childOrigin },
+                        childGroup: [ ...this.childGroupOrigin ],
+                        refer: { ...this.referAgent },
+                        referGroup: [ ...this.referGroupAgent ],
+                    }
                     if (Model.isFiberic) return handler.apply(this, args);
                     Model.isFiberic = true;
                     console.log('Fiberic+ ============')
                     const result = handler.apply(this, args);
+                    for (const fiber of Model.fibers) {
+
+                    }
+                    Model.fibers.forEach(model => model.refresh())
                     Model.isFiberic = false;
                     Model.fibers = [];
                     console.log('Fiberic- ============')

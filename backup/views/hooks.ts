@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { BaseModel } from "../model";
+import { BaseModel } from "../../backup/model";
 
 export function useModel<M extends BaseModel>(model?: M): {
     state?: M['state'], 

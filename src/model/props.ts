@@ -1,10 +1,10 @@
 import { ChildChunk, ReferAddrs } from "./chunk";
 import { Model } from "./model";
-import { BaseValue } from "./types";
+import { Value } from "./types";
 
 export type Props<
-    S extends Record<string, BaseValue>,
-    D extends Record<string, BaseValue>,
+    S extends Record<string, Value>,
+    D extends Record<string, Value>,
     C extends Record<string, Model>,
     P extends Model | undefined,
     I extends Model,
@@ -21,8 +21,8 @@ export type Props<
 }
 
 export type StrictProps<
-    S extends Record<string, BaseValue>,
-    D extends Record<string, BaseValue>,
+    S extends Record<string, Value>,
+    D extends Record<string, Value>,
     C extends Record<string, Model>,
     P extends Model | undefined,
     I extends Model,

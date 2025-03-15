@@ -1,13 +1,13 @@
 import { DecorReceivers } from "./decor";
 import { EventProducers } from "./event";
 import { Model } from "./model";
-import { BaseValue } from "./types";
+import { Value } from "./types";
 
 export type ChildAgent<C extends Record<string, Model>> = C extends C ? { [K in keyof C]: Model.Agent<Required<C>[K]> } : never;
 
 export class Agent<
     E extends Record<string, any>,
-    S extends Record<string, BaseValue>,
+    S extends Record<string, Value>,
     C extends Record<string, Model>,
     I extends Model,
     M extends Model

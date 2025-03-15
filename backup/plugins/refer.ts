@@ -1,6 +1,6 @@
 import { DebugService } from "@/services/debug";
 import { BaseModel, Model } from "../model"
-import { FiberService } from "@/services/fiber";
+import { FiberService } from "backup/plugins/fiber";
 import { Plugin } from ".";
 
 export type ChildUpdateEvent<C> = Readonly<{ 

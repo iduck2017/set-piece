@@ -1,9 +1,9 @@
 import { Model } from "./model";
-import { BaseValue } from "./types";
+import { Value } from "./types";
 
 export type Chunk<
-    S extends Record<string, BaseValue>,
-    D extends Record<string, BaseValue>,
+    S extends Record<string, Value>,
+    D extends Record<string, Value>,
     C extends Record<string, Model>,
     P extends Model | undefined,
     I extends Model,
@@ -20,8 +20,8 @@ export type Chunk<
 }
 
 export type StrictChunk<
-    S extends Record<string, BaseValue>,
-    D extends Record<string, BaseValue>,
+    S extends Record<string, Value>,
+    D extends Record<string, Value>,
     C extends Record<string, Model>,
     P extends Model | undefined,
     I extends Model,

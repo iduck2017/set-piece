@@ -1,5 +1,5 @@
 import React from "react";
-import { Model } from "../model.bk";
+import { Model } from "../../backup/model.bk";
 import { useModel } from "./hooks";
 import { View } from ".";
 import './index.scss';

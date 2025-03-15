@@ -3,9 +3,9 @@ import { EventHandler, EventPlugin, ModelEvent } from "./plugins/event";
 import { ModelProxy } from "./plugins/proxy";
 import { ReferPlugin } from "./plugins/refer";
 import { StatePlugin } from "./plugins/state";
-import { DebugService } from "./services/debug";
-import { StoreService } from "./services/store";
-import { Value } from "./types";
+import { DebugService } from "../src/services/debug";
+import { StoreService } from "./plugins/store";
+import { Value } from "../src/types";
 
 export type BaseModel = Model<
     Record<string, Value>,

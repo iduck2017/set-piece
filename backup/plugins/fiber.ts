@@ -1,5 +1,4 @@
 import { BaseModel, Model } from "@/model";
-import { Plugin } from "@/plugins";
 import { Callback, Value } from "@/types";
 
 export class FiberService {

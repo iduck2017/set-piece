@@ -1,5 +1,5 @@
-import { Value } from "./types";
-import { StoreService } from "@/services/store";
+import { Value } from "../src/types";
+import { StoreService } from "backup/plugins/store";
 
 type EventHandler<E = any> = (event: E) => void
 type StateHandler<S = any> = (state: S) => S
@@ -119,7 +119,6 @@ class Model<
 
     @Model.useFiber()
     @Model.useLogger()
-    private _popChild() {
         if (!Array.isArray(this._childDraft)) return;
         const result: Model | undefined = this._childDraft.pop();
         if (result) result._isOrdered = false;
