@@ -45,8 +45,8 @@ export class OuterPartyModel<
         this.child.dog?.state.age;
         this.eventEmitter.onWork(undefined)
         this.eventEmitter.onReport(this.parent)
-        const introducer: OuterPartyModel = this.refer.introducer;
-        const introducer2: OuterPartyModel = this.referAgent.introducer;
+        const introducer: OuterPartyModel | undefined = this.refer.introducer;
+        const introducer2: OuterPartyModel | undefined = this.referAgent.introducer;
         this.referAgent.introducer = this.refer.father;
         const friend: OuterPartyModel = this.referGroup[0];
     }

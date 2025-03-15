@@ -16,7 +16,7 @@ export type Chunk<
     child?: Partial<ChildChunk<C>>;
     childGroup?: Model.Chunk<I>[];
     refer?: Partial<ReferAddrs<R>>;
-    referGroup?: string[][];
+    referGroup?: string[];
 }
 
 export type StrictChunk<
@@ -34,8 +34,8 @@ export type StrictChunk<
     child: ChildChunk<C>;
     childGroup: Model.Chunk<I>[];
     refer: ReferAddrs<R>;
-    referGroup: string[][];
+    referGroup: string[];
 }
 
 export type ChildChunk<C extends Record<string, Model>> = C extends C ? { [K in keyof C]: C[K] extends Model ? Model.Chunk<C[K]> : Model.Chunk<Required<C>[K]> | undefined } : never;
-export type ReferAddrs<C extends Record<string, Model>> = C extends C ? { [K in keyof C]: C[K] extends Model ? string[] : string[] | undefined } : never;
+export type ReferAddrs<C extends Record<string, Model>> = { [K in keyof C]?: string };

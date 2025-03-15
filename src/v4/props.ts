@@ -16,7 +16,7 @@ export type Props<
     childGroup?: Model.Chunk<I>[];
     parent: P;
     refer?: Partial<ReferAddrs<R>>;
-    referGroup?: string[][];
+    referGroup?: string[];
     key?: string;
 }
 
@@ -34,6 +34,6 @@ export type StrictProps<
     childGroup: Model.Chunk<I>[];
     parent: P;
     refer: ReferAddrs<R>;
-    referGroup: string[][];
+    referGroup: string[];
     key?: string;
 }

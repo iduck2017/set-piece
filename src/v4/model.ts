@@ -56,13 +56,15 @@ export abstract class Model<
     readonly key?: string;
     readonly path?: string;
 
-    get refer(): Readonly<R> { return { ...this.referAgent } }
+    get refer(): Readonly<Partial<R>> { return { ...this.referAgent } }
     private readonly referOrigin: ReferAddrs<R>;
-    protected readonly referAgent: R;
+    protected readonly referAgent: Partial<R>;
 
     readonly referGroup!: Readonly<Q[]>;
-    private readonly referGroupOrigin!: string[][];
+    private readonly referGroupOrigin!: string[];
     protected readonly referGroupAgent!: Q[];
+
+    private readonly referConsumers: Model[];
 
     readonly agent: Agent<E, S, C, I, this>
     // readonly cache: 
@@ -95,6 +97,7 @@ export abstract class Model<
     }
     
     constructor(props: StrictProps<S, D, C, P, I, R>) {
+        this.referConsumers = [];
         this.eventConsumers = new Map()
         this.eventProducers = new Map()
         this.decorProviders = new Map()
@@ -149,7 +152,8 @@ export abstract class Model<
         this.agent = new Agent();
     }
 
-    queryChild(path: string): Model | undefined { 
+    queryChild(path?: string): Model | undefined { 
+        if (!path) return undefined;
         const keys = path.split('/');
         let target = this.root;
         while (keys.length) {
@@ -163,7 +167,8 @@ export abstract class Model<
 
     @Model.useFiber()
     private setRefer(origin: Record<string, any>, key: string, value: any) {
-        origin[key] = value; return true;
+        origin[key] = value; 
+        return true;
     }
 
     @Model.useFiber()
@@ -171,9 +176,14 @@ export abstract class Model<
         delete origin[key]; return true;
     }
 
-    private getRefer(origin: Record<string, any>, key: string) {
-        if (!this.referOrigin[key]) Reflect.set(this.referOrigin, key, this.root.queryChild(origin[key]));
-        return this.referOrigin[key];
+    private getRefer<K extends keyof R>(origin: R, key: K & string) {
+        if (!origin[key]) {
+            const model = this.queryChild(this.referOrigin[key]);
+            if (!model) return undefined;
+            Reflect.set(origin, key, model);
+            model?.referConsumers.push(this);
+        }
+        return origin[key];
     }
 
     private getChild(origin: Record<string, any>, key: string) {
@@ -319,30 +329,93 @@ export abstract class Model<
     private init() {
         Object.values(this.child).forEach(child => child.init());
         this.childGroup.forEach(child => child.init());
-
+        
+        let constructor = this.constructor;
+        while (constructor) {
+            const hooksEvent = Model.hooksEvent.get(constructor) ?? {};
+            Object.keys(hooksEvent).forEach(key => {
+                const accessors = hooksEvent[key];
+                for (const accessor of accessors) {
+                    const producer = accessor(this);
+                    if (!producer) continue;
+                    const handler: any = Reflect.get(this, key)
+                    this.bindEvent(producer, handler);
+                }
+            })
+            const hooksDecor = Model.hooksDecor.get(constructor) ?? {};
+            Object.keys(hooksDecor).forEach(key => {
+                const accessors = hooksDecor[key];
+                for (const accessor of accessors) {
+                    const receiver = accessor(this);
+                    if (!receiver) continue;
+                    const updater: any = Reflect.get(this, key)
+                    this.bindDecor(receiver, updater);
+                }
+            })
+            constructor = Reflect.get(constructor, '__proto__');
+        }
     }
     
     private uninit() {
+        Object.values(this.child).forEach(child => child.uninit());
+        this.childGroup.forEach(child => child.uninit());
+
+        for (const channel of this.eventConsumers) {
+            const [ producerKey, consumers ] = channel;
+            const producer = this.event[producerKey];
+            for (const consumer of consumers) {
+                const { target, handler } = consumer;
+                target.unbindEvent(producer, handler);
+            }
+        }
+        for (const channel of this.eventProducers) {
+            const [ handler ] = channel
+            this.unbindEvent(undefined, handler)
+        }
+
+        for (const channel of this.decorProviders) {
+            const [ receiverKey, providers ] = channel;
+            const receiver = this.decor[receiverKey];
+            for (const provider of providers) {
+                const { target, updater } = provider;
+                target.unbindDecor(receiver, updater);
+            }
+        }
+        for (const channel of this.decorReceivers) {
+            const [ updater ] = channel;
+            this.unbindDecor(undefined, updater);
+        }
+
+        
 
     }
 
+
+    private static hooksEvent: Map<Function, Record<string, Array<(model: Model) => EventProducer | undefined>>>;
     protected static useEvent<E, M extends Model>(accessor: (model: M) => EventProducer<E, M> | undefined) {
         return function(
             target: M,
             key: string,
             descriptor: TypedPropertyDescriptor<EventHandler<E, M>>
         ): TypedPropertyDescriptor<EventHandler<E, M>> {
+            const hooksEvent = Model.hooksEvent.get(target.constructor) ?? {};
+            hooksEvent[key] = [...(hooksEvent[key] ?? []), accessor];
+            Model.hooksEvent.set(target.constructor, hooksEvent);
             return descriptor;
         };
     }
 
     
+    private static hooksDecor: Map<Function, Record<string, Array<(model: Model) => DecorReceiver | undefined>>>
     protected static useDecor<S, M extends Model>(accessor: (model: M) => DecorReceiver<S, M> | undefined) {
         return function(
             target: M,
             key: string,
             descriptor: TypedPropertyDescriptor<DecorUpdater<S, M>>
         ): TypedPropertyDescriptor<DecorUpdater<S, M>> {
+            const hooksDecor = Model.hooksDecor.get(target.constructor) ?? {};
+            hooksDecor[key] = [...(hooksDecor[key] ?? []), accessor];
+            Model.hooksDecor.set(target.constructor, hooksDecor);
             return descriptor;
         };
     }

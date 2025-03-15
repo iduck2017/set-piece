@@ -55,7 +55,7 @@ export abstract class HumanModel<
         const employee: HumanModel = this.childGroup[0];
         this.childGroupAgent.push({ type: ThinkPolModel });
         const father: HumanModel | undefined = this.refer.father;
-        const mother: HumanModel = this.refer.mother;
+        const mother: HumanModel | undefined= this.refer.mother;
         const friends: HumanModel = this.referGroup[0];
         this.referAgent.father = human.refer.father;
         this.referAgent.mother = human.refer.mother;
