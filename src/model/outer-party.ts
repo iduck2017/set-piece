@@ -1,37 +1,47 @@
 import { HumanDefine, HumanModel } from "./human";
 import { Model } from "./model";
 import { PetModel } from "./pet";
+import { ObjectUtils } from "./struct";
+
 
 export namespace OuterPartyDefine {
-    export type Event = Partial<HumanDefine.Event> & { onWork: void; onReport: OuterPartyModel };
-    export type State = Partial<HumanDefine.State> & { salary: number };
-    export type StateInner = Partial<HumanDefine.StateInner> & { seniority: number };
-    export type Child = Partial<HumanDefine.Child> & { cat: PetModel, dog?: PetModel };
-    export type Parent = OuterPartyModel;
-    export type ChildGroup = OuterPartyModel;
-    export type Refer = Partial<HumanDefine.Refer> & { father: OuterPartyModel, introducer: OuterPartyModel };
-    export type ReferGroup = OuterPartyModel;
+    export type E = Partial<HumanDefine.E> & { onWork: void; onReport: OuterPartyModel }
+    export type S1 = Partial<HumanDefine.S1> & { salary: number }
+    export type S2 = Partial<HumanDefine.S2> & { seniority: number }
+    export type P = OuterPartyModel
+    export type C1 = Partial<HumanDefine.C1> & { cat: PetModel, dog?: PetModel }
+    export type C2 = OuterPartyModel
+    export type R1 = Partial<HumanDefine.R1> & { father: OuterPartyModel, introducer: OuterPartyModel }
+    export type R2 = Partial<HumanDefine.R2> & { enemies: OuterPartyModel }
 }
 
 export class OuterPartyModel<
-    E extends Partial<OuterPartyDefine.Event> = {},
-    S extends Partial<OuterPartyDefine.State> = {},
-    D extends Partial<OuterPartyDefine.StateInner> = {},
-    C extends Partial<OuterPartyDefine.Child> = {},
-    P extends OuterPartyDefine.Parent = OuterPartyDefine.Parent,
-    I extends OuterPartyDefine.ChildGroup = OuterPartyDefine.ChildGroup,
-    R extends Partial<OuterPartyDefine.Refer> = {},
-    Q extends OuterPartyDefine.ReferGroup = OuterPartyDefine.ReferGroup
+    E extends Partial<OuterPartyDefine.E> = {},
+    S1 extends Partial<OuterPartyDefine.S1> = {},
+    S2 extends Partial<OuterPartyDefine.S2> = {},
+    P extends OuterPartyDefine.P = OuterPartyDefine.P,
+    C1 extends Partial<OuterPartyDefine.C1> = {},
+    C2 extends OuterPartyDefine.C2 = OuterPartyDefine.C2,
+    R1 extends Partial<OuterPartyDefine.R1> = {},
+    R2 extends Partial<OuterPartyDefine.R2> = {}
 > extends HumanModel<
-    E & OuterPartyDefine.Event,
-    S & OuterPartyDefine.State,
-    D & OuterPartyDefine.StateInner,
-    C & OuterPartyDefine.Child,
+    E & OuterPartyDefine.E,
+    S1 & OuterPartyDefine.S1,
+    S2 & OuterPartyDefine.S2,
     P,
-    I,
-    R & OuterPartyDefine.Refer,
-    Q
+    C1 & OuterPartyDefine.C1,
+    C2,
+    R1 & OuterPartyDefine.R1,
+    R2 & OuterPartyDefine.R2
 > {
+    static superProps<M extends OuterPartyModel>(props: Model.Props<M>) {
+        const superProps = HumanModel.superProps(props);
+        return {
+            ...superProps,
+            child: ObjectUtils.merge(superProps.child ?? [], { cat: { type: PetModel } })
+        }
+    }
+
     test() {
         const model: Model = this;
         const human: HumanModel = this;
@@ -41,13 +51,15 @@ export class OuterPartyModel<
         const seniority: number = this.state.seniority;
         const dog: PetModel | undefined = this.child.dog;
         const cat: PetModel = this.child.cat;
-        this.childAgent.dog?.state?.age;
+        const a: OuterPartyModel = [...this.child][0]
+        this.childDelegator.dog?.state?.age;
         this.child.dog?.state.age;
-        this.eventEmitter.onWork(undefined)
-        this.eventEmitter.onReport(this.parent)
+        this.eventEmitters.onWork(undefined)
+        this.eventEmitters.onReport(this.parent)
         const introducer: OuterPartyModel | undefined = this.refer.introducer;
-        const introducer2: OuterPartyModel | undefined = this.referAgent.introducer;
-        this.referAgent.introducer = this.refer.father;
-        const friend: OuterPartyModel = this.referGroup[0];
+        const introducer2: OuterPartyModel | undefined = this.referDelegator.introducer;
+        this.referDelegator.introducer = this.refer.father;
+        const friend: HumanModel | undefined = this.refer.friends[0];
+        const enemies: OuterPartyModel | undefined = this.refer.enemies[0];
     }
 }

@@ -2,33 +2,33 @@ import { HumanModel } from "./human";
 import { Model } from "./model";
 
 export namespace PetDefine {
-    export type Event = { onBorn: void; onPlay: HumanModel; onFight: PetModel }
-    export type State = { name?: string };
-    export type StateInner = { age: number, isAlive: boolean };
-    export type Child = {};
-    export type ChildGroup = Model;
-    export type Parent = HumanModel;
+    export type E = { onBorn: void; onPlay: HumanModel; onFight: PetModel }
+    export type S1 = { name?: string };
+    export type S2 = { age: number, isAlive: boolean };
+    export type P = HumanModel;
+    export type C1 = {};
+    export type C2 = Model;
 }
 
 export class PetModel extends Model<
-    PetDefine.Event,
-    PetDefine.State,
-    PetDefine.StateInner,
-    PetDefine.Child,
-    PetDefine.Parent,
-    PetDefine.ChildGroup
+    PetDefine.E,
+    PetDefine.S1,
+    PetDefine.S2,
+    PetDefine.P,
+    PetDefine.C1,
+    PetDefine.C2
 > {
     test() {
         const pet: PetModel = this;
         const age: number = pet.state.age;
         const isAlive: boolean = pet.state.isAlive;
         const name: string = pet.state.name ?? '';
-        pet.stateAgent.age += 10;
-        pet.stateAgent.isAlive = true;
-        pet.stateAgent.name = 'Tom';
+        pet.stateDelegator.age += 10;
+        pet.stateDelegator.isAlive = true;
+        pet.stateDelegator.name = 'Tom';
         this.parent;
-        this.eventEmitter.onBorn();
-        this.eventEmitter.onPlay(this.parent);
-        this.eventEmitter.onFight(this)
+        this.eventEmitters.onBorn();
+        this.eventEmitters.onPlay(this.parent);
+        this.eventEmitters.onFight(this)
     }
 }

@@ -1,39 +1,38 @@
-import { ChildChunk, ReferAddrs } from "./chunk";
+import { ReferAddrs } from "./child";
+import { ChildChunk } from "./chunk";
 import { Model } from "./model";
 import { Value } from "./types";
 
 export type Props<
-    S extends Record<string, Value>,
-    D extends Record<string, Value>,
-    C extends Record<string, Model>,
+    S1 extends Record<string, Value>,
+    S2 extends Record<string, Value>,
     P extends Model | undefined,
-    I extends Model,
-    R extends Record<string, Model>,
+    C1 extends Record<string, Model>,
+    C2 extends Model,
+    R1 extends Record<string, Model>,
+    R2 extends Record<string, Model>
 > = {
     uuid: string;
-    state?: Partial<S & D>;
-    child?: Partial<ChildChunk<C>>;
-    childGroup?: Model.Chunk<I>[];
+    state?: Partial<S1 & S2>;
+    child?: Partial<ChildChunk<C1, C2>> & Model.Chunk<C2>[];
+    refer?: ReferAddrs<R1, R2>;
+    key: string | undefined;
     parent: P;
-    refer?: Partial<ReferAddrs<R>>;
-    referGroup?: string[];
-    key?: string;
 }
 
 export type StrictProps<
-    S extends Record<string, Value>,
-    D extends Record<string, Value>,
-    C extends Record<string, Model>,
+    S1 extends Record<string, Value>,
+    S2 extends Record<string, Value>,
     P extends Model | undefined,
-    I extends Model,
-    R extends Record<string, Model>,
+    C1 extends Record<string, Model>,
+    C2 extends Model,
+    R1 extends Record<string, Model>,
+    R2 extends Record<string, Model>
 > = {
     uuid: string;
-    state: S & D;
-    child: ChildChunk<C>;
-    childGroup: Model.Chunk<I>[];
+    state: S1 & S2;
+    child: ChildChunk<C1, C2>;
+    refer?: ReferAddrs<R1, R2>;
+    key: string | undefined;
     parent: P;
-    refer: ReferAddrs<R>;
-    referGroup: string[];
-    key?: string;
 }

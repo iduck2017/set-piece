@@ -1,41 +1,44 @@
+import { ReferAddrs } from "./child";
 import { Model } from "./model";
 import { Value } from "./types";
 
 export type Chunk<
-    S extends Record<string, Value>,
-    D extends Record<string, Value>,
-    C extends Record<string, Model>,
+    S1 extends Record<string, Value>,
+    S2 extends Record<string, Value>,
     P extends Model | undefined,
-    I extends Model,
-    R extends Record<string, Model>,
+    C1 extends Record<string, Model>,
+    C2 extends Model,
+    R1 extends Record<string, Model>,
+    R2 extends Record<string, Model>,
     M extends Model,
 > = {
     type: new (props: any) => M;
     uuid?: string;
-    state?: Partial<S & D>;
-    child?: Partial<ChildChunk<C>>;
-    childGroup?: Model.Chunk<I>[];
-    refer?: Partial<ReferAddrs<R>>;
-    referGroup?: string[];
+    state?: Partial<S1 & S2>;
+    child?: Partial<ChildChunk<C1, C2>> & Model.Chunk<C2>[];
+    refer?: ReferAddrs<R1, R2>;
 }
 
 export type StrictChunk<
-    S extends Record<string, Value>,
-    D extends Record<string, Value>,
-    C extends Record<string, Model>,
+    S1 extends Record<string, Value>,
+    S2 extends Record<string, Value>,
     P extends Model | undefined,
-    I extends Model,
-    R extends Record<string, Model>,
+    C1 extends Record<string, Model>,
+    C2 extends Model,
+    R1 extends Record<string, Model>,
+    R2 extends Record<string, Model>,
     M extends Model,
 > = {
     type: new (props: any) => M;
     uuid: string;
-    state: S & D;
-    child: ChildChunk<C>;
-    childGroup: Model.Chunk<I>[];
-    refer: ReferAddrs<R>;
-    referGroup: string[];
+    state: S1 & S2;
+    child: ChildChunk<C1, C2>;
+    refer?: ReferAddrs<R1, R2>;
 }
 
-export type ChildChunk<C extends Record<string, Model>> = C extends C ? { [K in keyof C]: C[K] extends Model ? Model.Chunk<C[K]> : Model.Chunk<Required<C>[K]> | undefined } : never;
-export type ReferAddrs<C extends Record<string, Model>> = { [K in keyof C]?: string };
+export type ChildChunk<
+    C1 extends Record<string, Model>,
+    C2 extends Model,
+> = C1 extends C1 ? { 
+    [K in keyof C1]: C1[K] extends Model ? Model.Chunk<C1[K]> : Model.Chunk<Required<C1>[K]> | undefined 
+} & Model.Chunk<C2>[] : never;
