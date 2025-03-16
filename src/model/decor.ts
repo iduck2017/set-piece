@@ -1,16 +1,22 @@
 import { Model } from "./model"
+import { Value } from "./types";
 
-export type DecorReceivers<S extends Record<string, any>, M extends Model = Model> = { [K in keyof S]: DecorReceiver<Required<S>[K], M> }
 export type DecorUpdater<S = any, M extends Model = Model> = (target: M, state: S) => S
 export type DecorProvider = { target: Model, updater: DecorUpdater }
+export type DecorReceivers<
+    S extends Record<string, Value>, 
+    M extends Model = Model
+> = { [K in keyof S]: DecorReceiver<Required<S>[K], M> }
 
 export class DecorReceiver<S = any, M extends Model = Model> {
-    readonly target: M;
-    readonly path: string;
+    readonly self: M;
+    readonly pathAbsolute: string;
+    readonly pathRelative: string;
 
-    constructor(target: M, path: string) {
-        this.target = target;
-        this.path = path;
+    constructor(self: M, path: string) {
+        this.self = self;
+        this.pathRelative = path;
+        this.pathAbsolute = self.pathAbsolute ? `${self.pathAbsolute}/${path}` : path;
     }
 }
 

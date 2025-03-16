@@ -1,13 +1,12 @@
 import { Agent } from "./agent"
-import { ReferAddrs, ReferGroup } from "./child"
-import { ChildChunk, Chunk, StrictChunk } from "./chunk"
+import { ReferAddrs, ReferGroup } from "./refer"
+import { FlatChildChunk, Chunk, StrictChunk, ChildChunk } from "./chunk"
 import { DecorProvider, DecorReceiver, DecorReceivers, DecorUpdater } from "./decor"
 import { BaseEvent, EventConsumer, EventEmitters, EventHandler, EventProducer, EventProducers } from "./event"
 import { Props, StrictProps } from "./props"
-import { ObjectUtils } from "./struct"
 import { Value } from "./types"
 
-type BaseModel = Model<{}, {}, {}, BaseModel | undefined, {}, BaseModel, {}, {}>
+type BaseModel = Model<string, {}, {}, {}, BaseModel | undefined, {}, BaseModel, {}, {}>
 
 export namespace Model {
     export type Props<M extends Model> = M['props']
@@ -19,6 +18,7 @@ export namespace Model {
 }
 
 export abstract class Model<
+    I extends string = string,
     E extends Record<string, any> = {},
     S1 extends Record<string, Value> = {},
     S2 extends Record<string, Value> = {},
@@ -34,14 +34,21 @@ export abstract class Model<
     private readonly stateWorkspace?: S1 & S2
     protected readonly stateDelegator: S1 & S2
 
-    get child(): Readonly<C1 & C2[]>  { return ObjectUtils.copy(this.childSnapshot) }
-    private childSnapshot: Readonly<C1 & C2[]> ;
-    private readonly childWorkspace: C1 & C2[];
+    private copy(origin: any[]) {
+        const result: any = [ ...origin ];
+        Object.keys(origin)
+            .filter(key => isNaN(Number(key)))
+            .forEach(key => {
+                const value = Reflect.get(origin, key);
+                Reflect.set(result, key, value); 
+            });
+        return result;
+    }
+
+    get child(): Readonly<C1 & C2[]>  { return this.copy(this.childSnapshot) }
+    private childSnapshot: Readonly<C1 & C2[]>;
+    private readonly childWorkspace!: C1 & C2[];
     protected readonly childDelegator: ChildChunk<C1, C2>
-    private readonly childRegister: Record<string, Model> = {};
-    
-    readonly parent: P;
-    readonly root: Model;
 
     readonly event: Readonly<EventProducers<E & BaseEvent<this>, this>>;
     readonly eventEmitters: Readonly<EventEmitters<E>>;
@@ -53,57 +60,56 @@ export abstract class Model<
     private readonly decorReceivers: Map<DecorUpdater, DecorReceiver[]> = new Map();
 
     readonly uuid: string;
-    readonly uuidRoute: string;
+    readonly code: I;
 
-    readonly key?: string;
-    readonly keyRoute: string;
+    readonly parent: P;
+    readonly root: Model;
+    readonly pathAbsolute: string | undefined;
+    readonly pathRelative: string | undefined;
 
-    get refer(): ReferGroup<R1, R2> { return ObjectUtils.copy(this.referWorkspace) }
-    private referSnapshot: ReferGroup<R1, R2>
-    private readonly referWorkspace: ReferGroup<R1, R2>;
+    get refer(): ReferGroup<R1, R2> { return { ...this.referSnapshot } }
+    private referSnapshot!: ReferGroup<R1, R2>
+    private readonly referWorkspace!: ReferGroup<R1, R2>;
     protected readonly referDelegator: ReferAddrs<R1, R2>;
     private readonly referConsumers: Model[] = [];
 
     readonly agent: Agent<E, S1, C1, C2, this>
 
-    get props(): Readonly<Props<S1, S2, P, C1, C2, R1, R2>> {
-        const result: StrictProps<S1, S2, P, C1, C2, R1, R2> = {
+    get props(): Readonly<Props<I, S1, S2, P, C1, C2, R1, R2>> {
+        const result: StrictProps<I, S1, S2, P, C1, C2, R1, R2> = {
+            code: this.code,
             uuid: this.uuid,
+            path: this.pathRelative,
             state: { ...this.stateDelegator },
-            child: ObjectUtils.copy(this.childDelegator),
-            refer: ObjectUtils.copy(this.referWorkspace),
+            child: { ...this.childDelegator },
+            refer: { ...this.referDelegator },
             parent: this.parent,
-            key: this.key,
         }
         return result;
     }
 
-    get chunk(): Readonly<Chunk<S1, S2, P, C1, C2, R1, R2, this>> {
-        const result: StrictChunk<S1, S2, P, C1, C2, R1, R2, this> = {
+    get chunk(): Readonly<Chunk<I, S1, S2, C1, C2, R1, R2>> {
+        const result: StrictChunk<I, S1, S2, C1, C2, R1, R2> = {
             uuid: this.uuid,
-            type: this.constructor as new (props: any) => this,
+            code: this.code,
             state: { ...this.stateDelegator },
-            child: ObjectUtils.copy(this.childDelegator),
-            refer: ObjectUtils.copy(this.referWorkspace),
+            child: { ...this.childDelegator },
+            refer: { ...this.referDelegator }
         }
         return result;
     }
     
-    constructor(props: StrictProps<S1, S2, P, C1, C2, R1, R2>) {
+    constructor(props: StrictProps<I, S1, S2, P, C1, C2, R1, R2>) {
         this.parent = props.parent;
         this.root = this.parent?.root ?? this;
         this.uuid = props.uuid;
-        this.key = props.key;
-        if (this.parent && this.key) this.path = `${this.parent.path}/${this.key}`;
-        this.event = new Proxy({} as any, { 
-            get: this.getEvent.bind(this) 
-        });
-        this.decor = new Proxy({} as any, { 
-            get: this.getDecor.bind(this) 
-        });
-        this.eventEmitters = new Proxy({} as any, { 
-            get: this.getEventEmitter.bind(this) 
-        })
+        this.code = props.code;
+        this.pathRelative = props.path;
+        this.pathAbsolute = props.parent?.pathAbsolute ? 
+            `${props.parent.pathAbsolute}/${this.pathRelative}` : undefined;
+        this.event = new Proxy({} as EventProducers<E & BaseEvent<this>, this>, { get: this.getEvent.bind(this) });
+        this.decor = new Proxy({} as DecorReceivers<S1, this>, { get: this.getDecor.bind(this) });
+        this.eventEmitters = new Proxy({} as EventEmitters<E>, { get: this.getEventEmitter.bind(this) })
         this.stateSnapshot = { ...props.state }
         this.stateDelegator = new Proxy({ ...props.state }, {
             set: this.setState.bind(this),
@@ -112,17 +118,16 @@ export abstract class Model<
         const childOrigin: any = [];
         this.childSnapshot = childOrigin;
         this.childDelegator = new Proxy(childOrigin, {
-            get: this.getChild.bind(this),
-            set: this.setChild.bind(this),
-            deleteProperty: this.deleteChild.bind(this),
+            // get: this.getChild.bind(this),
+            // set: this.setChild.bind(this),
+            // deleteProperty: this.deleteChild.bind(this),
         })
-        this.referWorkspace = ObjectUtils.copy(props.refer);
-        this.referDelegator = new Proxy({} as any, {
-            get: this.getRefer.bind(this),
-            set: this.setRefer.bind(this),
-            deleteProperty: this.deleteRefer.bind(this),
+        this.referDelegator = new Proxy((props.refer ?? {}) as ReferAddrs<R1, R2>, {
+            // get: this.getRefer.bind(this),
+            // set: this.setRefer.bind(this),
+            // deleteProperty: this.deleteRefer.bind(this),
         })
-        this.agent = new Agent();
+        this.agent = new Agent(this, undefined);
     }
 
     queryChild(path?: string): Model | undefined { 
@@ -149,13 +154,13 @@ export abstract class Model<
     }
 
     private getRefer<K extends keyof R1>(origin: R1, key: K & string) {
-        if (!origin[key]) {
-            const model = this.queryChild(this.referWorkspace[key]);
-            if (!model) return undefined;
-            Reflect.set(origin, key, model);
-            model?.referConsumers.push(this);
-        }
-        return origin[key];
+        // if (!origin[key]) {
+        //     const model = this.queryChild(this.referWorkspace[key]);
+        //     if (!model) return undefined;
+        //     Reflect.set(origin, key, model);
+        //     model?.referConsumers.push(this);
+        // }
+        // return origin[key];
     }
 
     private getChild(origin: Record<string, any>, key: string) {
@@ -175,6 +180,7 @@ export abstract class Model<
     @Model.useFiber()
     private setChild(origin: unknown, key: string, props: any) {
         const model = this.createChild(props, key);
+        if (!model) return true;
         Reflect.set(this.childWorkspace, key, model);
         return true;
     }
@@ -185,10 +191,11 @@ export abstract class Model<
         return true;
     }
 
-    private createChild<M extends Model>(chunk: Model.Chunk<M>, key: string): Model {
+    private createChild<M extends Model>(chunk: Model.Chunk<M>, path: string): Model | undefined {
         const uuid = chunk.uuid ?? '';
-        const props: Model.Props<M> = { ...chunk, parent: this, key, uuid };
-        return new chunk.type(props)
+        const props: Model.Props<M> = { ...chunk, parent: this, path: path, uuid };
+        // return new chunk.type(props)
+        return undefined;
     }
 
     @Model.useFiber()
@@ -239,7 +246,7 @@ export abstract class Model<
         let parent: Model | undefined = this.parent;
         let path: string = key;
         while (parent) {
-            const key = isNaN(Number(parent.key)) ? parent.key : '0';
+            const key = isNaN(Number(parent.pathRelative)) ? parent.pathRelative : '0';
             path = `${key}/${path}`
             const consumers = parent.eventConsumers.get(path) ?? [];
             for (const consumer of consumers) {
@@ -254,10 +261,10 @@ export abstract class Model<
         producer: EventProducer<E, M>, 
         handler: EventHandler<E, M>
     ) {
-        const { target } = producer;
-        const consumers = target.eventConsumers.get(producer.path) ?? [];
+        const { self: target } = producer;
+        const consumers = target.eventConsumers.get(producer.pathRelative) ?? [];
         consumers.push({ target: this, handler });
-        target.eventConsumers.set(producer.path, consumers);
+        target.eventConsumers.set(producer.pathRelative, consumers);
         const producers: EventProducer[] = this.eventProducers.get(handler) ?? [];
         producers.push(producer);
         this.eventProducers.set(handler, producers);
@@ -270,9 +277,9 @@ export abstract class Model<
         const producers = this.eventProducers.get(handler) ?? [];
         for (const producerTemp of producers) {
             if (producer !== producerTemp) continue;
-            const { target } = producerTemp;
-            const consumers = target.eventConsumers.get(producerTemp.path)?.filter(item => item.handler !== handler) ?? [];
-            target.eventConsumers.set(producerTemp.path, consumers);
+            const { self: target } = producerTemp;
+            const consumers = target.eventConsumers.get(producerTemp.pathRelative)?.filter(item => item.handler !== handler) ?? [];
+            target.eventConsumers.set(producerTemp.pathRelative, consumers);
         }
         const producersNext = producer ? producers.filter(producerCur => producerCur !== producer) : [];
         this.eventProducers.set(handler, producersNext);
@@ -282,10 +289,10 @@ export abstract class Model<
         receiver: DecorReceiver<S, M>,
         updater: DecorUpdater<S, M>
     ) {
-        const { target } = receiver;
-        const providers = target.decorProviders.get(receiver.path) ?? [];
+        const { self: target } = receiver;
+        const providers = target.decorProviders.get(receiver.pathRelative) ?? [];
         providers.push({ target: this, updater });
-        target.decorProviders.set(receiver.path, providers);
+        target.decorProviders.set(receiver.pathRelative, providers);
         const receivers: DecorReceiver[] = this.decorReceivers.get(updater) ?? [];
         receivers.push(receiver);
         this.eventProducers.set(updater, receivers); 
@@ -299,9 +306,9 @@ export abstract class Model<
         const receivers = this.decorReceivers.get(updater) ?? [];
         for (const receiverTemp of receivers) {
             if (receiver !== receiverTemp) continue;
-            const { target } = receiverTemp;
-            const providers = target.decorProviders.get(receiverTemp.path)?.filter(item => item.updater !== updater) ?? [];
-            target.decorProviders.set(receiverTemp.path, providers);
+            const { self: target } = receiverTemp;
+            const providers = target.decorProviders.get(receiverTemp.pathRelative)?.filter(item => item.updater !== updater) ?? [];
+            target.decorProviders.set(receiverTemp.pathRelative, providers);
         }
         const receiversNext = receiver ? receivers.filter(receiverCur => receiverCur !== receiver) : [];
         this.eventProducers.set(updater, receiversNext);

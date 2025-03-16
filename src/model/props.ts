@@ -1,9 +1,10 @@
-import { ReferAddrs } from "./child";
-import { ChildChunk } from "./chunk";
+import { ReferAddrs } from "./refer";
+import { FlatChildChunk } from "./chunk";
 import { Model } from "./model";
 import { Value } from "./types";
 
 export type Props<
+    I extends string,
     S1 extends Record<string, Value>,
     S2 extends Record<string, Value>,
     P extends Model | undefined,
@@ -12,15 +13,17 @@ export type Props<
     R1 extends Record<string, Model>,
     R2 extends Record<string, Model>
 > = {
+    code: I;
     uuid: string;
+    path: string | undefined;
     state?: Partial<S1 & S2>;
-    child?: Partial<ChildChunk<C1, C2>> & Model.Chunk<C2>[];
+    child?: Partial<FlatChildChunk<C1, C2>>;
     refer?: ReferAddrs<R1, R2>;
-    key: string | undefined;
     parent: P;
 }
 
 export type StrictProps<
+    I extends string,
     S1 extends Record<string, Value>,
     S2 extends Record<string, Value>,
     P extends Model | undefined,
@@ -29,10 +32,11 @@ export type StrictProps<
     R1 extends Record<string, Model>,
     R2 extends Record<string, Model>
 > = {
+    code: I;
     uuid: string;
+    path: string | undefined;
     state: S1 & S2;
-    child: ChildChunk<C1, C2>;
+    child: FlatChildChunk<C1, C2>;
     refer?: ReferAddrs<R1, R2>;
-    key: string | undefined;
     parent: P;
 }
