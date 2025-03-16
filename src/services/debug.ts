@@ -8,7 +8,7 @@ export enum LogLevel {
 
 export class DebugService {
     
-    private static readonly _stack: string[] = []
+    private static readonly stack: string[] = []
     static useStack(level?: LogLevel) {
         return function(
             target: Object,
@@ -19,10 +19,10 @@ export class DebugService {
             if (!handler) return descriptor;
             const instance = {
                 [key](this: Object, ...args: any[]) {
-                    DebugService._console(this, key, level);
-                    DebugService._stack.push(key);
+                    DebugService.console(this, key, level);
+                    DebugService.stack.push(key);
                     const result = handler.call(this, ...args);
-                    DebugService._stack.pop();
+                    DebugService.stack.pop();
                     return result;
                 }
             }
@@ -60,24 +60,23 @@ export class DebugService {
     }
 
 
-    private static readonly _levels = new Map<Function, LogLevel>()
-    static _useLevel(level: LogLevel) {
+    private static readonly levels = new Map<Function, LogLevel>()
+    static useLevel(level: LogLevel) {
         return function(constructor: Function) {
-            DebugService._levels.set(constructor, level);
+            DebugService.levels.set(constructor, level);
         }
     }
     
-
-    private static _console(
+    private static console(
         target: any, 
         key: string, 
         level?: LogLevel
     ) {
-        const indent = new Array(DebugService._stack.length).fill('  ').join('')
+        const indent = new Array(DebugService.stack.length).fill('  ').join('')
         const namespace = target.constructor.name + '::' + key
         let constructor = target.constructor
         while (constructor) {
-            const result = DebugService._levels.get(constructor);
+            const result = DebugService.levels.get(constructor);
             if (result) level = result;
             if (result) break;
             constructor = Reflect.get(constructor, '__proto__');

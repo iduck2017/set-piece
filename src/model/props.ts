@@ -37,6 +37,6 @@ export type StrictProps<
     path: string | undefined;
     state: S1 & S2;
     child: FlatChildChunk<C1, C2>;
-    refer?: ReferAddrs<R1, R2>;
+    refer: ReferAddrs<R1, R2>;
     parent: P;
 }

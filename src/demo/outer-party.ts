@@ -3,9 +3,8 @@ import { Model } from "../model/model";
 import { PetModel } from "./pet";
 import { ThinkPolDefine } from "./thinkpol";
 
-
 export namespace OuterPartyDefine {
-    export type I = string | ThinkPolDefine.I
+    export type I = ThinkPolDefine.I
     export type E = Partial<HumanDefine.E> & { onWork: void; onReport: OuterPartyModel }
     export type S1 = Partial<HumanDefine.S1> & { salary: number }
     export type S2 = Partial<HumanDefine.S2> & { seniority: number }

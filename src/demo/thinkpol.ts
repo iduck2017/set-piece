@@ -41,6 +41,11 @@ export class ThinkPolModel extends OuterPartyModel<
             child: {
                 ...superProps.child,
                 dog: { code: 'pet' }
+            },
+            refer: {
+                ...superProps.refer,
+                friends: [],
+                enemies: []
             }
         });
     }

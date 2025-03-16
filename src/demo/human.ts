@@ -4,8 +4,8 @@ import { OuterPartyDefine } from "./outer-party";
 import { PetModel } from "./pet";
 
 export namespace HumanDefine {
-    export type I = string | OuterPartyDefine.I;
-    export type E = { onBorn: void, onSpeek: string, onHello: HumanModel, onCount: number }
+    export type I = OuterPartyDefine.I
+    export type E = { onBorn: void, onHello: HumanModel, onCount: number }
     export type S1 = { nickname?: string, emotion: string }
     export type S2 = { isAlive: boolean, age: number, name: string }
     export type P = HumanModel
@@ -55,7 +55,6 @@ export  class HumanModel<
         human.stateDelegator.isAlive = true;
         human.stateDelegator.nickname = '';
         this.eventEmitters.onBorn(undefined);
-        this.eventEmitters.onSpeek('Hello');
         this.eventEmitters.onCount(4);
         this.eventEmitters.onHello(this.parent);
         const cat: PetModel | undefined = this.child.cat;
