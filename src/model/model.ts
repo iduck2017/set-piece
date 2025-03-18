@@ -30,10 +30,11 @@ export abstract class Model<
     R1 extends Record<string, Model> = {},
     R2 extends Record<string, Model> = {}
 > {
-    get state(): Readonly<S1 & S2> { return { ...this.stateDelegator } }
-    private stateReleased: Readonly<S1 & S2>
+    get state(): Readonly<S1 & S2> { return { ...this.stateDecorated } }
+    private stateDecorated: Readonly<S1 & S2>
     private stateSnapshot?: Readonly<S1 & S2>
     private stateChecklist: string[] = [];
+    private stateReleased: Readonly<S1 & S2>
     private readonly stateWorkspace: S1 & S2
     protected readonly stateDelegator: S1 & S2
 
@@ -139,6 +140,7 @@ export abstract class Model<
         })
         
         this.stateReleased = { ...props.state }
+        this.stateDecorated = { ...props.state }
         this.stateWorkspace = { ...props.state }
         this.stateDelegator = new Proxy(this.stateWorkspace, {
             get: this.getState.bind(this),
@@ -174,7 +176,13 @@ export abstract class Model<
             // deleteProperty: this.deleteRefer.bind(this),
         })
         this.agent = new Agent(this, undefined);
-        if (!this.parent) this.init();
+        if (!this.parent) this.initRoot();
+    }
+    
+    @DebugService.useStack()
+    @Model.useFiber()
+    private initRoot() {
+        this.init();
     }
 
     private getState(origin: any, key: string) {
@@ -214,13 +222,13 @@ export abstract class Model<
         // return origin[key];
     }
 
-    private getChild(origin: Record<string, any>, key: string) {
-        const value = origin[key];
+    private getChild(origin: any, key: string) {
+        const value = this.childReleased[key];
         if (value instanceof Model) return value.chunk;
         if (typeof value === 'function' && typeof key === 'string') {
             return this.operateChild.bind(value);
         } 
-        return origin[key].chunk;
+        return this.childReleased[key];
     }
 
     @Model.useFiber()
@@ -252,15 +260,15 @@ export abstract class Model<
 
     @Model.useFiber()
     private deleteState(origin: S1 & S2, key: string) {
-        if (!this.stateChecklist.includes(key)) this.stateChecklist.push(key);
         Reflect.deleteProperty(origin, key); 
+        this.resetState(key)
         return true;
     }
 
     @Model.useFiber()
     private setState(origin: S1 & S2, key: any, value: any) {
-        if (!this.stateChecklist.includes(key)) this.stateChecklist.push(key);
         Reflect.set(origin, key, value); 
+        this.resetState(key);
         return true;
     }
 
@@ -292,6 +300,7 @@ export abstract class Model<
 
     @Model.useFiber()
     private resetState(key: string) {
+        if (this.stateChecklist.includes(key)) return;
         this.stateChecklist.push(key);
     }
 
@@ -299,13 +308,14 @@ export abstract class Model<
     private refreshState() {
         if (!this.stateChecklist.length) return;
         console.log('StateChange', this.stateChecklist);
-        const stateCurrent = { ...this.stateReleased };
+        const stateCurrent = { ...this.stateDecorated };
         for (const key of this.stateChecklist) {
             const value = this.emitDecor(key);
             Reflect.set(stateCurrent, key, value);
         }
         this.stateSnapshot = this.state
-        this.stateReleased = stateCurrent;
+        this.stateReleased = { ...this.stateWorkspace };
+        this.stateDecorated = stateCurrent;
     } 
 
     @DebugService.useStack()
@@ -369,6 +379,7 @@ export abstract class Model<
     private emitDecor(key: string) {
         const path = this.pathAbstract? `${this.pathAbstract}/${key}` : key;
         let state = this.stateWorkspace[key];
+        console.log('StateOrigin', this.stateWorkspace[key])
         let parent: Model | undefined = this;
         while(parent) {
             const providers = parent.decorProviders.get(path) ?? [];
@@ -436,14 +447,16 @@ export abstract class Model<
         receiver: DecorReceiver<S, M>,
         updater: DecorUpdater<S, M>
     ) {
-        const { self: target } = receiver;
-        const providers = target.decorProviders.get(receiver.pathRelative) ?? [];
+        const { self, key } = receiver;
+        const providers = self.decorProviders.get(receiver.pathRelative) ?? [];
         providers.push({ target: this, updater });
-        target.decorProviders.set(receiver.pathRelative, providers);
+        console.log('bindDecor', receiver.pathRelative, key)
+        self.decorProviders.set(receiver.pathRelative, providers);
         const receivers: DecorReceiver[] = this.decorReceivers.get(updater) ?? [];
         receivers.push(receiver);
         this.eventProducers.set(updater, receivers); 
         // emit recheck
+        this.resetState(key)
     }
 
     protected unbindDecor<S, M extends Model>(
@@ -575,7 +588,7 @@ export abstract class Model<
                     Model.modelChecklist.push(this);
                     if (Model.isFiberic) return handler.apply(this, args);
                     Model.isFiberic = true;
-                    console.log('Fiberic+ ============')
+                    console.group(this.constructor.name + ":useFiber")
                     const result = handler.apply(this, args);
                     Model.modelChecklist.forEach(model => model.refreshChild());
                     Model.modelChecklist.forEach(model => model.refreshRefer());
@@ -583,7 +596,7 @@ export abstract class Model<
                     Model.modelChecklist.forEach(model => model.resetSnapshot());
                     Model.isFiberic = false;
                     Model.modelChecklist = [];
-                    console.log('Fiberic- ============')
+                    console.groupEnd();
                     return result;
                 }
             }

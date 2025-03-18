@@ -9,7 +9,10 @@ export enum LogLevel {
 export class DebugService {
     
     private static readonly stack: string[] = []
-    static useStack() {
+    static useStack(options?: {
+        useArgs?: boolean,
+        useResult?: boolean,
+    }) {
         return function(
             target: Object,
             key: string,
@@ -25,7 +28,8 @@ export class DebugService {
                     const result = handler.call(this, ...args);
                     const output = [...args]; 
                     if (result !== undefined) output.push(result) 
-                    console.log('details', output)
+                    if (options?.useArgs) console.log('args', args);
+                    if (options?.useResult) console.log('result', result)
                     DebugService.stack.pop();
                     console.groupEnd()
                     return result;
