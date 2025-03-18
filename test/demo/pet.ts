@@ -1,5 +1,5 @@
 import { HumanModel } from "./human";
-import { Model } from "../model/model";
+import { Model } from "../../src/model/model";
 
 export namespace PetDefine {
     export type I = 'pet';

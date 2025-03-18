@@ -5,6 +5,8 @@ import { DecorProvider, DecorReceiver, DecorReceivers, DecorUpdater } from "./de
 import { BaseEvent, EventConsumer, EventEmitters, EventHandler, EventProducer, EventProducers } from "./event"
 import { Props, StrictProps } from "./props"
 import { Value } from "./types"
+import { StoreService } from "@/services/store"
+import { DebugService } from "@/services/debug"
 
 type BaseModel = Model<string, {}, {}, {}, BaseModel | undefined, {}, BaseModel, {}, {}>
 
@@ -139,6 +141,7 @@ export abstract class Model<
         this.stateReleased = { ...props.state }
         this.stateWorkspace = { ...props.state }
         this.stateDelegator = new Proxy(this.stateWorkspace, {
+            get: this.getState.bind(this),
             set: this.setState.bind(this),
             deleteProperty: this.deleteState.bind(this),
         })
@@ -171,6 +174,11 @@ export abstract class Model<
             // deleteProperty: this.deleteRefer.bind(this),
         })
         this.agent = new Agent(this, undefined);
+        if (!this.parent) this.init();
+    }
+
+    private getState(origin: any, key: string) {
+        return this.stateReleased[key];
     }
 
     queryChild(path?: string): Model | undefined { 
@@ -235,24 +243,51 @@ export abstract class Model<
     }
 
     private createChild<M extends Model>(chunk: Model.Chunk<M>, path: string): Model | undefined {
-        const uuid = chunk.uuid ?? '';
+        const uuid = chunk.uuid ?? StoreService.uuid;
         const props: Model.Props<M> = { ...chunk, parent: this, path: path, uuid };
-        // return new chunk.type(props)
-        return undefined;
+        const constructor = StoreService.getProduct(this.code);
+        if (!constructor) return undefined;
+        return new constructor(props)
     }
 
     @Model.useFiber()
     private deleteState(origin: S1 & S2, key: string) {
-        this.stateChecklist.push(key);
+        if (!this.stateChecklist.includes(key)) this.stateChecklist.push(key);
         Reflect.deleteProperty(origin, key); 
         return true;
     }
 
     @Model.useFiber()
     private setState(origin: S1 & S2, key: any, value: any) {
-        this.stateChecklist.push(key);
+        if (!this.stateChecklist.includes(key)) this.stateChecklist.push(key);
         Reflect.set(origin, key, value); 
         return true;
+    }
+
+    @DebugService.useStack()
+    @Model.useFiber()
+    public setStateBatch(updater: (prev: S1 & S2) => Partial<S1 & S2>) {
+        const statePrev = { ...this.stateWorkspace };
+        const stateNext = updater(statePrev);
+        Object.keys(stateNext).forEach(key => {
+            console.log('SetStateBatch', key)
+            Reflect.set(this.stateDelegator, key, stateNext[key]);
+        })
+    }
+
+    @Model.useFiber()
+    public addChild() {
+
+    }
+
+    @Model.useFiber()
+    public removeChild() {
+
+    }
+
+    @Model.useFiber()
+    public swapChild() {
+
     }
 
     @Model.useFiber()
@@ -260,7 +295,10 @@ export abstract class Model<
         this.stateChecklist.push(key);
     }
 
+    @DebugService.useStack()
     private refreshState() {
+        if (!this.stateChecklist.length) return;
+        console.log('StateChange', this.stateChecklist);
         const stateCurrent = { ...this.stateReleased };
         for (const key of this.stateChecklist) {
             const value = this.emitDecor(key);
@@ -270,20 +308,24 @@ export abstract class Model<
         this.stateReleased = stateCurrent;
     } 
 
+    @DebugService.useStack()
     private refreshChild() {
         const childCurrent: Model[] = Object.values(this.childReleased);
         const childWorkspace: Model[] = Object.values(this.childWorkspace);
         const childCreated = childWorkspace.filter(child => !childCurrent.includes(child))
         const childRemoved = childCurrent.filter(child => !childWorkspace.includes(child));
+        if (!childCreated.length && !childRemoved.length) return;
         this.childSnapshot = this.child;
         this.childReleased = this.copyChild(this.childWorkspace);
         childRemoved.forEach(child => child.uninit());
         childCreated.forEach(child => child.init());
     }
 
+    @DebugService.useStack()
     private refreshRefer() {
     }
 
+    @DebugService.useStack()
     private resetSnapshot() {
         if (this.stateSnapshot) this.emitEvent('onStateUpdate', {
             prev: this.stateSnapshot,
@@ -323,6 +365,7 @@ export abstract class Model<
         return this.emitEvent.bind(this, key);
     }
 
+    @DebugService.useStack()
     private emitDecor(key: string) {
         const path = this.pathAbstract? `${this.pathAbstract}/${key}` : key;
         let state = this.stateWorkspace[key];
@@ -338,6 +381,7 @@ export abstract class Model<
         return state;
     }
 
+    @DebugService.useStack()
     private emitEvent<E>(key: string, event: E) {
         const consumers = this.eventConsumers.get(key) ?? [];
         for (const consumer of consumers) {
@@ -358,6 +402,7 @@ export abstract class Model<
         }
     }
 
+    @DebugService.useStack()
     protected bindEvent<E, M extends Model>(
         producer: EventProducer<E, M>, 
         handler: EventHandler<E, M>
@@ -386,6 +431,7 @@ export abstract class Model<
         this.eventProducers.set(handler, producersNext);
     }
 
+    @DebugService.useStack()
     protected bindDecor<S, M extends Model>(
         receiver: DecorReceiver<S, M>,
         updater: DecorUpdater<S, M>
@@ -416,6 +462,9 @@ export abstract class Model<
         // emit recheck 
     }
 
+    private isInited: boolean = false;
+
+    @DebugService.useStack()
     private init() {
         Object.values(this.child).forEach(child => child.init());
         
@@ -443,8 +492,11 @@ export abstract class Model<
             })
             constructor = Reflect.get(constructor, '__proto__');
         }
+
+        this.isInited = true;
     }
     
+    @DebugService.useStack()
     private uninit() {
         Object.values(this.child).forEach(child => child.uninit());
 
@@ -473,10 +525,12 @@ export abstract class Model<
             const [ updater ] = channel;
             this.unbindDecor(undefined, updater);
         }
+
+        this.isInited = false;
     }
 
 
-    private static hooksEvent: Map<Function, Record<string, Array<(model: Model) => EventProducer | undefined>>>;
+    private static hooksEvent: Map<Function, Record<string, Array<(model: Model) => EventProducer | undefined>>> = new Map();
     protected static useEvent<E, M extends Model>(accessor: (model: M) => EventProducer<E, M> | undefined) {
         return function(
             target: M,
@@ -491,7 +545,7 @@ export abstract class Model<
     }
 
     
-    private static hooksDecor: Map<Function, Record<string, Array<(model: Model) => DecorReceiver | undefined>>>
+    private static hooksDecor: Map<Function, Record<string, Array<(model: Model) => DecorReceiver | undefined>>> = new Map()
     protected static useDecor<S, M extends Model>(accessor: (model: M) => DecorReceiver<S, M> | undefined) {
         return function(
             target: M,

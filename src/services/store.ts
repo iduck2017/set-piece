@@ -13,6 +13,10 @@ export class StoreService {
         };
     }
 
+    static getProduct(code: string) {
+        return StoreService.productConstructors.get(code);
+    }
+
     private static ticket = Date.now() % (36 ** 2);
     private static timestamp = Date.now(); 
     

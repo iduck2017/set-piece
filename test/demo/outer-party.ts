@@ -1,5 +1,5 @@
 import { HumanDefine, HumanModel } from "./human";
-import { Model } from "../model/model";
+import { Model } from "../../src/model/model";
 import { PetModel } from "./pet";
 import { ThinkPolDefine } from "./thinkpol";
 

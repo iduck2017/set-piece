@@ -1,5 +1,5 @@
-import { OnChildChange } from "../model/event";
-import { Model } from "../model/model";
+import { OnChildChange } from "../../src/model/event";
+import { Model } from "set-piece";
 import { OuterPartyDefine } from "./outer-party";
 import { PetModel } from "./pet";
 
