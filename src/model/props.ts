@@ -15,7 +15,7 @@ export type Props<
 > = {
     code: I;
     uuid: string;
-    path: string | undefined;
+    path: string;
     state?: Partial<S1 & S2>;
     child?: Partial<FlatChildChunk<C1, C2>>;
     refer?: ReferAddrs<R1, R2>;
@@ -34,7 +34,7 @@ export type StrictProps<
 > = {
     code: I;
     uuid: string;
-    path: string | undefined;
+    path: string;
     state: S1 & S2;
     child: FlatChildChunk<C1, C2>;
     refer: ReferAddrs<R1, R2>;

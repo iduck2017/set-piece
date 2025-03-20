@@ -9,16 +9,16 @@ export type DecorReceivers<
 > = { [K in keyof S]: DecorReceiver<Required<S>[K], M> }
 
 export class DecorReceiver<S = any, M extends Model = Model> {
-    readonly self: M;
+    readonly target: M;
     readonly pathAbsolute: string;
     readonly pathRelative: string;
-    readonly key: string;
+    readonly pathAbstract: string;
 
-    constructor(self: M, path: string) {
-        this.self = self;
-        this.key = path.split('/').pop() ?? ''
+    constructor(target: M, path: string) {
+        this.target = target;
         this.pathRelative = path;
-        this.pathAbsolute = self.pathAbsolute ? `${self.pathAbsolute}/${path}` : path;
+        this.pathAbstract = `${target.pathAbstract}/${path}`;
+        this.pathAbsolute = `${target.pathAbsolute}/${path}`;
     }
 }
 

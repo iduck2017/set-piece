@@ -69,9 +69,9 @@ export abstract class Model<
 
     readonly parent: P;
     readonly root: Model;
-    readonly pathAbsolute: string | undefined;
-    readonly pathRelative: string | undefined;
-    readonly pathAbstract: string | undefined;
+    readonly pathAbsolute: string;
+    readonly pathRelative: string;
+    readonly pathAbstract: string;
 
     private copyRefer(origin: Readonly<ReferGroup<R1, R2>>): ReferGroup<R1, R2> {
         const result: any = {};
@@ -116,14 +116,22 @@ export abstract class Model<
     }
     
     constructor(props: StrictProps<I, S1, S2, P, C1, C2, R1, R2>) {
+
         this.parent = props.parent;
         this.root = this.parent?.root ?? this;
         this.uuid = props.uuid;
         this.code = props.code;
+
+        const index = isNaN(Number(props.path)) ? props.path : '0';
         this.pathRelative = props.path;
-        this.pathAbsolute = props.parent?.pathAbsolute ? 
-            `${props.parent.pathAbsolute}/${this.pathRelative}` : undefined;
-    
+        if (props.parent) {
+            this.pathAbsolute = `${props.parent.pathAbsolute}/${props.path}`;
+            this.pathAbstract = `${props.parent.pathAbstract}/${index}`;
+        } else {
+            this.pathAbsolute = props.path;
+            this.pathAbstract = index
+        }
+
         this.decorProviders = new Map();
         this.decorReceivers = new Map();
         this.decor = new Proxy({} as DecorReceivers<S1, this>, { 
@@ -189,9 +197,11 @@ export abstract class Model<
         return this.stateReleased[key];
     }
 
+    @DebugService.useStack()
     queryChild(path?: string): Model | undefined { 
         if (!path) return undefined;
         const keys = path.split('/');
+        keys.shift()
         let target = this.root;
         while (keys.length) {
             const key = keys.shift();
@@ -299,9 +309,18 @@ export abstract class Model<
     }
 
     @Model.useFiber()
-    private resetState(key: string) {
-        if (this.stateChecklist.includes(key)) return;
-        this.stateChecklist.push(key);
+    private resetState(path: string) {
+        const pathSegments = path.split('/');
+        const key = pathSegments.shift();
+        if (!key) return;
+        if (pathSegments.length > 1) {
+            const pathRelative = pathSegments.join('/')
+            if (key === '0') this.child.forEach(child => child.resetState(pathRelative))
+            else Reflect.get(this.child, key).resetState(pathRelative)
+        } else {
+            if (this.stateChecklist.includes(key)) return;
+            this.stateChecklist.push(key);
+        }
     }
 
     @DebugService.useStack()
@@ -377,7 +396,7 @@ export abstract class Model<
 
     @DebugService.useStack()
     private emitDecor(key: string) {
-        const path = this.pathAbstract? `${this.pathAbstract}/${key}` : key;
+        const path = `${this.pathAbstract}/${key}`;
         let state = this.stateWorkspace[key];
         console.log('StateOrigin', this.stateWorkspace[key])
         let parent: Model | undefined = this;
@@ -389,6 +408,7 @@ export abstract class Model<
             }
             parent = parent.parent;
         }
+        console.log('StatePiped', state);
         return state;
     }
 
@@ -418,7 +438,7 @@ export abstract class Model<
         producer: EventProducer<E, M>, 
         handler: EventHandler<E, M>
     ) {
-        const { self: target } = producer;
+        const { target: target } = producer;
         const consumers = target.eventConsumers.get(producer.pathRelative) ?? [];
         consumers.push({ target: this, handler });
         target.eventConsumers.set(producer.pathRelative, consumers);
@@ -434,7 +454,7 @@ export abstract class Model<
         const producers = this.eventProducers.get(handler) ?? [];
         for (const producerTemp of producers) {
             if (producer !== producerTemp) continue;
-            const { self: target } = producerTemp;
+            const { target: target } = producerTemp;
             const consumers = target.eventConsumers.get(producerTemp.pathRelative)?.filter(item => item.handler !== handler) ?? [];
             target.eventConsumers.set(producerTemp.pathRelative, consumers);
         }
@@ -447,16 +467,21 @@ export abstract class Model<
         receiver: DecorReceiver<S, M>,
         updater: DecorUpdater<S, M>
     ) {
-        const { self, key } = receiver;
-        const providers = self.decorProviders.get(receiver.pathRelative) ?? [];
+        const { target, pathAbsolute, pathRelative } = receiver;
+        const providers = target.decorProviders.get(pathAbsolute) ?? [];
         providers.push({ target: this, updater });
-        console.log('bindDecor', receiver.pathRelative, key)
-        self.decorProviders.set(receiver.pathRelative, providers);
+        console.log('bindDecor', pathAbsolute)
+        target.decorProviders.set(pathAbsolute, providers);
         const receivers: DecorReceiver[] = this.decorReceivers.get(updater) ?? [];
         receivers.push(receiver);
-        this.eventProducers.set(updater, receivers); 
-        // emit recheck
-        this.resetState(key)
+        this.decorReceivers.set(updater, receivers); 
+        target.resetState(pathRelative);
+    }
+
+    @DebugService.useStack()
+    debug() {
+        console.log(this.uuid, this.pathAbsolute);
+        console.log(this.decorProviders);
     }
 
     protected unbindDecor<S, M extends Model>(
@@ -466,13 +491,13 @@ export abstract class Model<
         const receivers = this.decorReceivers.get(updater) ?? [];
         for (const receiverTemp of receivers) {
             if (receiver !== receiverTemp) continue;
-            const { self: target } = receiverTemp;
-            const providers = target.decorProviders.get(receiverTemp.pathRelative)?.filter(item => item.updater !== updater) ?? [];
-            target.decorProviders.set(receiverTemp.pathRelative, providers);
+            const { target, pathAbsolute, pathRelative } = receiverTemp;
+            const providers = target.decorProviders.get(pathAbsolute)?.filter(item => item.updater !== updater) ?? [];
+            target.decorProviders.set(pathAbsolute, providers);
+            target.resetState(pathRelative)
         }
         const receiversNext = receiver ? receivers.filter(receiverCur => receiverCur !== receiver) : [];
-        this.eventProducers.set(updater, receiversNext);
-        // emit recheck 
+        this.decorReceivers.set(updater, receiversNext);
     }
 
     private isInited: boolean = false;
@@ -538,7 +563,6 @@ export abstract class Model<
             const [ updater ] = channel;
             this.unbindDecor(undefined, updater);
         }
-
         this.isInited = false;
     }
 
