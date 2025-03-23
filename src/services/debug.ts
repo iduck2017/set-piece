@@ -28,7 +28,7 @@ export class DebugService {
                     const result = handler.call(this, ...args);
                     const output = [...args]; 
                     if (result !== undefined) output.push(result) 
-                    if (options?.useArgs) console.log('args', args);
+                    if (options?.useArgs) console.log('args', ...args);
                     if (options?.useResult) console.log('result', result)
                     DebugService.stack.pop();
                     console.groupEnd()

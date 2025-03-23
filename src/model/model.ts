@@ -7,6 +7,7 @@ import { Props, StrictProps } from "./props"
 import { Value } from "./types"
 import { StoreService } from "@/services/store"
 import { DebugService } from "@/services/debug"
+import { number } from "joi"
 
 type BaseModel = Model<string, {}, {}, {}, BaseModel | undefined, {}, BaseModel, {}, {}>
 
@@ -52,7 +53,7 @@ export abstract class Model<
     get child(): Readonly<C1 & C2[]>  { return this.copyChild(this.childReleased) }
     private childReleased: Readonly<C1 & C2[]>;
     private childSnapshot?: Readonly<C1 & C2[]>
-    private readonly childWorkspace!: C1 & C2[];
+    private readonly childWorkspace: ChildChunk<C1, C2>;
     protected readonly childDelegator: ChildChunk<C1, C2>
 
     readonly event: Readonly<EventProducers<E & BaseEvent<this>, this>>;
@@ -116,6 +117,7 @@ export abstract class Model<
     }
     
     constructor(props: StrictProps<I, S1, S2, P, C1, C2, R1, R2>) {
+        console.log('Constructor', props.code)
 
         this.parent = props.parent;
         this.root = this.parent?.root ?? this;
@@ -156,16 +158,22 @@ export abstract class Model<
             deleteProperty: this.deleteState.bind(this),
         })
 
-        const childOrigin: any = [];
+        this.childReleased = [] as any;
+        this.childWorkspace = [] as any;
         Object.keys(props.child).forEach(key => {
-            const model = this.createChild(props.child[key], key);
-            if (!model) return;
-            childOrigin[key] = model;
-            if (!isNaN(Number(key))) childOrigin.length += 1;
+            const chunk = props.child[key]
+            Reflect.set(this.childWorkspace, key, chunk)
         })
-        this.childReleased = this.copyChild(childOrigin);
-        this.childWorkspace = childOrigin
-        this.childDelegator = new Proxy(childOrigin, {
+        this.checkChildChunk();
+        Object.keys(props.child).forEach(key => {
+            const chunk = { ...props.child[key] };
+            if (!chunk.uuid) chunk.uuid = StoreService.uuid;
+            const model = this.createChild(chunk, key);
+            if (!model) return;
+            Reflect.set(this.childWorkspace, key, chunk);
+            Reflect.set(this.childReleased, key, model);
+        })
+        this.childDelegator = new Proxy(this.childWorkspace, {
             get: this.getChild.bind(this),
             set: this.setChild.bind(this),
             deleteProperty: this.deleteChild.bind(this),
@@ -236,21 +244,22 @@ export abstract class Model<
         const value = this.childReleased[key];
         if (value instanceof Model) return value.chunk;
         if (typeof value === 'function' && typeof key === 'string') {
-            return this.operateChild.bind(value);
-        } 
+            return this.operateChild.bind(this, value);
+        }
         return this.childReleased[key];
     }
 
     @Model.useFiber()
+    @DebugService.useStack()
     private operateChild(handler: (...args: any[]) => any, ...args: any[]) {
-        return handler.call(this.childWorkspace, ...args);
+        return handler.call(this.childDelegator, ...args);
     }
 
     @Model.useFiber()
+    @DebugService.useStack()
     private setChild(origin: any, key: string, props: any) {
-        const model = this.createChild(props, key);
-        if (!model) return true;
-        Reflect.set(this.childWorkspace, key, model);
+        console.log('setChild', key, props)
+        Reflect.set(this.childWorkspace, key, props);
         return true;
     }
 
@@ -260,10 +269,14 @@ export abstract class Model<
         return true;
     }
 
-    private createChild<M extends Model>(chunk: Model.Chunk<M>, path: string): Model | undefined {
-        const uuid = chunk.uuid ?? StoreService.uuid;
-        const props: Model.Props<M> = { ...chunk, parent: this, path: path, uuid };
-        const constructor = StoreService.getProduct(this.code);
+    @DebugService.useStack({ useResult: true })
+    private createChild<M extends Model>(key: string): Model | undefined {
+        const chunk = this.childWorkspace[key];
+        const uuid = chunk.uuid;
+        if (!uuid) Reflect.set(this.childWorkspace, key, { uuid })
+        const props: Model.Props<M> = { ...chunk, parent: this, path: key, uuid };
+        const constructor = StoreService.getProduct(props.code);
+        console.log('createChild', constructor, props.code);
         if (!constructor) return undefined;
         return new constructor(props)
     }
@@ -271,14 +284,14 @@ export abstract class Model<
     @Model.useFiber()
     private deleteState(origin: S1 & S2, key: string) {
         Reflect.deleteProperty(origin, key); 
-        this.resetState(key)
+        this.checkState(key)
         return true;
     }
 
     @Model.useFiber()
     private setState(origin: S1 & S2, key: any, value: any) {
         Reflect.set(origin, key, value); 
-        this.resetState(key);
+        this.checkState(key);
         return true;
     }
 
@@ -309,14 +322,14 @@ export abstract class Model<
     }
 
     @Model.useFiber()
-    private resetState(path: string) {
+    checkState(path: string) {
         const pathSegments = path.split('/');
         const key = pathSegments.shift();
         if (!key) return;
         if (pathSegments.length > 1) {
             const pathRelative = pathSegments.join('/')
-            if (key === '0') this.child.forEach(child => child.resetState(pathRelative))
-            else Reflect.get(this.child, key).resetState(pathRelative)
+            if (key === '0') this.child.forEach(child => child.checkState(pathRelative))
+            else Reflect.get(this.child, key).checkState(pathRelative)
         } else {
             if (this.stateChecklist.includes(key)) return;
             this.stateChecklist.push(key);
@@ -324,34 +337,63 @@ export abstract class Model<
     }
 
     @DebugService.useStack()
-    private refreshState() {
+    private resetState() {
         if (!this.stateChecklist.length) return;
-        console.log('StateChange', this.stateChecklist);
-        const stateCurrent = { ...this.stateDecorated };
+        console.log('StateChange', ...this.stateChecklist);
+        const stateDecorated = { ...this.stateDecorated };
         for (const key of this.stateChecklist) {
             const value = this.emitDecor(key);
-            Reflect.set(stateCurrent, key, value);
+            Reflect.set(stateDecorated, key, value);
         }
         this.stateSnapshot = this.state
         this.stateReleased = { ...this.stateWorkspace };
-        this.stateDecorated = stateCurrent;
+        this.stateDecorated = stateDecorated;
     } 
 
+    private checkChildChunk() {
+        Object.keys(this.childWorkspace).forEach((key) => {
+            const chunk = this.childWorkspace[key];
+            if (chunk.uuid) return;
+            const uuid = StoreService.uuid;
+            Reflect.set(this.childWorkspace, key, { ...chunk, uuid })
+        })
+    }
+
     @DebugService.useStack()
-    private refreshChild() {
-        const childCurrent: Model[] = Object.values(this.childReleased);
-        const childWorkspace: Model[] = Object.values(this.childWorkspace);
-        const childCreated = childWorkspace.filter(child => !childCurrent.includes(child))
-        const childRemoved = childCurrent.filter(child => !childWorkspace.includes(child));
+    private resetChild() {
+        const childReleased: any = []
+        const childPrev: Model[] = Object.values(this.childReleased);
+        console.log('childPrev', childPrev.map(item => item.uuid))
+        this.checkChildChunk();
+        Object.keys(this.childWorkspace).forEach((key) => {
+            const chunk = this.childWorkspace[key];
+            const uuid = chunk.uuid;
+            console.log('check uuid', uuid);
+            const target = childPrev.find(child => child.uuid === uuid);
+            if (target) childReleased[key] = target;
+            else {
+                const chunk = this.childWorkspace[key];
+                const model = this.createChild(chunk, key);
+                if (!model) return;
+                childReleased[key] = model
+            }
+        })
+        const childNext: Model[] = Object.values(childReleased);
+        const childCreated = childNext.filter(child => !childPrev.includes(child))
+        const childRemoved = childPrev.filter(child => !childNext.includes(child));
         if (!childCreated.length && !childRemoved.length) return;
         this.childSnapshot = this.child;
-        this.childReleased = this.copyChild(this.childWorkspace);
+        console.log('childReleased', childReleased);
+        console.log('childSnapshot', this.childSnapshot);
+        console.log('childCreated', childCreated);
+        console.log('childRemoved', childRemoved);
+        this.childReleased = this.copyChild(childReleased);
         childRemoved.forEach(child => child.uninit());
         childCreated.forEach(child => child.init());
     }
 
     @DebugService.useStack()
-    private refreshRefer() {
+    private resetRefer() {
     }
 
     @DebugService.useStack()
@@ -414,16 +456,10 @@ export abstract class Model<
 
     @DebugService.useStack()
     private emitEvent<E>(key: string, event: E) {
-        const consumers = this.eventConsumers.get(key) ?? [];
-        for (const consumer of consumers) {
-            const { target, handler } = consumer;
-            handler.call(target, this, event);
-        }
-        let parent: Model | undefined = this.parent;
-        let path: string = key;
-        while (parent) {
-            const key = isNaN(Number(parent.pathRelative)) ? parent.pathRelative : '0';
-            path = `${key}/${path}`
+        const path = `${this.pathAbstract}/${key}`;
+        console.log('EmitEvent', path);
+        let parent: Model | undefined = this;
+        while(parent) {
             const consumers = parent.eventConsumers.get(path) ?? [];
             for (const consumer of consumers) {
                 const { target, handler } = consumer;
@@ -438,10 +474,10 @@ export abstract class Model<
         producer: EventProducer<E, M>, 
         handler: EventHandler<E, M>
     ) {
-        const { target: target } = producer;
-        const consumers = target.eventConsumers.get(producer.pathRelative) ?? [];
+        const { target, pathAbstract } = producer;
+        const consumers = target.eventConsumers.get(pathAbstract) ?? [];
         consumers.push({ target: this, handler });
-        target.eventConsumers.set(producer.pathRelative, consumers);
+        target.eventConsumers.set(pathAbstract, consumers);
         const producers: EventProducer[] = this.eventProducers.get(handler) ?? [];
         producers.push(producer);
         this.eventProducers.set(handler, producers);
@@ -454,9 +490,9 @@ export abstract class Model<
         const producers = this.eventProducers.get(handler) ?? [];
         for (const producerTemp of producers) {
             if (producer !== producerTemp) continue;
-            const { target: target } = producerTemp;
-            const consumers = target.eventConsumers.get(producerTemp.pathRelative)?.filter(item => item.handler !== handler) ?? [];
-            target.eventConsumers.set(producerTemp.pathRelative, consumers);
+            const { target, pathAbstract } = producerTemp;
+            const consumers = target.eventConsumers.get(pathAbstract)?.filter(item => item.handler !== handler) ?? [];
+            target.eventConsumers.set(pathAbstract, consumers);
         }
         const producersNext = producer ? producers.filter(producerCur => producerCur !== producer) : [];
         this.eventProducers.set(handler, producersNext);
@@ -467,21 +503,22 @@ export abstract class Model<
         receiver: DecorReceiver<S, M>,
         updater: DecorUpdater<S, M>
     ) {
-        const { target, pathAbsolute, pathRelative } = receiver;
-        const providers = target.decorProviders.get(pathAbsolute) ?? [];
+        const { target, pathAbstract, pathRelative } = receiver;
+        const providers = target.decorProviders.get(pathAbstract) ?? [];
         providers.push({ target: this, updater });
-        console.log('bindDecor', pathAbsolute)
-        target.decorProviders.set(pathAbsolute, providers);
+        console.log('bindDecor', pathAbstract)
+        target.decorProviders.set(pathAbstract, providers);
         const receivers: DecorReceiver[] = this.decorReceivers.get(updater) ?? [];
         receivers.push(receiver);
         this.decorReceivers.set(updater, receivers); 
-        target.resetState(pathRelative);
+        target.checkState(pathRelative);
     }
 
     @DebugService.useStack()
     debug() {
         console.log(this.uuid, this.pathAbsolute);
         console.log(this.decorProviders);
+        console.log(this.eventConsumers);
     }
 
     protected unbindDecor<S, M extends Model>(
@@ -491,10 +528,10 @@ export abstract class Model<
         const receivers = this.decorReceivers.get(updater) ?? [];
         for (const receiverTemp of receivers) {
             if (receiver !== receiverTemp) continue;
-            const { target, pathAbsolute, pathRelative } = receiverTemp;
-            const providers = target.decorProviders.get(pathAbsolute)?.filter(item => item.updater !== updater) ?? [];
-            target.decorProviders.set(pathAbsolute, providers);
-            target.resetState(pathRelative)
+            const { target, pathAbstract, pathRelative } = receiverTemp;
+            const providers = target.decorProviders.get(pathAbstract)?.filter(item => item.updater !== updater) ?? [];
+            target.decorProviders.set(pathAbstract, providers);
+            target.checkState(pathRelative)
         }
         const receiversNext = receiver ? receivers.filter(receiverCur => receiverCur !== receiver) : [];
         this.decorReceivers.set(updater, receiversNext);
@@ -583,9 +620,9 @@ export abstract class Model<
 
     
     private static hooksDecor: Map<Function, Record<string, Array<(model: Model) => DecorReceiver | undefined>>> = new Map()
-    protected static useDecor<S, M extends Model>(accessor: (model: M) => DecorReceiver<S, M> | undefined) {
+    protected static useDecor<S, M extends Model, T extends Model>(accessor: (model: T) => DecorReceiver<S, M> | undefined) {
         return function(
-            target: M,
+            target: T,
             key: string,
             descriptor: TypedPropertyDescriptor<DecorUpdater<S, M>>
         ): TypedPropertyDescriptor<DecorUpdater<S, M>> {
@@ -614,9 +651,9 @@ export abstract class Model<
                     Model.isFiberic = true;
                     console.group(this.constructor.name + ":useFiber")
                     const result = handler.apply(this, args);
-                    Model.modelChecklist.forEach(model => model.refreshChild());
-                    Model.modelChecklist.forEach(model => model.refreshRefer());
-                    Model.modelChecklist.forEach(model => model.refreshState());
+                    Model.modelChecklist.forEach(model => model.resetChild());
+                    Model.modelChecklist.forEach(model => model.resetRefer());
+                    Model.modelChecklist.forEach(model => model.resetState());
                     Model.modelChecklist.forEach(model => model.resetSnapshot());
                     Model.isFiberic = false;
                     Model.modelChecklist = [];

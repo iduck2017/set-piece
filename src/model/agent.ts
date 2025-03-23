@@ -22,14 +22,14 @@ export class Agent<
     readonly event: Readonly<EventProducers<E, M>>;
     readonly decor: Readonly<DecorReceivers<S2, M>>;
 
-    readonly self: M;
+    readonly target: M;
     readonly pathAbsolute: string | undefined;
     readonly pathRelative: string | undefined;
 
-    constructor(self: M, path: string | undefined) {
-        this.self = self;
+    constructor(target: M, path: string | undefined) {
+        this.target = target;
         this.pathRelative = path;
-        this.pathAbsolute = self.pathAbsolute ? `${self.pathAbsolute}/${path}` : path;
+        this.pathAbsolute = path ? `${target.pathAbsolute}/${path}` : target.pathAbsolute;
         this.child = new Proxy({} as ChildAgent<C1, C2>, { get: this.getAgent.bind(this) })
         this.event = new Proxy({} as EventProducers<E, M>, { get: this.getEvent.bind(this) })
         this.decor = new Proxy({} as DecorReceivers<S2, M>, { get: this.getDecor.bind(this) })
@@ -38,7 +38,7 @@ export class Agent<
     private getDecor(origin: DecorReceivers<S2, M>, key: string) {
         const value = Reflect.get(origin, key);
         if (value) return value;
-        const receiver = new DecorReceiver(this.self, `${this.pathRelative}/${key}`);
+        const receiver = new DecorReceiver(this.target, `${this.pathRelative}/${key}`);
         Reflect.set(origin, key, receiver);
         return receiver;
     }
@@ -46,7 +46,7 @@ export class Agent<
     private getEvent(origin: EventProducers<E, M>, key: string) {
         const value = Reflect.get(origin, key);
         if (value) return value;
-        const producer = new EventProducer(this.self, `${this.pathRelative}/${key}`);
+        const producer = new EventProducer(this.target, `${this.pathRelative}/${key}`);
         Reflect.set(origin, key, producer);
         return producer;
     }
@@ -54,7 +54,7 @@ export class Agent<
     private getAgent(origin: ChildAgent<C1, C2>, key: string) {
         const value = Reflect.get(origin, key);
         if (value) return value;
-        const agent = new Agent(this.self, `${this.pathRelative}/${key}`);
+        const agent = new Agent(this.target, `${this.pathRelative}/${key}`);
         Reflect.set(origin, key, agent);
         return agent;
     }

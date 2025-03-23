@@ -6,8 +6,8 @@ export class StoreService {
 
     private constructor() {}
     
-    static useProduct<T extends string>(code: T) {
-        return function (constructor: new (...args: any[]) => Model) {
+    static useProduct<I extends string>(code: I) {
+        return function (constructor: new (...args: any[]) => { code: I }) {
             StoreService.productConstructors.set(code, constructor);
             StoreService.productCodes.set(constructor, code);
         };
