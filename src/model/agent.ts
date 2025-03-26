@@ -29,7 +29,7 @@ export class Agent<
     constructor(target: M, path: string | undefined) {
         this.target = target;
         this.pathRelative = path;
-        this.pathAbsolute = path ? `${target.pathAbsolute}/${path}` : target.pathAbsolute;
+        this.pathAbsolute = path ? `${target.pathAbstract}/${path}` : target.pathAbstract;
         this.child = new Proxy({} as ChildAgent<C1, C2>, { get: this.getAgent.bind(this) })
         this.event = new Proxy({} as EventProducers<E, M>, { get: this.getEvent.bind(this) })
         this.decor = new Proxy({} as DecorReceivers<S2, M>, { get: this.getDecor.bind(this) })

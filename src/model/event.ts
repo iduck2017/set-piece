@@ -20,14 +20,12 @@ export type BaseEvent<M extends Model> = {
 
 export class EventProducer<E = any, M extends Model = Model> {
     readonly target: M;
-    readonly pathAbsolute: string;
     readonly pathRelative: string;
     readonly pathAbstract: string;
 
     constructor(target: M, path: string) {
         this.target = target;
         this.pathRelative = path;
-        this.pathAbsolute = `${target.pathAbsolute}/${path}`;
         this.pathAbstract = `${target.pathAbstract}/${path}`;
     }
 }

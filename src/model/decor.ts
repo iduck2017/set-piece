@@ -10,7 +10,6 @@ export type DecorReceivers<
 
 export class DecorReceiver<S = any, M extends Model = Model> {
     readonly target: M;
-    readonly pathAbsolute: string;
     readonly pathRelative: string;
     readonly pathAbstract: string;
 
@@ -18,7 +17,6 @@ export class DecorReceiver<S = any, M extends Model = Model> {
         this.target = target;
         this.pathRelative = path;
         this.pathAbstract = `${target.pathAbstract}/${path}`;
-        this.pathAbsolute = `${target.pathAbsolute}/${path}`;
     }
 }
 

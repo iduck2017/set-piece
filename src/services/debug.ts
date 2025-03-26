@@ -22,7 +22,7 @@ export class DebugService {
             if (!handler) return descriptor;
             const instance = {
                 [key](this: Object, ...args: any[]) {
-                    const namespace = target.constructor.name + '::' + key
+                    const namespace = this.constructor.name + '::' + key
                     console.group(namespace)
                     DebugService.stack.push(namespace);
                     const result = handler.call(this, ...args);
@@ -40,7 +40,7 @@ export class DebugService {
         };
     }
 
-    static useMute() {
+    static useBlock() {
         return function(
             target: Object,
             key: string,
@@ -50,16 +50,12 @@ export class DebugService {
             if (!handler) return descriptor;
             const instance = {
                 [key](this: Object, ...args: any[]) {
-                    const consoleLog = console.log;
-                    const consoleWarn = console.warn;
-                    const consoleError = console.error;
-                    console.log = () => undefined;
-                    console.warn = () => undefined;
-                    console.error = () => undefined;
+                    const consoleOrigin = console;
+                    console = new Proxy({} as any, {
+                        get() { return () => undefined }
+                    })
                     const result = handler.call(this, ...args);
-                    console.log = consoleLog;
-                    console.warn = consoleWarn;
-                    console.error = consoleError;
+                    console = consoleOrigin;
                     return result;
                 }
             }

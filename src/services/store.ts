@@ -1,26 +1,35 @@
 import { Model } from "@/model/model";
 
 export class StoreService {
-    private static productConstructors: Map<string, any> = new Map();
-    private static productCodes: Map<Function, string> = new Map();
+    private static constructorRegistry: Map<string, any> = new Map();
+    private static codeRegistry: Map<Function, string> = new Map();
 
     private constructor() {}
     
     static useProduct<I extends string>(code: I) {
         return function (constructor: new (...args: any[]) => { code: I }) {
-            StoreService.productConstructors.set(code, constructor);
-            StoreService.productCodes.set(constructor, code);
+            StoreService.constructorRegistry.set(code, constructor);
+            StoreService.codeRegistry.set(constructor, code);
         };
     }
 
     static getProduct(code: string) {
-        return StoreService.productConstructors.get(code);
+        return StoreService.constructorRegistry.get(code);
     }
 
     private static ticket = Date.now() % (36 ** 2);
     private static timestamp = Date.now(); 
-    
-    static get uuid(): string {
+
+    private static uuidChecklist: Set<string> = new Set();
+    static getTicket(uuid?: string) {
+        let uuidChecked = uuid;
+        if (!uuidChecked) uuidChecked = StoreService.uuid;
+        if (StoreService.uuidChecklist.has(uuidChecked)) uuidChecked = StoreService.uuid;
+        StoreService.uuidChecklist.add(uuidChecked);
+        return uuidChecked;
+    }
+
+    private static get uuid(): string {
         let now = Date.now();
         const ticket = StoreService.ticket;
         StoreService.ticket += 1;
