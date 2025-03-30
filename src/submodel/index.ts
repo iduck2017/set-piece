@@ -1,12 +1,14 @@
 import { Model } from "@/model/model";
 import { EventModel } from "./event";
 
-export class Submodel {
-    public readonly target: Model;
+export class SubModel<M extends Model = Model> {
+    public readonly target: M;
 
-    // public get event() { return this.target.event }
+    public get eventModel() { return this.target.eventModel }
+    public get stateModel() { return this.target.stateModel }
+    public get decorModel() { return this.target.decorModel }
 
-    constructor(target: Model) {
+    constructor(target: M) {
         this.target = target;
     }
 }

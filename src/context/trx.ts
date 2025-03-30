@@ -1,5 +1,5 @@
 import { Model } from "@/model/model";
-import { Submodel } from "@/submodel";
+import { SubModel } from "@/submodel";
 
 export class TrxContext {
     private constructor() {}
@@ -10,14 +10,14 @@ export class TrxContext {
 
     static use() {
         return function(
-            target: Model | Submodel,
+            target: Model | SubModel,
             key: string,
             descriptor: TypedPropertyDescriptor<(...args: any) => any>
         ): TypedPropertyDescriptor<(...args: any) => any> {
             const handler = descriptor.value;
             if (!handler) return descriptor;
             const instance = {
-                [key](this: Model | Submodel, ...args: any[]) {
+                [key](this: Model | SubModel, ...args: any[]) {
                     const model = this.target;
                     if (!TrxContext.models.includes(model)) TrxContext.models.push(model)
                     if (TrxContext.isActived) return handler.apply(this, args);
@@ -27,8 +27,8 @@ export class TrxContext {
                     console.log('registry', TrxContext.models)
                     TrxContext.models.forEach(model => model.commitChild());
                     TrxContext.models.forEach(model => model.commitRefer());
-                    TrxContext.models.forEach(model => model.commitState());
-                    TrxContext.models.forEach(model => model.clear());
+                    TrxContext.models.forEach(model => model.stateModel.commit());
+                    TrxContext.models.forEach(model => model.reset());
                     TrxContext.isActived = false;
                     TrxContext.models = [];
                     console.groupEnd();

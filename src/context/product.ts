@@ -1,10 +1,10 @@
 import { DebugContext } from "./debug";
 
 export class ProductContext {
-    private static constructors: Map<string, any> = new Map();
+    private static registry: Map<string, any> = new Map();
     
     static query(code: string) {
-        return ProductContext.constructors.get(code);
+        return ProductContext.registry.get(code);
     }
 
     private constructor() {}
@@ -14,14 +14,14 @@ export class ProductContext {
             constructor: new (...args: any[]) => { code: I }
         ) {
             console.log('useProduct', constructor.name, code)
-            ProductContext.constructors.set(code, constructor);
+            ProductContext.registry.set(code, constructor);
         };
     }
 
     private static uuids: Set<string> = new Set();
     
     @DebugContext.log()
-    static registerId(uuid?: string) {
+    static checkUUID(uuid?: string) {
         if (!uuid) uuid = crypto.randomUUID();
         while (ProductContext.uuids.has(uuid)) {
             console.log('duplicateUUID', uuid);
@@ -32,7 +32,7 @@ export class ProductContext {
     }
 
     @DebugContext.log()
-    static unregisterId(uuid: string) {
+    static deleteUUID(uuid: string) {
         ProductContext.uuids.delete(uuid)
     }
 }
