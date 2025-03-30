@@ -1,6 +1,6 @@
 import { ReferAddrs } from "./refer";
-import { Model } from "./model";
-import { Value } from "./types";
+import { Model } from "../model/model";
+import { Value } from ".";
 
 export type Chunk<
     I extends string,

@@ -1,7 +1,8 @@
-import { DecorReceiver, DecorReceivers } from "./decor";
-import { EventProducer, EventProducers } from "./event";
+import { DecorReceiver, DecorReceivers } from "../types/decor";
+import { EventProducers } from "../types/event";
 import { Model } from "./model";
-import { Value } from "./types";
+import { Value } from "../types";
+import { EventProducer } from "@/submodel/event";
 
 export type ChildAgent<
     C1 extends Record<string, Model>,
@@ -12,50 +13,75 @@ export type ChildAgent<
     never;
 
 export class Agent<
-    E extends Record<string, any>,
-    S2 extends Record<string, Value>,
-    C1 extends Record<string, Model>,
-    C2 extends Model,
-    M extends Model
+    E extends Record<string, any> = Record<string, any>,
+    S2 extends Record<string, Value> = Record<string, Value>,
+    C1 extends Record<string, Model> = Record<string, Model>,
+    C2 extends Model = Model,
+    M extends Model = Model
 > {
     readonly child: Readonly<ChildAgent<C1, C2>>;
     readonly event: Readonly<EventProducers<E, M>>;
     readonly decor: Readonly<DecorReceivers<S2, M>>;
 
+    readonly path?: string;
     readonly target: M;
-    readonly pathAbsolute: string | undefined;
-    readonly pathRelative: string | undefined;
 
-    constructor(target: M, path: string | undefined) {
+    constructor(target: M, path?: string) {
+        this.path = path;
         this.target = target;
-        this.pathRelative = path;
-        this.pathAbsolute = path ? `${target.pathAbstract}/${path}` : target.pathAbstract;
-        this.child = new Proxy({} as ChildAgent<C1, C2>, { get: this.getAgent.bind(this) })
-        this.event = new Proxy({} as EventProducers<E, M>, { get: this.getEvent.bind(this) })
-        this.decor = new Proxy({} as DecorReceivers<S2, M>, { get: this.getDecor.bind(this) })
+        this.child = new Proxy({} as any, { get: this.getAgent.bind(this) })
+        this.event = new Proxy({} as any, { get: this.getEvent.bind(this) })
+        this.decor = new Proxy({} as any, { get: this.getDecor.bind(this) })
     }
 
-    private getDecor(origin: DecorReceivers<S2, M>, key: string) {
-        const value = Reflect.get(origin, key);
-        if (value) return value;
-        const receiver = new DecorReceiver(this.target, `${this.pathRelative}/${key}`);
-        Reflect.set(origin, key, receiver);
-        return receiver;
+    private getDecor(origin: DecorReceivers<S2, M>, path: string) {
+        const keys = path.split('/');
+        const key = keys.shift();
+        if (!key) return;
+        if (keys.length) {
+            const path = keys.join('/');
+            const child = this.child[key].decor;
+            const value = Reflect.get(child, path);
+            return value;
+        } else {
+            let value: EventProducer = Reflect.get(origin, key);
+            if (value) return value;
+            let path = key;
+            if (this.path) path = this.path + '/' + key;
+            value = new DecorReceiver(this.target, path);
+            Reflect.set(origin, key, value);
+            return value;
+        }
     }
 
-    private getEvent(origin: EventProducers<E, M>, key: string) {
-        const value = Reflect.get(origin, key);
-        if (value) return value;
-        const producer = new EventProducer(this.target, `${this.pathRelative}/${key}`);
-        Reflect.set(origin, key, producer);
-        return producer;
+    private getEvent(origin: EventProducers<E, M>, path: string) {
+        const keys = path.split('/');
+        const key = keys.shift();
+        path = keys.join('/');
+        if (!key) return;
+        if (keys.length) {
+            const path = keys.join('/');
+            const child = this.child[key].event;
+            const value = Reflect.get(child, path);
+            return value;
+        } else {
+            let value: EventProducer = Reflect.get(origin, key);
+            if (value) return value;
+            let path = key;
+            if (this.path) path = this.path + '/' + key;
+            value = new EventProducer(this.target, path);
+            Reflect.set(origin, key, value);
+            return value;
+        }
     }
 
     private getAgent(origin: ChildAgent<C1, C2>, key: string) {
-        const value = Reflect.get(origin, key);
+        let value: Agent = Reflect.get(origin, key);
         if (value) return value;
-        const agent = new Agent(this.target, `${this.pathRelative}/${key}`);
-        Reflect.set(origin, key, agent);
-        return agent;
+        let path = key;
+        if (this.path) path = this.path + '/' + key;
+        value = new Agent(this.target, path);
+        Reflect.set(origin, path, value);
+        return value;
     }
 }

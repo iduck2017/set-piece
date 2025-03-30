@@ -23,6 +23,5 @@ yarn-debug.log*
 yarn-error.log*
 
 dist
-types
 .vscode
 .jest

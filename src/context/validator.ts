@@ -1,8 +1,9 @@
 type Callback<R = any, P extends any[] = any[]> = (...args: P) => R
 
-export class CheckService {
+export class ValidatorContext {
     private static readonly validators = new Map<Function, Record<string, Callback[]>>();
-    static if<T extends Object, R = any, P extends any[] = any[]>(
+    
+    static is<T extends Object, R = any, P extends any[] = any[]>(
         validator: (target: T, ...args: P) => any,
         error?: string | Error,
     ) {
@@ -22,10 +23,10 @@ export class CheckService {
                 }
             }
             descriptor.value = instance[key];
-            const validators = CheckService.validators.get(target.constructor) || {}
+            const validators = ValidatorContext.validators.get(target.constructor) || {}
             validators[key] = validators[key] || [];
             validators[key].push(validator);
-            CheckService.validators.set(target.constructor, validators);
+            ValidatorContext.validators.set(target.constructor, validators);
             return descriptor;
         };
     }
@@ -34,7 +35,7 @@ export class CheckService {
         let validators: Callback[] = [];
         let constructor = target.constructor;
         while (constructor) {
-            const _validators = CheckService.validators.get(constructor) || {};
+            const _validators = ValidatorContext.validators.get(constructor) || {};
             validators = validators.concat(_validators[method.name] || []);
             constructor = Reflect.get(constructor, '__proto__');
         }

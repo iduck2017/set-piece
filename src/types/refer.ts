@@ -1,4 +1,4 @@
-import { Model } from "./model";
+import { Model } from "../model/model";
 
 export type ReferGroup<
     R1 extends Record<string, Model>,

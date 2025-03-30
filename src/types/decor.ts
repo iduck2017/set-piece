@@ -1,5 +1,5 @@
-import { Model } from "./model"
-import { Value } from "./types";
+import { Model } from "../model/model"
+import { Value } from ".";
 
 export type DecorUpdater<S = any, M extends Model = Model> = (target: M, state: S) => S
 export type DecorProvider = { target: Model, updater: DecorUpdater }
@@ -10,13 +10,11 @@ export type DecorReceivers<
 
 export class DecorReceiver<S = any, M extends Model = Model> {
     readonly target: M;
-    readonly pathRelative: string;
-    readonly pathAbstract: string;
+    readonly path: string;
 
     constructor(target: M, path: string) {
         this.target = target;
-        this.pathRelative = path;
-        this.pathAbstract = `${target.pathAbstract}/${path}`;
+        this.path = path;
     }
 }
 

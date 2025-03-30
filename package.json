@@ -26,6 +26,8 @@
   },
   "private": false,
   "dependencies": {
+    "@types/crypto-js": "^4.2.2",
+    "crypto-js": "^4.2.0",
     "dayjs": "^1.11.10",
     "joi": "^17.13.3",
     "pixi.js": "^8.1.1",

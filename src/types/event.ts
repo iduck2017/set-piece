@@ -1,4 +1,5 @@
-import { Model } from "./model"
+import { EventProducer } from "@/submodel/event"
+import { Model } from "../model/model"
 
 export type EventHandler<E = any, M extends Model = Model> = (target: M, event: E) => void
 
@@ -17,19 +18,3 @@ export type BaseEvent<M extends Model> = {
     onReferChange: OnReferChange<M>
 } & Record<string, any>
 
-
-export class EventProducer<E = any, M extends Model = Model> {
-    readonly target: M;
-    readonly pathRelative: string;
-    readonly pathAbstract: string;
-
-    constructor(target: M, path: string) {
-        this.target = target;
-        this.pathRelative = path;
-        this.pathAbstract = `${target.pathAbstract}/${path}`;
-    }
-}
-
-export class EventPlugin<E> {
-
-}
