@@ -3,7 +3,7 @@ type Callback<R = any, P extends any[] = any[]> = (...args: P) => R
 export class ValidatorContext {
     private static readonly validators = new Map<Function, Record<string, Callback[]>>();
     
-    static is<T extends Object, R = any, P extends any[] = any[]>(
+    static if<T extends Object, R = any, P extends any[] = any[]>(
         validator: (target: T, ...args: P) => any,
         error?: string | Error,
     ) {

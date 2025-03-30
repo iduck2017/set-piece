@@ -8,7 +8,7 @@ import { Value } from "../types"
 import { ProductContext } from "@/context/product"
 import { DebugContext } from "@/context/debug"
 import { TrxContext } from "@/context/trx"
-import { EventProducer } from "@/submodel/event"
+import { EventProducer, EventModel } from "@/submodel/event"
 
 type BaseModel = Model<string, {}, {}, {}, BaseModel | undefined, {}, BaseModel, {}, {}>
 
@@ -55,10 +55,10 @@ export abstract class Model<
     private readonly childWorkspace: C1 & C2[]
     protected readonly childDelegator: ChildChunk<C1, C2>
 
+    public readonly eventModel: EventModel<E, this> 
+
     readonly event: Readonly<EventProducers<E & BaseEvent<this>, this>>;
     readonly eventEmitters: Readonly<EventEmitters<E>>;
-    private readonly eventConsumers: Map<string, EventConsumer[]>;
-    private readonly eventProducers: Map<EventHandler, EventProducer[]>;
 
     readonly decor: Readonly<DecorReceivers<S1, this>>;
     private readonly decorProviders: Map<string, DecorProvider[]>;
@@ -128,15 +128,10 @@ export abstract class Model<
             get: this.getDecor.bind(this) 
         });
 
-        this.eventConsumers = new Map();
-        this.eventProducers = new Map();
-        this.event = new Proxy({} as EventProducers<E & BaseEvent<this>, this>, { 
-            get: this.getEvent.bind(this) 
-        });
-        this.eventEmitters = new Proxy({} as EventEmitters<E>, { 
-            get: this.getEventEmitter.bind(this) 
-        })
-        
+        this.eventModel = new EventModel(this)
+        this.event = this.eventModel.producers;
+        this.eventEmitters = this.eventModel.emitters;
+
         this.stateReleased = { ...props.state }
         this.stateDecorated = { ...props.state }
         this.stateWorkspace = { ...props.state }
@@ -177,7 +172,7 @@ export abstract class Model<
     static createRoot<M extends Model>(props: Model.Chunk<M>): M | undefined {
         if (Model.root) return Model.root as M;
         const type = ProductContext.query(props.code);
-        const uuid = ProductContext.register()
+        const uuid = ProductContext.registerId()
         if (!type) return undefined;
         props = { ...props, path: 'root', uuid }
         const model: M = new type(props)
@@ -190,13 +185,13 @@ export abstract class Model<
         return this.stateReleased[key];
     }
 
-    @TrxContext.in()
+    @TrxContext.use()
     private setRefer(origin: Record<string, any>, key: string, value: any) {
         origin[key] = value; 
         return true;
     }
 
-    @TrxContext.in()
+    @TrxContext.use()
     private deleteRefer(origin: Record<string, any>, key: string) {
         delete origin[key]; 
         return true;
@@ -228,7 +223,7 @@ export abstract class Model<
         return this.childReleased[key];
     }
 
-    @TrxContext.in()
+    @TrxContext.use()
     @DebugContext.log()
     private pushChild(...args: any[]) {
         const models: any[] = args.map(props => this.createChild(props, 0)).filter(Boolean);
@@ -236,15 +231,15 @@ export abstract class Model<
         return result;
     }
 
-    @TrxContext.in()
+    @TrxContext.use()
     @DebugContext.log()
     private popChild() {
         const model = this.childWorkspace.pop();
-        if (model) ProductContext.unregister(model.uuid);
+        if (model) ProductContext.unregisterId(model.uuid);
         return model?.chunk;
     }
 
-    @TrxContext.in()
+    @TrxContext.use()
     @DebugContext.log()
     private unshiftChild(...args: any[]) {
         const models: any[] = args.map(props => this.createChild(props, 0)).filter(Boolean)
@@ -252,7 +247,7 @@ export abstract class Model<
         return result
     }
 
-    @TrxContext.in()
+    @TrxContext.use()
     @DebugContext.log()
     private fillChild(props: any) {
         this.childWorkspace.forEach((child, index) => {
@@ -261,34 +256,34 @@ export abstract class Model<
         })
     }
 
-    @TrxContext.in()
+    @TrxContext.use()
     @DebugContext.log()
     private shiftChild(...args: any[]) {
         const model = this.childWorkspace.shift();
-        if (model) ProductContext.unregister(model.uuid);
+        if (model) ProductContext.unregisterId(model.uuid);
         return model?.chunk;
     }
 
-    @TrxContext.in()
+    @TrxContext.use()
     @DebugContext.log()
     private setChild(origin: any, key: string, props: any) {
         const modelPrev = origin[key]
-        if (modelPrev) ProductContext.unregister(modelPrev.uuid);
+        if (modelPrev) ProductContext.unregisterId(modelPrev.uuid);
         const modelNext = this.createChild(props, key);
         Reflect.set(this.childWorkspace, key, modelNext);
         return true;
     }
 
-    @TrxContext.in()
+    @TrxContext.use()
     @DebugContext.log()
     private deleteChild(origin: any, key: string) {
         const modelPrev = this.childWorkspace[key];
-        if (modelPrev) ProductContext.unregister(modelPrev.uuid)
+        if (modelPrev) ProductContext.unregisterId(modelPrev.uuid)
         Reflect.deleteProperty(this.childWorkspace, key);
         return true;
     }
 
-    @TrxContext.in()
+    @TrxContext.use()
     private spliceChild() {
 
     }
@@ -298,7 +293,7 @@ export abstract class Model<
         const constructor = ProductContext.query(props.code);
         if (!constructor) return undefined;
         if (!isNaN(Number(key))) key = '0';
-        const uuid = ProductContext.register(props.uuid);
+        const uuid = ProductContext.registerId(props.uuid);
         console.log('createChild', constructor, props.code, uuid);
         return new constructor({
             ...props,
@@ -308,21 +303,21 @@ export abstract class Model<
         })
     }
 
-    @TrxContext.in()
+    @TrxContext.use()
     private deleteState(origin: S1 & S2, key: string) {
         Reflect.deleteProperty(origin, key); 
         this.resetState(key)
         return true;
     }
 
-    @TrxContext.in()
+    @TrxContext.use()
     private setState(origin: S1 & S2, key: any, value: any) {
         Reflect.set(origin, key, value); 
         this.resetState(key);
         return true;
     }
 
-    @TrxContext.in()
+    @TrxContext.use()
     @DebugContext.log()
     public setStateBatch(updater: (prev: S1 & S2) => Partial<S1 & S2>) {
         const statePrev = { ...this.stateWorkspace };
@@ -333,22 +328,22 @@ export abstract class Model<
         })
     }
 
-    @TrxContext.in()
+    @TrxContext.use()
     public addChild() {
 
     }
 
-    @TrxContext.in()
+    @TrxContext.use()
     public removeChild() {
 
     }
 
-    @TrxContext.in()
+    @TrxContext.use()
     public swapChild() {
 
     }
 
-    @TrxContext.in()
+    @TrxContext.use()
     resetState(path: string) {
         const pathSegments = path.split('/');
         const key = pathSegments.shift();
@@ -396,7 +391,7 @@ export abstract class Model<
     @DebugContext.log()
     public clear() {
         if (this.stateSnapshot) {
-            this.emitEvent('onStateUpdate', {
+            this.eventModel.emit('onStateUpdate', {
                 prev: this.stateSnapshot,
                 next: this.state
             })
@@ -404,14 +399,14 @@ export abstract class Model<
             this.stateChecklist = [];
         }
         if (this.childSnapshot) {
-            this.emitEvent('onChildUpdate', {
+            this.eventModel.emit('onChildUpdate', {
                 prev: this.childSnapshot,
                 next: this.child
             })
             this.childSnapshot = undefined;
         }
         if (this.referSnapshot) {
-            this.emitEvent('onReferUpdate', {
+            this.eventModel.emit('onReferUpdate', {
                 prev: this.referSnapshot,
                 next: this.refer,
             })
@@ -420,11 +415,6 @@ export abstract class Model<
     }
     
     private getDecor(origin: any, key: string) { return this.agent.decor[key]; }
-    private getEvent(origin: any, key: string) { return this.agent.event[key]; }
-
-    private getEventEmitter(origin: any, key: string) {
-        return this.emitEvent.bind(this, key);
-    }
 
     @DebugContext.log()
     private emitDecor(key: string) {
@@ -447,50 +437,7 @@ export abstract class Model<
         return result;
     }
 
-    @DebugContext.log()
-    private emitEvent<E>(key: string, event: E) {
-        let target: Model | undefined = this;
-        let path = key;
-        while(target) {
-            console.log('emitEvent', path);
-            const consumers = target.eventConsumers.get(path) ?? [];
-            for (const consumer of consumers) {
-                const target = consumer.target;
-                const handler = consumer.handler;
-                handler.call(target, this, event);
-            }
-            path = target.path + '/' + path;
-            target = target.parent;
-        }
-    }
-
-    @DebugContext.log()
-    protected bindEvent<E, M extends Model>(
-        producer: EventProducer<E, M>, 
-        handler: EventHandler<E, M>
-    ) {
-        const { target, path } = producer;
-        const consumers = target.eventConsumers.get(path) ?? [];
-        const producers = this.eventProducers.get(handler) ?? [];
-        consumers.push({ target: this, handler });
-        producers.push(producer);
-        this.eventProducers.set(handler, producers);
-        target.eventConsumers.set(path, consumers);
-    }
-
-    @DebugContext.log()
-    protected unbindEvent<E, M extends Model>(
-        producer: EventProducer<E, M>, 
-        handler: EventHandler<E, M>
-    ) {
-        const { target, path } = producer;
-        let producers = this.eventProducers.get(handler) ?? [];
-        let consumers = target.eventConsumers.get(path) ?? [];
-        producers = producers.filter(item => item !== producer);
-        consumers = consumers.filter(item => item.handler !== handler || item.target !== this);
-        target.eventConsumers.set(path, consumers);
-        this.eventProducers.set(handler, producers);
-    }
+    
 
     @DebugContext.log()
     protected bindDecor<S, M extends Model>(
@@ -512,7 +459,6 @@ export abstract class Model<
     debug() {
         console.log(this.child);
         console.log(this.decorProviders);
-        console.log(this.eventConsumers);
     }
 
     @DebugContext.log({ useArgs: true })
@@ -532,22 +478,13 @@ export abstract class Model<
 
     private isInited: boolean = false;
 
-    @TrxContext.in()
+    @TrxContext.use()
     @DebugContext.log()
     private load() {
         Object.values(this.child).forEach(child => child.load());
         let constructor = this.constructor;
         while (constructor) {
-            const hooksEvent = Model.hooksEvent.get(constructor) ?? {};
-            for (const key of Object.keys(hooksEvent)) {
-                const accessors = hooksEvent[key];
-                for (const accessor of accessors) {
-                    const producer = accessor(this);
-                    if (!producer) continue;
-                    const handler: any = Reflect.get(this, key)
-                    this.bindEvent(producer, handler);
-                }
-            }
+            this.eventModel.load();
             const hooksDecor = Model.hooksDecor.get(constructor) ?? {};
             for (const key of Object.keys(hooksDecor)) {
                 const accessors = hooksDecor[key];
@@ -566,20 +503,7 @@ export abstract class Model<
     @DebugContext.log()
     private unload() {
         Object.values(this.child).forEach(child => child.unload());
-        for (const channel of this.eventProducers) {
-            const [ handler, producers ] = channel
-            for (const producer of producers) {
-                this.unbindEvent(producer, handler);
-            }
-        }
-        for (const channel of this.eventConsumers) {
-            const [ path, consumers ] = channel;
-            const producer = this.event[path];
-            for (const consumer of consumers) {
-                const { target, handler } = consumer;
-                target.unbindEvent(producer, handler);
-            }
-        }
+        this.eventModel.unload()
         for (const channel of this.decorReceivers) {
             const [ updater, receivers ] = channel;
             for (const receiver of receivers) {
@@ -595,21 +519,6 @@ export abstract class Model<
             }
         }
         this.isInited = false;
-    }
-
-
-    private static hooksEvent: Map<Function, Record<string, Array<(model: Model) => EventProducer | undefined>>> = new Map();
-    protected static useEvent<E, M extends Model>(accessor: (model: M) => EventProducer<E, M> | undefined) {
-        return function(
-            target: M,
-            key: string,
-            descriptor: TypedPropertyDescriptor<EventHandler<E, M>>
-        ): TypedPropertyDescriptor<EventHandler<E, M>> {
-            const hooksEvent = Model.hooksEvent.get(target.constructor) ?? {};
-            hooksEvent[key] = [...(hooksEvent[key] ?? []), accessor];
-            Model.hooksEvent.set(target.constructor, hooksEvent);
-            return descriptor;
-        };
     }
 
     private static hooksDecor: Map<Function, Record<string, Array<(model: Model) => DecorReceiver | undefined>>> = new Map()

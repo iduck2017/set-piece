@@ -8,7 +8,7 @@ export class TrxContext {
 
     private static models: Model[] = [];
 
-    static in() {
+    static use() {
         return function(
             target: Model | Submodel,
             key: string,

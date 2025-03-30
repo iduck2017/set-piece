@@ -3,11 +3,8 @@
   "version": "1.1.0",
   "main": "dist/index.js",
   "module": "dist/index.esm.js",
-  "types": "types/index.d.ts",
-  "files": [
-    "dist",
-    "types"
-  ],
+  "types": "dist/index.d.ts",
+  "files": [ "dist" ],
   "publishConfig": {
     "access": "public",
     "registry": "https://registry.npmjs.org/"
@@ -21,7 +18,7 @@
     ".": {
       "import": "./dist/index.js",
       "require": "./dist/index.js",
-      "types": "./types/index.d.ts"
+      "types": "./dist/index.d.ts"
     }
   },
   "private": false,

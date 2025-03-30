@@ -1,27 +1,27 @@
 import { DebugContext } from "./debug";
 
 export class ProductContext {
-    private static products: Map<string, any> = new Map();
+    private static constructors: Map<string, any> = new Map();
     
     static query(code: string) {
-        return ProductContext.products.get(code);
+        return ProductContext.constructors.get(code);
     }
 
     private constructor() {}
 
-    static as<I extends string>(code: I) {
+    static is<I extends string>(code: I) {
         return function (
             constructor: new (...args: any[]) => { code: I }
         ) {
             console.log('useProduct', constructor.name, code)
-            ProductContext.products.set(code, constructor);
+            ProductContext.constructors.set(code, constructor);
         };
     }
 
     private static uuids: Set<string> = new Set();
     
     @DebugContext.log()
-    static register(uuid?: string) {
+    static registerId(uuid?: string) {
         if (!uuid) uuid = crypto.randomUUID();
         while (ProductContext.uuids.has(uuid)) {
             console.log('duplicateUUID', uuid);
@@ -32,7 +32,7 @@ export class ProductContext {
     }
 
     @DebugContext.log()
-    static unregister(uuid: string) {
+    static unregisterId(uuid: string) {
         ProductContext.uuids.delete(uuid)
     }
 }

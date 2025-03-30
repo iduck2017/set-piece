@@ -1,5 +1,5 @@
 import { Model } from "@/model/model";
-import { EventSubmodel } from "./event";
+import { EventModel } from "./event";
 
 export class Submodel {
     public readonly target: Model;
