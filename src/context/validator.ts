@@ -1,10 +1,10 @@
-type Callback<R = any, P extends any[] = any[]> = (...args: P) => R
+import { Callback } from "@/types";
 
 export class ValidatorContext {
     private static readonly validators = new Map<Function, Record<string, Callback[]>>();
     
     static if<T extends Object, R = any, P extends any[] = any[]>(
-        validator: (target: T, ...args: P) => any,
+        validator: Callback<any, [T, ...P]>,
         error?: string | Error,
     ) {
         return function (

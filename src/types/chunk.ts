@@ -1,5 +1,5 @@
 import { ReferAddrs } from "./refer";
-import { Model } from "../model/model";
+import { Model } from "../model";
 import { Value } from ".";
 
 export type Chunk<

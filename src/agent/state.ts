@@ -1,14 +1,14 @@
 import { Value } from "@/types";
-import { SubModel } from ".";
-import { Model } from "@/model/model";
+import { Agent } from ".";
+import { Model } from "@/model";
 import { TrxContext } from "@/context/trx";
 import { DebugContext } from "@/context/debug";
 
-export class StateModel<
+export class StateAgent<
     S1 extends Record<string, Value> = Record<string, Value>,
     S2 extends Record<string, Value> = Record<string, Value>,
-    M extends Model<any, any, S1, S2> = Model<any, any, S1, S2>
-> extends SubModel<M> {
+    M extends Model = Model
+> extends Agent<M> {
     public current: Readonly<S1 & S2>
     public origin: Readonly<S1 & S2>
 
@@ -45,11 +45,11 @@ export class StateModel<
             if (key === '0') {
                 const children = [...this.target.child];
                 console.log('cehckChild', children);
-                children.forEach(child => child.stateModel.check(key));
+                children.forEach(child => child.agent.state.check(key));
             } else {
                 const child: Model = Reflect.get(this.target.child, key);
                 console.log('cehckChild', child)
-                child.stateModel.check(key)
+                child.agent.state.check(key)
             }
         } else {
             if (this.isEdit.includes(key)) return;
@@ -80,10 +80,10 @@ export class StateModel<
         console.log('updateState', ...this.isEdit);
         const current = { ...this.current };
         for (const key of this.isEdit) {
-            const value = this.decorModel.emit(key);
+            const value = this.agent.decor.emit(key);
             Reflect.set(current, key, value);
         }
-        this.history = this.target.state;
+        this.history = this.target.state as any;
         this.origin = { ...this.draft };
         this.current = current;
     }
@@ -91,7 +91,7 @@ export class StateModel<
     @DebugContext.log()
     public reset() {
         if (!this.isEdit.length) return;
-        this.eventModel.emit('onStateUpdate', {
+        this.agent.event.emit('onStateUpdate', {
             prev: this.history,
             next: this.current
         })

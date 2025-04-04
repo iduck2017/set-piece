@@ -1,4 +1,4 @@
-import { Model } from "../model/model"
+import { Model } from "../model"
 import { Value } from ".";
 
 export type DecorUpdater<S = any, M extends Model = Model> = (target: M, state: S) => S

@@ -1,25 +1,26 @@
 import { DecorReceiver, DecorReceivers } from "../types/decor";
 import { EventProducers } from "../types/event";
-import { Model } from "./model";
+import { Model } from "../model";
 import { Value } from "../types";
-import { EventProducer } from "@/submodel/event";
+import { EventProducer } from "@/agent/event";
+import { Agent } from ".";
 
-export type ChildAgent<
+export type ChildDecoy<
     C1 extends Record<string, Model>,
     C2 extends Model
 > = C1 extends C1 ? 
-    { [K in keyof C1]: Model.Agent<Required<C1>[K]> } & 
-    { [0]: Model.Agent<C2> } : 
+    { [K in keyof C1]: Model.Decoy<Required<C1>[K]> } & 
+    { [0]: Model.Decoy<C2> } : 
     never;
 
-export class Agent<
+export class DecoyAgent<
     E extends Record<string, any> = Record<string, any>,
     S2 extends Record<string, Value> = Record<string, Value>,
     C1 extends Record<string, Model> = Record<string, Model>,
     C2 extends Model = Model,
     M extends Model = Model
-> {
-    readonly child: Readonly<ChildAgent<C1, C2>>;
+> extends Agent {
+    readonly child: Readonly<ChildDecoy<C1, C2>>;
     readonly event: Readonly<EventProducers<E, M>>;
     readonly decor: Readonly<DecorReceivers<S2, M>>;
 
@@ -27,6 +28,7 @@ export class Agent<
     readonly target: M;
 
     constructor(target: M, path?: string) {
+        super(target);
         this.path = path;
         this.target = target;
         this.child = new Proxy({} as any, { get: this.getAgent.bind(this) })
@@ -75,12 +77,12 @@ export class Agent<
         }
     }
 
-    private getAgent(origin: ChildAgent<C1, C2>, key: string) {
-        let value: Agent = Reflect.get(origin, key);
+    private getAgent(origin: ChildDecoy<C1, C2>, key: string) {
+        let value: DecoyAgent = Reflect.get(origin, key);
         if (value) return value;
         let path = key;
         if (this.path) path = this.path + '/' + key;
-        value = new Agent(this.target, path);
+        value = new DecoyAgent(this.target, path);
         Reflect.set(origin, path, value);
         return value;
     }

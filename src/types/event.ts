@@ -1,8 +1,8 @@
-import { EventProducer } from "@/submodel/event"
-import { Model } from "../model/model"
+import { EventProducer } from "@/agent/event"
+import { Model } from "../model"
 
 export type EventHandler<E = any, M extends Model = Model> = (target: M, event: E) => void
-export type EventEmitter<E> = (event: E) => void
+export type EventEmitter<E = any> = (event: E) => void
 export type EventEmitters<E extends Record<string, any>> = { [K in keyof E]: EventEmitter<Required<E>[K]> }
 
 export type EventConsumer = { target: Model, handler: EventHandler }

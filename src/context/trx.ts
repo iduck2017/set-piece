@@ -1,5 +1,5 @@
-import { Model } from "@/model/model";
-import { SubModel } from "@/submodel";
+import { Model } from "@/model";
+import { Agent } from "@/agent/index";
 
 export class TrxContext {
     private constructor() {}
@@ -10,14 +10,14 @@ export class TrxContext {
 
     static use() {
         return function(
-            target: Model | SubModel,
+            target: Model | Agent,
             key: string,
             descriptor: TypedPropertyDescriptor<(...args: any) => any>
         ): TypedPropertyDescriptor<(...args: any) => any> {
             const handler = descriptor.value;
             if (!handler) return descriptor;
             const instance = {
-                [key](this: Model | SubModel, ...args: any[]) {
+                [key](this: Model | Agent, ...args: any[]) {
                     const model = this.target;
                     if (!TrxContext.models.includes(model)) TrxContext.models.push(model)
                     if (TrxContext.isActived) return handler.apply(this, args);
@@ -25,9 +25,9 @@ export class TrxContext {
                     console.group(this.constructor.name + ":useFiber")
                     const result = handler.apply(this, args);
                     console.log('registry', TrxContext.models)
-                    TrxContext.models.forEach(model => model.commitChild());
-                    TrxContext.models.forEach(model => model.commitRefer());
-                    TrxContext.models.forEach(model => model.stateModel.commit());
+                    TrxContext.models.forEach(model => model.agent.child.commit());
+                    TrxContext.models.forEach(model => model.agent.refer.commit());
+                    TrxContext.models.forEach(model => model.agent.state.commit());
                     TrxContext.models.forEach(model => model.reset());
                     TrxContext.isActived = false;
                     TrxContext.models = [];

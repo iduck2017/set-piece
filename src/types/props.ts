@@ -1,6 +1,6 @@
 import { ReferAddrs } from "./refer";
 import { FlatChildChunk } from "./chunk";
-import { Model } from "../model/model";
+import { Model } from "../model";
 import { Value } from ".";
 
 export type Props<

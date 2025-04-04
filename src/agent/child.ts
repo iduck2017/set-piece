@@ -1,25 +1,27 @@
-import { Model } from "@/model/model";
-import { SubModel } from ".";
+import { Model } from "@/model";
+import { Agent } from ".";
 import { ChildChunk, FlatChildChunk } from "@/types/chunk";
 import { DebugContext } from "@/context/debug";
 import { ProductContext } from "@/context/product";
 import { TrxContext } from "@/context/trx";
+import { Callback } from "@/types";
 
-export class ChildModel<
-    C1 extends Record<string, Model>,
-    C2 extends Model,
-    M extends Model<any, any, any, any, any, C1, C2>
-> extends SubModel<M> {   
+export class ChildAgent<
+    C1 extends Record<string, Model> = Record<string, Model>,
+    C2 extends Model = Model,
+    M extends Model = Model
+> extends Agent<M> {   
     public current: Readonly<C1 & C2[]>;
-    private history?: Readonly<C1 & C2[]>
-
-    private readonly draft: C1 & C2[]
+    public history?: any;
     public readonly proxy: ChildChunk<C1, C2>
-
-    private isEdit: boolean = false;
-
-    constructor(target: M, props: FlatChildChunk<C1, C2>) {
+    public readonly workspace: C1 & C2[]
+    
+    constructor(
+        target: M, 
+        props: FlatChildChunk<C1, C2>,
+    ) {
         super(target);
+        
         const origin: any = [];
         Object.keys(props.child).forEach(key => {
             const chunk = props[key];
@@ -27,7 +29,7 @@ export class ChildModel<
             origin[key] = model;
         })
         this.current = origin;
-        this.draft = origin;
+        this.workspace = origin;
         this.proxy = new Proxy(origin, {
             get: this.get.bind(this),
             set: this.set.bind(this),
@@ -47,19 +49,25 @@ export class ChildModel<
 
     public commit() {
         const prev: Model[] = Object.values(this.current);
-        const next: Model[] = Object.values(this.draft);
+        const next: Model[] = Object.values(this.workspace);
         const childCreated = next.filter(item => !prev.includes(item))
         const childRemoved = prev.filter(item => !next.includes(item))
         if (!childCreated.length && !childRemoved.length) return;
         for (const child of childRemoved) child.unload();
         this.history = this.target.child;
-        this.current = this.copy(this.draft);
+        this.current = this.copy(this.workspace);
         for (const child of childCreated) child.load();
     }
 
     public reset() {
-        if (!this.isEdit) return;
-        this.eventModel.emit('onChildUpdate', {
+        let flag = false;
+        const keys = Object.keys(this.workspace);
+        keys.push(...Object.keys(this.current)); 
+        for (const key of keys) {
+            if (this.workspace[key] !== this.current[key]) return;
+        }
+        if (!flag) return;
+        this.agent.event.emit('onChildUpdate', {
             prev: this.history,
             next: this.current
         })
@@ -79,7 +87,7 @@ export class ChildModel<
         }
     }
 
-    private get(origin: any, key: string) {
+    private get(origin: never, key: string) {
         const value = this.current[key];
         if (value instanceof Model) return value.chunk;
         if (typeof value === 'function' && typeof key === 'string') {
@@ -114,18 +122,16 @@ export class ChildModel<
     @TrxContext.use()
     @DebugContext.log()
     private push(...args: Model.Props<Model>[]) {
-        this.isEdit = true;
         let models: any[] = args.map(props => this.create(props, 0));
         models = models.filter(Boolean);
-        const result = this.draft.push(...models);
+        const result = this.workspace.push(...models);
         return result;
     }
 
     @TrxContext.use()
     @DebugContext.log()
     private pop() {
-        this.isEdit = true;
-        const model = this.draft.pop();
+        const model = this.workspace.pop();
         if (model) ProductContext.deleteUUID(model.uuid);
         return model?.chunk;
     }
@@ -133,21 +139,26 @@ export class ChildModel<
     @TrxContext.use()
     @DebugContext.log()
     private unshift(...args: Model.Props<Model>[]) {
-        this.isEdit = true;
         let models: any[] = args.map(props => this.create(props, 0));
         models = models.filter(Boolean);
-        const result = this.draft.unshift(...models);
+        const result = this.workspace.unshift(...models);
         return result
     }
 
-    
+    @TrxContext.use()
+    @DebugContext.log()
+    private shift() {
+        const model = this.workspace.shift();
+        if (model) ProductContext.deleteUUID(model.uuid);
+        return model?.chunk;
+    }
+
     @TrxContext.use()
     @DebugContext.log()
     private splice(index: number, count: number, ...args: Model.Props<Model>[]) {
-        this.isEdit = true;
         let models: any[] = args.map(props => this.create(props, 0));
         models = models.filter(Boolean);
-        const result = this.draft.splice(index, count, ...models);
+        const result = this.workspace.splice(index, count, ...models);
         for (const model of result) {
             ProductContext.deleteUUID(model.uuid)
         }
@@ -155,56 +166,40 @@ export class ChildModel<
     }
 
     @TrxContext.use()
-    private sort(...args: any[]) {
-        this.isEdit = true;
-        const result = this.draft.sort(...args);
-        return result;
+    private sort(handlers: Callback<number, [Model, Model]>) {
+        return this.workspace.sort(handlers);
     }
 
     @TrxContext.use()
     private reverse() {
-        this.isEdit = true;
-        return this.draft.reverse();
+        return this.workspace.reverse();
     }
-
 
     @TrxContext.use()
     @DebugContext.log()
-    private fill(props: any) {
-        this.isEdit = true;
-        for (let index = 0; index < this.draft.length; index ++) {
+    private fill(props: Model.Props<Model>) {
+        for (let index = 0; index < this.workspace.length; index ++) {
             const model = this.create(props, 0);
-            Reflect.set(this.draft, index, model)
+            Reflect.set(this.workspace, index, model)
         }
     }
 
     @TrxContext.use()
     @DebugContext.log()
-    private shift(...args: any[]) {
-        this.isEdit = true;
-        const model = this.draft.shift();
-        if (model) ProductContext.deleteUUID(model.uuid);
-        return model?.chunk;
-    }
-
-    @TrxContext.use()
-    @DebugContext.log()
-    private set(origin: any, key: string, props: any) {
-        this.isEdit = true;
-        const modelPrev = origin[key]
+    private set(origin: never, key: string, props: Model.Props<Model>) {
+        const modelPrev = this.workspace[key]
         if (modelPrev) ProductContext.deleteUUID(modelPrev.uuid);
         const modelNext = this.create(props, key);
-        Reflect.set(this.draft, key, modelNext);
+        Reflect.set(this.workspace, key, modelNext);
         return true;
     }
 
     @TrxContext.use()
     @DebugContext.log()
-    private delete(origin: any, key: string) {
-        this.isEdit = true;
-        const modelPrev = this.draft[key];
+    private delete(origin: never, key: string) {
+        const modelPrev = this.workspace[key];
         if (modelPrev) ProductContext.deleteUUID(modelPrev.uuid)
-        Reflect.deleteProperty(this.draft, key);
+        Reflect.deleteProperty(this.workspace, key);
         return true;
     }
 }
