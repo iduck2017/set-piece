@@ -13,6 +13,7 @@ import {
 export class EventProducer<E = any, M extends Model = Model> {
     public readonly path: string;
     public readonly target: M;
+    
     public constructor(target: M, path: string) {
         this.path = path;
         this.target = target;
@@ -26,8 +27,11 @@ export class EventAgent<
     M extends Model = Model
 > extends Agent<M> {
     public readonly producers = {} as Readonly<EventProducers<E & BaseEvent<M>, M>>;
+    
     public readonly emitters = {} as Readonly<EventEmitters<E>>;
+    
     private readonly router: Map<string, EventConsumer[]>;
+    
     private readonly routerInvert: Map<EventHandler, EventProducer[]>;
     
     public constructor(target: M) {
@@ -134,6 +138,10 @@ export class EventAgent<
                 target.agent.event.unbind(producer, handler);
             }
         }
+    }
+
+    @DebugContext.log()
+    public destroy() {
         for (const channel of this.routerInvert) {
             const [ handler, producers ] = channel
             for (const producer of producers) {

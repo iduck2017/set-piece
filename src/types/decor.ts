@@ -2,13 +2,13 @@ import { Model } from "../model"
 import { Value } from ".";
 
 export type DecorUpdater<S = any, M extends Model = Model> = (target: M, state: S) => S
-export type DecorProvider = { target: Model, updater: DecorUpdater }
-export type DecorReceivers<
+export type DecorConsumer = { target: Model, updater: DecorUpdater }
+export type DecorProducers<
     S extends Record<string, Value>, 
     M extends Model = Model
-> = { [K in keyof S]: DecorReceiver<Required<S>[K], M> }
+> = { [K in keyof S]: DecorProducer<Required<S>[K], M> }
 
-export class DecorReceiver<S = any, M extends Model = Model> {
+export class DecorProducer<S = any, M extends Model = Model> {
     readonly target: M;
     readonly path: string;
 

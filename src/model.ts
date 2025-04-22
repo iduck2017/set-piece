@@ -1,5 +1,5 @@
 import { DecoyAgent } from "./agent/decoy"
-import { ReferGroup } from "./types/refer"
+import { ReferAddrs, ReferGroup } from "./types/refer"
 import { Chunk, StrictChunk, ChildChunk } from "./types/chunk"
 import { BaseEvent, EventEmitters, EventProducers } from "./types/event"
 import { Props, StrictProps } from "./types/props"
@@ -9,20 +9,20 @@ import { DebugContext } from "@/context/debug"
 import { TrxContext } from "@/context/trx"
 import { EventAgent } from "@/agent/event"
 import { StateAgent } from "@/agent/state"
-import { DecorAgent } from "@/agent/decor"
 import { ChildAgent } from "@/agent/child"
 import { AgentGroup } from "@/agent"
 import { ReferAgent } from "@/agent/refer"
+import { DecorProducer, DecorProducers } from "./types/decor"
 
 type BaseModel = Model<string, {}, {}, {}, BaseModel | undefined, {}, BaseModel, {}, {}>
 
 export namespace Model {
-    export type Props<M extends Model> = M['props']
-    export type Chunk<M extends Model> = M['chunk']
-    export type Decoy<M extends Model> = M['agent']['decoy']
-    export type State<M extends Model> = M['state']
-    export type Child<M extends Model> = M['child']
-    export type Refer<M extends Model> = M['refer']
+    export type Props<M extends Model = Model> = M['props']
+    export type Chunk<M extends Model = Model> = M['chunk']
+    export type Decoy<M extends Model = Model> = M['agent']['decoy']
+    export type State<M extends Model = Model> = M['state']
+    export type Child<M extends Model = Model> = M['child']
+    export type Refer<M extends Model = Model> = M['refer']
 }
 
 export type ProxyGroup<
@@ -37,7 +37,7 @@ export type ProxyGroup<
     event: EventEmitters<E>;
     child: ChildChunk<C1, C2>;
     state: S1 & S2;
-    refer: ReferGroup<R1, R2>;
+    refer: ReferAddrs<R1, R2>;
 }
 
 
@@ -52,9 +52,10 @@ export abstract class Model<
     R1 extends Record<string, Model> = {},
     R2 extends Record<string, Model> = {}
 > {
-    public agent: AgentGroup<E, S1, S2, C1, C2, R1, R2, this>;
+    /** @internal */
+    public agent: Readonly<AgentGroup<E, S1, S2, C1, C2, R1, R2, this>>;
     
-    protected proxy: ProxyGroup<E, S1, S2, C1, C2, R1, R2>;
+    protected proxy: Readonly<ProxyGroup<E, S1, S2, C1, C2, R1, R2>>;
 
     public get state(): Readonly<S1 & S2> { 
         return { ...this.agent.state.current } 
@@ -64,9 +65,19 @@ export abstract class Model<
         return this.agent.child.copy() 
     }
 
-    public get refer() {
-        return this.agent.refer.copy();
+    public get refer(): Readonly<ReferGroup<R1, R2>> {
+        const current = this.agent.refer.current;
+        const result = { ...current }
+        for (const key of Object.keys(current)) {
+            const value = current[key];
+            if (value instanceof Array) {
+                Reflect.set(result, key, [ ...value ])
+            }
+        }
+        return result;
     }
+
+    public readonly decor: Readonly<DecorProducers<S1, this>>
 
     public readonly event: Readonly<EventProducers<E & BaseEvent<this>, this>>;
 
@@ -91,9 +102,8 @@ export abstract class Model<
         this.agent = {
             event: new EventAgent(this),
             child: new ChildAgent(this, props.child),
-            decor: new DecorAgent(this),
             state: new StateAgent(this, props.state),
-            refer: new ReferAgent(this),
+            refer: new ReferAgent(this, props.refer),
             decoy: new DecoyAgent(this)
         }
         const agent = this.agent;
@@ -110,6 +120,7 @@ export abstract class Model<
         this.code = props.code;
         this.path = props.path;
         this.event = agent.event.producers;
+        this.decor = agent.state.producers;
         this.setStateBatch = agent.state.setBatch;
     }
     
@@ -119,12 +130,12 @@ export abstract class Model<
     static boot<M extends Model>(props: Model.Chunk<M>): M | undefined {
         if (Model.root) return Model.root as M;
         const type = ProductContext.query(props.code);
-        const uuid = ProductContext.checkUUID()
+        const uuid = ReferAgent.check()
         if (!type) return undefined;
         props = { ...props, path: 'root', uuid }
         const model: M = new type(props)
         Model.root = model;
-        model.load()
+        model.agent.child.load()
         return model;
     }
 
@@ -135,28 +146,21 @@ export abstract class Model<
             path: this.path,
             state: { ...this.proxy.state },
             child: { ...this.proxy.child },
-            refer: { ...this.agent.refer.current },
+            refer: { ...this.proxy.refer },
             parent: this.parent,
         }
         return result;
     }
 
-    public get chunk(): Readonly<Chunk<I, S1, S2, C1, C2, R1, R2>> {
+    public get chunk(): Chunk<I, S1, S2, C1, C2, R1, R2> {
         const result: StrictChunk<I, S1, S2, C1, C2, R1, R2> = {
             uuid: this.uuid,
             code: this.code,
             state: { ...this.proxy.state },
             child: { ...this.proxy.child },
-            refer: { ...this.agent.refer.current }
+            refer: { ...this.proxy.refer },
         }
         return result;
-    }
-
-    @DebugContext.log()
-    public reset() {
-        this.agent.state.reset();
-        this.agent.child.reset();
-        this.agent.refer.reset();
     }
     
     @DebugContext.log()
@@ -164,23 +168,5 @@ export abstract class Model<
         console.log(this.child);
     }
 
-    private isInited: boolean = false;
-    
-    @TrxContext.use()
-    @DebugContext.log()
-    public load() {
-        this.agent.child.load();
-        this.agent.event.load();
-        this.agent.decor.load();
-        this.isInited = true;
-    }
-
-    @DebugContext.log()
-    public unload() {
-        this.agent.child.unload();
-        this.agent.child.unload()
-        this.agent.decor.unload()
-        this.isInited = false;
-    }
 }
 

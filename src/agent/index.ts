@@ -2,7 +2,6 @@ import { EventAgent } from "@/agent/event";
 import { Model } from "@/model";
 import { ChildAgent } from "./child";
 import { StateAgent } from "./state";
-import { DecorAgent } from "./decor";
 import { ReferAgent } from "./refer";
 import { Value } from "@/types";
 import { DecoyAgent } from "@/agent/decoy";
@@ -20,7 +19,6 @@ export type AgentGroup<
     event: EventAgent<E, M>;
     child: ChildAgent<C1, C2, M>;
     state: StateAgent<S1, S2, M>;
-    decor: DecorAgent<S1, M>;
     refer: ReferAgent<R1, R2>;
     decoy: DecoyAgent<E, S1, C1, C2, M>
 }

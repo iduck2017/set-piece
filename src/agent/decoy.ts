@@ -1,4 +1,4 @@
-import { DecorReceiver, DecorReceivers } from "../types/decor";
+import { DecorProducer, DecorProducers } from "../types/decor";
 import { EventProducers } from "../types/event";
 import { Model } from "../model";
 import { Value } from "../types";
@@ -21,22 +21,25 @@ export class DecoyAgent<
     M extends Model = Model
 > extends Agent {
     readonly child: Readonly<ChildDecoy<C1, C2>>;
+    
     readonly event: Readonly<EventProducers<E, M>>;
-    readonly decor: Readonly<DecorReceivers<S2, M>>;
+    
+    readonly decor: Readonly<DecorProducers<S2, M>>;
 
     readonly path?: string;
+    
     readonly target: M;
 
     constructor(target: M, path?: string) {
         super(target);
         this.path = path;
         this.target = target;
-        this.child = new Proxy({} as any, { get: this.getAgent.bind(this) })
+        this.child = new Proxy({} as any, { get: this.getChild.bind(this) })
         this.event = new Proxy({} as any, { get: this.getEvent.bind(this) })
         this.decor = new Proxy({} as any, { get: this.getDecor.bind(this) })
     }
 
-    private getDecor(origin: DecorReceivers<S2, M>, path: string) {
+    private getDecor(origin: DecorProducers<S2, M>, path: string) {
         const keys = path.split('/');
         const key = keys.shift();
         if (!key) return;
@@ -50,7 +53,7 @@ export class DecoyAgent<
             if (value) return value;
             let path = key;
             if (this.path) path = this.path + '/' + key;
-            value = new DecorReceiver(this.target, path);
+            value = new DecorProducer(this.target, path);
             Reflect.set(origin, key, value);
             return value;
         }
@@ -77,7 +80,7 @@ export class DecoyAgent<
         }
     }
 
-    private getAgent(origin: ChildDecoy<C1, C2>, key: string) {
+    private getChild(origin: ChildDecoy<C1, C2>, key: string) {
         let value: DecoyAgent = Reflect.get(origin, key);
         if (value) return value;
         let path = key;

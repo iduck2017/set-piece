@@ -2,7 +2,9 @@ export { Model } from "./model";
 export { Value } from "./types";
 
 export { EventAgent } from './agent/event'
-export { DecorAgent } from './agent/decor'
+export { StateAgent } from './agent/state'
+export { ChildAgent } from './agent/child'
+export { ReferAgent } from './agent/refer'
 
 export { SyncContext } from "./context/sync";
 export { ValidatorContext } from "./context/validator";

@@ -1,5 +1,6 @@
 import { Model } from "@/model";
 import { Agent } from "@/agent/index";
+import { ReferAgent } from "@/agent/refer";
 
 export class TrxContext {
     private constructor() {}
@@ -22,13 +23,11 @@ export class TrxContext {
                     if (!TrxContext.models.includes(model)) TrxContext.models.push(model)
                     if (TrxContext.isActived) return handler.apply(this, args);
                     TrxContext.isActived = true;
-                    console.group(this.constructor.name + ":useFiber")
+                    console.group(this.target.constructor.name + ":useTrx")
                     const result = handler.apply(this, args);
                     console.log('registry', TrxContext.models)
-                    TrxContext.models.forEach(model => model.agent.child.commit());
-                    TrxContext.models.forEach(model => model.agent.refer.commit());
-                    TrxContext.models.forEach(model => model.agent.state.commit());
-                    TrxContext.models.forEach(model => model.reset());
+                    TrxContext.commit();
+                    TrxContext.reset();
                     TrxContext.isActived = false;
                     TrxContext.models = [];
                     console.groupEnd();
@@ -39,4 +38,21 @@ export class TrxContext {
             return descriptor;
         }
     }
+
+    private static commit() {
+        const models = TrxContext.models
+        models.forEach(model => model.agent.child.commitBefore());
+        models.forEach(model => model.agent.child.commit());
+        models.forEach(model => model.agent.child.commitDone());
+        models.forEach(model => model.agent.refer.commit());
+        models.forEach(model => model.agent.state.commit());
+    }
+
+    private static reset() {
+        const models = TrxContext.models
+        models.forEach(model => model.agent.child.reset());
+        models.forEach(model => model.agent.refer.reset());
+        models.forEach(model => model.agent.state.reset());
+    }
+
 }

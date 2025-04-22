@@ -1,8 +1,11 @@
-import { Value } from "@/types";
+import { Callback, Value } from "@/types";
 import { Agent } from ".";
 import { Model } from "@/model";
 import { TrxContext } from "@/context/trx";
 import { DebugContext } from "@/context/debug";
+import { DecorConsumer, DecorProducer, DecorProducers, DecorUpdater } from "@/types/decor";
+
+type ProducerAccessor = Callback<DecorProducer | undefined, [Model]>
 
 export class StateAgent<
     S1 extends Record<string, Value> = Record<string, Value>,
@@ -10,105 +13,246 @@ export class StateAgent<
     M extends Model = Model
 > extends Agent<M> {
     public current: Readonly<S1 & S2>
-    public origin: Readonly<S1 & S2>
+    
+    public currentOrigin: Readonly<S1 & S2>
+    
+    private history?: Model.State<M>
+    
+    public workspace: S1 & S2
+    
+    public proxy: S1 & S2
+    
+    private altered: string[];
 
-    private history?: Readonly<S1 & S2>
-    public readonly draft: S1 & S2
-    public readonly proxy: S1 & S2
-
-    private isEdit: string[] = [];
+    public readonly producers: Readonly<DecorProducers<S1, M>>;
+    
+    private readonly router: Map<string, DecorConsumer[]>
+    
+    private readonly routerInvert: Map<DecorUpdater, DecorProducer[]>
 
     constructor(target: M, props: S1 & S2) {
         super(target);
-        this.origin = { ...props }
+        this.altered = [];
+        this.workspace = { ...props }
+        this.currentOrigin = { ...props }
         this.current = { ...props }
-        this.draft = { ...props }
-        this.proxy = new Proxy(this.draft, {
-            get: this.get.bind(this),
+        this.proxy = new Proxy({} as any, {
+            get: this.getState.bind(this),
             set: this.set.bind(this),
             deleteProperty: this.delete.bind(this),
         })
+        this.router = new Map();
+        this.routerInvert = new Map();
+        this.producers = new Proxy({} as any, {
+            get: this.getDecor.bind(this)
+        })
     }
-
-    private get(origin: any, key: string) {
-        return this.origin[key];
+    
+    @TrxContext.use()
+    @DebugContext.log()
+    public setBatch(
+        handler: Callback<Partial<S1 & S2>, [S1 & S2]>
+    ) {
+        const statePrev: S1 & S2 = { ...this.current };
+        const nextPrev = handler(statePrev);
+        this.workspace = { ...this.workspace, ...nextPrev }
     }
-
+    
     @DebugContext.log()
     public check(path: string) {
-        console.log(path);
         const keys = path.split('/');
         const key = keys.shift();
-        path = keys.join('/')
         if (!key) return;
         if (keys.length) {
             if (key === '0') {
-                const children = [...this.target.child];
-                console.log('cehckChild', children);
-                children.forEach(child => child.agent.state.check(key));
+                const path = keys.join('/');
+                const childAgent = this.agent.child;
+                const models = [ ...childAgent.current ];
+                for (const model of models) {
+                    const stateAgent = model.agent.state;
+                    stateAgent.check(path);
+                }
             } else {
-                const child: Model = Reflect.get(this.target.child, key);
-                console.log('cehckChild', child)
-                child.agent.state.check(key)
+                const childAgent = this.agent.child;
+                const model: Model = Reflect.get(childAgent.current, key)
+                const stateAgent = model.agent.state;
+                stateAgent.check(path)
             }
         } else {
-            if (this.isEdit.includes(key)) return;
-            console.log('resetState', key)
-            this.isEdit.push(key);
+            if (this.altered.includes(key)) return;
+            this.altered.push(key);
         }
     } 
 
+    private getDecor(origin: never, path: string) { 
+        const DecoyAgent = this.target.agent.decoy;
+        return Reflect.get(DecoyAgent.decor, path)
+    }
+
+    private getState(origin: never, key: string) {
+        return this.currentOrigin[key];
+    }
+
     @TrxContext.use()
-    private set(origin: S1 & S2, key: any, value: any) {
-        Reflect.set(origin, key, value); 
+    @DebugContext.log()
+    private set(origin: never, key: string, value: any) {
+        Reflect.set(this.workspace, key, value); 
         this.check(key);
         return true;
     }
-
     
     @TrxContext.use()
-    private delete(origin: S1 & S2, key: string) {
-        Reflect.deleteProperty(origin, key); 
+    @DebugContext.log()
+    private delete(origin: never, key: string) {
+        Reflect.deleteProperty(this.workspace, key); 
         this.check(key)
         return true;
     }
 
     @DebugContext.log()
     public commit() {
-        console.log(this.isEdit)
-        if (!this.isEdit.length) return;
-        console.log('updateState', ...this.isEdit);
+        if (!this.altered.length) return;
         const current = { ...this.current };
-        for (const key of this.isEdit) {
-            const value = this.agent.decor.emit(key);
+        for (const key of this.altered) {
+            const value = this.emit(key);
             Reflect.set(current, key, value);
         }
-        this.history = this.target.state as any;
-        this.origin = { ...this.draft };
+        this.history = this.target.state;
+        this.currentOrigin = { ...this.workspace };
         this.current = current;
     }
 
     @DebugContext.log()
+    public emit(key: string) {
+        let target: Model | undefined = this.target;
+        let result = Reflect.get(this.workspace, key);
+        let path = key;
+        while (target) {
+            const router = target.agent.state.router;
+            const consumers = router.get(path) ?? [];
+            for (const consumer of consumers) {
+                const target = consumer.target;
+                const updater = consumer.updater;
+                result = updater.call(target, this.target, result);
+            }
+            path = target.path + '/' + path;
+            target = target.parent;
+        }
+        return result;
+    }
+
+    @DebugContext.log()
+    protected bind<E, M extends Model>(
+        producer: DecorProducer<E, M>, 
+        updater: DecorUpdater<E, M>
+    ) {
+        const { target, path } = producer;
+        const stateAgent = target.agent.state;
+        const router = stateAgent.router;
+        const consumers = router.get(path) ?? [];
+        consumers.push({ target: this.target, updater });
+        router.set(path, consumers);
+
+        const producers = this.routerInvert.get(updater) ?? [];
+        producers.push(producer);
+        this.routerInvert.set(updater, producers);
+        
+        stateAgent.check(path);
+    }
+
+    @DebugContext.log()
+    protected unbind<S, M extends Model>(
+        producer: DecorProducer<S, M>, 
+        updater: DecorUpdater<S, M>
+    ) {
+        const { target, path } = producer;
+        const stateAgent = target.agent.state;
+
+        const router = stateAgent.router;
+        let comsumers = router.get(path) ?? [];
+        comsumers = comsumers.filter(item => {
+            if (item.updater !== updater) return true;
+            if (item.target !== this.target) return true;
+            return false;
+        });
+        router.set(path, comsumers);
+
+        let producers = this.routerInvert.get(updater) ?? [];
+        producers = producers.filter(item => item !== producer);
+        this.routerInvert.set(updater, producers);
+        
+        stateAgent.check(path)
+    }
+
+    @DebugContext.log()
+    public load() {
+        let constructor = this.target.constructor;
+        const target = this.target;
+        while (constructor) {
+            const registry = StateAgent.registry.get(constructor) ?? {};
+            for (const key of Object.keys(registry)) {
+                const accessors = registry[key];
+                for (const accessor of accessors) {
+                    const producer = accessor(target);
+                    if (!producer) continue;
+                    const handler: any = Reflect.get(target, key)
+                    this.bind(producer, handler);
+                }
+            }
+            constructor = Reflect.get(constructor, '__proto__');
+        }
+        this.commit();
+    }
+
+    @DebugContext.log()
+    public unload() {
+        for (const channel of this.router) {
+            const [ path, consumers ] = channel;
+            const producer: DecorProducer = Reflect.get(this.producers, path);
+            for (const consumer of consumers) {
+                const { target, updater } = consumer;
+                const stateAgent = target.agent.state;
+                stateAgent.unbind(producer, updater);
+            }
+        }
+        this.agent.state.commit()
+    }
+
+    @DebugContext.log()
+    public destroy() {
+        for (const channel of this.routerInvert) {
+            const [ handler, producers ] = channel
+            for (const producer of producers) {
+                this.unbind(producer, handler);
+            }
+        }
+    }
+
+    private static registry: Map<Function, Record<string, ProducerAccessor[]>> = new Map();
+
+    @DebugContext.log()
+    public static use<S, M extends Model>(accessor: (model: M) => DecorProducer<S, M> | undefined) {
+        return function(
+            target: M,
+            key: string,
+            descriptor: TypedPropertyDescriptor<DecorUpdater<S, M>>
+        ): TypedPropertyDescriptor<DecorUpdater<S, M>> {
+            const registry = StateAgent.registry.get(target.constructor) ?? {};
+            if (!registry[key]) registry[key] = [];
+            registry[key].push(accessor);
+            StateAgent.registry.set(target.constructor, registry);
+            return descriptor;
+        };
+    }
+
+    @DebugContext.log()
     public reset() {
-        if (!this.isEdit.length) return;
+        if (!this.history) return;
         this.agent.event.emit('onStateUpdate', {
             prev: this.history,
             next: this.current
         })
         this.history = undefined;
-        this.isEdit = [];
+        this.altered = [];
     }
-
-    @TrxContext.use()
-    @DebugContext.log()
-    public setBatch(updater: (prev: S1 & S2) => Partial<S1 & S2>) {
-        const prev: S1 & S2 = { ...this.current };
-        const next = updater(prev);
-        Object.keys(next).forEach(key => {
-            console.log('SetStateBatch', key)
-            Reflect.set(this.proxy, key, next[key]);
-        })
-    }
-
-    
 }

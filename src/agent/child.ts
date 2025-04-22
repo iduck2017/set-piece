@@ -5,6 +5,7 @@ import { DebugContext } from "@/context/debug";
 import { ProductContext } from "@/context/product";
 import { TrxContext } from "@/context/trx";
 import { Callback } from "@/types";
+import { ReferAgent } from "./refer";
 
 export class ChildAgent<
     C1 extends Record<string, Model> = Record<string, Model>,
@@ -12,194 +13,277 @@ export class ChildAgent<
     M extends Model = Model
 > extends Agent<M> {   
     public current: Readonly<C1 & C2[]>;
-    public history?: any;
+    
+    private history?: Model.Child<M>;
+
     public readonly proxy: ChildChunk<C1, C2>
-    public readonly workspace: C1 & C2[]
+
+    private workspace: ChildChunk<C1, C2>
+    
+    private removed: string[];
+    
+    private created: Model[];
+
+    private altered: boolean
     
     constructor(
         target: M, 
         props: FlatChildChunk<C1, C2>,
     ) {
         super(target);
-        
+
         const origin: any = [];
-        Object.keys(props.child).forEach(key => {
+        console.log('props', props)
+        const keys = Object.keys(props);
+        for (const key of keys) {
             const chunk = props[key];
+            chunk.uuid = ReferAgent.check(chunk.uuid);
             const model = this.create(chunk, key);
             origin[key] = model;
-        })
+        }
         this.current = origin;
         this.workspace = origin;
-        this.proxy = new Proxy(origin, {
+
+        this.proxy = new Proxy({} as any, {
             get: this.get.bind(this),
             set: this.set.bind(this),
             deleteProperty: this.delete.bind(this),
         })
+
+        this.removed = [];
+        this.created = [];
+        this.altered = false;
     }
 
     public copy(origin?: C1 & C2[]): C1 & C2[] {
         if (!origin) origin = this.current;
         const result: any = [];
-        for (const key of Object.keys(origin)) {
+        const keys = Object.keys(origin);
+        for (const key of keys) {
             const value = Reflect.get(origin, key);
             Reflect.set(result, key, value);
         }
         return result;
     }
 
-    public commit() {
-        const prev: Model[] = Object.values(this.current);
-        const next: Model[] = Object.values(this.workspace);
-        const childCreated = next.filter(item => !prev.includes(item))
-        const childRemoved = prev.filter(item => !next.includes(item))
-        if (!childCreated.length && !childRemoved.length) return;
-        for (const child of childRemoved) child.unload();
-        this.history = this.target.child;
-        this.current = this.copy(this.workspace);
-        for (const child of childCreated) child.load();
+
+    @DebugContext.log()
+    public commitBefore() {
+        const models = Object.values(this.current);
+        for (const uuid of this.removed) {
+            const model = models.find(item => item.uuid === uuid);
+            if (!model) continue;
+            const child = model.agent.child;
+            child.unload() 
+        }
     }
 
-    public reset() {
-        let flag = false;
-        const keys = Object.keys(this.workspace);
-        keys.push(...Object.keys(this.current)); 
-        for (const key of keys) {
-            if (this.workspace[key] !== this.current[key]) return;
+    @DebugContext.log()
+    public commit() {
+        const current: any = []
+        const memory = Object.values(this.current); 
+        for (const key of Object.keys(this.workspace)) {
+            const chunk: Model.Chunk | undefined = this.workspace[key];
+            if (!chunk) continue;
+            let model = ReferAgent.recycle(chunk.uuid);
+            if (model) {
+                this.created.push(model);
+                current[key] = model;
+                continue;
+            }
+            model = memory.find(item => item.uuid === chunk.uuid);
+            if (model) {
+                current[key] = model;
+                continue;
+            }
+            model = this.create(chunk, key);
+            if (model) {
+                chunk.uuid = model.uuid;
+                this.created.push(model);
+                current[key] = model;
+                continue;
+            }
         }
-        if (!flag) return;
+        this.history = this.target.child;
+        this.current = current;
+    }
+
+    @DebugContext.log()
+    public commitDone() {
+        for (const model of this.created) {
+            const child = model?.agent.child;
+            if (child) child.load()
+        }
+    }
+
+    @DebugContext.log()
+    public reset() {
+        console.log('history', this.history);
+        if (!this.history) return;
         this.agent.event.emit('onChildUpdate', {
             prev: this.history,
             next: this.current
         })
+        this.removed = [];
+        this.created = [];
+        this.history = undefined;
     }
 
+    @TrxContext.use()
     public load() {
+        const state = this.agent.state;
+        const refer = this.agent.refer;
+        const event = this.agent.event;
+        state.load();
+        refer.load();
+        event.load();
         for (const key of Object.keys(this.current)) {
-            const child = this.current[key]
-            child.unload()
+            const child = this.current[key]?.agent.child;
+            if (child) child.load();
         }
     }
 
     public unload() {
+        const state = this.agent.state;
+        const refer = this.agent.refer;
+        const event = this.agent.event;
+        state.unload();
+        refer.unload();
+        event.unload();
         for (const key of Object.keys(this.current)) {
-            const child = this.current[key];
-            child.unload()
+            const child = this.current[key]?.agent.child;
+            if (child) child.unload()
         }
     }
 
-    private get(origin: never, key: string) {
-        const value = this.current[key];
-        if (value instanceof Model) return value.chunk;
-        if (typeof value === 'function' && typeof key === 'string') {
-            if (key === 'push') return this.push.bind(this);
-            if (key === 'pop') return this.pop.bind(this);
-            if (key === 'shift') return this.shift.bind(this);
-            if (key === 'unshift') return this.unshift.bind(this);
-            if (key === 'splice') return this.splice.bind(this);
-            if (key === 'reverse') return this.reverse.bind(this);
-            if (key === 'sort') return this.sort.bind(this);
-            if (key === 'fill') return this.fill.bind(this);
+    public destroy() {
+        const state = this.agent.state;
+        const refer = this.agent.refer;
+        const event = this.agent.event;
+        state.destroy();
+        refer.destroy();
+        event.destroy();
+        for (const key of Object.keys(this.current)) {
+            const child = this.current[key]?.agent.child;
+            if (child) child.destroy()
         }
-        return this.current[key];
     }
-
     
     @DebugContext.log({ useResult: false })
     private create<M extends Model>(props: Model.Chunk<M>, key: string | number): Model | undefined {
         const constructor = ProductContext.query(props.code);
         if (!constructor) return undefined;
         if (!isNaN(Number(key))) key = '0';
-        const uuid = ProductContext.checkUUID(props.uuid);
-        console.log('createChild', constructor, props.code, uuid);
+        console.log('createChild', constructor, props.code);
         return new constructor({
             ...props,
-            uuid,
             path: key,
             parent: this.target,
         })
     }
-    
-    @TrxContext.use()
-    @DebugContext.log()
-    private push(...args: Model.Props<Model>[]) {
-        let models: any[] = args.map(props => this.create(props, 0));
-        models = models.filter(Boolean);
-        const result = this.workspace.push(...models);
-        return result;
+
+    private get(origin: never, key: string) {
+        if (key === 'push') return this.push.bind(this);
+        if (key === 'pop') return this.pop.bind(this);
+        if (key === 'shift') return this.shift.bind(this);
+        if (key === 'unshift') return this.unshift.bind(this);
+        if (key === 'splice') return this.splice.bind(this);
+        if (key === 'reverse') return this.reverse.bind(this);
+        if (key === 'sort') return this.sort.bind(this);
+        if (key === 'fill') return this.fill.bind(this); 
+        const value = this.current[key];
+        if (value instanceof Model) return value.chunk;
+        return value;
+    }
+
+    private unregister(uuid: string | undefined) {
+        if (!uuid) return;
+        if (this.removed.includes(uuid)) return;
+        this.removed.push(uuid);
     }
 
     @TrxContext.use()
     @DebugContext.log()
-    private pop() {
-        const model = this.workspace.pop();
-        if (model) ProductContext.deleteUUID(model.uuid);
-        return model?.chunk;
-    }
-
-    @TrxContext.use()
-    @DebugContext.log()
-    private unshift(...args: Model.Props<Model>[]) {
-        let models: any[] = args.map(props => this.create(props, 0));
-        models = models.filter(Boolean);
-        const result = this.workspace.unshift(...models);
-        return result
-    }
-
-    @TrxContext.use()
-    @DebugContext.log()
-    private shift() {
-        const model = this.workspace.shift();
-        if (model) ProductContext.deleteUUID(model.uuid);
-        return model?.chunk;
-    }
-
-    @TrxContext.use()
-    @DebugContext.log()
-    private splice(index: number, count: number, ...args: Model.Props<Model>[]) {
-        let models: any[] = args.map(props => this.create(props, 0));
-        models = models.filter(Boolean);
-        const result = this.workspace.splice(index, count, ...models);
-        for (const model of result) {
-            ProductContext.deleteUUID(model.uuid)
-        }
-        return result.map(child => child.props);
-    }
-
-    @TrxContext.use()
-    private sort(handlers: Callback<number, [Model, Model]>) {
-        return this.workspace.sort(handlers);
-    }
-
-    @TrxContext.use()
-    private reverse() {
-        return this.workspace.reverse();
-    }
-
-    @TrxContext.use()
-    @DebugContext.log()
-    private fill(props: Model.Props<Model>) {
-        for (let index = 0; index < this.workspace.length; index ++) {
-            const model = this.create(props, 0);
-            Reflect.set(this.workspace, index, model)
-        }
-    }
-
-    @TrxContext.use()
-    @DebugContext.log()
-    private set(origin: never, key: string, props: Model.Props<Model>) {
-        const modelPrev = this.workspace[key]
-        if (modelPrev) ProductContext.deleteUUID(modelPrev.uuid);
-        const modelNext = this.create(props, key);
-        Reflect.set(this.workspace, key, modelNext);
+    private set(origin: never, key: string, value: Model.Props<Model>) {
+        const uuid: string | undefined = this.current[key]?.uuid;
+        this.unregister(uuid);
+        this.altered = true;
+        Reflect.set(this.workspace, key, value);
         return true;
     }
 
     @TrxContext.use()
     @DebugContext.log()
     private delete(origin: never, key: string) {
-        const modelPrev = this.workspace[key];
-        if (modelPrev) ProductContext.deleteUUID(modelPrev.uuid)
+        const uuid: string | undefined = this.current[key]?.uuid;
+        this.unregister(uuid);
+        this.altered = true;
         Reflect.deleteProperty(this.workspace, key);
         return true;
+    }
+
+    @TrxContext.use()
+    @DebugContext.log()
+    private push(...args: Model.Chunk[]) {
+        const result = this.workspace.push(...args);
+        return result;
+    }
+
+    @TrxContext.use()
+    @DebugContext.log()
+    private pop() {
+        const result: Model.Chunk | undefined = this.workspace.pop();
+        const uuid = result?.uuid;
+        this.unregister(uuid)
+        return result;
+    }
+
+    @TrxContext.use()
+    @DebugContext.log()
+    private shift() {
+        const result = this.workspace.shift()
+        const uuid = result?.uuid;
+        this.unregister(uuid);
+        return result;
+    }
+
+    @TrxContext.use()
+    @DebugContext.log()
+    private unshift(...args: Model.Chunk[]) {
+        const result = this.workspace.unshift(...args);
+        return result;
+    }
+
+    @TrxContext.use()
+    @DebugContext.log()
+    private splice(index: number, count: number, ...args: Model.Chunk[]) {
+        const result = this.workspace.splice(index, count, ...args);
+        const uuids: Array<string | undefined> = result.map(item => item?.uuid);
+        for (const uuid of uuids) this.unregister(uuid);
+        return result;
+    }
+
+    @TrxContext.use()
+    @DebugContext.log()
+    private reverse() {
+        const result = this.workspace.reverse();
+        return result;
+    }
+
+    @TrxContext.use()
+    @DebugContext.log()
+    private fill(chunk: Model.Chunk) {
+        const chunks = [ ...this.workspace ];
+        const uuids = chunks.map(item => item?.uuid);
+        for (const uuid of uuids) this.unregister(uuid);
+        const result = this.workspace.fill(chunk);
+        return result;
+    }
+
+    @TrxContext.use()
+    @DebugContext.log()
+    private sort(handler: Callback) {
+        const result = this.workspace.sort(handler);
+        return result;
     }
 }

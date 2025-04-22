@@ -18,21 +18,4 @@ export class ProductContext {
         };
     }
 
-    private static uuids: Set<string> = new Set();
-    
-    @DebugContext.log()
-    static checkUUID(uuid?: string) {
-        if (!uuid) uuid = crypto.randomUUID();
-        while (ProductContext.uuids.has(uuid)) {
-            console.log('duplicateUUID', uuid);
-            uuid = crypto.randomUUID();
-        }
-        ProductContext.uuids.add(uuid)
-        return uuid;
-    }
-
-    @DebugContext.log()
-    static deleteUUID(uuid: string) {
-        ProductContext.uuids.delete(uuid)
-    }
 }
