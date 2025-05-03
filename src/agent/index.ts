@@ -13,7 +13,7 @@ export type AgentGroup<
     C1 extends Record<string, Model> = {},
     C2 extends Model = Model,
     R1 extends Record<string, Model> = {},
-    R2 extends Record<string, Model> = {},
+    R2 extends Record<string, Model[]> = {},
     M extends Model = Model
 > = {
     event: EventAgent<E, M>;

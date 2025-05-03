@@ -15,7 +15,7 @@ export type ChildDecoy<
 
 export class DecoyAgent<
     E extends Record<string, any> = Record<string, any>,
-    S2 extends Record<string, Value> = Record<string, Value>,
+    S1 extends Record<string, Value> = Record<string, Value>,
     C1 extends Record<string, Model> = Record<string, Model>,
     C2 extends Model = Model,
     M extends Model = Model
@@ -24,7 +24,7 @@ export class DecoyAgent<
     
     readonly event: Readonly<EventProducers<E, M>>;
     
-    readonly decor: Readonly<DecorProducers<S2, M>>;
+    readonly decor: Readonly<DecorProducers<S1, M>>;
 
     readonly path?: string;
     
@@ -39,7 +39,7 @@ export class DecoyAgent<
         this.decor = new Proxy({} as any, { get: this.getDecor.bind(this) })
     }
 
-    private getDecor(origin: DecorProducers<S2, M>, path: string) {
+    private getDecor(origin: DecorProducers<S1, M>, path: string) {
         const keys = path.split('/');
         const key = keys.shift();
         if (!key) return;

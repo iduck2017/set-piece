@@ -1,20 +1,18 @@
 import { DecoyAgent } from "./agent/decoy"
-import { ReferAddrs, ReferGroup } from "./types/refer"
-import { Chunk, StrictChunk, ChildChunk } from "./types/chunk"
+import { Chunk } from "./types/chunk"
 import { BaseEvent, EventEmitters, EventProducers } from "./types/event"
 import { Props, StrictProps } from "./types/props"
 import { Value } from "./types"
 import { ProductContext } from "@/context/product"
 import { DebugContext } from "@/context/debug"
-import { TrxContext } from "@/context/trx"
 import { EventAgent } from "@/agent/event"
 import { StateAgent } from "@/agent/state"
 import { ChildAgent } from "@/agent/child"
 import { AgentGroup } from "@/agent"
 import { ReferAgent } from "@/agent/refer"
-import { DecorProducer, DecorProducers } from "./types/decor"
+import { DecorProducers } from "./types/decor"
 
-type BaseModel = Model<string, {}, {}, {}, BaseModel | undefined, {}, BaseModel, {}, {}>
+type BaseModel = Model<{}, {}, {}, BaseModel | undefined, {}, BaseModel, {}, {}>
 
 export namespace Model {
     export type Props<M extends Model = Model> = M['props']
@@ -32,17 +30,15 @@ export type ProxyGroup<
     C1 extends Record<string, Model> = {},
     C2 extends Model = Model,
     R1 extends Record<string, Model> = {},
-    R2 extends Record<string, Model> = {},
+    R2 extends Record<string, Model[]> = {},
 > = {
     event: EventEmitters<E>;
-    child: ChildChunk<C1, C2>;
+    child: C1 & C2[];
     state: S1 & S2;
-    refer: ReferAddrs<R1, R2>;
+    refer: R1 & R2;
 }
 
-
 export abstract class Model<
-    I extends string = string,
     E extends Record<string, any> = {},
     S1 extends Record<string, Value> = {},
     S2 extends Record<string, Value> = {},
@@ -50,12 +46,13 @@ export abstract class Model<
     C1 extends Record<string, Model> = {},
     C2 extends Model = BaseModel,
     R1 extends Record<string, Model> = {},
-    R2 extends Record<string, Model> = {}
+    R2 extends Record<string, Model[]> = {}
 > {
-    /** @internal */
     public agent: Readonly<AgentGroup<E, S1, S2, C1, C2, R1, R2, this>>;
     
     protected proxy: Readonly<ProxyGroup<E, S1, S2, C1, C2, R1, R2>>;
+
+    public decoy: DecoyAgent<E, S1, C1, C2, this>;
 
     public get state(): Readonly<S1 & S2> { 
         return { ...this.agent.state.current } 
@@ -65,38 +62,25 @@ export abstract class Model<
         return this.agent.child.copy() 
     }
 
-    public get refer(): Readonly<ReferGroup<R1, R2>> {
-        const current = this.agent.refer.current;
-        const result = { ...current }
-        for (const key of Object.keys(current)) {
-            const value = current[key];
-            if (value instanceof Array) {
-                Reflect.set(result, key, [ ...value ])
-            }
-        }
-        return result;
+    public get refer(): Readonly<R1 & R2> {
+        return this.agent.refer.copy();
     }
-
-    public readonly decor: Readonly<DecorProducers<S1, this>>
-
-    public readonly event: Readonly<EventProducers<E & BaseEvent<this>, this>>;
-
-    public readonly path: string;
 
     public readonly uuid: string;
 
-    public readonly code: I;
-
-    public readonly root: Model;
-
-    public readonly parent: P;
-    
     public readonly target: this;
+
+    public get path() {
+        return this.agent.child.path;
+    }
+
+    public get parent() {
+        return this.agent.child.parent
+    }
 
     protected setStateBatch
     
-    constructor(props: StrictProps<I, S1, S2, P, C1, C2, R1, R2>) {
-        console.log('Constructor', props.code)
+    constructor(props: StrictProps<S1, S2, C1, C2, R1, R2>) {
 
         this.target = this;
         this.agent = {
@@ -113,14 +97,9 @@ export abstract class Model<
             state: agent.state.proxy,
             refer: agent.refer.proxy
         }
+        this.decoy = this.agent.decoy;
 
-        this.parent = props.parent;
-        this.root = this.parent?.root ?? this;
         this.uuid = props.uuid;
-        this.code = props.code;
-        this.path = props.path;
-        this.event = agent.event.producers;
-        this.decor = agent.state.producers;
         this.setStateBatch = agent.state.setBatch;
     }
     
@@ -128,45 +107,46 @@ export abstract class Model<
     private static root: Model | undefined;
     @DebugContext.log()
     static boot<M extends Model>(props: Model.Chunk<M>): M | undefined {
-        if (Model.root) return Model.root as M;
-        const type = ProductContext.query(props.code);
-        const uuid = ReferAgent.check()
-        if (!type) return undefined;
-        props = { ...props, path: 'root', uuid }
-        const model: M = new type(props)
-        Model.root = model;
-        model.agent.child.load()
-        return model;
+        // if (Model.root) return Model.root as M;
+        // if (!props) return;
+        // const type = ProductContext.getType(props.code);
+        // if (!type) return;
+        // props = { ...props, path: 'root', uuid }
+        // const model: M = new type(props)
+        // Model.root = model;
+        // model.agent.child.load()
+        // return model;
+        return undefined as any;
     }
 
-    public get props(): Readonly<Props<I, S1, S2, P, C1, C2, R1, R2>> {
-        const result: StrictProps<I, S1, S2, P, C1, C2, R1, R2> = {
-            code: this.code,
+    public get props(): Readonly<Props<S1, S2, C1, C2, R1, R2>> {
+        const result: StrictProps<S1, S2, C1, C2, R1, R2> = {
             uuid: this.uuid,
-            path: this.path,
-            state: { ...this.proxy.state },
-            child: { ...this.proxy.child },
-            refer: { ...this.proxy.refer },
-            parent: this.parent,
-        }
-        return result;
-    }
-
-    public get chunk(): Chunk<I, S1, S2, C1, C2, R1, R2> {
-        const result: StrictChunk<I, S1, S2, C1, C2, R1, R2> = {
-            uuid: this.uuid,
-            code: this.code,
             state: { ...this.proxy.state },
             child: { ...this.proxy.child },
             refer: { ...this.proxy.refer },
         }
         return result;
+    }
+
+    public get chunk(): Chunk<S1, S2, C1, C2, R1, R2> | undefined {
+        const code = ProductContext.getCode(this.constructor);
+        if (!code) return undefined;
+        return {
+            code,
+            uuid: this.uuid,
+            state: { ...this.proxy.state },
+            child: { ...this.agent.child.chunk },
+            refer: { ...this.agent.refer.chunk },
+        }
     }
     
     @DebugContext.log()
     public debug() {
         console.log(this.child);
     }
+
+    
 
 }
 

@@ -4,8 +4,9 @@ import { Model } from "@/model";
 import { TrxContext } from "@/context/trx";
 import { DebugContext } from "@/context/debug";
 import { DecorConsumer, DecorProducer, DecorProducers, DecorUpdater } from "@/types/decor";
+import { DecoyAgent } from "./decoy";
 
-type ProducerAccessor = Callback<DecorProducer | undefined, [Model]>
+export type DecorAccessor = Callback<DecorProducer | undefined, [DecoyAgent]>
 
 export class StateAgent<
     S1 extends Record<string, Value> = Record<string, Value>,
@@ -22,17 +23,15 @@ export class StateAgent<
     
     public proxy: S1 & S2
     
-    private altered: string[];
+    private keysAltered: string[];
 
-    public readonly producers: Readonly<DecorProducers<S1, M>>;
-    
     private readonly router: Map<string, DecorConsumer[]>
     
     private readonly routerInvert: Map<DecorUpdater, DecorProducer[]>
 
     constructor(target: M, props: S1 & S2) {
         super(target);
-        this.altered = [];
+        this.keysAltered = [];
         this.workspace = { ...props }
         this.currentOrigin = { ...props }
         this.current = { ...props }
@@ -43,9 +42,6 @@ export class StateAgent<
         })
         this.router = new Map();
         this.routerInvert = new Map();
-        this.producers = new Proxy({} as any, {
-            get: this.getDecor.bind(this)
-        })
     }
     
     @TrxContext.use()
@@ -67,6 +63,7 @@ export class StateAgent<
             if (key === '0') {
                 const path = keys.join('/');
                 const childAgent = this.agent.child;
+                if (!childAgent.current) return;
                 const models = [ ...childAgent.current ];
                 for (const model of models) {
                     const stateAgent = model.agent.state;
@@ -74,20 +71,16 @@ export class StateAgent<
                 }
             } else {
                 const childAgent = this.agent.child;
+                if (!childAgent.current) return;
                 const model: Model = Reflect.get(childAgent.current, key)
                 const stateAgent = model.agent.state;
                 stateAgent.check(path)
             }
         } else {
-            if (this.altered.includes(key)) return;
-            this.altered.push(key);
+            if (this.keysAltered.includes(key)) return;
+            this.keysAltered.push(key);
         }
     } 
-
-    private getDecor(origin: never, path: string) { 
-        const DecoyAgent = this.target.agent.decoy;
-        return Reflect.get(DecoyAgent.decor, path)
-    }
 
     private getState(origin: never, key: string) {
         return this.currentOrigin[key];
@@ -111,9 +104,9 @@ export class StateAgent<
 
     @DebugContext.log()
     public commit() {
-        if (!this.altered.length) return;
+        if (!this.keysAltered.length) return;
         const current = { ...this.current };
-        for (const key of this.altered) {
+        for (const key of this.keysAltered) {
             const value = this.emit(key);
             Reflect.set(current, key, value);
         }
@@ -193,7 +186,7 @@ export class StateAgent<
             for (const key of Object.keys(registry)) {
                 const accessors = registry[key];
                 for (const accessor of accessors) {
-                    const producer = accessor(target);
+                    const producer = accessor(target.agent.decoy);
                     if (!producer) continue;
                     const handler: any = Reflect.get(target, key)
                     this.bind(producer, handler);
@@ -208,7 +201,8 @@ export class StateAgent<
     public unload() {
         for (const channel of this.router) {
             const [ path, consumers ] = channel;
-            const producer: DecorProducer = Reflect.get(this.producers, path);
+            const decoyAgent = this.agent.decoy;
+            const producer: DecorProducer = Reflect.get(decoyAgent.decor, path);
             for (const consumer of consumers) {
                 const { target, updater } = consumer;
                 const stateAgent = target.agent.state;
@@ -228,12 +222,14 @@ export class StateAgent<
         }
     }
 
-    private static registry: Map<Function, Record<string, ProducerAccessor[]>> = new Map();
+    private static registry: Map<Function, Record<string, DecorAccessor[]>> = new Map();
 
     @DebugContext.log()
-    public static use<S, M extends Model>(accessor: (model: M) => DecorProducer<S, M> | undefined) {
+    public static use<S, M extends Model, I extends Model>(
+        accessor: (model: Model.Decoy<I>) => DecorProducer<S, M> | undefined
+    ) {
         return function(
-            target: M,
+            target: I,
             key: string,
             descriptor: TypedPropertyDescriptor<DecorUpdater<S, M>>
         ): TypedPropertyDescriptor<DecorUpdater<S, M>> {
@@ -242,7 +238,7 @@ export class StateAgent<
             registry[key].push(accessor);
             StateAgent.registry.set(target.constructor, registry);
             return descriptor;
-        };
+        }
     }
 
     @DebugContext.log()
@@ -253,6 +249,6 @@ export class StateAgent<
             next: this.current
         })
         this.history = undefined;
-        this.altered = [];
+        this.keysAltered = [];
     }
 }

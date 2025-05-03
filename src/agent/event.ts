@@ -9,6 +9,7 @@ import {
     EventEmitters, 
     EventProducers, 
 } from "@/types/event";
+import { DecoyAgent } from "./decoy";
 
 export class EventProducer<E = any, M extends Model = Model> {
     public readonly path: string;
@@ -20,14 +21,12 @@ export class EventProducer<E = any, M extends Model = Model> {
     }
 }
 
-type ProducerAccessor = Callback<EventProducer | undefined, [Model]>
+export type EventAccessor = Callback<EventProducer | undefined, [DecoyAgent]>
 
 export class EventAgent<
     E extends Record<string, any> = Record<string, any>,
     M extends Model = Model
 > extends Agent<M> {
-    public readonly producers = {} as Readonly<EventProducers<E & BaseEvent<M>, M>>;
-    
     public readonly emitters = {} as Readonly<EventEmitters<E>>;
     
     private readonly router: Map<string, EventConsumer[]>;
@@ -36,20 +35,11 @@ export class EventAgent<
     
     public constructor(target: M) {
         super(target)
-        this.producers = new Proxy(this.producers, {
-            get: this.getProducer.bind(this)
-        })
         this.emitters = new Proxy(this.emitters, {
             get: this.getEmitter.bind(this)
         })
         this.router = new Map();
         this.routerInvert = new Map();
-    }
-
-    private getProducer(origin: never, path: string) { 
-        const agent = this.agent.decoy;
-        const producer: EventProducer = Reflect.get(agent.event, path)
-        return producer;
     }
     
     private getEmitter(origin: never, path: string) {
@@ -61,7 +51,7 @@ export class EventAgent<
         let target: Model | undefined = this.target;
         let path = key;
         while(target) {
-            console.log('emitEvent', path, target.code);
+            console.log('emitEvent', path, target.constructor.name);
             const router = target.agent.event.router;
             const consumers = router.get(path) ?? [];
             for (const consumer of consumers) {
@@ -118,7 +108,7 @@ export class EventAgent<
             for (const key of Object.keys(hooks)) {
                 const accessors = hooks[key];
                 for (const accessor of accessors) {
-                    const producer = accessor(target);
+                    const producer = accessor(target.agent.decoy);
                     if (!producer) continue;
                     const handler: any = Reflect.get(target, key)
                     this.bind(producer, handler);
@@ -132,7 +122,8 @@ export class EventAgent<
     public unload() {
         for (const channel of this.router) {
             const [ path, consumers ] = channel;
-            const producer = this.producers[path];
+            const decoyAgent = this.agent.decoy;
+            const producer = Reflect.get(decoyAgent.event, path);
             for (const consumer of consumers) {
                 const { target, handler } = consumer;
                 target.agent.event.unbind(producer, handler);
@@ -150,10 +141,12 @@ export class EventAgent<
         }
     }
 
-    private static registry: Map<Function, Record<string, ProducerAccessor[]>> = new Map();
-    public static use<E, M extends Model>(accessor: ProducerAccessor) {
+    private static registry: Map<Function, Record<string, EventAccessor[]>> = new Map();
+    public static use<E, M extends Model, I extends Model>(
+        accessor: (agent: Model.Decoy<I>) => EventProducer<E, M> | undefined
+    ) {
         return function(
-            target: M,
+            target: I,
             key: string,
             descriptor: TypedPropertyDescriptor<EventHandler<E, M>>
         ): TypedPropertyDescriptor<EventHandler<E, M>> {
