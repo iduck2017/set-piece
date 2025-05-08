@@ -1,14 +1,11 @@
 export { Model } from "./model";
 export { Value } from "./types";
 
-export { EventAgent } from './agent/event'
-export { StateAgent } from './agent/state'
-export { ChildAgent } from './agent/child'
-export { ReferAgent } from './agent/refer'
+export { EventAgent } from "./agent/event";
+export { StateAgent } from "./agent/state";
+export { ReferAgent } from "./agent/refer";
+export { ChildAgent } from "./agent/child";
 
-export { SyncContext } from "./context/sync";
-export { ValidatorContext } from "./context/validator";
-export { DebugContext } from "./context/debug";
-export { ProductContext } from "./context/product";
-export { TrxContext } from './context/trx';
-export { RandomContext } from './context/random'
+export { DebugService } from "./service/debug";
+export { StoreService } from "./service/store";
+export { CheckService } from "./service/check";

@@ -1,15 +1,13 @@
 import { Model } from "@/model";
-import { Callback } from "@/types";
 import { Agent } from ".";
-import { DebugContext } from "@/context/debug";
+import { DebugService } from "@/service/debug";
 import { 
-    BaseEvent, 
     EventHandler, 
     EventConsumer, 
     EventEmitters, 
-    EventProducers, 
 } from "@/types/event";
-import { DecoyAgent } from "./decoy";
+import { ModelProxy } from "@/proxy";
+import { ModelStatus } from "@/types/model";
 
 export class EventProducer<E = any, M extends Model = Model> {
     public readonly path: string;
@@ -21,13 +19,11 @@ export class EventProducer<E = any, M extends Model = Model> {
     }
 }
 
-export type EventAccessor = Callback<EventProducer | undefined, [DecoyAgent]>
-
 export class EventAgent<
     E extends Record<string, any> = Record<string, any>,
     M extends Model = Model
 > extends Agent<M> {
-    public readonly emitters = {} as Readonly<EventEmitters<E>>;
+    public readonly emitters: Readonly<EventEmitters<E>>;
     
     private readonly router: Map<string, EventConsumer[]>;
     
@@ -35,19 +31,21 @@ export class EventAgent<
     
     public constructor(target: M) {
         super(target)
-        this.emitters = new Proxy(this.emitters, {
-            get: this.getEmitter.bind(this)
-        })
         this.router = new Map();
         this.routerInvert = new Map();
+        this.emitters = new Proxy({} as any, {
+            get: this.get.bind(this)
+        })
     }
-    
-    private getEmitter(origin: never, path: string) {
+
+    private get(origin: never, path: string) {
         return this.emit.bind(this, path);
     }
 
-    @DebugContext.log()
+    @DebugService.log()
     public emit<E>(key: string, event: E) {
+        if (this.target.status !== ModelStatus.LOAD) return;
+
         let target: Model | undefined = this.target;
         let path = key;
         while(target) {
@@ -64,7 +62,8 @@ export class EventAgent<
         }
     }
 
-    @DebugContext.log()
+
+    @DebugService.log()
     public bind<E, M extends Model>(
         producer: EventProducer<E, M>, 
         handler: EventHandler<E, M>
@@ -80,7 +79,9 @@ export class EventAgent<
         this.routerInvert.set(handler, producers);
     }
 
-    @DebugContext.log()
+
+
+    @DebugService.log()
     public unbind<E, M extends Model>(
         producer: EventProducer<E, M>, 
         handler: EventHandler<E, M>
@@ -99,40 +100,29 @@ export class EventAgent<
         this.routerInvert.set(handler, producers);
     }
 
-    @DebugContext.log()
+
+
+    @DebugService.log()
     public load() {
         let constructor = this.target.constructor;
-        const target = this.target;
         while (constructor) {
             const hooks = EventAgent.registry.get(constructor) ?? {};
             for (const key of Object.keys(hooks)) {
                 const accessors = hooks[key];
                 for (const accessor of accessors) {
-                    const producer = accessor(target.agent.decoy);
+                    const producer = accessor(this.target.proxy);
                     if (!producer) continue;
-                    const handler: any = Reflect.get(target, key)
+                    const handler: any = Reflect.get(this.target, key)
                     this.bind(producer, handler);
                 }
             }
-            constructor = Reflect.get(constructor, '__proto__');
+            constructor = (constructor as any).__proto__
         }
     }
 
-    @DebugContext.log()
+
+    @DebugService.log()
     public unload() {
-        for (const channel of this.router) {
-            const [ path, consumers ] = channel;
-            const decoyAgent = this.agent.decoy;
-            const producer = Reflect.get(decoyAgent.event, path);
-            for (const consumer of consumers) {
-                const { target, handler } = consumer;
-                target.agent.event.unbind(producer, handler);
-            }
-        }
-    }
-
-    @DebugContext.log()
-    public destroy() {
         for (const channel of this.routerInvert) {
             const [ handler, producers ] = channel
             for (const producer of producers) {
@@ -141,9 +131,23 @@ export class EventAgent<
         }
     }
 
-    private static registry: Map<Function, Record<string, EventAccessor[]>> = new Map();
+    @DebugService.log()
+    public destroy() {
+        for (const channel of this.router) {
+            const [ path, consumers ] = channel;
+            const proxy = this.target.proxy;
+            const producer: EventProducer = Reflect.get(proxy.event, path);
+            for (const consumer of consumers) {
+                const { target, handler } = consumer;
+                target.agent.event.unbind(producer, handler);
+            }
+        }
+    }
+
+    private static registry: Map<Function, Record<string, Array<(proxy: ModelProxy) => EventProducer | undefined>>> = new Map();
+
     public static use<E, M extends Model, I extends Model>(
-        accessor: (agent: Model.Decoy<I>) => EventProducer<E, M> | undefined
+        accessor: (agent: Model.Proxy<I>) => EventProducer<E, M> | undefined
     ) {
         return function(
             target: I,

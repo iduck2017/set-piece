@@ -1,152 +1,167 @@
-import { DecoyAgent } from "./agent/decoy"
-import { Chunk } from "./types/chunk"
-import { BaseEvent, EventEmitters, EventProducers } from "./types/event"
+import { EventEmitters } from "./types/event"
 import { Props, StrictProps } from "./types/props"
 import { Value } from "./types"
-import { ProductContext } from "@/context/product"
-import { DebugContext } from "@/context/debug"
+import { DebugService } from "@/service/debug"
 import { EventAgent } from "@/agent/event"
 import { StateAgent } from "@/agent/state"
 import { ChildAgent } from "@/agent/child"
-import { AgentGroup } from "@/agent"
+import { Agents } from "@/agent/index"
 import { ReferAgent } from "@/agent/refer"
-import { DecorProducers } from "./types/decor"
+import { ModelProxy } from "./proxy"
+import { ModelStatus } from "./types/model"
+import { StoreService } from "./service/store"
 
-type BaseModel = Model<{}, {}, {}, BaseModel | undefined, {}, BaseModel, {}, {}>
-
-export namespace Model {
-    export type Props<M extends Model = Model> = M['props']
-    export type Chunk<M extends Model = Model> = M['chunk']
-    export type Decoy<M extends Model = Model> = M['agent']['decoy']
-    export type State<M extends Model = Model> = M['state']
-    export type Child<M extends Model = Model> = M['child']
-    export type Refer<M extends Model = Model> = M['refer']
-}
-
-export type ProxyGroup<
-    E extends Record<string, any> = {},
-    S1 extends Record<string, Value> = {},
-    S2 extends Record<string, Value> = {},
-    C1 extends Record<string, Model> = {},
-    C2 extends Model = Model,
-    R1 extends Record<string, Model> = {},
-    R2 extends Record<string, Model[]> = {},
-> = {
-    event: EventEmitters<E>;
-    child: C1 & C2[];
-    state: S1 & S2;
-    refer: R1 & R2;
-}
+type BaseModel = Model<{}, {}, {}, BaseModel, {}, BaseModel, {}, {}>
 
 export abstract class Model<
     E extends Record<string, any> = {},
     S1 extends Record<string, Value> = {},
     S2 extends Record<string, Value> = {},
-    P extends Model | undefined = BaseModel | undefined,
+    P extends Model = BaseModel,
     C1 extends Record<string, Model> = {},
     C2 extends Model = BaseModel,
     R1 extends Record<string, Model> = {},
     R2 extends Record<string, Model[]> = {}
 > {
-    public agent: Readonly<AgentGroup<E, S1, S2, C1, C2, R1, R2, this>>;
-    
-    protected proxy: Readonly<ProxyGroup<E, S1, S2, C1, C2, R1, R2>>;
+    public readonly proxy: ModelProxy<E, S1, C1, C2, this>;
 
-    public decoy: DecoyAgent<E, S1, C1, C2, this>;
+    public readonly agent: Readonly<Agents<E, S1, S2, C1, C2, R1, R2, this>>;
+    
+
+    protected readonly draft: Readonly<{
+        child: C1 & C2[];
+        state: S1 & S2;
+        refer: Partial<R1> & R2;
+    }>;
+
+    protected readonly event: Readonly<EventEmitters<E>>;
+
 
     public get state(): Readonly<S1 & S2> { 
-        return { ...this.agent.state.current } 
+        return this.agent.state.current;
     }
     
     public get child(): Readonly<C1 & C2[]>  { 
-        return this.agent.child.copy() 
+        return this.agent.child.current 
     }
 
-    public get refer(): Readonly<R1 & R2> {
-        return this.agent.refer.copy();
+    public get refer(): Readonly<Partial<R1> & R2> {
+        return this.agent.refer.current
     }
 
-    public readonly uuid: string;
 
     public readonly target: this;
 
-    public get path() {
-        return this.agent.child.path;
-    }
+    public readonly uuid: string;
 
+
+    private _parent?: P;
     public get parent() {
-        return this.agent.child.parent
+        return this._parent;
     }
 
-    protected setStateBatch
+    private _status: ModelStatus;
+    public get status() {
+        return this._status;
+    }
     
+    private _path?: string;
+    public get path() {
+        return this._path;
+    }
+
+
     constructor(props: StrictProps<S1, S2, C1, C2, R1, R2>) {
+        this._status = ModelStatus.INIT;
+        this._parent = undefined;
+        this._path = undefined;
 
         this.target = this;
+        this.uuid = props.uuid ?? crypto.randomUUID()
+        
+
+        this.proxy = new ModelProxy(this)
         this.agent = {
             event: new EventAgent(this),
             child: new ChildAgent(this, props.child),
             state: new StateAgent(this, props.state),
             refer: new ReferAgent(this, props.refer),
-            decoy: new DecoyAgent(this)
         }
-        const agent = this.agent;
-        this.proxy = {
-            event: agent.event.emitters,
-            child: agent.child.proxy,
-            state: agent.state.proxy,
-            refer: agent.refer.proxy
-        }
-        this.decoy = this.agent.decoy;
 
-        this.uuid = props.uuid;
-        this.setStateBatch = agent.state.setBatch;
+
+        this.draft = {
+            child: this.agent.child.draft,
+            state: this.agent.state.draft,
+            refer: this.agent.refer.draft
+        }
+        this.event = this.agent.event.emitters;
+
     }
-    
 
-    private static root: Model | undefined;
-    @DebugContext.log()
-    static boot<M extends Model>(props: Model.Chunk<M>): M | undefined {
-        // if (Model.root) return Model.root as M;
-        // if (!props) return;
-        // const type = ProductContext.getType(props.code);
-        // if (!type) return;
-        // props = { ...props, path: 'root', uuid }
-        // const model: M = new type(props)
-        // Model.root = model;
-        // model.agent.child.load()
-        // return model;
-        return undefined as any;
+    bind(parent: P | undefined, path: string | number) {
+        this._parent = parent;
+        this._path = typeof path === 'number' ? String(0) : path;
+        this._status = ModelStatus.BIND;
+        
+        if (parent?._status === ModelStatus.LOAD) this.load();
+    }
+
+    unbind() {
+        if (this._status === ModelStatus.LOAD) this.unload();
+        this._parent = undefined;
+        this._path = undefined;
+        this._status = ModelStatus.INIT;
+        this.destroy();
+    }
+
+    load() {
+        this.agent.child.load();
+        this.agent.event.load();
+        this.agent.state.load();
+        this._status = ModelStatus.LOAD;
+    }
+
+    unload() {
+        this.agent.child.unload();
+        this.agent.event.unload();
+        this.agent.state.unload();
+        this._status = ModelStatus.BIND;
+    }
+
+    destroy() {
+        this.agent.child.destroy();
+        this.agent.refer.destroy();
+        this.agent.event.destroy();
+        this.agent.state.destroy();
     }
 
     public get props(): Readonly<Props<S1, S2, C1, C2, R1, R2>> {
         const result: StrictProps<S1, S2, C1, C2, R1, R2> = {
             uuid: this.uuid,
-            state: { ...this.proxy.state },
-            child: { ...this.proxy.child },
-            refer: { ...this.proxy.refer },
+            state: { ...this.draft.state },
+            child: { ...this.draft.child },
+            refer: { ...this.draft.refer },
         }
         return result;
     }
 
-    public get chunk(): Chunk<S1, S2, C1, C2, R1, R2> | undefined {
-        const code = ProductContext.getCode(this.constructor);
-        if (!code) return undefined;
-        return {
-            code,
-            uuid: this.uuid,
-            state: { ...this.proxy.state },
-            child: { ...this.agent.child.chunk },
-            refer: { ...this.agent.refer.chunk },
-        }
+    public get copy(): this {
+        const type: any = this.constructor;
+        const props = this.props;
+        return new type({ ...props, uuid: undefined });
     }
     
-    @DebugContext.log()
+    @DebugService.log()
     public debug() {
         console.log(this.child);
     }
-
-    
-
 }
 
+
+export namespace Model {
+    export type Props<M extends Model = Model> = M['props']
+    export type Proxy<M extends Model = Model> = M['proxy']
+    export type State<M extends Model = Model> = M['state']
+    export type Child<M extends Model = Model> = M['child']
+    export type Refer<M extends Model = Model> = M['refer']
+}

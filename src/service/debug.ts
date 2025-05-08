@@ -1,4 +1,4 @@
-type Callback<R = any, P extends any[] = any[]> = (...args: P) => R
+import { Callback } from "@/types";
 
 export enum LogLevel {
     INFO = 0,
@@ -6,7 +6,7 @@ export enum LogLevel {
     ERROR = 2,
 }
 
-export class DebugContext {
+export class DebugService {
     private static readonly stack: string[] = []
 
     static log(options?: {
@@ -24,11 +24,11 @@ export class DebugContext {
                 [key](this: Object, ...args: any[]) {
                     const namespace = this.constructor.name + '::' + key
                     console.group(namespace)
-                    DebugContext.stack.push(namespace);
+                    DebugService.stack.push(namespace);
                     const result = handler.call(this, ...args);
                     if (options?.useArgs) console.log('args', ...args);
                     if (options?.useResult) console.log('result', result)
-                    DebugContext.stack.pop();
+                    DebugService.stack.pop();
                     console.groupEnd()
                     return result;
                 }

@@ -1,271 +1,160 @@
 import { Model } from "@/model";
 import { Agent } from ".";
-import { DebugContext } from "@/context/debug";
-import { TrxContext } from "@/context/trx";
-import { Callback } from "@/types";
-import { ReferAgent } from "./refer";
-import { ChildChunk } from "@/types/chunk";
+import { DebugService } from "@/service/debug";
+import { ModelStatus } from "@/types/model";
 
 export class ChildAgent<
     C1 extends Record<string, Model> = Record<string, Model>,
     C2 extends Model = Model,
-    P extends Model = Model,
     M extends Model = Model
-> extends Agent<M> {   
-    public parent?: P
-
-    public path?: string;
-
-    public current?: Readonly<C1 & C2[]>;
-
-    public isLoad: boolean;
+> extends Agent<M> {
     
-    private history?: Model.Child<M>;
+    public readonly draft: Readonly<C1 & C2[]>
 
-    public readonly proxy: Readonly<C1 & C2[]>
-
-    private workspace: Readonly<C1 & C2[]>
-
-    private memory?: Readonly<C1 & C2[]>
-
-    public get chunk(): ChildChunk<C1, C2> {
-        const origin = this.current ?? this.workspace;
-        const result: any = {}
-        for (const key of Object.keys(origin)) {
-            const value: Model | undefined = origin[key];
-            if (value) result[key] = value.chunk
+    public get current(): Readonly<C1 & C2[]> {
+        const result: any = [];
+        for (const key of Object.keys(this.draft)) {
+            result[key] = this.draft[key];
         }
         return result;
     }
     
     constructor(
         target: M, 
-        props: C1 & Record<number, C2>,
+        props: C1 & Record<number, C2>
     ) {
         super(target);
 
         const origin: any = [];
         for (const key of Object.keys(props)) {
-            origin[key] = props[key];
+            const next = origin[key] = this.check(props[key]);
+            if (next instanceof Model) next.bind(this.target, key);
         }
-        this.isLoad = false;
-        this.current = this.copy(origin);
-        this.workspace = this.copy(origin);
-        this.proxy = new Proxy({} as any, {
+        this.draft = new Proxy(origin, {
             get: this.get.bind(this),
             set: this.set.bind(this),
             deleteProperty: this.delete.bind(this),
         })
     }
 
-    @DebugContext.log()
-    public copy(origin?: C1 & C2[]): C1 & C2[] {
-        origin = origin ?? this.current ?? this.workspace;
-        const result: any = [];
-        for (const key of Object.keys(origin)) {
-            result[key] = origin[key];
-        }
-        return result;
+    
+    private check(value: unknown): unknown {
+        if (value instanceof Model && value.status >= ModelStatus.BIND) return value.copy;
+        return value;
     }
 
-    @DebugContext.log()
-    public commitBefore() {
-        const removed: Model[] = [];
-        const origin: Record<string, Model> = this.current ?? {};
-        for (const key of Object.keys(origin)) {
-            const next: Model | undefined = this.workspace[key];
-            const prev: Model | undefined = origin[key];
-            if (next !== prev && prev) {
-                removed.push(prev);
-            }
-        }
-        for (const model of removed) {
-            const childAgent = model.agent.child;
-            childAgent.unload()
-        }
-    }
-
-    @DebugContext.log()
-    public commit() {
-        const created: Model[] = [];
-        const origin: Record<string, Model> = this.current ?? {};
-        for (const key of Object.keys(this.workspace)) {
-            const next = this.workspace[key];
-            const prev = origin[key];
-            if (next !== prev && next) {
-                if (!ReferAgent.check(next.uuid)) {
-                    // replace with valid one
-                }
-                created.push(this.workspace[key]);
-            }
-        }
-        this.history = this.target.child;
-        this.memory = this.copy(this.current);
-        this.current = this.copy(this.workspace);
-        for (const model of created) {
-            const childAgent = model.agent.child;
-            childAgent.commit();
-        }
-    }
-
-    @DebugContext.log()
-    public commitDone() {
-        if (!this.memory) return;
-        if (!this.current) return;
-        const created: Record<string, Model> = {};
+    public load() {
         for (const key of Object.keys(this.current)) {
-            const next = this.current[key]
-            const prev = this.memory[key];
-            if (next !== prev && next) {
-                created[key] = next;
-            }
-        }
-        for (const key of Object.keys(created)) {
-            const model = created[key];
-            const childAgent = model.agent.child;
-            const parent: any = this.target;
-            childAgent.load(parent, key)
+            const child: Model | undefined = this.current[key];
+            if (child instanceof Model) child.load();
         }
     }
 
-    @DebugContext.log()
-    public reset() {
-        console.log('history', this.history);
-        if (!this.history) return;
-        this.agent.event.emit('onChildUpdate', {
-            prev: this.history,
-            next: this.current
-        })
-        this.memory = undefined;
-        this.history = undefined;
-    }
-
-    @TrxContext.use()
-    public load(parent: P, path: string) {
-        this.parent = parent;
-        this.path = path;
-        this.isLoad = true;
-        const stateAgent = this.agent.state;
-        const referAgent = this.agent.refer;
-        const eventAgent = this.agent.event;
-        stateAgent.load();
-        referAgent.load();
-        eventAgent.load();
-        if (!this.current) return;
-        for (const key of Object.keys(this.current)) {
-            const child = this.current[key]?.agent.child;
-            const parent: any = this.target;
-            if (child) child.load(parent, key);
-        }
-    }
-
-    @DebugContext.log()
     public unload() {
-        this.parent = undefined;
-        this.path = undefined;
-        this.isLoad = false;
-        const stateAgent = this.agent.state;
-        const referAgent = this.agent.refer;
-        const eventAgent = this.agent.event;
-        stateAgent.unload();
-        referAgent.unload();
-        eventAgent.unload();
-        if (!this.current) return;
         for (const key of Object.keys(this.current)) {
-            const child = this.current[key]?.agent.child;
-            if (child) child.unload()
+            const child: Model | undefined = this.current[key];
+            if (child instanceof Model) child.unload()
         }
-        this.current = undefined;
     }
 
-    @DebugContext.log()
     public destroy() {
-        const stateAgent = this.agent.state;
-        const referAgent = this.agent.refer;
-        const eventAgent = this.agent.event;
-        stateAgent.destroy();
-        referAgent.destroy();
-        eventAgent.destroy();
-        if (!this.current) return;
         for (const key of Object.keys(this.current)) {
-            const child = this.current[key]?.agent.child;
-            if (child) child.destroy()
+            const child: Model | undefined = this.current[key];
+            if (child instanceof Model) child.destroy();
         }
     }
 
-    private get(origin: any, key: string) {
-        origin = this.current ?? this.workspace;
-        if (key === 'push') return this.push.bind(this);
-        if (key === 'pop') return this.pop.bind(this);
-        if (key === 'shift') return this.shift.bind(this);
-        if (key === 'unshift') return this.unshift.bind(this);
-        if (key === 'splice') return this.splice.bind(this);
-        if (key === 'reverse') return this.reverse.bind(this);
-        if (key === 'sort') return this.sort.bind(this);
-        if (key === 'fill') return this.fill.bind(this); 
+    private get(origin: Record<string, Model>, key: string) {
+        if (key === 'push') return this.push.bind(this, origin);
+        if (key === 'pop') return this.pop.bind(this, origin);
+        if (key === 'shift') return this.shift.bind(this, origin);
+        if (key === 'unshift') return this.unshift.bind(this, origin);
+        if (key === 'splice') return this.splice.bind(this, origin);
+        if (key === 'fill') return this.fill.bind(this, origin); 
         const value = origin[key];
         return value;
     }
 
-    @TrxContext.use()
-    @DebugContext.log()
-    private set(origin: never, key: string, value: Model) {
-        Reflect.set(this.workspace, key, value);
+    @DebugService.log()
+    private set(origin: Record<string, unknown>, key: string, next: unknown) {
+        const prev = origin[key];
+        if (prev instanceof Model) prev.unbind();
+
+        origin[key] = next = this.check(next);
+        if (next instanceof Model) next.bind(this.target, key);
         return true;
     }
 
-    @TrxContext.use()
-    @DebugContext.log()
-    private delete(origin: never, key: string) {
-        Reflect.deleteProperty(this.workspace, key);
+    @DebugService.log()
+    private delete(origin: Record<string, Model>, key: string) {
+        const prev = origin[key];
+        if (prev instanceof Model) prev.unbind();
+        delete origin[key];
         return true;
     }
 
-    @TrxContext.use()
-    @DebugContext.log()
-    private push(...args: C2[]) {
-        return this.workspace.push(...args);
+    @DebugService.log()
+    private push(origin: C1 & C2[], ...next: C2[]) {
+        const result = origin.push(...next);
+        for (let index = 0; index < next.length; index += 1) {
+            const item = this.check(next[index]);
+            if (item instanceof Model) item.bind(this.target, index);
+        }
+        return result;
     }
 
-    @TrxContext.use()
-    @DebugContext.log()
-    private pop() {
-        return this.workspace.pop();
+    @DebugService.log()
+    private pop(origin: C1 & C2[]) {
+        const prev = origin[origin.length - 1];
+        if (prev instanceof Model) prev.unbind();
+        return origin.pop();
     }
 
-    @TrxContext.use()
-    @DebugContext.log()
-    private shift() {
-        return this.workspace.shift();
+    @DebugService.log()
+    private shift(origin: C1 & C2[]) {
+        const prev = origin[0];
+        if (prev instanceof Model) prev.unbind();
+        return origin.shift();
     }
 
-    @TrxContext.use()
-    @DebugContext.log()
-    private unshift(...args: C2[]) {
-        return this.workspace.unshift(...args)
+    @DebugService.log()
+    private unshift(origin: C1 & C2[], ...next: C2[]) {
+        const result = origin.unshift(...next);
+        for (let index = 0; index < next.length; index += 1) {
+            const item = this.check(next[index]);
+            if (item instanceof Model) item.bind(this.target, index);
+        }
+        return result;
     }
 
-    @TrxContext.use()
-    @DebugContext.log()
-    private splice(index: number, count: number, ...args: C2[]) {
-        return this.workspace.splice(index, count, ...args);
+
+    @DebugService.log()
+    private splice(origin: C1 & C2[], start: number, count: number, ...next: C2[]) {
+        const prev: Array<Model | undefined> = origin.slice(start, start + count);
+        for (let index = 0; index < prev.length; index += 1) {
+            const item = prev[index];
+            if (item instanceof Model) item.unbind();
+        }
+
+        const result = origin.splice(start, count, ...next);
+        for (let index = 0; index < next.length; index += 1) {
+            const item = this.check(next[index]);
+            if (item instanceof Model) item.bind(this.target, index);
+        }
+        return result;
     }
 
-    @TrxContext.use()
-    @DebugContext.log()
-    private reverse() {
-        return this.workspace.reverse();
+
+    @DebugService.log()
+    private fill(origin: C1 & C2[], sample: C2) {
+        const length = origin.length;
+        for (let index = 0; index < length; index += 1) {
+            const prev = origin[index];
+            if (prev instanceof Model) prev.unbind();
+            const next = sample.copy;
+            origin[index] = next;
+            next.bind(this.target, index);
+        }
     }
 
-    @TrxContext.use()
-    @DebugContext.log()
-    private fill(sample: C2) {
-        return this.workspace.fill(sample);
-    }
-
-    @TrxContext.use()
-    @DebugContext.log()
-    private sort(handler: Callback) {
-        return this.workspace.sort(handler);
-    }
 }

@@ -9,10 +9,10 @@ export type Props<
     R1 extends Record<string, Model>,
     R2 extends Record<string, Model[]>
 > = {
-    uuid: string;
-    state?: Partial<S1 & S2>;
-    child?: Partial<C1 & Record<number, C2>>;
-    refer?: Partial<R1 & R2>;
+    uuid?: string;
+    state?: Partial<Readonly<S1 & S2>>;
+    child?: Partial<Readonly<C1 & Record<number, C2>>>;
+    refer?: Partial<Readonly<Partial<R1> & R2>>;
 }
 
 export type StrictProps<
@@ -23,8 +23,8 @@ export type StrictProps<
     R1 extends Record<string, Model>,
     R2 extends Record<string, Model[]>
 > = {
-    uuid: string;
-    state: S1 & S2;
-    child: C1 & Record<number, C2>;
-    refer: R1 & R2;
+    uuid?: string;
+    state: Readonly<S1 & S2>;
+    child: Readonly<C1 & Record<number, C2>>;
+    refer: Readonly<Partial<R1> & R2>
 }
