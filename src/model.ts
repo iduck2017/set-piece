@@ -7,9 +7,8 @@ import { StateAgent } from "@/agent/state"
 import { ChildAgent } from "@/agent/child"
 import { Agents } from "@/agent/index"
 import { ReferAgent } from "@/agent/refer"
-import { ModelProxy } from "./proxy"
-import { ModelStatus } from "./types/model"
-import { StoreService } from "./service/store"
+import { ModelProxy } from "./utils/proxy"
+import { ModelCycle } from "./utils/cycle"
 
 type BaseModel = Model<{}, {}, {}, BaseModel, {}, BaseModel, {}, {}>
 
@@ -26,7 +25,8 @@ export abstract class Model<
     public readonly proxy: ModelProxy<E, S1, C1, C2, this>;
 
     public readonly agent: Readonly<Agents<E, S1, S2, C1, C2, R1, R2, this>>;
-    
+
+    public readonly cycle: ModelCycle;
 
     protected readonly draft: Readonly<{
         child: C1 & C2[];
@@ -49,37 +49,28 @@ export abstract class Model<
         return this.agent.refer.current
     }
 
-
     public readonly target: this;
 
     public readonly uuid: string;
 
 
-    private _parent?: P;
     public get parent() {
-        return this._parent;
+        return this.cycle.parent;
     }
 
-    private _status: ModelStatus;
     public get status() {
-        return this._status;
+        return this.cycle.status;
     }
     
-    private _path?: string;
     public get path() {
-        return this._path;
+        return this.cycle.path;
     }
 
-
     constructor(props: StrictProps<S1, S2, C1, C2, R1, R2>) {
-        this._status = ModelStatus.INIT;
-        this._parent = undefined;
-        this._path = undefined;
-
         this.target = this;
         this.uuid = props.uuid ?? crypto.randomUUID()
-        
 
+        this.cycle = new ModelCycle(this);
         this.proxy = new ModelProxy(this)
         this.agent = {
             event: new EventAgent(this),
@@ -95,44 +86,6 @@ export abstract class Model<
             refer: this.agent.refer.draft
         }
         this.event = this.agent.event.emitters;
-
-    }
-
-    bind(parent: P | undefined, path: string | number) {
-        this._parent = parent;
-        this._path = typeof path === 'number' ? String(0) : path;
-        this._status = ModelStatus.BIND;
-        
-        if (parent?._status === ModelStatus.LOAD) this.load();
-    }
-
-    unbind() {
-        if (this._status === ModelStatus.LOAD) this.unload();
-        this._parent = undefined;
-        this._path = undefined;
-        this._status = ModelStatus.INIT;
-        this.destroy();
-    }
-
-    load() {
-        this.agent.child.load();
-        this.agent.event.load();
-        this.agent.state.load();
-        this._status = ModelStatus.LOAD;
-    }
-
-    unload() {
-        this.agent.child.unload();
-        this.agent.event.unload();
-        this.agent.state.unload();
-        this._status = ModelStatus.BIND;
-    }
-
-    destroy() {
-        this.agent.child.destroy();
-        this.agent.refer.destroy();
-        this.agent.event.destroy();
-        this.agent.state.destroy();
     }
 
     public get props(): Readonly<Props<S1, S2, C1, C2, R1, R2>> {

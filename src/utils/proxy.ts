@@ -1,8 +1,9 @@
-import { DecorProducer, DecorProducers } from "./types/decor";
-import { EventProducers } from "./types/event";
-import { Model } from "./model";
-import { Value } from "./types";
+import { DecorProducers } from "../types/decor";
+import { EventProducers } from "../types/event";
+import { Model } from "../model";
+import { Value } from "../types";
 import { EventProducer } from "@/agent/event";
+import { DecorProducer } from "@/agent/state";
 
 export type ChildProxy<
     C1 extends Record<string, Model>,

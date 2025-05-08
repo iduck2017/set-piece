@@ -1,5 +1,6 @@
 import { Model } from "../model"
 import { Value } from ".";
+import { DecorProducer } from "@/agent/state";
 
 export type DecorUpdater<S = any, M extends Model = Model> = (target: M, state: S) => S
 
@@ -10,13 +11,5 @@ export type DecorProducers<
     M extends Model = Model
 > = { [K in keyof S]: DecorProducer<Required<S>[K], M> }
 
-export class DecorProducer<S = any, M extends Model = Model> {
-    readonly target: M;
-    readonly path: string;
 
-    constructor(target: M, path: string) {
-        this.target = target;
-        this.path = path;
-    }
-}
 

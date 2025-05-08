@@ -2,8 +2,19 @@ import { Value } from "@/types";
 import { Agent } from ".";
 import { Model } from "@/model";
 import { DebugService } from "@/service/debug";
-import { DecorConsumer, DecorProducer, DecorUpdater } from "@/types/decor";
-import { ModelProxy } from "@/proxy";
+import { DecorConsumer, DecorUpdater } from "@/types/decor";
+import { ModelProxy } from "@/utils/proxy";
+
+export class DecorProducer<S = any, M extends Model = Model> {
+    public readonly path: string;
+
+    public readonly target: M;
+
+    constructor(target: M, path: string) {
+        this.target = target;
+        this.path = path;
+    }
+}
 
 export class StateAgent<
     S1 extends Record<string, Value> = Record<string, Value>,
@@ -157,7 +168,7 @@ export class StateAgent<
                     this.bind(producer, handler);
                 }
             }
-            constructor = Reflect.get(constructor, '__proto__');
+            constructor = (constructor as any).__proto__;
         }
     }
 

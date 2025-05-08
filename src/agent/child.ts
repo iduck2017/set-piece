@@ -28,7 +28,7 @@ export class ChildAgent<
         const origin: any = [];
         for (const key of Object.keys(props)) {
             const next = origin[key] = this.check(props[key]);
-            if (next instanceof Model) next.bind(this.target, key);
+            if (next instanceof Model) next.cycle.bind(this.target, key);
         }
         this.draft = new Proxy(origin, {
             get: this.get.bind(this),
@@ -46,21 +46,21 @@ export class ChildAgent<
     public load() {
         for (const key of Object.keys(this.current)) {
             const child: Model | undefined = this.current[key];
-            if (child instanceof Model) child.load();
+            if (child instanceof Model) child.cycle.load();
         }
     }
 
     public unload() {
         for (const key of Object.keys(this.current)) {
             const child: Model | undefined = this.current[key];
-            if (child instanceof Model) child.unload()
+            if (child instanceof Model) child.cycle.unload()
         }
     }
 
     public destroy() {
         for (const key of Object.keys(this.current)) {
             const child: Model | undefined = this.current[key];
-            if (child instanceof Model) child.destroy();
+            if (child instanceof Model) child.cycle.destroy();
         }
     }
 
@@ -78,17 +78,17 @@ export class ChildAgent<
     @DebugService.log()
     private set(origin: Record<string, unknown>, key: string, next: unknown) {
         const prev = origin[key];
-        if (prev instanceof Model) prev.unbind();
+        if (prev instanceof Model) prev.cycle.unbind();
 
         origin[key] = next = this.check(next);
-        if (next instanceof Model) next.bind(this.target, key);
+        if (next instanceof Model) next.cycle.bind(this.target, key);
         return true;
     }
 
     @DebugService.log()
     private delete(origin: Record<string, Model>, key: string) {
         const prev = origin[key];
-        if (prev instanceof Model) prev.unbind();
+        if (prev instanceof Model) prev.cycle.unbind();
         delete origin[key];
         return true;
     }
@@ -98,7 +98,7 @@ export class ChildAgent<
         const result = origin.push(...next);
         for (let index = 0; index < next.length; index += 1) {
             const item = this.check(next[index]);
-            if (item instanceof Model) item.bind(this.target, index);
+            if (item instanceof Model) item.cycle.bind(this.target, index);
         }
         return result;
     }
@@ -106,14 +106,14 @@ export class ChildAgent<
     @DebugService.log()
     private pop(origin: C1 & C2[]) {
         const prev = origin[origin.length - 1];
-        if (prev instanceof Model) prev.unbind();
+        if (prev instanceof Model) prev.cycle.unbind();
         return origin.pop();
     }
 
     @DebugService.log()
     private shift(origin: C1 & C2[]) {
         const prev = origin[0];
-        if (prev instanceof Model) prev.unbind();
+        if (prev instanceof Model) prev.cycle.unbind();
         return origin.shift();
     }
 
@@ -122,7 +122,7 @@ export class ChildAgent<
         const result = origin.unshift(...next);
         for (let index = 0; index < next.length; index += 1) {
             const item = this.check(next[index]);
-            if (item instanceof Model) item.bind(this.target, index);
+            if (item instanceof Model) item.cycle.bind(this.target, index);
         }
         return result;
     }
@@ -133,13 +133,13 @@ export class ChildAgent<
         const prev: Array<Model | undefined> = origin.slice(start, start + count);
         for (let index = 0; index < prev.length; index += 1) {
             const item = prev[index];
-            if (item instanceof Model) item.unbind();
+            if (item instanceof Model) item.cycle.unbind();
         }
 
         const result = origin.splice(start, count, ...next);
         for (let index = 0; index < next.length; index += 1) {
             const item = this.check(next[index]);
-            if (item instanceof Model) item.bind(this.target, index);
+            if (item instanceof Model) item.cycle.bind(this.target, index);
         }
         return result;
     }
@@ -150,10 +150,10 @@ export class ChildAgent<
         const length = origin.length;
         for (let index = 0; index < length; index += 1) {
             const prev = origin[index];
-            if (prev instanceof Model) prev.unbind();
+            if (prev instanceof Model) prev.cycle.unbind();
             const next = sample.copy;
             origin[index] = next;
-            next.bind(this.target, index);
+            next.cycle.bind(this.target, index);
         }
     }
 

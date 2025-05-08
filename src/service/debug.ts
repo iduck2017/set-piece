@@ -1,4 +1,6 @@
+import { Agent } from "@/agent";
 import { Callback } from "@/types";
+import { ModelCycle } from "@/utils/cycle";
 
 export enum LogLevel {
     INFO = 0,

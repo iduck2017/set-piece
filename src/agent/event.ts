@@ -6,11 +6,12 @@ import {
     EventConsumer, 
     EventEmitters, 
 } from "@/types/event";
-import { ModelProxy } from "@/proxy";
+import { ModelProxy } from "@/utils/proxy";
 import { ModelStatus } from "@/types/model";
 
 export class EventProducer<E = any, M extends Model = Model> {
     public readonly path: string;
+    
     public readonly target: M;
     
     public constructor(target: M, path: string) {

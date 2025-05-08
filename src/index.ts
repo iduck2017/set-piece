@@ -9,3 +9,7 @@ export { ChildAgent } from "./agent/child";
 export { DebugService } from "./service/debug";
 export { StoreService } from "./service/store";
 export { CheckService } from "./service/check";
+export { StoryService } from './service/story';
+
+export { ModelCycle } from './utils/cycle';
+export { ModelProxy } from './utils/proxy';

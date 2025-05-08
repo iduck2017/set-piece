@@ -35,9 +35,8 @@ export class CheckService {
         let validators: Callback[] = [];
         let constructor = target.constructor;
         while (constructor) {
-            const _validators = CheckService.validators.get(constructor) || {};
-            validators = validators.concat(_validators[method.name] || []);
-            constructor = Reflect.get(constructor, '__proto__');
+            validators = validators.concat(CheckService.validators.get(constructor)?.[method.name] ?? []);
+            constructor = (constructor as any).__proto__;
         }
         for (const validator of validators) {
             const result = validator(target, ...args);

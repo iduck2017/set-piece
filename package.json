@@ -66,11 +66,6 @@
     "react-dom": "^18.x.x"
   },
   "scripts": {
-    "test": "jest",
-    "watch": "webpack -w",
-    "build": "tsc && tsc-alias",
-    "prepublishOnly": "npm run build",
-    "build:types": "tsc --emitDeclarationOnly",
-    "build:clean": "rm -rf dist"
+    "build": "tsc && tsc-alias"
   }
 }
