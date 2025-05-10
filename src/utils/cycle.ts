@@ -37,30 +37,32 @@ export class ModelCycle {
 
     @DebugService.log()
     public load() {
-        this.target.agent.child.load();
-        this.target.agent.event.load();
-        this.target.agent.state.load();
+        console.log('load:', this.target.constructor.name)
+        this.target._agent.child.load();
+        this.target._agent.event.load();
+        this.target._agent.state.load();
         this.status = ModelStatus.LOAD;
     }
 
     @DebugService.log()
     public unload() {
-        this.target.agent.child.unload();
-        this.target.agent.event.unload();
-        this.target.agent.state.unload();
+        console.log('unload:', this.target.constructor.name)
+        this.target._agent.child.unload();
+        this.target._agent.event.unload();
+        this.target._agent.state.unload();
         this.status = ModelStatus.BIND;
     }
 
     public destroy() {
-        this.target.agent.child.destroy();
-        this.target.agent.refer.destroy();
-        this.target.agent.event.destroy();
-        this.target.agent.state.destroy();
+        this.target._agent.child.destroy();
+        this.target._agent.refer.destroy();
+        this.target._agent.event.destroy();
+        this.target._agent.state.destroy();
     }
 
     public static boot<T extends Model>(root: T): T {
-        root.cycle.bind(undefined, 'root')
-        root.cycle.load()
+        root._cycle.bind(undefined, 'root')
+        root._cycle.load()
         return root;
     }
 

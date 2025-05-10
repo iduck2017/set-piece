@@ -8,10 +8,13 @@ import { ModelProxy } from "@/utils/proxy";
 export class DecorProducer<S = any, M extends Model = Model> {
     public readonly path: string;
 
+    public readonly type: 'decor';
+
     public readonly target: M;
 
     constructor(target: M, path: string) {
         this.target = target;
+        this.type = 'decor';
         this.path = path;
     }
 }
@@ -31,14 +34,11 @@ export class StateAgent<
     
     private readonly router: Map<string, DecorConsumer[]>
     
-    private readonly routerInvert: Map<DecorUpdater, DecorProducer[]>
-    
 
     constructor(target: M, props: S1 & S2) {
         super(target);
         
         this.router = new Map();
-        this.routerInvert = new Map();
 
         this._current = { ...props }
         this.draft = new Proxy({ ...props }, {
@@ -46,7 +46,6 @@ export class StateAgent<
             deleteProperty: this.delete.bind(this),
         })
     }
-
 
     @DebugService.log()
     public update(path: string) {
@@ -59,12 +58,12 @@ export class StateAgent<
                 const path = keys.join('/');
                 const models = [ ...this.agent.child.current ];
                 for (const model of models) {
-                    model.agent.state.update(path);
+                    model._agent.state.update(path);
                 }
             } else {
                 const child: any = this.agent.child.current;
                 const model: unknown = child[key];
-                if (model instanceof Model) model.agent.state.update(path)
+                if (model instanceof Model) model._agent.state.update(path)
             }
         } else {
             const current: any = { ...this._current, [key]: this.emit(key) };
@@ -73,14 +72,12 @@ export class StateAgent<
     } 
 
 
-    @DebugService.log()
     private set(origin: any, key: string, value: any) {
         origin[key] = value;
         this.update(key);
         return true;
     }
     
-    @DebugService.log()
     private delete(origin: any, key: string) {
         delete origin[key]
         this.update(key)
@@ -90,21 +87,24 @@ export class StateAgent<
 
     @DebugService.log()
     public emit(key: string) {
+        console.log('emit:', this.target.constructor.name, key);
         let target: Model | undefined = this.target;
-        let result = Reflect.get(this.draft, key);
+        const prev = this.draft[key];
+        let next = this.draft[key];
         let path = key;
         while (target) {
-            const router = target.agent.state.router;
+            const router = target._agent.state.router;
             const consumers = router.get(path) ?? [];
             for (const consumer of consumers) {
                 const target = consumer.target;
                 const updater = consumer.updater;
-                result = updater.call(target, this.target, result);
+                next = updater.call(target, this.target, next);
             }
             path = target.path + '/' + path;
             target = target.parent;
         }
-        return result;
+        console.log('emit result:', prev, next);
+        return next;
     }
 
 
@@ -113,18 +113,15 @@ export class StateAgent<
         producer: DecorProducer<E, M>, 
         updater: DecorUpdater<E, M>
     ) {
+        console.log('bind:', producer.target.constructor.name);
         const { target, path } = producer;
-        const router = target.agent.state.router;
+        const router = target._agent.state.router;
 
         const consumers = router.get(path) ?? [];
         consumers.push({ target: this.target, updater });
         router.set(path, consumers);
-
-        const producers = this.routerInvert.get(updater) ?? [];
-        producers.push(producer);
-        this.routerInvert.set(updater, producers);
         
-        target.agent.state.update(path);
+        target._agent.state.update(path);
     }
 
 
@@ -134,8 +131,9 @@ export class StateAgent<
         producer: DecorProducer<S, M>, 
         updater: DecorUpdater<S, M>
     ) {
+        console.log('unbind:', producer.target.constructor.name);
         const { target, path } = producer;
-        const router = target.agent.state.router;
+        const router = target._agent.state.router;
 
         let comsumers = router.get(path) ?? [];
         comsumers = comsumers.filter(item => {
@@ -144,27 +142,21 @@ export class StateAgent<
             return false;
         });
         router.set(path, comsumers);
-
-        let producers = this.routerInvert.get(updater) ?? [];
-        producers = producers.filter(item => item !== producer);
-        this.routerInvert.set(updater, producers);
         
-        target.agent.state.update(path)
+        target._agent.state.update(path)
     }
 
 
-    @DebugService.log()
     public load() {
         let constructor = this.target.constructor;
-        const target = this.target;
         while (constructor) {
             const registry = StateAgent.registry.get(constructor) ?? {};
             for (const key of Object.keys(registry)) {
                 const accessors = registry[key];
                 for (const accessor of accessors) {
-                    const producer = accessor(target.proxy);
+                    const producer = accessor(this.target);
                     if (!producer) continue;
-                    const handler: any = Reflect.get(target, key)
+                    const handler: any = Reflect.get(this.target, key)
                     this.bind(producer, handler);
                 }
             }
@@ -172,17 +164,23 @@ export class StateAgent<
         }
     }
 
-    @DebugService.log()
     public unload() {
-        for (const channel of this.routerInvert) {
-            const [ handler, producers ] = channel
-            for (const producer of producers) {
-                this.unbind(producer, handler);
+        let constructor = this.target.constructor;
+        while (constructor) {
+            const registry = StateAgent.registry.get(constructor) ?? {};
+            for (const key of Object.keys(registry)) {
+                const accessors = registry[key];
+                for (const accessor of accessors) {
+                    const producer = accessor(this.target);
+                    if (!producer) continue;
+                    const handler: any = Reflect.get(this.target, key)
+                    this.unbind(producer, handler);
+                }
             }
+            constructor = (constructor as any).__proto__;
         }
     }
 
-    @DebugService.log()
     public destroy() {
         for (const channel of this.router) {
             const [ path, consumers ] = channel;
@@ -190,17 +188,16 @@ export class StateAgent<
             const producer: DecorProducer = Reflect.get(proxy.decor, path);
             for (const consumer of consumers) {
                 const { target, updater } = consumer;
-                target.agent.state.unbind(producer, updater);
+                target._agent.state.unbind(producer, updater);
             }
         }
     }
 
 
-    private static registry: Map<Function, Record<string, Array<(proxy: ModelProxy) => DecorProducer | undefined>>> = new Map();
+    private static registry: Map<Function, Record<string, Array<(model: Model) => DecorProducer | undefined>>> = new Map();
 
-    @DebugService.log()
     public static use<S, M extends Model, I extends Model>(
-        accessor: (model: Model.Proxy<I>) => DecorProducer<S, M> | undefined
+        accessor: (model: I) => DecorProducer<S, M> | undefined
     ) {
         return function(
             target: I,

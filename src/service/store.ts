@@ -31,6 +31,7 @@ export class StoreService {
         }
         for (const key of Object.keys(props.child)) {
             const value = Reflect.get(props.child, key);
+            if (!value) continue;
             const chunk = StoreService.save(value);
             if (chunk) result.child[key] = chunk;
         }
@@ -55,7 +56,7 @@ export class StoreService {
         const model = registry[uuid];
         if (!model) return;
         const refer = chunk.refer;
-        const draft: Record<string, Model | Model[]> = model.agent.refer.draft;
+        const draft: Record<string, Model | Model[]> = model._agent.refer.draft;
         for (const key of Object.keys(refer)) {
             const value = refer[key];
             if (value instanceof Array) {

@@ -27,7 +27,7 @@ export class Agent<M extends Model = Model> {
     public readonly target: M;
 
     public get agent(): Agents {
-        return this.target.agent;
+        return this.target._agent;
     }
 
     constructor(target: M) {

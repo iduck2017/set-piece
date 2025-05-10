@@ -3,11 +3,11 @@ import { Model } from "@/model";
 export class StoryService {
     private constructor() {}
 
-    public static span() {
+    public static atom() {
 
     }
 
-    public static para() {
+    public static task() {
 
     }
 }

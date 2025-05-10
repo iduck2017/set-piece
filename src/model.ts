@@ -10,23 +10,34 @@ import { ReferAgent } from "@/agent/refer"
 import { ModelProxy } from "./utils/proxy"
 import { ModelCycle } from "./utils/cycle"
 
-type BaseModel = Model<{}, {}, {}, BaseModel, {}, BaseModel, {}, {}>
+type _Model = Model<{}, {}, {}, _Model, {}, _Model, {}, {}>
+
+export namespace Define {
+    export type E = Record<string, any>
+    export type S1 = Record<string, Value>
+    export type S2 = Record<string, Value>
+    export type P = Model
+    export type C1 = Record<string, Model>
+    export type C2 = Model
+    export type R1 = Record<string, Model>
+    export type R2 = Record<string, Model[]>
+}
 
 export abstract class Model<
-    E extends Record<string, any> = {},
-    S1 extends Record<string, Value> = {},
-    S2 extends Record<string, Value> = {},
-    P extends Model = BaseModel,
-    C1 extends Record<string, Model> = {},
-    C2 extends Model = BaseModel,
-    R1 extends Record<string, Model> = {},
-    R2 extends Record<string, Model[]> = {}
+    E extends Define.E = {},
+    S1 extends Define.S1 = {},
+    S2 extends Define.S2 = {},
+    P extends Define.P = Define.P,
+    C1 extends Define.C1 = {},
+    C2 extends Define.C2 = Define.C2,
+    R1 extends Define.R1 = {},
+    R2 extends Define.R2 = {}
 > {
     public readonly proxy: ModelProxy<E, S1, C1, C2, this>;
 
-    public readonly agent: Readonly<Agents<E, S1, S2, C1, C2, R1, R2, this>>;
+    public readonly _agent: Readonly<Agents<E, S1, S2, C1, C2, R1, R2, this>>;
 
-    public readonly cycle: ModelCycle;
+    public readonly _cycle: ModelCycle;
 
     protected readonly draft: Readonly<{
         child: C1 & C2[];
@@ -38,15 +49,15 @@ export abstract class Model<
 
 
     public get state(): Readonly<S1 & S2> { 
-        return this.agent.state.current;
+        return this._agent.state.current;
     }
     
-    public get child(): Readonly<C1 & C2[]>  { 
-        return this.agent.child.current 
+    public get child(): Readonly<C1 & Readonly<C2[]>>  { 
+        return this._agent.child.current 
     }
 
     public get refer(): Readonly<Partial<R1> & R2> {
-        return this.agent.refer.current
+        return this._agent.refer.current
     }
 
     public readonly target: this;
@@ -54,25 +65,25 @@ export abstract class Model<
     public readonly uuid: string;
 
 
-    public get parent() {
-        return this.cycle.parent;
+    public get parent(): P | undefined {
+        return this._cycle.parent as P | undefined;
     }
 
     public get status() {
-        return this.cycle.status;
+        return this._cycle.status;
     }
     
     public get path() {
-        return this.cycle.path;
+        return this._cycle.path;
     }
 
     constructor(props: StrictProps<S1, S2, C1, C2, R1, R2>) {
         this.target = this;
         this.uuid = props.uuid ?? crypto.randomUUID()
 
-        this.cycle = new ModelCycle(this);
+        this._cycle = new ModelCycle(this);
         this.proxy = new ModelProxy(this)
-        this.agent = {
+        this._agent = {
             event: new EventAgent(this),
             child: new ChildAgent(this, props.child),
             state: new StateAgent(this, props.state),
@@ -81,11 +92,11 @@ export abstract class Model<
 
 
         this.draft = {
-            child: this.agent.child.draft,
-            state: this.agent.state.draft,
-            refer: this.agent.refer.draft
+            child: this._agent.child.draft,
+            state: this._agent.state.draft,
+            refer: this._agent.refer.draft
         }
-        this.event = this.agent.event.emitters;
+        this.event = this._agent.event.emitters;
     }
 
     public get props(): Readonly<Props<S1, S2, C1, C2, R1, R2>> {

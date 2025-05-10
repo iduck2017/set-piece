@@ -1,7 +1,7 @@
 import { Model } from "@/model";
 import { Agent } from ".";
 import { DebugService } from "@/service/debug";
-import { ModelStatus } from "@/types/model";
+import { ModelStatus, ReferAddrs } from "@/types/model";
 
 export class ReferAgent<
     R1 extends Record<string, Model> = Record<string, Model>,
@@ -20,6 +20,7 @@ export class ReferAgent<
         return result;
     }
 
+    // private readonly _draft: ReferAddrs<R1, R2>;
     public readonly draft: Partial<R1> & R2; 
 
     private readonly registry: Model[];
@@ -32,7 +33,9 @@ export class ReferAgent<
     ) {
         super(target);
         this.registry = [];
+
         this.draft = new Proxy({ ...props }, {
+            // get: this.get.bind(this),
             set: this.set.bind(this),
             deleteProperty: this.delete.bind(this)
         })
@@ -40,10 +43,9 @@ export class ReferAgent<
 
 
 
-    @DebugService.log()
     public destroy() {
         for (const model of this.registry) {
-            const refer: Record<string, Model | Model[]> = model.agent.refer.draft;
+            const refer: Record<string, Model | Model[]> = model._agent.refer.draft;
             for (const key of Object.keys(refer)) {
                 const value: unknown = refer[key];
                 if (value instanceof Model && value === this.target) {
@@ -60,7 +62,7 @@ export class ReferAgent<
     private set(origin: any, key: string, next: Model | Model[]) {
         let prev = origin[key];
         if (prev instanceof Model) {
-            const registry = prev.agent.refer.registry;
+            const registry = prev._agent.refer.registry;
             const index = registry.indexOf(this.target);
             if (index !== -1) registry.splice(index, 1);
         } else if (prev instanceof Array) {
@@ -72,10 +74,10 @@ export class ReferAgent<
         }
         origin[key] = next;
         if (next instanceof Model) {
-            next.agent.refer.registry.push(this.target)
+            next._agent.refer.registry.push(this.target)
         } else if (next instanceof Array) {
             for (const model of next) {
-                model.agent.refer.registry.push(this.target)
+                model._agent.refer.registry.push(this.target)
             }
         }
         return true;
@@ -85,7 +87,7 @@ export class ReferAgent<
     private delete(origin: any, key: string) {
         let prev = origin[key];
         if (prev instanceof Model) {
-            const registry = prev.agent.refer.registry;
+            const registry = prev._agent.refer.registry;
             const index = registry.indexOf(this.target);
             if (index !== -1) registry.splice(index, 1);
         } else if (prev instanceof Array) {

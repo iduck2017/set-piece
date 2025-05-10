@@ -19,7 +19,6 @@ export class ModelProxy<
     S1 extends Record<string, Value> = Record<string, Value>,
     C1 extends Record<string, Model> = Record<string, Model>,
     C2 extends Model = Model,
-    P extends Model = Model,
     M extends Model = Model,
 > {
     public readonly child: Readonly<ChildProxy<C1, C2>>;
@@ -32,11 +31,6 @@ export class ModelProxy<
     public readonly path?: string;
     
     public readonly target: M;
-
-
-    public get parent(): Model.Proxy<P> | undefined {
-        return this.target.parent?.proxy;
-    }
 
 
     constructor(target: M, path?: string) {
