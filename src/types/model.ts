@@ -7,9 +7,9 @@ export enum ModelStatus {
 }
 
 export type ReferAddrs<
-    R1 = Record<string, Model>, 
-    R2 = Record<string, Model[]>
+    R1 extends Record<string, Model>, 
+    R2 extends Record<string, Model[]>,
 > = 
-    { [K in keyof R1]?: string } & 
-    { [K in keyof R2]: string[] }
+    { [K in keyof R1]: string } & 
+    { [K in keyof R2]: Readonly<string[]> } 
 

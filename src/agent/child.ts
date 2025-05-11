@@ -57,10 +57,10 @@ export class ChildAgent<
         }
     }
 
-    public destroy() {
+    public uninit() {
         for (const key of Object.keys(this.current)) {
             const child: Model | undefined = this.current[key];
-            if (child instanceof Model) child._cycle.destroy();
+            if (child instanceof Model) child._cycle.uninit();
         }
     }
 

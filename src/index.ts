@@ -1,6 +1,7 @@
 export { Model } from "./model";
 export { Value } from "./types";
 export { Define } from "./model";
+export { StrictProps } from './types/props'
 
 export { EventAgent } from "./agent/event";
 export { StateAgent } from "./agent/state";

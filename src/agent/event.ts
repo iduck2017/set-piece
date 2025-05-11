@@ -29,11 +29,17 @@ export class EventAgent<
 > extends Agent<M> {
     public readonly emitters: Readonly<EventEmitters<E>>;
     
-    private readonly router: Map<string, EventConsumer[]>;
+    private readonly router: Readonly<{
+        consumers: Map<string, EventConsumer[]>,
+        producers: Map<EventHandler, EventProducer[]>
+    }>
     
     public constructor(target: M) {
         super(target)
-        this.router = new Map();
+        this.router = {
+            consumers: new Map(),
+            producers: new Map()
+        }
         this.emitters = new Proxy({} as any, {
             get: this.get.bind(this)
         })
@@ -52,7 +58,7 @@ export class EventAgent<
         while(target) {
             console.log('emitEvent', path, target.constructor.name);
             const router = target._agent.event.router;
-            const consumers = router.get(path) ?? [];
+            const consumers = router.consumers.get(path) ?? [];
             for (const consumer of consumers) {
                 const target = consumer.target;
                 const handler = consumer.handler;
@@ -71,10 +77,15 @@ export class EventAgent<
     ) {
         const { target, path } = producer;
         const router = target._agent.event.router;
-        const consumers = router.get(path) ?? [];
+
+        const consumers = router.consumers.get(path) ?? [];
         const consumer: EventConsumer = { target: this.target, handler }
         consumers.push(consumer);
-        router.set(path, consumers);
+        router.consumers.set(path, consumers);
+        
+        const producers = this.router.producers.get(handler) ?? [];
+        producers.push(producer);
+        this.router.producers.set(handler, producers);
     }
 
 
@@ -85,20 +96,28 @@ export class EventAgent<
         handler: EventHandler<E, M>
     ) {
         const { target, path } = producer;
+        
+        let index;
+
         const router = target._agent.event.router;
-        let consumers = router.get(path) ?? [];
-        consumers = consumers.filter(item => {
-            if (item.handler !== handler) return true;
-            if (item.target !== this.target) return true;
-            return false;
-        });
-        router.set(path, consumers);
+        const consumers = router.consumers.get(path) ?? [];
+        index = consumers.findIndex(item => (
+            item.handler === handler && 
+            item.target === this.target
+        ));
+        if (index !== -1) consumers.splice(index, 1);
+        
+        const producers = this.router.producers.get(handler) ?? [];
+        index = producers.indexOf(producer);
+        if (index !== -1) producers.splice(index, 1);
+    
     }
 
 
 
     public load() {
         console.log('load event', this.target.constructor.name);
+
         let constructor = this.target.constructor;
         while (constructor) {
             const hooks = EventAgent.registry.get(constructor) ?? {};
@@ -118,24 +137,16 @@ export class EventAgent<
 
     public unload() {
         console.log('unload event', this.target.constructor.name);
-        let constructor = this.target.constructor;
-        while (constructor) {
-            const hooks = EventAgent.registry.get(constructor) ?? {};
-            for (const key of Object.keys(hooks)) {
-                const accessors = hooks[key];
-                for (const accessor of accessors) {
-                    const producer = accessor(this.target);
-                    if (!producer) continue;
-                    const handler: any = Reflect.get(this.target, key)
-                    this.unbind(producer, handler);
-                }
+        for (const channel of this.router.producers) {
+            const [ handler, producers ] = channel;
+            for (const producer of producers) {
+                this.unbind(producer, handler);
             }
-            constructor = (constructor as any).__proto__
         }
     }
 
-    public destroy() {
-        for (const channel of this.router) {
+    public uninit() {
+        for (const channel of this.router.consumers) {
             const [ path, consumers ] = channel;
             const proxy = this.target.proxy;
             const producer: EventProducer = Reflect.get(proxy.event, path);
@@ -145,7 +156,6 @@ export class EventAgent<
             }
         }
     }
-
 
 
     private static registry: Map<Function, Record<string, Array<(model: Model) => EventProducer | undefined>>> = new Map();

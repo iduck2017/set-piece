@@ -1,5 +1,6 @@
 import { Model } from "../model";
 import { Value } from ".";
+import { ReferAddrs } from "./model";
 
 export type Props<
     S1 extends Record<string, Value>,
@@ -12,7 +13,7 @@ export type Props<
     uuid?: string;
     state?: Partial<Readonly<S1 & S2>>;
     child?: Partial<Readonly<C1 & Partial<Record<number, C2>>>>;
-    refer?: Partial<Readonly<Partial<R1> & R2>>;
+    refer?: Partial<Readonly<ReferAddrs<R1, R2>>>
 }
 
 export type StrictProps<
@@ -21,10 +22,10 @@ export type StrictProps<
     C1 extends Record<string, Model>,
     C2 extends Model,
     R1 extends Record<string, Model>,
-    R2 extends Record<string, Model[]>
+    R2 extends Record<string, Model[]>,
 > = {
     uuid?: string;
     state: Readonly<S1 & S2>;
     child: Readonly<C1 & Partial<Record<number, C2>>>;
-    refer: Readonly<Partial<R1> & R2>
+    refer?: Partial<Readonly<ReferAddrs<R1, R2>>>
 }

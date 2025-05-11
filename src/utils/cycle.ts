@@ -11,7 +11,7 @@ export class ModelCycle {
     public status: ModelStatus;
 
     public readonly target: Model;
-    
+
     constructor(target: Model) {
         this.target = target;
         this.path = undefined;
@@ -19,6 +19,10 @@ export class ModelCycle {
         this.status = ModelStatus.INIT;
     }
     
+    public init() {
+        this.target._agent.refer.init();
+    }
+
     public bind(parent: Model | undefined, path: string | number) {
         this.parent = parent;
         this.path = typeof path === 'number' ? String(0) : path;
@@ -32,7 +36,7 @@ export class ModelCycle {
         this.parent = undefined;
         this.path = undefined;
         this.status = ModelStatus.INIT;
-        this.destroy();
+        this.uninit();
     }
 
     @DebugService.log()
@@ -53,11 +57,13 @@ export class ModelCycle {
         this.status = ModelStatus.BIND;
     }
 
-    public destroy() {
-        this.target._agent.child.destroy();
-        this.target._agent.refer.destroy();
-        this.target._agent.event.destroy();
-        this.target._agent.state.destroy();
+    @DebugService.log()
+    public uninit() {
+        console.log('uninit:', this.target.constructor.name)
+        this.target._agent.child.uninit();
+        this.target._agent.refer.uninit();
+        this.target._agent.event.uninit();
+        this.target._agent.state.uninit();
     }
 
     public static boot<T extends Model>(root: T): T {

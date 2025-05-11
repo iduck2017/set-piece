@@ -9,6 +9,7 @@ import { Agents } from "@/agent/index"
 import { ReferAgent } from "@/agent/refer"
 import { ModelProxy } from "./utils/proxy"
 import { ModelCycle } from "./utils/cycle"
+import { v4 as uuid } from 'uuid';
 
 type _Model = Model<{}, {}, {}, _Model, {}, _Model, {}, {}>
 
@@ -79,15 +80,15 @@ export abstract class Model<
 
     constructor(props: StrictProps<S1, S2, C1, C2, R1, R2>) {
         this.target = this;
-        this.uuid = props.uuid ?? crypto.randomUUID()
+        this.uuid = props.uuid ?? uuid();
 
         this._cycle = new ModelCycle(this);
         this.proxy = new ModelProxy(this)
         this._agent = {
-            event: new EventAgent(this),
-            child: new ChildAgent(this, props.child),
-            state: new StateAgent(this, props.state),
-            refer: new ReferAgent(this, props.refer),
+            event: new EventAgent<E, this>(this),
+            child: new ChildAgent<C1, C2, this>(this, props.child),
+            state: new StateAgent<S1, S2, this>(this, props.state),
+            refer: new ReferAgent<R1, R2, this>(this, props.refer),
         }
 
 
@@ -97,14 +98,29 @@ export abstract class Model<
             refer: this._agent.refer.draft
         }
         this.event = this._agent.event.emitters;
+
+        this.bindEvent = this._agent.event.bind;
+        this.unbindEvent = this._agent.event.unbind;
+        this.bindDecor = this._agent.state.bind;
+        this.unbindDecor = this._agent.state.unbind;
+
+        this._cycle.init();
     }
+
+    public bindEvent;
+
+    public unbindEvent;
+
+    public bindDecor;
+
+    public unbindDecor;
 
     public get props(): Readonly<Props<S1, S2, C1, C2, R1, R2>> {
         const result: StrictProps<S1, S2, C1, C2, R1, R2> = {
             uuid: this.uuid,
             state: { ...this.draft.state },
             child: { ...this.draft.child },
-            refer: { ...this.draft.refer },
+            refer: { ...this._agent.refer.addrs },
         }
         return result;
     }
@@ -123,9 +139,10 @@ export abstract class Model<
 
 
 export namespace Model {
-    export type Props<M extends Model = Model> = M['props']
     export type Proxy<M extends Model = Model> = M['proxy']
     export type State<M extends Model = Model> = M['state']
     export type Child<M extends Model = Model> = M['child']
     export type Refer<M extends Model = Model> = M['refer']
+    export type Props<M extends Model = Model> = M['props']
 }
+

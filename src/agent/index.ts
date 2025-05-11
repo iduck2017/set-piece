@@ -4,7 +4,6 @@ import { ChildAgent } from "./child";
 import { StateAgent } from "./state";
 import { ReferAgent } from "./refer";
 import { Value } from "@/types";
-import { ModelCycle } from "../utils/cycle";
 
 export type Agents<
     E extends Record<string, any> = {},

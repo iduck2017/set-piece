@@ -32,13 +32,19 @@ export class StateAgent<
     
     public readonly draft: S1 & S2
     
-    private readonly router: Map<string, DecorConsumer[]>
+    private readonly router: {
+        consumers: Map<string, DecorConsumer[]>,
+        producers: Map<DecorUpdater, DecorProducer[]>
+    }
     
 
     constructor(target: M, props: S1 & S2) {
         super(target);
         
-        this.router = new Map();
+        this.router = {
+            consumers: new Map(),
+            producers: new Map()
+        }
 
         this._current = { ...props }
         this.draft = new Proxy({ ...props }, {
@@ -66,6 +72,7 @@ export class StateAgent<
                 if (model instanceof Model) model._agent.state.update(path)
             }
         } else {
+            console.log('update:', this.target.constructor.name, key);
             const current: any = { ...this._current, [key]: this.emit(key) };
             this._current = current;
         }
@@ -94,7 +101,7 @@ export class StateAgent<
         let path = key;
         while (target) {
             const router = target._agent.state.router;
-            const consumers = router.get(path) ?? [];
+            const consumers = router.consumers.get(path) ?? [];
             for (const consumer of consumers) {
                 const target = consumer.target;
                 const updater = consumer.updater;
@@ -109,7 +116,7 @@ export class StateAgent<
 
 
     @DebugService.log()
-    protected bind<E, M extends Model>(
+    public bind<E, M extends Model>(
         producer: DecorProducer<E, M>, 
         updater: DecorUpdater<E, M>
     ) {
@@ -117,31 +124,45 @@ export class StateAgent<
         const { target, path } = producer;
         const router = target._agent.state.router;
 
-        const consumers = router.get(path) ?? [];
+        const consumers = router.consumers.get(path) ?? [];
         consumers.push({ target: this.target, updater });
-        router.set(path, consumers);
+        router.consumers.set(path, consumers);
         
+        const producers = this.router.producers.get(updater) ?? [];
+        producers.push(producer);
+        this.router.producers.set(updater, producers);
+
         target._agent.state.update(path);
     }
 
 
 
     @DebugService.log()
-    protected unbind<S, M extends Model>(
+    public unbind<S, M extends Model>(
         producer: DecorProducer<S, M>, 
         updater: DecorUpdater<S, M>
     ) {
-        console.log('unbind:', producer.target.constructor.name);
+        console.log(
+            'unbind:', 
+            producer.path,
+            producer.target.constructor.name,
+            this.target.constructor.name
+        );
         const { target, path } = producer;
-        const router = target._agent.state.router;
 
-        let comsumers = router.get(path) ?? [];
-        comsumers = comsumers.filter(item => {
-            if (item.updater !== updater) return true;
-            if (item.target !== this.target) return true;
-            return false;
-        });
-        router.set(path, comsumers);
+        let index;
+
+        const router = target._agent.state.router;
+        const comsumers = router.consumers.get(path) ?? [];
+        index = comsumers.findIndex(item => (
+            item.updater === updater &&
+            item.target === this.target
+        ));
+        if (index !== -1) comsumers.splice(index, 1);
+
+        const producers = this.router.producers.get(updater) ?? [];
+        index = producers.indexOf(producer);
+        if (index !== -1) producers.splice(index, 1);
         
         target._agent.state.update(path)
     }
@@ -165,24 +186,17 @@ export class StateAgent<
     }
 
     public unload() {
-        let constructor = this.target.constructor;
-        while (constructor) {
-            const registry = StateAgent.registry.get(constructor) ?? {};
-            for (const key of Object.keys(registry)) {
-                const accessors = registry[key];
-                for (const accessor of accessors) {
-                    const producer = accessor(this.target);
-                    if (!producer) continue;
-                    const handler: any = Reflect.get(this.target, key)
-                    this.unbind(producer, handler);
-                }
+        console.log('unload decor', this.target.constructor.name);
+        for(const channel of this.router.producers) {
+            const [ handler, producers ] = channel;
+            for (const producer of producers) {
+                this.unbind(producer, handler);
             }
-            constructor = (constructor as any).__proto__;
         }
     }
 
-    public destroy() {
-        for (const channel of this.router) {
+    public uninit() {
+        for (const channel of this.router.consumers) {
             const [ path, consumers ] = channel;
             const proxy = this.target.proxy;
             const producer: DecorProducer = Reflect.get(proxy.decor, path);
