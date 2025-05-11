@@ -8,7 +8,7 @@ export class ReferAgent<
     R2 extends Record<string, Model[]> = Record<string, Model[]>,
     M extends Model = Model,
 > extends Agent<M> {
-    public get current(): Readonly<Partial<R1> & R2> {
+    public get current(): Readonly<Partial<R1 & R2>> {
         return { ...this.draft };
     }
 
@@ -17,7 +17,7 @@ export class ReferAgent<
         return { ...this._addrs }
     }
 
-    public readonly draft: Partial<R1> & R2; 
+    public readonly draft: Partial<R1 & R2>; 
 
     constructor(
         target: M,

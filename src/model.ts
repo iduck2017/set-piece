@@ -11,8 +11,6 @@ import { ModelProxy } from "./utils/proxy"
 import { ModelCycle } from "./utils/cycle"
 import { v4 as uuid } from 'uuid';
 
-type _Model = Model<{}, {}, {}, _Model, {}, _Model, {}, {}>
-
 export namespace Define {
     export type E = Record<string, any>
     export type S1 = Record<string, Value>
@@ -43,7 +41,7 @@ export abstract class Model<
     protected readonly draft: Readonly<{
         child: C1 & C2[];
         state: S1 & S2;
-        refer: Partial<R1> & R2;
+        refer: Partial<R1 & R2>;
     }>;
 
     protected readonly event: Readonly<EventEmitters<E>>;
@@ -57,7 +55,7 @@ export abstract class Model<
         return this._agent.child.current 
     }
 
-    public get refer(): Readonly<Partial<R1> & R2> {
+    public get refer(): Readonly<Partial<R1 & R2>> {
         return this._agent.refer.current
     }
 
@@ -128,7 +126,9 @@ export abstract class Model<
     public get copy(): this {
         const type: any = this.constructor;
         const props = this.props;
-        return new type({ ...props, uuid: undefined });
+        const result =  new type({ ...props, uuid: undefined });
+        console.log('copy', result.uuid, this.uuid);
+        return result;
     }
     
     @DebugService.log()

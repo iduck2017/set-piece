@@ -37,8 +37,7 @@ export class ChildAgent<
         })
     }
 
-    
-    private check(value: unknown): unknown {
+    private check<T>(value: T): T {
         if (value instanceof Model && value.status >= ModelStatus.BIND) return value.copy;
         return value;
     }
@@ -92,11 +91,17 @@ export class ChildAgent<
     }
 
     @DebugService.log()
-    private push(origin: C1 & C2[], ...next: C2[]) {
+    private push(origin: C1 & C2[], ...value: C2[]) {
+        const next = [ ...value ]
+        for (let index = 0; index < next.length; index += 1) {
+            next[index] = this.check(next[index]);
+        }
         const result = origin.push(...next);
         for (let index = 0; index < next.length; index += 1) {
-            const item = this.check(next[index]);
-            if (item instanceof Model) item._cycle.bind(this.target, index);
+            const item = next[index];
+            if (item instanceof Model) {
+                item._cycle.bind(this.target, index)
+            }
         }
         return result;
     }
@@ -114,27 +119,38 @@ export class ChildAgent<
         return origin.shift();
     }
 
-    private unshift(origin: C1 & C2[], ...next: C2[]) {
+    private unshift(origin: C1 & C2[], ...value: C2[]) {
+        const next = [ ...value ]
+        for (let index = 0; index < next.length; index += 1) {
+            next[index] = this.check(next[index]);
+        }
         const result = origin.unshift(...next);
         for (let index = 0; index < next.length; index += 1) {
-            const item = this.check(next[index]);
-            if (item instanceof Model) item._cycle.bind(this.target, index);
+            const item = next[index];
+            if (item instanceof Model) {
+                item._cycle.bind(this.target, index);
+            }
         }
         return result;
     }
 
 
-    private splice(origin: C1 & C2[], start: number, count: number, ...next: C2[]) {
+    private splice(origin: C1 & C2[], start: number, count: number, ...value: C2[]) {
         const prev: Array<Model | undefined> = origin.slice(start, start + count);
         for (let index = 0; index < prev.length; index += 1) {
             const item = prev[index];
             if (item instanceof Model) item._cycle.unbind();
         }
-
+        const next = [ ...value ]
+        for (let index = 0; index < next.length; index += 1) {
+            next[index] = this.check(next[index]);
+        }
         const result = origin.splice(start, count, ...next);
         for (let index = 0; index < next.length; index += 1) {
-            const item = this.check(next[index]);
-            if (item instanceof Model) item._cycle.bind(this.target, index);
+            const item = next[index];
+            if (item instanceof Model) {
+                item._cycle.bind(this.target, index);
+            }
         }
         return result;
     }
