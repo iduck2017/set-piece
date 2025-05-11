@@ -16,13 +16,6 @@
     "model",
     "framework"
   ],
-  "exports": {
-    ".": {
-      "import": "./dist/index.js",
-      "require": "./dist/index.js",
-      "types": "./dist/index.d.ts"
-    }
-  },
   "private": false,
   "dependencies": {
     "@types/crypto-js": "^4.2.2",
