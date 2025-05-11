@@ -11,7 +11,16 @@ export enum LogLevel {
 export class DebugService {
     private static readonly stack: string[] = []
 
-    static log(options?: {
+    public static disable() {
+        console.info = () => undefined;
+        console.log = () => undefined;
+        console.group = () => undefined;
+        console.groupEnd = () => undefined;
+        console.warn = () => undefined;
+        console.error = () => undefined;
+    }
+
+    public static log(options?: {
         useArgs?: boolean,
         useResult?: boolean,
     }) {
@@ -40,7 +49,7 @@ export class DebugService {
         };
     }
 
-    static mute() {
+    public static mute() {
         return function(
             target: Object,
             key: string,
