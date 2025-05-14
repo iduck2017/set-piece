@@ -2,41 +2,40 @@ import { Model } from "@/model";
 import { Agent } from "../agent";
 import { ModelStatus } from "@/types/model";
 import { DebugService } from "@/service/debug";
+import { TranxService } from "@/service/tranx";
 
-export class ModelCycle {
-    public parent: Model | undefined;
-
-    public path: string | undefined;
-    
+export class ModelCycle<
+    P extends Model = Model,
+    M extends Model = Model
+> {
     public status: ModelStatus;
 
-    public readonly target: Model;
+    public target: Model;
 
-    constructor(target: Model) {
-        this.target = target;
-        this.path = undefined;
-        this.parent = undefined;
+    constructor(target: M) {
         this.status = ModelStatus.INIT;
+        this.target = target;
     }
     
     public init() {
         this.target._agent.refer.init();
     }
 
-    public bind(parent: Model | undefined, path: string | number) {
-        this.parent = parent;
-        this.path = typeof path === 'number' ? String(0) : path;
+    public bind(parent: P | undefined, path: string | number) {
+        this.target._agent.route.bind(parent, path);
         this.status = ModelStatus.BIND;
-        
-        if (parent?.status === ModelStatus.LOAD) this.load();
+        if (parent?._cycle.status === ModelStatus.LOAD) this.load();
     }
 
     public unbind() {
         if (this.status === ModelStatus.LOAD) this.unload();
-        this.parent = undefined;
-        this.path = undefined;
+        this.target._agent.route.unbind();
         this.status = ModelStatus.INIT;
-        this.uninit();
+    }
+
+    public reload() {
+        this.unload();
+        this.load();
     }
 
     @DebugService.log()
@@ -48,6 +47,7 @@ export class ModelCycle {
         this.status = ModelStatus.LOAD;
     }
 
+    @TranxService.span()
     @DebugService.log()
     public unload() {
         console.log('unload:', this.target.constructor.name)
@@ -71,5 +71,4 @@ export class ModelCycle {
         root._cycle.load()
         return root;
     }
-
 }

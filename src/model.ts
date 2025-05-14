@@ -10,6 +10,7 @@ import { ReferAgent } from "@/agent/refer"
 import { ModelProxy } from "./utils/proxy"
 import { ModelCycle } from "./utils/cycle"
 import { v4 as uuid } from 'uuid';
+import { RouteAgent } from "./agent/route"
 
 export namespace Define {
     export type E = Record<string, any>
@@ -34,9 +35,9 @@ export abstract class Model<
 > {
     public readonly proxy: ModelProxy<E, S1, C1, C2, this>;
 
-    public readonly _agent: Readonly<Agents<E, S1, S2, C1, C2, R1, R2, this>>;
+    public readonly _agent: Readonly<Agents<E, S1, S2, P, C1, C2, R1, R2, this>>;
 
-    public readonly _cycle: ModelCycle;
+    public readonly _cycle: ModelCycle<P, this>;
 
     protected readonly draft: Readonly<{
         child: C1 & C2[];
@@ -58,6 +59,10 @@ export abstract class Model<
     public get refer(): Readonly<Partial<R1 & R2>> {
         return this._agent.refer.current
     }
+    
+    public get route(): Readonly<{ parent?: P, path?: string }> {
+        return this._agent.route.current
+    }
 
     public readonly target: this;
 
@@ -65,15 +70,7 @@ export abstract class Model<
 
 
     public get parent(): P | undefined {
-        return this._cycle.parent as P | undefined;
-    }
-
-    public get status() {
-        return this._cycle.status;
-    }
-    
-    public get path() {
-        return this._cycle.path;
+        return this._agent.route.current.parent
     }
 
     constructor(props: StrictProps<S1, S2, C1, C2, R1, R2>) {
@@ -87,6 +84,7 @@ export abstract class Model<
             child: new ChildAgent<C1, C2, this>(this, props.child),
             state: new StateAgent<S1, S2, this>(this, props.state),
             refer: new ReferAgent<R1, R2, this>(this, props.refer),
+            route: new RouteAgent<P, this>(this),
         }
 
 
@@ -97,21 +95,8 @@ export abstract class Model<
         }
         this.event = this._agent.event.emitters;
 
-        this.bindEvent = this._agent.event.bind;
-        this.unbindEvent = this._agent.event.unbind;
-        this.bindDecor = this._agent.state.bind;
-        this.unbindDecor = this._agent.state.unbind;
-
         this._cycle.init();
     }
-
-    public bindEvent;
-
-    public unbindEvent;
-
-    public bindDecor;
-
-    public unbindDecor;
 
     public get props(): Readonly<Props<S1, S2, C1, C2, R1, R2>> {
         const result: StrictProps<S1, S2, C1, C2, R1, R2> = {
@@ -144,5 +129,6 @@ export namespace Model {
     export type Child<M extends Model = Model> = M['child']
     export type Refer<M extends Model = Model> = M['refer']
     export type Props<M extends Model = Model> = M['props']
+    export type Route<M extends Model = Model> = M['route']
 }
 

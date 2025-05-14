@@ -1,9 +1,10 @@
-import { Value } from "@/types";
+import { Callback, Value } from "@/types";
 import { Agent } from ".";
 import { Model } from "@/model";
 import { DebugService } from "@/service/debug";
 import { DecorConsumer, DecorUpdater } from "@/types/decor";
 import { ModelProxy } from "@/utils/proxy";
+import { TranxService } from "@/service/tranx";
 
 export class DecorProducer<S = any, M extends Model = Model> {
     public readonly path: string;
@@ -29,7 +30,7 @@ export class StateAgent<
     public get current(): Readonly<S1 & S2> {
         return { ...this._current }
     }
-    
+
     public readonly draft: S1 & S2
     
     private readonly router: {
@@ -72,11 +73,17 @@ export class StateAgent<
                 if (model instanceof Model) model._agent.state.update(path)
             }
         } else {
-            console.log('update:', this.target.constructor.name, key);
-            const current: any = { ...this._current, [key]: this.emit(key) };
-            this._current = current;
+            this._update(key);
         }
     } 
+
+    @TranxService.span()
+    private _update(key: string) {
+        console.log('update:', this.target.constructor.name, key);
+        const next = this.emit(key)
+        const current: any = { ...this._current, [key]: next };
+        this._current = current;
+    }
 
 
     private set(origin: any, key: string, value: any) {
@@ -107,7 +114,7 @@ export class StateAgent<
                 const updater = consumer.updater;
                 next = updater.call(target, this.target, next);
             }
-            path = target.path + '/' + path;
+            path = target._agent.route.current.path + '/' + path;
             target = target.parent;
         }
         console.log('emit result:', prev, next);
@@ -134,7 +141,6 @@ export class StateAgent<
 
         target._agent.state.update(path);
     }
-
 
 
     @DebugService.log()
@@ -225,5 +231,6 @@ export class StateAgent<
             return descriptor;
         }
     }
+
 
 }

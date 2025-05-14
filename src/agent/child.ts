@@ -2,6 +2,7 @@ import { Model } from "@/model";
 import { Agent } from ".";
 import { DebugService } from "@/service/debug";
 import { ModelStatus } from "@/types/model";
+import { TranxService } from "@/service/tranx";
 
 export class ChildAgent<
     C1 extends Record<string, Model> = Record<string, Model>,
@@ -38,7 +39,10 @@ export class ChildAgent<
     }
 
     private check<T>(value: T): T {
-        if (value instanceof Model && value.status >= ModelStatus.BIND) return value.copy;
+        if (
+            value instanceof Model && 
+            value._cycle.status >= ModelStatus.BIND
+        ) return value.copy;
         return value;
     }
 
@@ -70,19 +74,24 @@ export class ChildAgent<
         if (key === 'unshift') return this.unshift.bind(this, origin);
         if (key === 'splice') return this.splice.bind(this, origin);
         if (key === 'fill') return this.fill.bind(this, origin); 
+        if (key === 'reverse') return this.reverse.bind(this, origin);
+        if (key === 'sort') return this.sort.bind(this, origin);
         const value = origin[key];
         return value;
     }
 
+    @TranxService.span()
     private set(origin: Record<string, unknown>, key: string, next: unknown) {
         const prev = origin[key];
         if (prev instanceof Model) prev._cycle.unbind();
-
         origin[key] = next = this.check(next);
-        if (next instanceof Model) next._cycle.bind(this.target, key);
+        if (next instanceof Model) {
+            next._cycle.bind(this.target, key);
+        }
         return true;
     }
 
+    @TranxService.span()
     private delete(origin: Record<string, Model>, key: string) {
         const prev = origin[key];
         if (prev instanceof Model) prev._cycle.unbind();
@@ -90,6 +99,7 @@ export class ChildAgent<
         return true;
     }
 
+    @TranxService.span()
     @DebugService.log()
     private push(origin: C1 & C2[], ...value: C2[]) {
         const next = [ ...value ]
@@ -106,6 +116,7 @@ export class ChildAgent<
         return result;
     }
 
+    @TranxService.span()
     @DebugService.log()
     private pop(origin: C1 & C2[]) {
         const prev = origin[origin.length - 1];
@@ -113,12 +124,14 @@ export class ChildAgent<
         return origin.pop();
     }
 
+    @TranxService.span()
     private shift(origin: C1 & C2[]) {
         const prev = origin[0];
         if (prev instanceof Model) prev._cycle.unbind();
         return origin.shift();
     }
 
+    @TranxService.span()
     private unshift(origin: C1 & C2[], ...value: C2[]) {
         const next = [ ...value ]
         for (let index = 0; index < next.length; index += 1) {
@@ -134,7 +147,7 @@ export class ChildAgent<
         return result;
     }
 
-
+    @TranxService.span()
     private splice(origin: C1 & C2[], start: number, count: number, ...value: C2[]) {
         const prev: Array<Model | undefined> = origin.slice(start, start + count);
         for (let index = 0; index < prev.length; index += 1) {
@@ -155,7 +168,7 @@ export class ChildAgent<
         return result;
     }
 
-
+    @TranxService.span()
     private fill(origin: C1 & C2[], sample: C2) {
         const length = origin.length;
         for (let index = 0; index < length; index += 1) {
@@ -165,6 +178,16 @@ export class ChildAgent<
             origin[index] = next;
             next._cycle.bind(this.target, index);
         }
+    }
+
+    @TranxService.span()
+    private reverse(origin: C1 & C2[]) {
+        return origin.reverse();
+    }
+
+    @TranxService.span()
+    private sort(origin: C1 & C2[], handler: (a: C2, b: C2) => number) {
+        return origin.sort(handler);
     }
 
 }

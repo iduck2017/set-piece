@@ -4,7 +4,8 @@ import { DebugService } from "@/service/debug";
 import { 
     EventHandler, 
     EventConsumer, 
-    EventEmitters, 
+    EventEmitters,
+    BaseEvent, 
 } from "@/types/event";
 import { ModelStatus } from "@/types/model";
 
@@ -27,7 +28,7 @@ export class EventAgent<
     E extends Record<string, any> = Record<string, any>,
     M extends Model = Model
 > extends Agent<M> {
-    public readonly emitters: Readonly<EventEmitters<E>>;
+    public readonly emitters: Readonly<EventEmitters<E & BaseEvent<M>>>;
     
     private readonly router: Readonly<{
         consumers: Map<string, EventConsumer[]>,
@@ -51,7 +52,7 @@ export class EventAgent<
 
     @DebugService.log()
     public emit<E>(key: string, event: E) {
-        if (this.target.status !== ModelStatus.LOAD) return;
+        if (this.target._cycle.status !== ModelStatus.LOAD) return;
 
         let target: Model | undefined = this.target;
         let path = key;
@@ -64,7 +65,7 @@ export class EventAgent<
                 const handler = consumer.handler;
                 handler.call(target, this.target, event);
             }
-            path = target.path + '/' + path;
+            path = target._agent.route.current.path + '/' + path;
             target = target.parent;
         }
     }

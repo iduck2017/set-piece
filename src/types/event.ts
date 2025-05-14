@@ -12,15 +12,19 @@ export type EventConsumer = { target: Model, handler: EventHandler }
 export type EventProducers<E extends Record<string, any>, M extends Model> = { [K in keyof E]: EventProducer<Required<E>[K], M> }
 
 
+
 export type OnStateChange<M extends Model> = { prev: Model.State<M>, next: Model.State<M> }
 
 export type OnChildChange<M extends Model> = { prev: Model.Child<M>, next: Model.Child<M> }
 
 export type OnReferChange<M extends Model> = { prev: Model.Refer<M>, next: Model.Refer<M> }
 
+export type OnRouteChange<M extends Model> = { prev: Model.Route<M>, next: Model.Route<M> }
+
 export type BaseEvent<M extends Model> = {
     onStateChange: OnStateChange<M>
     onChildChange: OnChildChange<M>
     onReferChange: OnReferChange<M>
+    onRouteChange: OnRouteChange<M>
 } & Record<string, any>
 
