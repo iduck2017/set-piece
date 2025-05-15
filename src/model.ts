@@ -11,6 +11,7 @@ import { ModelProxy } from "./utils/proxy"
 import { ModelCycle } from "./utils/cycle"
 import { v4 as uuid } from 'uuid';
 import { RouteAgent } from "./agent/route"
+import { ModelStatus } from "./types/model"
 
 export namespace Define {
     export type E = Record<string, any>
@@ -69,8 +70,20 @@ export abstract class Model<
     public readonly uuid: string;
 
 
+    public get status(): ModelStatus {
+        return this._cycle.status;
+    }
+
     public get parent(): P | undefined {
         return this._agent.route.current.parent
+    }
+
+    public get path(): string | undefined {
+        return this._agent.route.current.path
+    }
+
+    protected reload() {
+        this._cycle.reload();
     }
 
     constructor(props: StrictProps<S1, S2, C1, C2, R1, R2>) {
