@@ -42,11 +42,11 @@ export class EventAgent<
             producers: new Map()
         }
         this.emitters = new Proxy({} as any, {
-            get: this.get.bind(this)
+            get: this.getEmitter.bind(this)
         })
     }
 
-    private get(origin: never, path: string) {
+    private getEmitter(origin: never, path: string) {
         return this.emit.bind(this, path);
     }
 

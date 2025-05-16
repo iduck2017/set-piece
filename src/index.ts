@@ -17,3 +17,10 @@ export { TranxService } from './service/tranx';
 
 export { ModelCycle } from './utils/cycle';
 export { ModelProxy } from './utils/proxy';
+
+export { 
+    OnChildChange,
+    OnStateChange,
+    OnReferChange,
+    OnRouteChange,
+} from './types/event';

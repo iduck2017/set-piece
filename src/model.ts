@@ -12,6 +12,7 @@ import { ModelCycle } from "./utils/cycle"
 import { v4 as uuid } from 'uuid';
 import { RouteAgent } from "./agent/route"
 import { ModelStatus } from "./types/model"
+import { DecorUpdater } from "./types/decor"
 
 export namespace Define {
     export type E = Record<string, any>
@@ -82,7 +83,7 @@ export abstract class Model<
         return this._agent.route.current.path
     }
 
-    protected reload() {
+    protected _reload() {
         this._cycle.reload();
     }
 
@@ -106,6 +107,8 @@ export abstract class Model<
             state: this._agent.state.draft,
             refer: this._agent.refer.draft
         }
+
+
         this.event = this._agent.event.emitters;
 
         this._cycle.init();

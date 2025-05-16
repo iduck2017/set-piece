@@ -1,5 +1,5 @@
 import { DecorProducers } from "../types/decor";
-import { EventProducers } from "../types/event";
+import { BaseEvent, EventProducers } from "../types/event";
 import { Model } from "../model";
 import { Value } from "../types";
 import { EventProducer } from "@/agent/event";
@@ -23,7 +23,7 @@ export class ModelProxy<
 > {
     public readonly child: Readonly<ChildProxy<C1, C2>>;
     
-    public readonly event: Readonly<EventProducers<E, M>>;
+    public readonly event: Readonly<EventProducers<E & BaseEvent<M>, M>>;
     
     public readonly decor: Readonly<DecorProducers<S1, M>>;
 
