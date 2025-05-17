@@ -20,6 +20,7 @@ export class DecorProducer<S = any, M extends Model = Model> {
     }
 }
 
+@DebugService.is(target => target.target.constructor.name)
 export class StateAgent<
     S1 extends Record<string, Value> = Record<string, Value>,
     S2 extends Record<string, Value> = Record<string, Value>,
@@ -56,6 +57,7 @@ export class StateAgent<
 
     @DebugService.log()
     public update(path: string) {
+        console.log('update', path);
         const keys = path.split('/');
         const key = keys.shift();
         if (!key) return;
@@ -78,8 +80,9 @@ export class StateAgent<
     } 
 
     @TranxService.span()
+    @DebugService.log()
     private _update(key: string) {
-        console.log('update:', this.target.constructor.name, key);
+        console.log('update', key);
         const next = this.emit(key)
         const current: any = { ...this._current, [key]: next };
         this._current = current;
@@ -101,12 +104,13 @@ export class StateAgent<
 
     @DebugService.log()
     public emit(key: string) {
-        console.log('emit:', this.target.constructor.name, key);
+        console.log('emit', key);
         let target: Model | undefined = this.target;
         const prev = this.draft[key];
         let next = this.draft[key];
         let path = key;
         while (target) {
+            console.log('decor', path);
             const router = target._agent.state.router;
             const consumers = router.consumers.get(path) ?? [];
             for (const consumer of consumers) {
@@ -127,7 +131,7 @@ export class StateAgent<
         producer: DecorProducer<E, M>, 
         updater: DecorUpdater<E, M>
     ) {
-        console.log('bind:', producer.target.constructor.name);
+        console.log('decor:', producer.path);
         const { target, path } = producer;
         const router = target._agent.state.router;
 
@@ -139,7 +143,20 @@ export class StateAgent<
         producers.push(producer);
         this.router.producers.set(updater, producers);
 
-        target._agent.state.update(path);
+        const keys = path.split('/');
+        let prev: Model[] = [target];
+        const key = keys.pop();
+        while (keys.length) {
+            const key = keys.pop();
+            if (!key) break;
+            let next: Model[] = [];
+            for (const model of prev) {
+                if (key === String(0)) next.push(...model._agent.child.current);
+                else next.push(Reflect.get(model._agent.child.current, key));
+            }
+            prev = next;
+        }
+        if (key) prev.map(model => model._agent.state.update(key));
     }
 
 
@@ -148,12 +165,7 @@ export class StateAgent<
         producer: DecorProducer<S, M>, 
         updater: DecorUpdater<S, M>
     ) {
-        console.log(
-            'unbind:', 
-            producer.path,
-            producer.target.constructor.name,
-            this.target.constructor.name
-        );
+        console.log('decor:', producer.path);
         const { target, path } = producer;
 
         let index;
@@ -170,7 +182,20 @@ export class StateAgent<
         index = producers.indexOf(producer);
         if (index !== -1) producers.splice(index, 1);
         
-        target._agent.state.update(path)
+        const keys = path.split('/');
+        let prev: Model[] = [target];
+        const key = keys.pop();
+        while (keys.length) {
+            const key = keys.pop();
+            if (!key) break;
+            let next: Model[] = [];
+            for (const model of prev) {
+                if (key === String(0)) next.push(...model._agent.child.current);
+                else next.push(Reflect.get(model._agent.child.current, key));
+            }
+            prev = next;
+        }
+        if (key) prev.map(model => model._agent.state.update(key));
     }
 
 

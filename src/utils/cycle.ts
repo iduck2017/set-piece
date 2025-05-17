@@ -1,9 +1,15 @@
 import { Model } from "@/model";
 import { Agent } from "../agent";
-import { ModelStatus } from "@/types/model";
 import { DebugService } from "@/service/debug";
 import { TranxService } from "@/service/tranx";
 
+export enum ModelStatus {
+    INIT = 0,
+    BIND = 2,
+    LOAD = 3,
+}
+
+@DebugService.is(target => target.target.constructor.name)
 export class ModelCycle<
     P extends Model = Model,
     M extends Model = Model
@@ -40,7 +46,6 @@ export class ModelCycle<
 
     @DebugService.log()
     public load() {
-        console.log('load:', this.target.constructor.name)
         this.target._agent.child.load();
         this.target._agent.event.load();
         this.target._agent.state.load();
@@ -50,7 +55,6 @@ export class ModelCycle<
     @TranxService.span()
     @DebugService.log()
     public unload() {
-        console.log('unload:', this.target.constructor.name)
         this.target._agent.child.unload();
         this.target._agent.event.unload();
         this.target._agent.state.unload();

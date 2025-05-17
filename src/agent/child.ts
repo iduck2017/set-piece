@@ -1,9 +1,10 @@
 import { Model } from "@/model";
 import { Agent } from ".";
 import { DebugService } from "@/service/debug";
-import { ModelStatus } from "@/types/model";
+import { ModelStatus } from "@/utils/cycle";
 import { TranxService } from "@/service/tranx";
 
+@DebugService.is(target => target.target.constructor.name)
 export class ChildAgent<
     C1 extends Record<string, Model> = Record<string, Model>,
     C2 extends Model = Model,

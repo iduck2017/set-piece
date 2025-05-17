@@ -4,6 +4,7 @@ import { Model } from "../model";
 import { Value } from "../types";
 import { EventProducer } from "@/agent/event";
 import { DecorProducer } from "@/agent/state";
+import { DebugService } from "@/service/debug";
 
 export type ChildProxy<
     C1 extends Record<string, Model>,
@@ -14,6 +15,7 @@ export type ChildProxy<
     never;
 
 
+@DebugService.is(target => target.target.constructor.name)
 export class ModelProxy<
     E extends Record<string, any> = Record<string, any>,
     S1 extends Record<string, Value> = Record<string, Value>,

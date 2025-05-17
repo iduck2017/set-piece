@@ -1,8 +1,7 @@
 import { Agent } from "@/agent";
 import { Model } from "@/model";
 import { Callback, Value } from "@/types";
-import { ModelStatus } from "@/types/model";
-import { ModelCycle } from "@/utils/cycle";
+import { ModelCycle, ModelStatus } from "@/utils/cycle";
 
 export class TranxService {
     private constructor() {}

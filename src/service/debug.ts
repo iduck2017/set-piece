@@ -10,6 +10,7 @@ export enum LogLevel {
 
 export class DebugService {
     private static readonly stack: string[] = []
+    private static readonly alias: Map<Function, (target: any) => string> = new Map();
 
     public static log() {
         return function(
@@ -21,7 +22,9 @@ export class DebugService {
             if (!handler) return descriptor;
             const instance = {
                 [key](this: Object, ...args: any[]) {
-                    const namespace = this.constructor.name + '::' + key
+                    const accessor = DebugService.alias.get(this.constructor)
+                    const name = accessor ? accessor(this) : this.constructor.name
+                    const namespace = name + '::' + key
                     console.group(namespace)
                     DebugService.stack.push(namespace);
                     const result = handler.call(this, ...args);
@@ -57,6 +60,13 @@ export class DebugService {
             descriptor.value = instance[key];
             return descriptor;
         };
+    }
+
+
+    public static is<T>(accessor: (target: T) => string) {
+        return function (constructor: new (...args: any[]) => T) {
+            DebugService.alias.set(constructor, accessor);
+        }
     }
 
     private constructor() {}

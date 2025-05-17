@@ -8,28 +8,28 @@ import { ChildAgent } from "@/agent/child"
 import { Agents } from "@/agent/index"
 import { ReferAgent } from "@/agent/refer"
 import { ModelProxy } from "./utils/proxy"
-import { ModelCycle } from "./utils/cycle"
+import { ModelCycle, ModelStatus } from "./utils/cycle"
 import { v4 as uuid } from 'uuid';
 import { RouteAgent } from "./agent/route"
-import { ModelStatus } from "./types/model"
 import { DecorUpdater } from "./types/decor"
+import { Refer } from "./types/refer"
 
 export namespace Define {
+    export type P = Model
     export type E = Record<string, any>
     export type S1 = Record<string, Value>
     export type S2 = Record<string, Value>
-    export type P = Model
     export type C1 = Record<string, Model>
     export type C2 = Model
     export type R1 = Record<string, Model>
-    export type R2 = Record<string, Model[]>
+    export type R2 = Record<string, Model>
 }
 
 export abstract class Model<
+    P extends Define.P = Define.P,
     E extends Define.E = {},
     S1 extends Define.S1 = {},
     S2 extends Define.S2 = {},
-    P extends Define.P = Define.P,
     C1 extends Define.C1 = {},
     C2 extends Define.C2 = Define.C2,
     R1 extends Define.R1 = {},
@@ -37,14 +37,14 @@ export abstract class Model<
 > {
     public readonly proxy: ModelProxy<E, S1, C1, C2, this>;
 
-    public readonly _agent: Readonly<Agents<E, S1, S2, P, C1, C2, R1, R2, this>>;
+    public readonly _agent: Readonly<Agents<P, E, S1, S2, C1, C2, R1, R2, this>>;
 
     public readonly _cycle: ModelCycle<P, this>;
 
     protected readonly draft: Readonly<{
         child: C1 & C2[];
         state: S1 & S2;
-        refer: Partial<R1 & R2>;
+        refer: Refer<R1, R2>;
     }>;
 
     protected readonly event: Readonly<EventEmitters<E>>;
@@ -58,7 +58,7 @@ export abstract class Model<
         return this._agent.child.current 
     }
 
-    public get refer(): Readonly<Partial<R1 & R2>> {
+    public get refer(): Readonly<Refer<R1, R2>> {
         return this._agent.refer.current
     }
     

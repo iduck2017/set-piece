@@ -1,24 +1,25 @@
 import { Model } from "@/model";
 import { Agent } from ".";
 import { DebugService } from "@/service/debug";
-import { ReferAddrs } from "@/types/model";
 import { TranxService } from "@/service/tranx";
+import { Refer, ReferAddrs } from "@/types/refer";
 
+@DebugService.is(target => target.target.constructor.name)
 export class ReferAgent<
     R1 extends Record<string, Model> = Record<string, Model>,
-    R2 extends Record<string, Model[]> = Record<string, Model[]>,
+    R2 extends Record<string, Model> = Record<string, Model>,
     M extends Model = Model,
 > extends Agent<M> {
-    public get current(): Readonly<Partial<R1 & R2>> {
+    public get current(): Readonly<Refer<R1, R2>> {
         return { ...this.draft };
     }
 
-    private readonly _addrs: Partial<ReferAddrs<R1, R2>>;
+    private readonly _addrs: ReferAddrs<R1, R2>;
     public get addrs() {
         return { ...this._addrs }
     }
 
-    public readonly draft: Partial<R1 & R2>; 
+    public readonly draft: Refer<R1, R2>; 
 
     constructor(
         target: M,

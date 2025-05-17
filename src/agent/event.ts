@@ -7,7 +7,7 @@ import {
     EventEmitters,
     BaseEvent, 
 } from "@/types/event";
-import { ModelStatus } from "@/types/model";
+import { ModelStatus } from "@/utils/cycle";
 
 export class EventProducer<E = any, M extends Model = Model> {
    
@@ -24,6 +24,7 @@ export class EventProducer<E = any, M extends Model = Model> {
     }
 }
 
+@DebugService.is(target => target.target.constructor.name)
 export class EventAgent<
     E extends Record<string, any> = Record<string, any>,
     M extends Model = Model
@@ -52,12 +53,13 @@ export class EventAgent<
 
     @DebugService.log()
     public emit<E>(key: string, event: E) {
+        console.log('emit', key);
         if (this.target._cycle.status !== ModelStatus.LOAD) return;
 
         let target: Model | undefined = this.target;
         let path = key;
         while(target) {
-            console.log('emitEvent', path, target.constructor.name);
+            console.log('event', path);
             const router = target._agent.event.router;
             const consumers = router.consumers.get(path) ?? [];
             for (const consumer of consumers) {
@@ -76,6 +78,8 @@ export class EventAgent<
         producer: EventProducer<E, M>, 
         handler: EventHandler<E, M>
     ) {
+        console.log('event', producer.path);
+
         const { target, path } = producer;
         const router = target._agent.event.router;
 
@@ -96,6 +100,8 @@ export class EventAgent<
         producer: EventProducer<E, M>, 
         handler: EventHandler<E, M>
     ) {
+        console.log('event', producer.path);
+        
         const { target, path } = producer;
         
         let index;
