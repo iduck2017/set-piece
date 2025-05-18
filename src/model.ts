@@ -23,7 +23,7 @@ export namespace Define {
     export type C2 = Model
     export type R1 = Record<string, Model>
     export type R2 = Record<string, Model>
-    // export type R = Record<string, Model | Model[]>
+    export type R = Record<string, Model | Model[]>
 }
 
 export abstract class Model<
@@ -35,7 +35,7 @@ export abstract class Model<
     C2 extends Define.C2 = Define.C2,
     R1 extends Define.R1 = {},
     R2 extends Define.R2 = {},
-    // R extends Define.R = {}
+    R extends Define.R = {}
 > {
     public readonly proxy: ModelProxy<E, S1, C1, C2, this>;
 
@@ -49,13 +49,13 @@ export abstract class Model<
         refer: Refer<R1, R2>;
     }>;
 
-    // public refer2!: {
-    //     [K in keyof R]?: Required<R>[K] extends Model[] ? Readonly<R[K]> : R[K];
-    // }
+    public refer2!: {
+        [K in keyof R]?: Required<R>[K] extends Model[] ? Readonly<R[K]> : R[K];
+    }
 
-    // public _refer2!: {
-    //     [K in keyof R]?: Required<R>[K] extends Model[] ? Readonly<string[]> : string
-    // }
+    public _refer2!: {
+        [K in keyof R]?: Required<R>[K] extends Model[] ? Readonly<string[]> : string
+    }
 
     protected readonly event: Readonly<EventEmitters<E>>;
 
