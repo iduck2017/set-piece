@@ -1,7 +1,7 @@
 import { Agent } from "@/agent";
 import { Model } from "@/model";
 import { Callback, Value } from "@/types";
-import { ModelCycle, ModelStatus } from "@/utils/cycle";
+import { ModelCycle } from "@/utils/cycle";
 
 export class TranxService {
     private constructor() {}
@@ -10,19 +10,18 @@ export class TranxService {
     public static get isSpan() { return TranxService._isSpan; }
 
     private static readonly registry: Readonly<{
+        cycle: Map<Model, Model>,
         state: Map<Model, Model.State>,
         refer: Map<Model, Model.Refer>,
         child: Map<Model, Model.Child>,
-        route: Map<Model, Model.Route>,
-        cycle: Set<Model>
     }> = {
-        cycle: new Set(),
-        state: new Map(),
+        cycle: new Map(),
         refer: new Map(),
+        state: new Map(),
         child: new Map(),
-        route: new Map(),
     }
 
+    
     public static span() {
         return function(
             target: Model | Agent | ModelCycle,
@@ -49,8 +48,8 @@ export class TranxService {
                     if (agent.child === this && !registry.child.has(this.target)) {
                         registry.child.set(this.target, this.target.child)
                     }
-                    if (agent.route === this && !registry.route.has(this.target)) {
-                        registry.route.set(this.target, this.target.route)
+                    if (agent.route === this && !registry.cycle.has(this.target)) {
+                        registry.cycle.set(this.target, this.target.route)
                     }
                     if (this.target._cycle === this && !registry.cycle.has(this.target)) {
                         registry.cycle.add(this.target)
@@ -68,13 +67,13 @@ export class TranxService {
                     const refer = [...TranxService.registry.refer];
                     const child = [...TranxService.registry.child];
                     const state = [...TranxService.registry.state];
-                    const route = [...TranxService.registry.route];
+                    const route = [...TranxService.registry.cycle];
                     const cycle = [...TranxService.registry.cycle];
 
                     TranxService.registry.child.clear();
                     TranxService.registry.state.clear();
                     TranxService.registry.refer.clear();
-                    TranxService.registry.route.clear();
+                    TranxService.registry.cycle.clear();
                     TranxService.registry.cycle.clear();
 
                     TranxService._isSpan = false;
@@ -90,24 +89,24 @@ export class TranxService {
 
                     
                     for (const model of cycle) {
-                        if (model._cycle.status !== ModelStatus.LOAD) model._cycle.uninit();
+                        if (model) model._cycle.uninit();
                     }
                     for (const [model, prev] of child) {
                         const next = model.child;
-                        model._agent.event.emitters.onChildChange({ prev, next })
+                        model._agent.event.current.onChildChange({ prev, next })
                     }
                     for (const [model, prev] of refer) {
                         const next = model.refer;
-                        model._agent.event.emitters.onReferChange({ prev, next })
+                        model._agent.event.current.onReferChange({ prev, next })
                     }
                     for (const [model, prev] of state) {
                         const next = model.state;
                         console.log({ prev, next })
-                        model._agent.event.emitters.onStateChange({ prev, next })
+                        model._agent.event.current.onStateChange({ prev, next })
                     }
                     for (const [model, prev] of route) {
                         const next = model.route;
-                        model._agent.event.emitters.onRouteChange({ prev, next })
+                        model._agent.event.current.onParentChange({ prev, next })
                     }
 
                     console.groupEnd()
@@ -119,7 +118,7 @@ export class TranxService {
         }
     }
 
-    public static task() {
 
-    }
+
+    public static task() {}
 }

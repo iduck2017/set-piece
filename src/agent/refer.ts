@@ -2,7 +2,22 @@ import { Model } from "@/model";
 import { Agent } from ".";
 import { DebugService } from "@/service/debug";
 import { TranxService } from "@/service/tranx";
-import { Addrs, Refer } from "@/types/model";
+
+
+export type ReferGroup<
+    R1 extends Record<string, Model>, 
+    R2 extends Record<string, Model>
+> = 
+    { [K in keyof R1]?: R1[K] } & 
+    { [K in keyof R2]?: Readonly<Required<R2>[K][]> }
+
+export type ReferAddrs<
+    R1 extends Record<string, Model>, 
+    R2 extends Record<string, Model>,
+> = 
+    { [K in keyof R1]?: string } & 
+    { [K in keyof R2]?: Readonly<string[]> } 
+
 
 @DebugService.is(target => target.target.name)
 export class ReferAgent<
@@ -10,20 +25,20 @@ export class ReferAgent<
     R2 extends Record<string, Model> = Record<string, Model>,
     M extends Model = Model,
 > extends Agent<M> {
-    public get current(): Readonly<Refer<R1, R2>> {
+    public get current(): Readonly<ReferGroup<R1, R2>> {
         return { ...this.draft };
     }
 
-    private readonly _addrs: Addrs<R1, R2>;
+    private readonly _addrs: ReferAddrs<R1, R2>;
     public get addrs() {
         return { ...this._addrs }
     }
 
-    public readonly draft: Refer<R1, R2>; 
+    public readonly draft: ReferGroup<R1, R2>; 
 
     constructor(
         target: M,
-        props?: Partial<Addrs<R1, R2>>
+        props?: Partial<ReferAddrs<R1, R2>>
     ) {
         super(target);
 

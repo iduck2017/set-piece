@@ -3,12 +3,6 @@ import { Agent } from "../agent";
 import { DebugService } from "@/service/debug";
 import { TranxService } from "@/service/tranx";
 
-export enum ModelStatus {
-    INIT = 0,
-    BIND = 2,
-    LOAD = 3,
-}
-
 @DebugService.is(target => target.target.name)
 export class ModelCycle<
     P extends Model = Model,
@@ -39,7 +33,7 @@ export class ModelCycle<
         this._isLoad = false;
     }
 
-
+    @TranxService.span()
     public bind(parent: P | undefined, path: string) {
         this._isBind = true;
         this._path = path;
@@ -49,9 +43,9 @@ export class ModelCycle<
         if (parent?._cycle._isLoad) this.load();
     }
 
+    @TranxService.span()
     public unbind() {
         if (this._isLoad) this.unload();
-
         this.target._agent.refer.unbind();
         this._parent = undefined;
         this._path = undefined;

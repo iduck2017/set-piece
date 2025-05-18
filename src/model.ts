@@ -1,16 +1,14 @@
-import { EventEmitters } from "./types/event"
-import { Props, StrictProps } from "./types/props"
+import { RawProps, Props } from "./types/props"
 import { Value } from "./types"
 import { EventAgent } from "@/agent/event"
 import { StateAgent } from "@/agent/state"
-import { ChildAgent } from "@/agent/child"
+import { ChildAgent, ChildGroup } from "@/agent/child"
 import { Agents } from "@/agent/index"
-import { ReferAgent } from "@/agent/refer"
+import { ReferAgent, ReferGroup } from "@/agent/refer"
 import { ModelProxy } from "./utils/proxy"
-import { ModelCycle, ModelStatus } from "./utils/cycle"
+import { ModelCycle } from "./utils/cycle"
 import { v4 as uuid } from 'uuid';
-import { RouteAgent } from "./agent/route"
-import { Child, Refer, Route } from "./types/model"
+import { EventEmitter } from "./types/event"
 
 export namespace Define {
     export type P = Model
@@ -39,29 +37,17 @@ export abstract class Model<
 
     public readonly _agent: Readonly<Agents<E, S1, S2, C1, C2, R1, R2, this>>;
 
-    protected readonly draft: Readonly<{
-        state: S1 & S2;
-        child: Child<C1, C2>;
-        refer: Refer<R1, R2>;
-    }>;
-
-    protected readonly event: Readonly<EventEmitters<E>>;
 
 
     public get name(): string { return this.constructor.name; }
 
-    // public get path(): string | undefined { return this._agent.route.current.path }
-
-    // public get state(): Readonly<S1 & S2> { return this._agent.state.current; }
+    public get state(): Readonly<S1 & S2> { return this._agent.state.current; }
     
-    // public get child(): Readonly<Child<C1, C2>>  { return this._agent.child.current }
+    public get child(): Readonly<ChildGroup<C1, C2>>  { return this._agent.child.current }
 
-    // public get refer(): Readonly<Refer<R1, R2>> { return this._agent.refer.current }
+    public get refer(): Readonly<ReferGroup<R1, R2>> { return this._agent.refer.current }
     
-    // public get route(): Readonly<Route<P>> { return this._agent.route.current }
-
-    // public get parent(): P | undefined { return this._agent.route.current.parent }
-
+    public get parent(): P | undefined { return this._cycle.parent }
 
 
 
@@ -71,8 +57,18 @@ export abstract class Model<
 
 
 
-    constructor(props: StrictProps<S1, S2, C1, C2, R1, R2>) {
-        
+    protected readonly draft: Readonly<{
+        state: S1 & S2;
+        child: ChildGroup<C1, C2>;
+        refer: ReferGroup<R1, R2>;
+    }>;
+
+    protected readonly event: Readonly<EventEmitter<E>>;
+
+    
+
+
+    constructor(props: Props<S1, S2, C1, C2, R1, R2>) {
 
         this.target = this;
 
@@ -86,7 +82,6 @@ export abstract class Model<
             child: new ChildAgent<C1, C2, this>(this, props.child),
             state: new StateAgent<S1, S2, this>(this, props.state),
             refer: new ReferAgent<R1, R2, this>(this, props.refer),
-            route: new RouteAgent<P, this>(this),
         }
 
         this.draft = {
@@ -94,12 +89,10 @@ export abstract class Model<
             state: this._agent.state.draft,
             refer: this._agent.refer.draft
         }
-        this.event = this._agent.event.emitters;
-        
-        this._cycle.init();
+        this.event = this._agent.event.current;
     }
 
-    public get props(): Readonly<Props<S1, S2, C1, C2, R1, R2>> {
+    public get props(): Readonly<RawProps<S1, S2, C1, C2, R1, R2>> {
         return {
             uuid: this.uuid,
             state: { ...this.draft.state },
@@ -130,6 +123,5 @@ export namespace Model {
     export type Child<M extends Model = Model> = M['child']
     export type Refer<M extends Model = Model> = M['refer']
     export type Props<M extends Model = Model> = M['props']
-    export type Route<M extends Model = Model> = M['route']
 }
 

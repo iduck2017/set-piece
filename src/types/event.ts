@@ -1,16 +1,10 @@
-import { EventProducer } from "@/agent/event"
 import { Model } from "../model"
 
 export type EventHandler<E = any, M extends Model = Model> = (target: M, event: E) => void
 
-export type EventEmitter<E = any> = (event: E) => void
-
-export type EventEmitters<E extends Record<string, any>> = { [K in keyof E]: EventEmitter<Required<E>[K]> }
+export type EventEmitter<E = Record<string, any>> = { [K in keyof E]: (event: E[K]) => void }
 
 export type EventConsumer = { target: Model, handler: EventHandler }
-
-export type EventProducers<E extends Record<string, any>, M extends Model> = { [K in keyof E]: EventProducer<Required<E>[K], M> }
-
 
 
 export type OnStateChange<M extends Model> = { prev: Model.State<M>, next: Model.State<M> }
@@ -19,12 +13,12 @@ export type OnChildChange<M extends Model> = { prev: Model.Child<M>, next: Model
 
 export type OnReferChange<M extends Model> = { prev: Model.Refer<M>, next: Model.Refer<M> }
 
-export type OnRouteChange<M extends Model> = { prev: Model.Route<M>, next: Model.Route<M> }
+export type onParentChange = { prev?: Model, next?: Model }
 
-export type BaseEvent<M extends Model> = {
+export type ModelEvent<M extends Model> = {
     onStateChange: OnStateChange<M>
     onChildChange: OnChildChange<M>
     onReferChange: OnReferChange<M>
-    onRouteChange: OnRouteChange<M>
+    onParentChange: onParentChange
 } & Record<string, any>
 

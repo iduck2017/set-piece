@@ -1,9 +1,14 @@
 import { Model } from "@/model";
 import { Agent } from ".";
 import { DebugService } from "@/service/debug";
-import { ModelStatus } from "@/utils/cycle";
 import { TranxService } from "@/service/tranx";
-import { Child } from "@/types/model";
+
+export type ChildGroup<
+    C1 extends Record<string, Model>,
+    C2 extends Record<string, Model>
+> = C1 &
+    { [K in keyof C2]: Readonly<Required<C2>[K][]> }
+
 
 @DebugService.is(target => target.target.name)
 export class ChildAgent<
@@ -12,9 +17,9 @@ export class ChildAgent<
     M extends Model = Model
 > extends Agent<M> {
     
-    public readonly draft: Child<C1, C2>
+    public readonly draft: ChildGroup<C1, C2>
 
-    public get current(): Readonly<Child<C1, C2>> {
+    public get current(): Readonly<ChildGroup<C1, C2>> {
         const result: any = [];
         for (const key of Object.keys(this.draft)) {
             result[key] = this.draft[key];
@@ -24,17 +29,18 @@ export class ChildAgent<
     
     constructor(
         target: M, 
-        props: Readonly<Child<C1, C2>>
+        props: Readonly<ChildGroup<C1, C2>>
     ) {
         super(target);
 
         const origin: any = [];
         for (const key of Object.keys(props)) {
+            const value = props[key];
+            if (value instanceof Model) {  }
             const next = origin[key] = this.check(props[key]);
             if (next instanceof Model) next._cycle.bind(this.target, key);
         }
         this.draft = new Proxy(origin, {
-            get: this.get.bind(this),
             set: this.set.bind(this),
             deleteProperty: this.delete.bind(this),
         })
@@ -66,18 +72,6 @@ export class ChildAgent<
         }
     }
 
-    private get(origin: Record<string, Model>, key: string) {
-        if (key === 'push') return this.push.bind(this, origin);
-        if (key === 'pop') return this.pop.bind(this, origin);
-        if (key === 'shift') return this.shift.bind(this, origin);
-        if (key === 'unshift') return this.unshift.bind(this, origin);
-        if (key === 'splice') return this.splice.bind(this, origin);
-        if (key === 'fill') return this.fill.bind(this, origin); 
-        if (key === 'reverse') return this.reverse.bind(this, origin);
-        if (key === 'sort') return this.sort.bind(this, origin);
-        const value = origin[key];
-        return value;
-    }
 
     @DebugService.log()
     @TranxService.span()
@@ -102,96 +96,4 @@ export class ChildAgent<
         delete origin[key];
         return true;
     }
-
-    @DebugService.log()
-    @TranxService.span()
-    private push(origin: C1 & (C2 | undefined)[], ...value: (C2 | undefined)[]) {
-        const next = [ ...value ]
-        for (let index = 0; index < next.length; index += 1) {
-            next[index] = this.check(next[index]);
-        }
-        const result = origin.push(...next);
-        for (let index = 0; index < next.length; index += 1) {
-            const item = next[index];
-            if (item instanceof Model) {
-                item._cycle.bind(this.target, index)
-            }
-        }
-        return result;
-    }
-
-    @TranxService.span()
-    @DebugService.log()
-    private pop(origin: C1 & (C2 | undefined)[]) {
-        const prev = origin[origin.length - 1];
-        if (prev instanceof Model) prev._cycle.unbind();
-        return origin.pop();
-    }
-
-    @TranxService.span()
-    private shift(origin: C1 & (C2 | undefined)[]) {
-        const prev = origin[0];
-        if (prev instanceof Model) prev._cycle.unbind();
-        return origin.shift();
-    }
-
-    @TranxService.span()
-    private unshift(origin: C1 & (C2 | undefined)[], ...value: (C2 | undefined)[]) {
-        const next = [ ...value ]
-        for (let index = 0; index < next.length; index += 1) {
-            next[index] = this.check(next[index]);
-        }
-        const result = origin.unshift(...next);
-        for (let index = 0; index < next.length; index += 1) {
-            const item = next[index];
-            if (item instanceof Model) {
-                item._cycle.bind(this.target, index);
-            }
-        }
-        return result;
-    }
-
-    @TranxService.span()
-    private splice(origin: C1 & (C2 | undefined)[], start: number, count: number, ...value: (C2 | undefined)[]) {
-        const prev: Array<Model | undefined> = origin.slice(start, start + count);
-        for (let index = 0; index < prev.length; index += 1) {
-            const item = prev[index];
-            if (item instanceof Model) item._cycle.unbind();
-        }
-        const next = [ ...value ]
-        for (let index = 0; index < next.length; index += 1) {
-            next[index] = this.check(next[index]);
-        }
-        const result = origin.splice(start, count, ...next);
-        for (let index = 0; index < next.length; index += 1) {
-            const item = next[index];
-            if (item instanceof Model) {
-                item._cycle.bind(this.target, index);
-            }
-        }
-        return result;
-    }
-
-    @TranxService.span()
-    private fill(origin: C1 & (C2 | undefined)[], sample: C2) {
-        const length = origin.length;
-        for (let index = 0; index < length; index += 1) {
-            const prev = origin[index];
-            if (prev instanceof Model) prev._cycle.unbind();
-            const next = sample.copy;
-            origin[index] = next;
-            next._cycle.bind(this.target, index);
-        }
-    }
-
-    @TranxService.span()
-    private reverse(origin: C1 & (C2 | undefined)[]) {
-        return origin.reverse();
-    }
-
-    @TranxService.span()
-    private sort(origin: C1 & (C2 | undefined)[], handler: (a: C2, b: C2) => number) {
-        return origin.sort(handler);
-    }
-
 }

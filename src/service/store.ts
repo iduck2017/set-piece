@@ -5,7 +5,7 @@ interface Chunk {
     uuid?: string,
     code: string,
     state: Record<string, Value>,
-    child: Record<string, Chunk>,
+    child: Record<string, Chunk | Chunk[]>,
     refer: Record<string, string | string[]>
 }
 
@@ -15,47 +15,72 @@ export class StoreService {
     private static readonly registryInvert: Map<Function, string> = new Map();
     
     public static save(model: Model): Chunk | undefined {
-        const props = {
+        const props: {
+            uuid?: string,
+            child: Record<string, Model | Model[]>,
+            refer: Record<string, string | string[]>,
+            state: Record<string, Value>,
+        } = {
+            state: {},
             child: {},
             refer: {},
             ...model.props,
         };
+
         const code = StoreService.registryInvert.get(model.constructor);
         if (!code) return undefined;
+
+
         const result: Chunk = {
             code,
             uuid: props.uuid,
-            state: props.state ?? {},
+            state: props.state,
+            refer: props.refer,
             child: {},
-            refer: {},
         }
+
         for (const key of Object.keys(props.child)) {
-            const value = Reflect.get(props.child, key);
-            if (!value) continue;
-            const chunk = StoreService.save(value);
-            if (chunk) result.child[key] = chunk;
+            const value = props.child[key];
+
+            if (value instanceof Array) {
+                result.child[key] = [];
+                for (const model of value) {
+                    const chunk = StoreService.save(model);
+                    if (chunk) result.child[key].push(chunk);
+                }
+            } else {
+                const chunk = StoreService.save(value);
+                if (chunk) result.child[key] = chunk;
+            }
         }
-        for (const key of Object.keys(props.refer)) {
-            const value = Reflect.get(props.refer, key);
-            if (value instanceof Model) result.refer[key] = value.uuid;
-            if (value instanceof Array) result.refer[key] = value.map(model => model?.uuid);
-        }
+        
         return result;
     }
 
     public static load(chunk: Chunk): Model | undefined {
         const type = StoreService.registry.get(chunk.code);
         if (!type) return undefined;
-        const child: Record<string, Model> = {};
+
+        const child: Record<string, Model | Model[]> = {};
         for (const key of Object.keys(chunk.child)) {
-            const value = StoreService.load(chunk.child[key]);
-            if (value) child[key] = value;
+            const value = chunk.child[key];
+            if (value instanceof Array) {
+                child[key] = [];
+                for (const chunk of value) {
+                    const model = StoreService.load(chunk);
+                    if (model) child[key].push(model);
+                }
+            } else {
+                const model = StoreService.load(value);
+                if (model) child[key] = model;
+            }
         }
+        
         const result = new type({
             uuid: chunk.uuid,
             state: chunk.state,
-            child,
             refer: chunk.refer,
+            child,
         })
         return result;
     }

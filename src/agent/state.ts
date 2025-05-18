@@ -2,9 +2,11 @@ import { Value } from "@/types";
 import { Agent } from ".";
 import { Model } from "@/model";
 import { DebugService } from "@/service/debug";
-import { DecorConsumer, DecorUpdater } from "@/types/decor";
 import { TranxService } from "@/service/tranx";
-import { ModelStatus } from "@/utils/cycle";
+
+export type DecorUpdater<S = any, M extends Model = Model> = (target: M, state: S) => S
+
+export type DecorConsumer = { target: Model, updater: DecorUpdater }
 
 export class DecorProducer<S = any, M extends Model = Model> {
     public readonly path: string;
@@ -20,6 +22,8 @@ export class DecorProducer<S = any, M extends Model = Model> {
     }
 }
 
+
+
 @DebugService.is(target => target.target.name)
 export class StateAgent<
     S1 extends Record<string, Value> = Record<string, Value>,
@@ -29,13 +33,13 @@ export class StateAgent<
 
     private _current: Readonly<S1 & S2>
     public get current(): Readonly<S1 & S2> {
-        if (this.target._cycle.status !== ModelStatus.LOAD) return { ...this.draft };
+        if (!this.target._cycle.isLoad) return { ...this.draft };
         return { ...this._current }
     }
 
     public readonly draft: S1 & S2
     
-    private readonly router: {
+    private readonly _router: {
         consumers: Map<string, DecorConsumer[]>,
         producers: Map<DecorUpdater, DecorProducer[]>
     }
@@ -44,7 +48,7 @@ export class StateAgent<
     constructor(target: M, props: S1 & S2) {
         super(target);
         
-        this.router = {
+        this._router = {
             consumers: new Map(),
             producers: new Map()
         }
@@ -115,7 +119,7 @@ export class StateAgent<
         let path = key;
         while (target) {
             console.log('decor', path);
-            const router = target._agent.state.router;
+            const router = target._agent.state._router;
             const consumers = router.consumers.get(path) ?? [];
             for (const consumer of [...consumers]) {
                 const target = consumer.target;
@@ -139,15 +143,15 @@ export class StateAgent<
     ) {
         console.log('decor:', producer.path);
         const { target, path } = producer;
-        const router = target._agent.state.router;
+        const router = target._agent.state._router;
 
         const consumers = router.consumers.get(path) ?? [];
         consumers.push({ target: this.target, updater });
         router.consumers.set(path, consumers);
         
-        const producers = this.router.producers.get(updater) ?? [];
+        const producers = this._router.producers.get(updater) ?? [];
         producers.push(producer);
-        this.router.producers.set(updater, producers);
+        this._router.producers.set(updater, producers);
 
         const keys = path.split('/');
         let prev: (Model | undefined)[] = [target];
@@ -176,7 +180,7 @@ export class StateAgent<
 
         let index;
 
-        const router = target._agent.state.router;
+        const router = target._agent.state._router;
         const comsumers = router.consumers.get(path) ?? [];
         index = comsumers.findIndex(item => (
             item.updater === updater &&
@@ -184,7 +188,7 @@ export class StateAgent<
         ));
         if (index !== -1) comsumers.splice(index, 1);
 
-        const producers = this.router.producers.get(updater) ?? [];
+        const producers = this._router.producers.get(updater) ?? [];
         index = producers.indexOf(producer);
         if (index !== -1) producers.splice(index, 1);
         
@@ -228,7 +232,7 @@ export class StateAgent<
         let prefix = '';
         while (target) {
             console.log('target', target, prefix)
-            const paths = [...target._agent.state.router.consumers]
+            const paths = [...target._agent.state._router.consumers]
                 .map(entry => entry[0])
                 .filter(path => path.startsWith(prefix))
                 .map(path => path.split('/').pop() ?? '')
@@ -249,7 +253,7 @@ export class StateAgent<
     }
 
     public unload() {
-        for(const channel of this.router.producers) {
+        for(const channel of this._router.producers) {
             const [ handler, producers ] = channel;
             for (const producer of [...producers]) {
                 this.unbind(producer, handler);
@@ -259,7 +263,7 @@ export class StateAgent<
 
     @DebugService.log()
     public uninit() {
-        for (const channel of this.router.consumers) {
+        for (const channel of this._router.consumers) {
             const [ path, consumers ] = channel;
             const proxy = this.target.proxy;
             const producer: DecorProducer = Reflect.get(proxy.decor, path);

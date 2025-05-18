@@ -13,14 +13,11 @@ export { TranxService } from './service/tranx';
 export { ModelCycle } from './utils/cycle';
 export { ModelProxy } from './utils/proxy';
 
+export { Value } from './types';
+export { Props } from './types/props'
 export { 
     OnChildChange,
     OnStateChange,
     OnReferChange,
-    OnRouteChange,
+    onParentChange,
 } from './types/event';
-
-export { Value, Callback } from './types';
-export { Props, StrictProps } from './types/props'
-export { ModelStatus } from './utils/cycle';
-export { Define } from './model';

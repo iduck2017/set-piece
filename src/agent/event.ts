@@ -4,8 +4,8 @@ import { DebugService } from "@/service/debug";
 import { 
     EventHandler, 
     EventConsumer, 
-    EventEmitters,
-    BaseEvent, 
+    ModelEvent,
+    EventEmitter, 
 } from "@/types/event";
 
 export class EventProducer<E = any, M extends Model = Model> {
@@ -28,7 +28,7 @@ export class EventAgent<
     E extends Record<string, any> = Record<string, any>,
     M extends Model = Model
 > extends Agent<M> {
-    public readonly emitters: Readonly<EventEmitters<E & BaseEvent<M>>>;
+    public readonly current: Readonly<EventEmitter<E & ModelEvent<M>>>;
     
     private readonly _router: Readonly<{
         consumers: Map<string, EventConsumer[]>,
@@ -41,15 +41,9 @@ export class EventAgent<
             consumers: new Map(),
             producers: new Map()
         }
-        this.emitters = new Proxy({} as any, {
-            get: this._get.bind(this)
+        this.current = new Proxy({} as any, {
+            get: (origin: never, key: string) => this.emit.bind(this, key)
         })
-    }
-
-
-
-    private _get(origin: never, path: string) {
-        return this.emit.bind(this, path);
     }
 
     @DebugService.log()
@@ -180,5 +174,5 @@ export class EventAgent<
             return descriptor;
         };
     }
-    
+
 }
