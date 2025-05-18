@@ -68,7 +68,7 @@ export class StateAgent<
                 const path = keys.join('/');
                 const models = [ ...this.agent.child.current ];
                 for (const model of models) {
-                    model._agent.state.update(path);
+                    model?._agent.state.update(path);
                 }
             } else {
                 const child: any = this.agent.child.current;
@@ -150,19 +150,19 @@ export class StateAgent<
         this.router.producers.set(updater, producers);
 
         const keys = path.split('/');
-        let prev: Model[] = [target];
+        let prev: (Model | undefined)[] = [target];
         const key = keys.pop();
         while (keys.length) {
             const key = keys.pop();
             if (!key) break;
-            let next: Model[] = [];
+            let next: (Model | undefined)[] = [];
             for (const model of prev) {
-                if (key === String(0)) next.push(...model._agent.child.current);
-                else next.push(Reflect.get(model._agent.child.current, key));
+                if (key === String(0)) next.push(...model?._agent.child.current ?? []);
+                else if (model?._agent.child.current) next.push(Reflect.get(model._agent.child.current, key));
             }
             prev = next;
         }
-        if (key) prev.map(model => model._agent.state.update(key));
+        if (key) prev.map(model => model?._agent.state.update(key));
     }
 
 
@@ -189,21 +189,21 @@ export class StateAgent<
         if (index !== -1) producers.splice(index, 1);
         
         const keys = path.split('/');
-        let prev: Model[] = [target];
+        let prev: (Model | undefined)[] = [target];
         const key = keys.pop();
         while (keys.length) {
             const key = keys.pop();
             if (!key) break;
-            let next: Model[] = [];
+            let next: (Model | undefined)[] = [];
             for (const model of prev) {
-                if (key === String(0)) next.push(...model._agent.child.current);
-                else next.push(Reflect.get(model._agent.child.current, key));
+                if (key === String(0)) next.push(...model?._agent.child.current ?? []);
+                else if (model?._agent.child.current) next.push(Reflect.get(model._agent.child.current, key));
             }
             prev = next;
         }
 
         if (!key) return;
-        prev.map(model => model._agent.state.update(key));
+        prev.map(model => model?._agent.state.update(key));
     }
 
 

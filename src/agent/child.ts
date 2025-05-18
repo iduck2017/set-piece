@@ -11,9 +11,9 @@ export class ChildAgent<
     M extends Model = Model
 > extends Agent<M> {
     
-    public readonly draft: C1 & C2[]
+    public readonly draft: C1 & (C2 | undefined)[]
 
-    public get current(): Readonly<C1 & Readonly<C2[]>> {
+    public get current(): Readonly<C1 & Readonly<(C2 | undefined)[]>> {
         const result: any = [];
         for (const key of Object.keys(this.draft)) {
             result[key] = this.draft[key];
@@ -107,7 +107,7 @@ export class ChildAgent<
 
     @DebugService.log()
     @TranxService.span()
-    private push(origin: C1 & C2[], ...value: C2[]) {
+    private push(origin: C1 & (C2 | undefined)[], ...value: (C2 | undefined)[]) {
         const next = [ ...value ]
         for (let index = 0; index < next.length; index += 1) {
             next[index] = this.check(next[index]);
@@ -124,21 +124,21 @@ export class ChildAgent<
 
     @TranxService.span()
     @DebugService.log()
-    private pop(origin: C1 & C2[]) {
+    private pop(origin: C1 & (C2 | undefined)[]) {
         const prev = origin[origin.length - 1];
         if (prev instanceof Model) prev._cycle.unbind();
         return origin.pop();
     }
 
     @TranxService.span()
-    private shift(origin: C1 & C2[]) {
+    private shift(origin: C1 & (C2 | undefined)[]) {
         const prev = origin[0];
         if (prev instanceof Model) prev._cycle.unbind();
         return origin.shift();
     }
 
     @TranxService.span()
-    private unshift(origin: C1 & C2[], ...value: C2[]) {
+    private unshift(origin: C1 & (C2 | undefined)[], ...value: (C2 | undefined)[]) {
         const next = [ ...value ]
         for (let index = 0; index < next.length; index += 1) {
             next[index] = this.check(next[index]);
@@ -154,7 +154,7 @@ export class ChildAgent<
     }
 
     @TranxService.span()
-    private splice(origin: C1 & C2[], start: number, count: number, ...value: C2[]) {
+    private splice(origin: C1 & (C2 | undefined)[], start: number, count: number, ...value: (C2 | undefined)[]) {
         const prev: Array<Model | undefined> = origin.slice(start, start + count);
         for (let index = 0; index < prev.length; index += 1) {
             const item = prev[index];
@@ -175,7 +175,7 @@ export class ChildAgent<
     }
 
     @TranxService.span()
-    private fill(origin: C1 & C2[], sample: C2) {
+    private fill(origin: C1 & (C2 | undefined)[], sample: C2) {
         const length = origin.length;
         for (let index = 0; index < length; index += 1) {
             const prev = origin[index];
@@ -187,12 +187,12 @@ export class ChildAgent<
     }
 
     @TranxService.span()
-    private reverse(origin: C1 & C2[]) {
+    private reverse(origin: C1 & (C2 | undefined)[]) {
         return origin.reverse();
     }
 
     @TranxService.span()
-    private sort(origin: C1 & C2[], handler: (a: C2, b: C2) => number) {
+    private sort(origin: C1 & (C2 | undefined)[], handler: (a: C2, b: C2) => number) {
         return origin.sort(handler);
     }
 
