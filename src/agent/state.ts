@@ -24,7 +24,7 @@ export class DecorProducer<S = any, M extends Model = Model> {
 
 
 
-@DebugService.is(target => target.target.name)
+@DebugService.is(target => target.target.name + '::state')
 export class StateAgent<
     S1 extends Record<string, Value> = Record<string, Value>,
     S2 extends Record<string, Value> = Record<string, Value>,
@@ -68,17 +68,14 @@ export class StateAgent<
         if (!key) return;
 
         if (keys.length) {
-            if (key === String(0)) {
-                const path = keys.join('/');
-                const models = [ ...this.agent.child.current ];
-                for (const model of models) {
-                    model?._agent.state.update(path);
+            const child: Record<string, Model | Model[]> = this.agent.child.current;
+            const value: unknown = child[key];
+            if (value instanceof Array) {
+                for (const model of value) {
+                    if (model instanceof Model) model._agent.state.update(path);
                 }
-            } else {
-                const child: any = this.agent.child.current;
-                const model: unknown = child[key];
-                if (model instanceof Model) model._agent.state.update(path)
             }
+            if (value instanceof Model) value._agent.state.update(path);
         } else {
             this._update(key);
         }
@@ -127,7 +124,7 @@ export class StateAgent<
                 console.log('updater', updater)
                 next = updater.call(target, this.target, next);
             }
-            path = target._agent.route.current.path + '/' + path;
+            path = target._cycle.path + '/' + path;
             target = target.parent;
         }
 
@@ -153,20 +150,7 @@ export class StateAgent<
         producers.push(producer);
         this._router.producers.set(updater, producers);
 
-        const keys = path.split('/');
-        let prev: (Model | undefined)[] = [target];
-        const key = keys.pop();
-        while (keys.length) {
-            const key = keys.pop();
-            if (!key) break;
-            let next: (Model | undefined)[] = [];
-            for (const model of prev) {
-                if (key === String(0)) next.push(...model?._agent.child.current ?? []);
-                else if (model?._agent.child.current) next.push(Reflect.get(model._agent.child.current, key));
-            }
-            prev = next;
-        }
-        if (key) prev.map(model => model?._agent.state.update(key));
+        target._agent.state.update(path);
     }
 
 
@@ -192,22 +176,7 @@ export class StateAgent<
         index = producers.indexOf(producer);
         if (index !== -1) producers.splice(index, 1);
         
-        const keys = path.split('/');
-        let prev: (Model | undefined)[] = [target];
-        const key = keys.pop();
-        while (keys.length) {
-            const key = keys.pop();
-            if (!key) break;
-            let next: (Model | undefined)[] = [];
-            for (const model of prev) {
-                if (key === String(0)) next.push(...model?._agent.child.current ?? []);
-                else if (model?._agent.child.current) next.push(Reflect.get(model._agent.child.current, key));
-            }
-            prev = next;
-        }
-
-        if (!key) return;
-        prev.map(model => model?._agent.state.update(key));
+        target._agent.state.update(path);
     }
 
 
@@ -242,8 +211,8 @@ export class StateAgent<
                 if (keys.includes(path)) continue;
                 keys.push(path);
             }
-            prefix = target.path + '/';
-            target = target.parent;
+            prefix = target._cycle.path + '/';
+            target = target._cycle.parent;
         }
         console.log('keys', keys)
         
