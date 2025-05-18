@@ -3,17 +3,18 @@ import { Agent } from ".";
 import { DebugService } from "@/service/debug";
 import { ModelStatus } from "@/utils/cycle";
 import { TranxService } from "@/service/tranx";
+import { Child } from "@/types/model";
 
 @DebugService.is(target => target.target.name)
 export class ChildAgent<
     C1 extends Record<string, Model> = Record<string, Model>,
-    C2 extends Model = Model,
+    C2 extends Record<string, Model> = Record<string, Model>,
     M extends Model = Model
 > extends Agent<M> {
     
-    public readonly draft: C1 & (C2 | undefined)[]
+    public readonly draft: Child<C1, C2>
 
-    public get current(): Readonly<C1 & Readonly<(C2 | undefined)[]>> {
+    public get current(): Readonly<Child<C1, C2>> {
         const result: any = [];
         for (const key of Object.keys(this.draft)) {
             result[key] = this.draft[key];
@@ -23,7 +24,7 @@ export class ChildAgent<
     
     constructor(
         target: M, 
-        props: C1 & Record<number, C2>
+        props: Readonly<Child<C1, C2>>
     ) {
         super(target);
 
@@ -40,10 +41,7 @@ export class ChildAgent<
     }
 
     private check<T>(value: T): T {
-        if (
-            value instanceof Model && 
-            value._cycle.status >= ModelStatus.BIND
-        ) return value.copy;
+        if (value instanceof Model && value._cycle.isBind) return value.copy;
         return value;
     }
 

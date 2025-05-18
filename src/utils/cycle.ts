@@ -14,29 +14,48 @@ export class ModelCycle<
     P extends Model = Model,
     M extends Model = Model
 > {
-    public status: ModelStatus;
 
-    public target: Model;
+    private _path: string | undefined;
+    public get path(): string | undefined { return this._path; }
+
+    private _parent: P | undefined;
+    public get parent(): P | undefined { return this._parent; }
+
+    
+    
+    private _isBind: boolean;
+    public get isBind(): boolean { return this._isBind; }
+
+    private _isLoad: boolean;
+    public get isLoad(): boolean { return this._isLoad; }
+
+
+
+    public readonly target: Model;
 
     constructor(target: M) {
-        this.status = ModelStatus.INIT;
         this.target = target;
-    }
-    
-    public init() {
-        this.target._agent.refer.init();
+        this._isBind = false;
+        this._isLoad = false;
     }
 
-    public bind(parent: P | undefined, path: string | number) {
-        this.target._agent.route.bind(parent, path);
-        this.status = ModelStatus.BIND;
-        if (parent?._cycle.status === ModelStatus.LOAD) this.load();
+
+    public bind(parent: P | undefined, path: string) {
+        this._isBind = true;
+        this._path = path;
+        this._parent = parent;
+        this.target._agent.refer.bind();
+        
+        if (parent?._cycle._isLoad) this.load();
     }
 
     public unbind() {
-        if (this.status === ModelStatus.LOAD) this.unload();
-        this.target._agent.route.unbind();
-        this.status = ModelStatus.INIT;
+        if (this._isLoad) this.unload();
+
+        this.target._agent.refer.unbind();
+        this._parent = undefined;
+        this._path = undefined;
+        this._isBind = false;
     }
 
     @TranxService.span()
@@ -48,7 +67,7 @@ export class ModelCycle<
     @DebugService.log()
     @TranxService.span()
     public load() {
-        this.status = ModelStatus.LOAD;
+        this._isLoad = true;
         this.target._agent.child.load();
         this.target._agent.event.load();
         this.target._agent.state.load();
@@ -60,17 +79,17 @@ export class ModelCycle<
         this.target._agent.child.unload();
         this.target._agent.event.unload();
         this.target._agent.state.unload();
-        this.status = ModelStatus.BIND;
+        this._isLoad = false;
     }
 
     @DebugService.log()
     public uninit() {
-        console.log('uninit:', this.target.constructor.name)
         this.target._agent.child.uninit();
-        this.target._agent.refer.uninit();
+        this.target._agent.refer.unbind();
         this.target._agent.event.uninit();
         this.target._agent.state.uninit();
     }
+
 
     public static boot<T extends Model>(root: T): T {
         root._cycle.bind(undefined, 'root')

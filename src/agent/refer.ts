@@ -2,7 +2,7 @@ import { Model } from "@/model";
 import { Agent } from ".";
 import { DebugService } from "@/service/debug";
 import { TranxService } from "@/service/tranx";
-import { Refer, ReferAddrs } from "@/types/refer";
+import { Addrs, Refer } from "@/types/model";
 
 @DebugService.is(target => target.target.name)
 export class ReferAgent<
@@ -14,7 +14,7 @@ export class ReferAgent<
         return { ...this.draft };
     }
 
-    private readonly _addrs: ReferAddrs<R1, R2>;
+    private readonly _addrs: Addrs<R1, R2>;
     public get addrs() {
         return { ...this._addrs }
     }
@@ -23,7 +23,7 @@ export class ReferAgent<
 
     constructor(
         target: M,
-        props?: Partial<ReferAddrs<R1, R2>>
+        props?: Partial<Addrs<R1, R2>>
     ) {
         super(target);
 
@@ -36,11 +36,11 @@ export class ReferAgent<
     }
 
     
-    public init() {
+    public bind() {
         ReferAgent.registry[this.target.uuid] = this.target;
     }
 
-    public uninit() {
+    public unbind() {
         const router = ReferAgent.router[this.target.uuid] ?? [];
         for (const uuid of router) {
             const model = ReferAgent.query(uuid);
@@ -67,9 +67,9 @@ export class ReferAgent<
     }
 
 
-    private bind(target?: string | string[]) {
+    private _link(target?: string | string[]) {
         if (target instanceof Array) {
-            for (const uuid of target) this.bind(uuid);
+            for (const uuid of target) this._link(uuid);
             return;
         }
         if (!target) return;
@@ -79,9 +79,9 @@ export class ReferAgent<
         ReferAgent.router[target] = consumers;
     }
 
-    private unbind(target?: string | string[]) {
+    private _unlink(target?: string | string[]) {
         if (target instanceof Array) {
-            for (const uuid of target) this.unbind(uuid);
+            for (const uuid of target) this._unlink(uuid);
             return;
         }
         if (!target) return;
@@ -96,12 +96,12 @@ export class ReferAgent<
     private set(origin: any, key: string, value: Model | Model[] | undefined) {
         console.log('refer set:', key, value);
         const prev = origin[key];
-        this.unbind(prev);
+        this._unlink(prev);
         const next = value instanceof Array ? 
             value.map(item => item?.uuid) : 
             value?.uuid;
         origin[key] = next;
-        this.bind(next);
+        this._link(next);
         return true;
     }
 
@@ -109,7 +109,7 @@ export class ReferAgent<
     @TranxService.span()
     private delete(origin: any, key: string) {
         let prev = origin[key];
-        this.unbind(prev);
+        this._unlink(prev);
         delete origin[key];
         return true;
     }

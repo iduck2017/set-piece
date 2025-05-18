@@ -7,7 +7,6 @@ import {
     EventEmitters,
     BaseEvent, 
 } from "@/types/event";
-import { ModelStatus } from "@/utils/cycle";
 
 export class EventProducer<E = any, M extends Model = Model> {
    
@@ -24,51 +23,53 @@ export class EventProducer<E = any, M extends Model = Model> {
     }
 }
 
-@DebugService.is(target => target.target.name)
+@DebugService.is(target => target.target.name + '::event')
 export class EventAgent<
     E extends Record<string, any> = Record<string, any>,
     M extends Model = Model
 > extends Agent<M> {
     public readonly emitters: Readonly<EventEmitters<E & BaseEvent<M>>>;
     
-    private readonly router: Readonly<{
+    private readonly _router: Readonly<{
         consumers: Map<string, EventConsumer[]>,
         producers: Map<EventHandler, EventProducer[]>
     }>
     
     public constructor(target: M) {
         super(target)
-        this.router = {
+        this._router = {
             consumers: new Map(),
             producers: new Map()
         }
         this.emitters = new Proxy({} as any, {
-            get: this.getEmitter.bind(this)
+            get: this._get.bind(this)
         })
     }
 
-    private getEmitter(origin: never, path: string) {
+
+
+    private _get(origin: never, path: string) {
         return this.emit.bind(this, path);
     }
 
     @DebugService.log()
     public emit<E>(key: string, event: E) {
         console.log('emit', key);
-        if (this.target._cycle.status !== ModelStatus.LOAD) return;
+        if (!this.target._cycle.isLoad) return;
 
         let target: Model | undefined = this.target;
         let path = key;
         while(target) {
             console.log('event', path);
-            const router = target._agent.event.router;
+            const router = target._agent.event._router;
             const consumers = router.consumers.get(path) ?? [];
             for (const consumer of [...consumers]) {
                 const target = consumer.target;
                 const handler = consumer.handler;
                 handler.call(target, this.target, event);
             }
-            path = target._agent.route.current.path + '/' + path;
-            target = target.parent;
+            path = target._cycle.path + '/' + path;
+            target = target._cycle.parent;
         }
     }
 
@@ -81,16 +82,16 @@ export class EventAgent<
         console.log('event', producer.path);
 
         const { target, path } = producer;
-        const router = target._agent.event.router;
+        const router = target._agent.event._router;
 
         const consumers = router.consumers.get(path) ?? [];
         const consumer: EventConsumer = { target: this.target, handler }
         consumers.push(consumer);
         router.consumers.set(path, consumers);
         
-        const producers = this.router.producers.get(handler) ?? [];
+        const producers = this._router.producers.get(handler) ?? [];
         producers.push(producer);
-        this.router.producers.set(handler, producers);
+        this._router.producers.set(handler, producers);
     }
 
 
@@ -106,7 +107,7 @@ export class EventAgent<
         
         let index;
 
-        const router = target._agent.event.router;
+        const router = target._agent.event._router;
         const consumers = router.consumers.get(path) ?? [];
         index = consumers.findIndex(item => (
             item.handler === handler && 
@@ -114,20 +115,16 @@ export class EventAgent<
         ));
         if (index !== -1) consumers.splice(index, 1);
         
-        const producers = this.router.producers.get(handler) ?? [];
+        const producers = this._router.producers.get(handler) ?? [];
         index = producers.indexOf(producer);
         if (index !== -1) producers.splice(index, 1);
     
     }
 
-
-
     public load() {
-        console.log('load event', this.target.constructor.name);
-
         let constructor = this.target.constructor;
         while (constructor) {
-            const hooks = EventAgent.registry.get(constructor) ?? {};
+            const hooks = EventAgent._registry.get(constructor) ?? {};
             for (const key of Object.keys(hooks)) {
                 const accessors = hooks[key];
                 for (const accessor of accessors) {
@@ -141,10 +138,9 @@ export class EventAgent<
         }
     }
 
-
+    @DebugService.log()
     public unload() {
-        console.log('unload event', this.target.constructor.name);
-        for (const channel of this.router.producers) {
+        for (const channel of this._router.producers) {
             const [ handler, producers ] = channel;
             for (const producer of [...producers]) {
                 this.unbind(producer, handler);
@@ -152,8 +148,9 @@ export class EventAgent<
         }
     }
 
+    @DebugService.log()
     public uninit() {
-        for (const channel of this.router.consumers) {
+        for (const channel of this._router.consumers) {
             const [ path, consumers ] = channel;
             const proxy = this.target.proxy;
             const producer: EventProducer = Reflect.get(proxy.event, path);
@@ -165,7 +162,8 @@ export class EventAgent<
     }
 
 
-    private static registry: Map<Function, Record<string, Array<(model: Model) => EventProducer | undefined>>> = new Map();
+    private static _registry: Map<Function, Record<string, Array<(model: Model) => EventProducer | undefined>>> = new Map();
+
 
     public static use<E, M extends Model, I extends Model>(
         accessor: (model: I) => EventProducer<E, M> | undefined
@@ -175,11 +173,12 @@ export class EventAgent<
             key: string,
             descriptor: TypedPropertyDescriptor<EventHandler<E, M>>
         ): TypedPropertyDescriptor<EventHandler<E, M>> {
-            const hooks = EventAgent.registry.get(target.constructor) ?? {};
+            const hooks = EventAgent._registry.get(target.constructor) ?? {};
             if (!hooks[key]) hooks[key] = [];
             hooks[key].push(accessor);
-            EventAgent.registry.set(target.constructor, hooks);
+            EventAgent._registry.set(target.constructor, hooks);
             return descriptor;
         };
     }
+    
 }

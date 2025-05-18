@@ -109,7 +109,7 @@ export class StateAgent<
 
         let target: Model | undefined = this.target;
         const prev = this.draft[key];
-        if (this.target._cycle.status !== ModelStatus.LOAD) return prev;
+        if (!this.target._cycle.isLoad) return prev;
 
         let next = this.draft[key];
         let path = key;
