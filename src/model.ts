@@ -75,6 +75,11 @@ export abstract class Model<
         return this._cycle.status;
     }
 
+
+    public get name() {
+        return this.constructor.name;
+    }
+
     public get parent(): P | undefined {
         return this._agent.route.current.parent
     }

@@ -15,7 +15,7 @@ export type ChildProxy<
     never;
 
 
-@DebugService.is(target => target.target.constructor.name)
+@DebugService.is(target => target.target.name)
 export class ModelProxy<
     E extends Record<string, any> = Record<string, any>,
     S1 extends Record<string, Value> = Record<string, Value>,
@@ -33,7 +33,6 @@ export class ModelProxy<
     public readonly path?: string;
     
     public readonly target: M;
-
 
     constructor(target: M, path?: string) {
         this.path = path;

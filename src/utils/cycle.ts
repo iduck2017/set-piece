@@ -9,7 +9,7 @@ export enum ModelStatus {
     LOAD = 3,
 }
 
-@DebugService.is(target => target.target.constructor.name)
+@DebugService.is(target => target.target.name)
 export class ModelCycle<
     P extends Model = Model,
     M extends Model = Model
@@ -39,21 +39,23 @@ export class ModelCycle<
         this.status = ModelStatus.INIT;
     }
 
+    @TranxService.span()
     public reload() {
         this.unload();
         this.load();
     }
 
     @DebugService.log()
+    @TranxService.span()
     public load() {
+        this.status = ModelStatus.LOAD;
         this.target._agent.child.load();
         this.target._agent.event.load();
         this.target._agent.state.load();
-        this.status = ModelStatus.LOAD;
     }
 
-    @TranxService.span()
     @DebugService.log()
+    @TranxService.span()
     public unload() {
         this.target._agent.child.unload();
         this.target._agent.event.unload();

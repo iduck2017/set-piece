@@ -24,7 +24,7 @@ export class EventProducer<E = any, M extends Model = Model> {
     }
 }
 
-@DebugService.is(target => target.target.constructor.name)
+@DebugService.is(target => target.target.name)
 export class EventAgent<
     E extends Record<string, any> = Record<string, any>,
     M extends Model = Model
@@ -62,7 +62,7 @@ export class EventAgent<
             console.log('event', path);
             const router = target._agent.event.router;
             const consumers = router.consumers.get(path) ?? [];
-            for (const consumer of consumers) {
+            for (const consumer of [...consumers]) {
                 const target = consumer.target;
                 const handler = consumer.handler;
                 handler.call(target, this.target, event);
@@ -146,7 +146,7 @@ export class EventAgent<
         console.log('unload event', this.target.constructor.name);
         for (const channel of this.router.producers) {
             const [ handler, producers ] = channel;
-            for (const producer of producers) {
+            for (const producer of [...producers]) {
                 this.unbind(producer, handler);
             }
         }
@@ -157,7 +157,7 @@ export class EventAgent<
             const [ path, consumers ] = channel;
             const proxy = this.target.proxy;
             const producer: EventProducer = Reflect.get(proxy.event, path);
-            for (const consumer of consumers) {
+            for (const consumer of [...consumers]) {
                 const { target, handler } = consumer;
                 target._agent.event.unbind(producer, handler);
             }

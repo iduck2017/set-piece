@@ -2,7 +2,7 @@ import { Model } from "@/model";
 import { Agent } from ".";
 import { DebugService } from "@/service/debug";
 
-@DebugService.is(target => target.target.constructor.name)
+@DebugService.is(target => target.target.name)
 export class RouteAgent<
     P extends Model = Model,
     M extends Model = Model

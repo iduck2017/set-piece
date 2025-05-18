@@ -1,10 +1,10 @@
-import { Callback, Value } from "@/types";
+import { Value } from "@/types";
 import { Agent } from ".";
 import { Model } from "@/model";
 import { DebugService } from "@/service/debug";
 import { DecorConsumer, DecorUpdater } from "@/types/decor";
-import { ModelProxy } from "@/utils/proxy";
 import { TranxService } from "@/service/tranx";
+import { ModelStatus } from "@/utils/cycle";
 
 export class DecorProducer<S = any, M extends Model = Model> {
     public readonly path: string;
@@ -20,7 +20,7 @@ export class DecorProducer<S = any, M extends Model = Model> {
     }
 }
 
-@DebugService.is(target => target.target.constructor.name)
+@DebugService.is(target => target.target.name)
 export class StateAgent<
     S1 extends Record<string, Value> = Record<string, Value>,
     S2 extends Record<string, Value> = Record<string, Value>,
@@ -29,6 +29,7 @@ export class StateAgent<
 
     private _current: Readonly<S1 & S2>
     public get current(): Readonly<S1 & S2> {
+        if (this.target._cycle.status !== ModelStatus.LOAD) return { ...this.draft };
         return { ...this._current }
     }
 
@@ -79,8 +80,8 @@ export class StateAgent<
         }
     } 
 
-    @TranxService.span()
     @DebugService.log()
+    @TranxService.span()
     private _update(key: string) {
         console.log('update', key);
         const next = this.emit(key)
@@ -105,22 +106,27 @@ export class StateAgent<
     @DebugService.log()
     public emit(key: string) {
         console.log('emit', key);
+
         let target: Model | undefined = this.target;
         const prev = this.draft[key];
+        if (this.target._cycle.status !== ModelStatus.LOAD) return prev;
+
         let next = this.draft[key];
         let path = key;
         while (target) {
             console.log('decor', path);
             const router = target._agent.state.router;
             const consumers = router.consumers.get(path) ?? [];
-            for (const consumer of consumers) {
+            for (const consumer of [...consumers]) {
                 const target = consumer.target;
                 const updater = consumer.updater;
+                console.log('updater', updater)
                 next = updater.call(target, this.target, next);
             }
             path = target._agent.route.current.path + '/' + path;
             target = target.parent;
         }
+
         console.log('emit result:', prev, next);
         return next;
     }
@@ -195,7 +201,9 @@ export class StateAgent<
             }
             prev = next;
         }
-        if (key) prev.map(model => model._agent.state.update(key));
+
+        if (!key) return;
+        prev.map(model => model._agent.state.update(key));
     }
 
 
@@ -214,24 +222,48 @@ export class StateAgent<
             }
             constructor = (constructor as any).__proto__;
         }
+
+        const keys: string[] = [];
+        let target: Model | undefined = this.target;
+        let prefix = '';
+        while (target) {
+            console.log('target', target, prefix)
+            const paths = [...target._agent.state.router.consumers]
+                .map(entry => entry[0])
+                .filter(path => path.startsWith(prefix))
+                .map(path => path.split('/').pop() ?? '')
+                .filter(Boolean)
+                
+            for (const path of paths) {
+                if (keys.includes(path)) continue;
+                keys.push(path);
+            }
+            prefix = target.path + '/';
+            target = target.parent;
+        }
+        console.log('keys', keys)
+        
+        for (const key of keys) {
+            this.emit(key);
+        }
     }
 
     public unload() {
-        console.log('unload decor', this.target.constructor.name);
         for(const channel of this.router.producers) {
             const [ handler, producers ] = channel;
-            for (const producer of producers) {
+            for (const producer of [...producers]) {
                 this.unbind(producer, handler);
             }
         }
     }
 
+    @DebugService.log()
     public uninit() {
         for (const channel of this.router.consumers) {
             const [ path, consumers ] = channel;
             const proxy = this.target.proxy;
             const producer: DecorProducer = Reflect.get(proxy.decor, path);
-            for (const consumer of consumers) {
+            for (const consumer of [...consumers]) {
                 const { target, updater } = consumer;
                 target._agent.state.unbind(producer, updater);
             }

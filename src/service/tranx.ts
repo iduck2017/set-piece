@@ -36,6 +36,7 @@ export class TranxService {
                     const namespace = this.constructor.name + '::transaction'
                     console.group(namespace)
 
+
                     const registry = TranxService.registry;
                     const agent = this.target._agent;
                     
@@ -55,12 +56,16 @@ export class TranxService {
                         registry.cycle.add(this.target)
                     }
 
-                    if (TranxService._isSpan) return handler.call(this, ...args);
+                    if (TranxService._isSpan) {
+                        const result = handler.call(this, ...args);
+                        console.groupEnd()
+                        return result;
+                    }
 
                     TranxService._isSpan = true;
                     const result = handler.call(this, ...args);
                     
-                    const refer = [...TranxService.registry.state];
+                    const refer = [...TranxService.registry.refer];
                     const child = [...TranxService.registry.child];
                     const state = [...TranxService.registry.state];
                     const route = [...TranxService.registry.route];
@@ -73,6 +78,15 @@ export class TranxService {
                     TranxService.registry.cycle.clear();
 
                     TranxService._isSpan = false;
+
+                    console.log(
+                        'tranx', 
+                        'refer', refer.length, 
+                        'child', child.length, 
+                        'state', state.length, 
+                        'route', route.length, 
+                        'cycle', cycle.length
+                    )
 
                     
                     for (const model of cycle) {
@@ -88,6 +102,7 @@ export class TranxService {
                     }
                     for (const [model, prev] of state) {
                         const next = model.state;
+                        console.log({ prev, next })
                         model._agent.event.emitters.onStateChange({ prev, next })
                     }
                     for (const [model, prev] of route) {

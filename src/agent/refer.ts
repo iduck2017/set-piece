@@ -4,7 +4,7 @@ import { DebugService } from "@/service/debug";
 import { TranxService } from "@/service/tranx";
 import { Refer, ReferAddrs } from "@/types/refer";
 
-@DebugService.is(target => target.target.constructor.name)
+@DebugService.is(target => target.target.name)
 export class ReferAgent<
     R1 extends Record<string, Model> = Record<string, Model>,
     R2 extends Record<string, Model> = Record<string, Model>,
@@ -91,8 +91,8 @@ export class ReferAgent<
         if (index !== -1) consumers.splice(index, 1);
     }
         
-    @TranxService.span()
     @DebugService.log()
+    @TranxService.span()
     private set(origin: any, key: string, value: Model | Model[] | undefined) {
         console.log('refer set:', key, value);
         const prev = origin[key];
@@ -105,8 +105,8 @@ export class ReferAgent<
         return true;
     }
 
-    @TranxService.span()
     @DebugService.log()
+    @TranxService.span()
     private delete(origin: any, key: string) {
         let prev = origin[key];
         this.unbind(prev);

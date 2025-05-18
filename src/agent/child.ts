@@ -4,7 +4,7 @@ import { DebugService } from "@/service/debug";
 import { ModelStatus } from "@/utils/cycle";
 import { TranxService } from "@/service/tranx";
 
-@DebugService.is(target => target.target.constructor.name)
+@DebugService.is(target => target.target.name)
 export class ChildAgent<
     C1 extends Record<string, Model> = Record<string, Model>,
     C2 extends Model = Model,
@@ -81,12 +81,17 @@ export class ChildAgent<
         return value;
     }
 
+    @DebugService.log()
     @TranxService.span()
     private set(origin: Record<string, unknown>, key: string, next: unknown) {
         const prev = origin[key];
-        if (prev instanceof Model) prev._cycle.unbind();
+        if (prev instanceof Model) {
+            console.log('unbind', prev)
+            prev._cycle.unbind();
+        }
         origin[key] = next = this.check(next);
         if (next instanceof Model) {
+            console.log('bind', next)
             next._cycle.bind(this.target, key);
         }
         return true;
@@ -100,8 +105,8 @@ export class ChildAgent<
         return true;
     }
 
-    @TranxService.span()
     @DebugService.log()
+    @TranxService.span()
     private push(origin: C1 & C2[], ...value: C2[]) {
         const next = [ ...value ]
         for (let index = 0; index < next.length; index += 1) {
