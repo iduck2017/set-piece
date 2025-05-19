@@ -10,7 +10,7 @@ export { StoreService } from "./service/store";
 export { CheckService } from "./service/check";
 export { TranxService } from './service/tranx';
 
-export { ModelCycle } from './utils/cycle';
+export { ModelCycle as ModelCycle } from './utils/cycle';
 export { ModelProxy } from './utils/proxy';
 
 export { Value } from './types';

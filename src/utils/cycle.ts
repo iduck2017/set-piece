@@ -7,49 +7,25 @@ import { TranxService } from "@/service/tranx";
 export class ModelCycle<
     P extends Model = Model,
     M extends Model = Model
-> {
-
-    private _path: string | undefined;
-    public get path(): string | undefined { return this._path; }
-
-    private _parent: P | undefined;
-    public get parent(): P | undefined { return this._parent; }
-
-    
-    
-    private _isBind: boolean;
-    public get isBind(): boolean { return this._isBind; }
-
+> extends Agent<M> {
     private _isLoad: boolean;
     public get isLoad(): boolean { return this._isLoad; }
 
-
-
-    public readonly target: Model;
-
     constructor(target: M) {
-        this.target = target;
-        this._isBind = false;
+        super(target);
         this._isLoad = false;
     }
 
-    @TranxService.span()
     public bind(parent: P | undefined, path: string) {
-        this._isBind = true;
-        this._path = path;
-        this._parent = parent;
-        this.target._agent.refer.bind();
-        
+        this.agent.route.bind(parent, path);
+        this.agent.refer.bind();
         if (parent?._cycle._isLoad) this.load();
     }
 
-    @TranxService.span()
     public unbind() {
         if (this._isLoad) this.unload();
-        this.target._agent.refer.unbind();
-        this._parent = undefined;
-        this._path = undefined;
-        this._isBind = false;
+        this.agent.refer.unbind();
+        this.agent.route.unbind();
     }
 
     @TranxService.span()
@@ -62,26 +38,26 @@ export class ModelCycle<
     @TranxService.span()
     public load() {
         this._isLoad = true;
-        this.target._agent.child.load();
-        this.target._agent.event.load();
-        this.target._agent.state.load();
+        this.agent.child.load();
+        this.agent.event.load();
+        this.agent.state.load();
     }
 
     @DebugService.log()
     @TranxService.span()
     public unload() {
-        this.target._agent.child.unload();
-        this.target._agent.event.unload();
-        this.target._agent.state.unload();
+        this.agent.child.unload();
+        this.agent.event.unload();
+        this.agent.state.unload();
         this._isLoad = false;
     }
 
     @DebugService.log()
     public uninit() {
-        this.target._agent.child.uninit();
-        this.target._agent.refer.unbind();
-        this.target._agent.event.uninit();
-        this.target._agent.state.uninit();
+        this.agent.child.uninit();
+        this.agent.refer.unbind();
+        this.agent.event.uninit();
+        this.agent.state.uninit();
     }
 
 

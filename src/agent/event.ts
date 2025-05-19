@@ -10,9 +10,9 @@ import {
 
 export class EventProducer<E = any, M extends Model = Model> {
    
-    public readonly path: string;
-    
     public readonly type: 'event';
+
+    public readonly path: string;
     
     public readonly target: M;
     
@@ -48,13 +48,13 @@ export class EventAgent<
 
     @DebugService.log()
     public emit<E>(key: string, event: E) {
-        console.log('emit', key);
         if (!this.target._cycle.isLoad) return;
+
+        console.log('emit', key);
 
         let target: Model | undefined = this.target;
         let path = key;
         while(target) {
-            console.log('event', path);
             const router = target._agent.event._router;
             const consumers = router.consumers.get(path) ?? [];
             for (const consumer of [...consumers]) {
@@ -62,8 +62,8 @@ export class EventAgent<
                 const handler = consumer.handler;
                 handler.call(target, this.target, event);
             }
-            path = target._cycle.path + '/' + path;
-            target = target._cycle.parent;
+            path = target._agent.route.path + '/' + path;
+            target = target._agent.route.parent;
         }
     }
 
@@ -73,8 +73,6 @@ export class EventAgent<
         producer: EventProducer<E, M>, 
         handler: EventHandler<E, M>
     ) {
-        console.log('event', producer.path);
-
         const { target, path } = producer;
         const router = target._agent.event._router;
 
@@ -95,8 +93,6 @@ export class EventAgent<
         producer: EventProducer<E, M>, 
         handler: EventHandler<E, M>
     ) {
-        console.log('event', producer.path);
-        
         const { target, path } = producer;
         
         let index;
@@ -116,7 +112,7 @@ export class EventAgent<
     }
 
     public load() {
-        let constructor = this.target.constructor;
+        let constructor: any = this.target.constructor;
         while (constructor) {
             const hooks = EventAgent._registry.get(constructor) ?? {};
             for (const key of Object.keys(hooks)) {
@@ -124,11 +120,11 @@ export class EventAgent<
                 for (const accessor of accessors) {
                     const producer = accessor(this.target);
                     if (!producer) continue;
-                    const handler: any = Reflect.get(this.target, key)
-                    this.bind(producer, handler);
+                    const target: any = this.target;
+                    this.bind(producer, target[key]);
                 }
             }
-            constructor = (constructor as any).__proto__
+            constructor = constructor.__proto__
         }
     }
 
@@ -146,8 +142,7 @@ export class EventAgent<
     public uninit() {
         for (const channel of this._router.consumers) {
             const [ path, consumers ] = channel;
-            const proxy = this.target.proxy;
-            const producer: EventProducer = Reflect.get(proxy.event, path);
+            const producer: EventProducer = this.target.proxy.event[path];
             for (const consumer of [...consumers]) {
                 const { target, handler } = consumer;
                 target._agent.event.unbind(producer, handler);
@@ -167,9 +162,11 @@ export class EventAgent<
             key: string,
             descriptor: TypedPropertyDescriptor<EventHandler<E, M>>
         ): TypedPropertyDescriptor<EventHandler<E, M>> {
+            
             const hooks = EventAgent._registry.get(target.constructor) ?? {};
             if (!hooks[key]) hooks[key] = [];
             hooks[key].push(accessor);
+
             EventAgent._registry.set(target.constructor, hooks);
             return descriptor;
         };

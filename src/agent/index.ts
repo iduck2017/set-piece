@@ -4,8 +4,10 @@ import { ChildAgent } from "./child";
 import { StateAgent } from "./state";
 import { ReferAgent } from "./refer";
 import { Value } from "@/types";
+import { RouteAgent } from "./route";
 
 export type Agents<
+    P extends Model = Model,
     E extends Record<string, any> = {},
     S1 extends Record<string, Value> = {},
     S2 extends Record<string, Value> = {},
@@ -19,6 +21,7 @@ export type Agents<
     child: ChildAgent<C1, C2, M>;
     state: StateAgent<S1, S2, M>;
     refer: ReferAgent<R1, R2, M>;
+    route: RouteAgent<P, M>;
 }
 
 export class Agent<M extends Model = Model> {

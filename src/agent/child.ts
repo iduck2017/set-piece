@@ -33,10 +33,15 @@ export class ChildAgent<
     ) {
         super(target);
 
-        const origin: any = [];
+        const origin: any = {};
         for (const key of Object.keys(props)) {
             const value = props[key];
-            if (value instanceof Model) {  }
+            if (value instanceof Array) {
+                origin[key] = [];
+                for (const model of value) {
+                    if (model) {}
+                }
+            }
             const next = origin[key] = this.check(props[key]);
             if (next instanceof Model) next._cycle.bind(this.target, key);
         }
@@ -47,7 +52,7 @@ export class ChildAgent<
     }
 
     private check<T>(value: T): T {
-        if (value instanceof Model && value._cycle.isBind) return value.copy;
+        if (value instanceof Model && value._agent.route.isBind) return value.copy;
         return value;
     }
 

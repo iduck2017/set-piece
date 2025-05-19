@@ -9,6 +9,7 @@ import { ModelProxy } from "./utils/proxy"
 import { ModelCycle } from "./utils/cycle"
 import { v4 as uuid } from 'uuid';
 import { EventEmitter } from "./types/event"
+import { RouteAgent } from "./agent/route"
 
 export namespace Define {
     export type P = Model
@@ -35,7 +36,7 @@ export abstract class Model<
     
     public readonly _cycle: ModelCycle<P, this>;
 
-    public readonly _agent: Readonly<Agents<E, S1, S2, C1, C2, R1, R2, this>>;
+    public readonly _agent: Readonly<Agents<P, E, S1, S2, C1, C2, R1, R2, this>>;
 
 
 
@@ -47,7 +48,7 @@ export abstract class Model<
 
     public get refer(): Readonly<ReferGroup<R1, R2>> { return this._agent.refer.current }
     
-    public get parent(): P | undefined { return this._cycle.parent }
+    public get parent(): P | undefined { return this._agent.route.parent }
 
 
 
@@ -65,7 +66,7 @@ export abstract class Model<
 
     protected readonly event: Readonly<EventEmitter<E>>;
 
-    
+
 
 
     constructor(props: Props<S1, S2, C1, C2, R1, R2>) {
@@ -82,6 +83,7 @@ export abstract class Model<
             child: new ChildAgent<C1, C2, this>(this, props.child),
             state: new StateAgent<S1, S2, this>(this, props.state),
             refer: new ReferAgent<R1, R2, this>(this, props.refer),
+            route: new RouteAgent<P, this>(this),
         }
 
         this.draft = {

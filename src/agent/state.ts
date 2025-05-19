@@ -33,7 +33,6 @@ export class StateAgent<
 
     private _current: Readonly<S1 & S2>
     public get current(): Readonly<S1 & S2> {
-        if (!this.target._cycle.isLoad) return { ...this.draft };
         return { ...this._current }
     }
 
@@ -124,8 +123,8 @@ export class StateAgent<
                 console.log('updater', updater)
                 next = updater.call(target, this.target, next);
             }
-            path = target._cycle.path + '/' + path;
-            target = target.parent;
+            path = target._agent.route.path + '/' + path;
+            target = target._agent.route.parent;
         }
 
         console.log('emit result:', prev, next);
@@ -189,8 +188,8 @@ export class StateAgent<
                 for (const accessor of accessors) {
                     const producer = accessor(this.target);
                     if (!producer) continue;
-                    const handler: any = Reflect.get(this.target, key)
-                    this.bind(producer, handler);
+                    const target: any = this.target;
+                    this.bind(producer, target[key]);
                 }
             }
             constructor = (constructor as any).__proto__;
@@ -211,8 +210,8 @@ export class StateAgent<
                 if (keys.includes(path)) continue;
                 keys.push(path);
             }
-            prefix = target._cycle.path + '/';
-            target = target._cycle.parent;
+            prefix = target._agent.route.path + '/';
+            target = target._agent.route.parent;
         }
         console.log('keys', keys)
         
@@ -228,14 +227,15 @@ export class StateAgent<
                 this.unbind(producer, handler);
             }
         }
+        this._current = this.draft;
     }
 
     @DebugService.log()
     public uninit() {
         for (const channel of this._router.consumers) {
             const [ path, consumers ] = channel;
-            const proxy = this.target.proxy;
-            const producer: DecorProducer = Reflect.get(proxy.decor, path);
+            const decor: Record<string, DecorProducer> = this.target.proxy.decor;
+            const producer: DecorProducer = decor[path];
             for (const consumer of [...consumers]) {
                 const { target, updater } = consumer;
                 target._agent.state.unbind(producer, updater);
@@ -254,9 +254,11 @@ export class StateAgent<
             key: string,
             descriptor: TypedPropertyDescriptor<DecorUpdater<S, M>>
         ): TypedPropertyDescriptor<DecorUpdater<S, M>> {
+            
             const registry = StateAgent.registry.get(target.constructor) ?? {};
             if (!registry[key]) registry[key] = [];
             registry[key].push(accessor);
+
             StateAgent.registry.set(target.constructor, registry);
             return descriptor;
         }

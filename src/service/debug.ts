@@ -25,11 +25,15 @@ export class DebugService {
                     const accessor = DebugService.alias.get(this.constructor)
                     const name = accessor ? accessor(this) : this.constructor.name
                     const namespace = name + '::' + key
+
                     console.group(namespace)
+                    
                     DebugService.stack.push(namespace);
                     const result = handler.call(this, ...args);
                     DebugService.stack.pop();
+                    
                     console.groupEnd()
+                    
                     return result;
                 }
             }

@@ -10,9 +10,7 @@ interface Chunk {
 }
 
 export class StoreService {
-    private static readonly registry: Map<string, any> = new Map();
-    
-    private static readonly registryInvert: Map<Function, string> = new Map();
+    private static readonly registry: Map<any, any> = new Map();
     
     public static save(model: Model): Chunk | undefined {
         const props: {
@@ -27,9 +25,8 @@ export class StoreService {
             ...model.props,
         };
 
-        const code = StoreService.registryInvert.get(model.constructor);
+        const code = StoreService.registry.get(model.constructor);
         if (!code) return undefined;
-
 
         const result: Chunk = {
             code,
@@ -45,10 +42,13 @@ export class StoreService {
             if (value instanceof Array) {
                 result.child[key] = [];
                 for (const model of value) {
+                    if (!model) continue;
                     const chunk = StoreService.save(model);
                     if (chunk) result.child[key].push(chunk);
                 }
-            } else {
+            }
+
+            if (value instanceof Model) {
                 const chunk = StoreService.save(value);
                 if (chunk) result.child[key] = chunk;
             }
@@ -58,19 +58,25 @@ export class StoreService {
     }
 
     public static load(chunk: Chunk): Model | undefined {
+
         const type = StoreService.registry.get(chunk.code);
         if (!type) return undefined;
 
         const child: Record<string, Model | Model[]> = {};
+
         for (const key of Object.keys(chunk.child)) {
             const value = chunk.child[key];
+
             if (value instanceof Array) {
                 child[key] = [];
                 for (const chunk of value) {
+                    if (!chunk) continue;
                     const model = StoreService.load(chunk);
                     if (model) child[key].push(model);
                 }
-            } else {
+            }
+            
+            else if (value) {
                 const model = StoreService.load(value);
                 if (model) child[key] = model;
             }
@@ -96,7 +102,7 @@ export class StoreService {
         ) {
             console.log('useProduct', constructor.name, code)
             StoreService.registry.set(code, constructor);
-            StoreService.registryInvert.set(constructor, code);
+            StoreService.registry.set(constructor, code);
         }
     }
 }

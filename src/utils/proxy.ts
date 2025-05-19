@@ -57,13 +57,13 @@ export class ModelProxy<
             const path = keys.join('/');
             const child: Record<string, DecorProducer> = this.child[key].decor;
             return child[path];
-        } else {
-            if (origin[key]) return origin[key];
-
-            const path = this.path ? [this.path, key].join('/') : key; 
-            origin[key] = new DecorProducer(this.target, path);
-            return origin[key];
         }
+        
+        if (!origin[key]) {
+            const path = [this.path, key].filter(Boolean).join('/');
+            origin[key] = new DecorProducer(this.target, path);
+        }
+        return origin[key];
     }
 
 
@@ -76,21 +76,21 @@ export class ModelProxy<
             const path = keys.join('/');
             const child: Record<string, EventProducer> = this.child[key].event;
             return child[path];
-        } else {
-            if (origin[key]) return origin[key];
-
-            const path = this.path ? [this.path, key].join('/') : key; 
+        } 
+        
+        if (!origin[key]) {
+            const path = [this.path, key].filter(Boolean).join('/');
             origin[key] = new EventProducer(this.target, path);
-            return origin[key]
         }
+        return origin[key];
     }
 
 
     private _getChild(origin: Record<string, ModelProxy>, key: string) {
-        if (origin[key]) return origin[key];
-        
-        const path = this.path ? [this.path, key].join('/') : key; 
-        origin[key] = new ModelProxy(this.target, path);
+        if (!origin[key]) {
+            const path = [this.path, key].filter(Boolean).join('/');
+            origin[key] = new ModelProxy(this.target, path);
+        }
         return origin[key];
     }
 }

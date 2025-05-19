@@ -19,6 +19,6 @@ export type ModelEvent<M extends Model> = {
     onStateChange: OnStateChange<M>
     onChildChange: OnChildChange<M>
     onReferChange: OnReferChange<M>
-    onParentChange: onParentChange
+    onRouteChange: onParentChange
 } & Record<string, any>
 
