@@ -49,74 +49,99 @@ export class ReferAgent<
             deleteProperty: this.delete.bind(this)
         })
     }
-
     
     public bind() {
         ReferAgent.registry[this.target.uuid] = this.target;
     }
 
-    public unbind() {
-        const router = ReferAgent.router[this.target.uuid] ?? [];
-        for (const uuid of router) {
-            const model = ReferAgent.query(uuid);
-            if (!model) continue;
-            const refer: Record<string, Model | Model[]> = model._agent.refer.draft;
-            for (const key of Object.keys(refer)) {
-                const value = refer[key];
-                if (value instanceof Array) {
-                    refer[key] = value.filter(item => item !== this.target);
-                } else if (value === this.target) {
-                    delete refer[key];
-                }
+    public load() {
+        for (const key of Object.keys(this._addrs)) {
+            let value: string[] | string | undefined = this._addrs[key];
+            if (!value) continue;
+            if (!Array.isArray(value)) value = [value];
+
+            for (const uuid of value) {
+                if (!uuid) continue;
+                const consumers = ReferAgent.router[uuid] ?? [];
+                consumers.push(this.target.uuid);
+                ReferAgent.router[uuid] = consumers;
             }
         }
     }
 
+    public unload() {
+        for (const key of Object.keys(this._addrs)) {
+            let value: string[] | string | undefined = this._addrs[key];
+            if (!value) continue;
+            if (!Array.isArray(value)) value = [value];
+
+            for (const uuid of value) {
+                const consumers = ReferAgent.router[uuid] ?? [];
+                const index = consumers.indexOf(this.target.uuid);
+                if (index !== -1) consumers.splice(index, 1);
+            }
+        }
+    }
+
+    public uninit() {
+        const router = ReferAgent.router[this.target.uuid] ?? [];
+        for (const uuid of router) {
+            const model = ReferAgent.query(uuid);
+            if (!model) continue;
+
+            const refer: Record<string, string | string[]> = model._agent.refer._addrs;
+            for (const key of Object.keys(refer)) {
+                const value = refer[key];
+                if (Array.isArray(value)) {
+                    refer[key] = value.filter(item => item !== this.target.uuid);
+                }
+                if (value === this.target.uuid) delete refer[key];
+            }
+        }
+        delete ReferAgent.router[this.target.uuid];
+        delete ReferAgent.registry[this.target.uuid];
+    }
+
     public get(origin: any, key: string) {
-        const value: unknown = this._addrs[key];
-        if (typeof value === 'string') return ReferAgent.query(value);
-        if (value instanceof Array) {
+        if (!this.target._cycle.isLoad) return undefined;
+
+        const value = this._addrs[key];
+        if (Array.isArray(value)) {
             return value.map(item => ReferAgent.query(item));
         }
-        return undefined;
+        return ReferAgent.query(value)
     }
 
-
-    private _link(target?: string | string[]) {
-        if (target instanceof Array) {
-            for (const uuid of target) this._link(uuid);
-            return;
-        }
-        if (!target) return;
-
-        const consumers = ReferAgent.router[target] ?? [];
-        consumers.push(this.target.uuid);
-        ReferAgent.router[target] = consumers;
-    }
-
-    private _unlink(target?: string | string[]) {
-        if (target instanceof Array) {
-            for (const uuid of target) this._unlink(uuid);
-            return;
-        }
-        if (!target) return;
-
-        const consumers = ReferAgent.router[target] ?? [];
-        const index = consumers.indexOf(this.target.uuid);
-        if (index !== -1) consumers.splice(index, 1);
-    }
         
     @DebugService.log()
     @TranxService.span()
-    private set(origin: any, key: string, value: Model | Model[] | undefined) {
-        console.log('refer set:', key, value);
-        const prev = origin[key];
-        this._unlink(prev);
-        const next = value instanceof Array ? 
-            value.map(item => item?.uuid) : 
-            value?.uuid;
-        origin[key] = next;
-        this._link(next);
+    private set(origin: Record<string, string | string[]>, key: string, next: Model | Model[]) {
+        let prev = origin[key];
+
+        if (!(prev instanceof Array)) prev = [prev];
+        if (this.target._cycle.isLoad) {
+            for (const uuid of prev) {
+                const consumers = ReferAgent.router[uuid] ?? [];
+                const index = consumers.indexOf(this.target.uuid);
+                if (index !== -1) consumers.splice(index, 1);
+            }
+        }
+
+        const isArray = next instanceof Array;
+        
+        if (!(next instanceof Array)) next = [next];
+        if (this.target._cycle.isLoad) {
+            for (const model of next) {
+                if (!(model instanceof Model)) continue;
+                const consumers = ReferAgent.router[model.uuid] ?? [];
+                consumers.push(this.target.uuid);
+                ReferAgent.router[model.uuid] = consumers;
+            }
+        }
+
+        if (isArray) origin[key] = next.map(item => item.uuid);
+        else origin[key] = next[0].uuid;
+
         return true;
     }
 
@@ -124,7 +149,16 @@ export class ReferAgent<
     @TranxService.span()
     private delete(origin: any, key: string) {
         let prev = origin[key];
-        this._unlink(prev);
+
+        if (!(prev instanceof Array)) prev = [prev];
+        if (this.target._cycle.isLoad) {
+            for (const uuid of prev) {
+                const consumers = ReferAgent.router[uuid] ?? [];
+                const index = consumers.indexOf(this.target.uuid);
+                if (index !== -1) consumers.splice(index, 1);
+            }
+        }
+
         delete origin[key];
         return true;
     }

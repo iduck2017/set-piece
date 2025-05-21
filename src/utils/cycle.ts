@@ -19,12 +19,11 @@ export class ModelCycle<
     public bind(parent: P | undefined, path: string) {
         this.agent.route.bind(parent, path);
         this.agent.refer.bind();
-        if (parent?._cycle._isLoad) this.load();
     }
 
     public unbind() {
         if (this._isLoad) this.unload();
-        this.agent.refer.unbind();
+        this.agent.refer.uninit();
         this.agent.route.unbind();
     }
 
@@ -55,7 +54,7 @@ export class ModelCycle<
     @DebugService.log()
     public uninit() {
         this.agent.child.uninit();
-        this.agent.refer.unbind();
+        this.agent.refer.uninit();
         this.agent.event.uninit();
         this.agent.state.uninit();
     }

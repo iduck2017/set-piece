@@ -114,13 +114,11 @@ export class StateAgent<
         let next = this.draft[key];
         let path = key;
         while (target) {
-            console.log('decor', path);
             const router = target._agent.state._router;
             const consumers = router.consumers.get(path) ?? [];
             for (const consumer of [...consumers]) {
                 const target = consumer.target;
                 const updater = consumer.updater;
-                console.log('updater', updater)
                 next = updater.call(target, this.target, next);
             }
             path = target._agent.route.path + '/' + path;
@@ -196,28 +194,28 @@ export class StateAgent<
         }
 
         const keys: string[] = [];
+        
         let target: Model | undefined = this.target;
         let prefix = '';
+
         while (target) {
-            console.log('target', target, prefix)
-            const paths = [...target._agent.state._router.consumers]
-                .map(entry => entry[0])
-                .filter(path => path.startsWith(prefix))
-                .map(path => path.split('/').pop() ?? '')
-                .filter(Boolean)
+            const consumers = target._agent.state._router.consumers;
+            const paths = [...consumers]
+                .filter(entry => entry[0].startsWith(prefix))
+                .map(entry => entry[0].split('/').pop())
                 
             for (const path of paths) {
+                if (!path) continue;
                 if (keys.includes(path)) continue;
                 keys.push(path);
             }
+
             prefix = target._agent.route.path + '/';
             target = target._agent.route.parent;
         }
         console.log('keys', keys)
         
-        for (const key of keys) {
-            this.emit(key);
-        }
+        for (const key of keys) this.emit(key);
     }
 
     public unload() {

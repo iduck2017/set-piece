@@ -20,11 +20,7 @@ export class ChildAgent<
     public readonly draft: ChildGroup<C1, C2>
 
     public get current(): Readonly<ChildGroup<C1, C2>> {
-        const result: any = [];
-        for (const key of Object.keys(this.draft)) {
-            result[key] = this.draft[key];
-        }
-        return result;
+        return { ...this.draft };
     }
     
     constructor(
@@ -33,27 +29,26 @@ export class ChildAgent<
     ) {
         super(target);
 
-        const origin: any = {};
+
+        const origin: any = {}
         for (const key of Object.keys(props)) {
-            const value = props[key];
-            if (value instanceof Array) {
-                origin[key] = [];
-                for (const model of value) {
-                    if (model) {}
-                }
+            let value: Model | Model[] = props[key];
+            const isArray = value instanceof Array;
+            if (!(value instanceof Array)) value = [value];
+            
+            for (let index = 0; index < value.length; index += 1) {
+                const model = value[index];
+                if (!(model instanceof Model)) continue;
+                if (model._agent.route.isBind) value[index] = model.copy;
+                model._cycle.bind(this.target, key);
             }
-            const next = origin[key] = this.check(props[key]);
-            if (next instanceof Model) next._cycle.bind(this.target, key);
+            origin[key] = isArray ? value : value[0];
         }
+
         this.draft = new Proxy(origin, {
             set: this.set.bind(this),
             deleteProperty: this.delete.bind(this),
         })
-    }
-
-    private check<T>(value: T): T {
-        if (value instanceof Model && value._agent.route.isBind) return value.copy;
-        return value;
     }
 
     public load() {
@@ -77,27 +72,48 @@ export class ChildAgent<
         }
     }
 
-
     @DebugService.log()
     @TranxService.span()
-    private set(origin: Record<string, unknown>, key: string, next: unknown) {
-        const prev = origin[key];
-        if (prev instanceof Model) {
-            console.log('unbind', prev)
-            prev._cycle.unbind();
+    private set(origin: Record<string, Model | Model[]>, key: string, next: Model | Model[]) {
+        let prev = origin[key];
+
+        if (!(prev instanceof Array)) prev = [prev];
+        for (const model of prev) {
+            if (!(model instanceof Model)) continue;
+            model._cycle.unbind();
         }
-        origin[key] = next = this.check(next);
-        if (next instanceof Model) {
-            console.log('bind', next)
-            next._cycle.bind(this.target, key);
+
+        const isArray = next instanceof Array;
+        
+        if (!(next instanceof Array)) next = [next];
+        for (let index = 0; index < next.length; index += 1) {
+            const model = next[index];
+            if (!(model instanceof Model)) continue;
+            if (model._agent.route.isBind) next[index] = model.copy;
+            model._cycle.bind(this.target, key);
+        }
+
+        origin[key] = isArray ? next : next[0];
+
+        if (!this.target._cycle.isLoad) return true;
+
+        for (const model of next) {
+            if (!(model instanceof Model)) continue;
+            model._cycle.load();
         }
         return true;
     }
 
     @TranxService.span()
-    private delete(origin: Record<string, Model>, key: string) {
-        const prev = origin[key];
-        if (prev instanceof Model) prev._cycle.unbind();
+    private delete(origin: Record<string, Model | Model[]>, key: string) {
+        let prev = origin[key];
+
+        if (!(prev instanceof Array)) prev = [prev];
+        for (const model of prev) {
+            if (!(model instanceof Model)) continue;
+            model._cycle.unbind();
+        }
+
         delete origin[key];
         return true;
     }

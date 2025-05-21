@@ -28,5 +28,5 @@ export type Props<
     uuid?: string;
     state: Readonly<S1 & S2>;
     child: Readonly<ChildGroup<C1, C2>>;
-    refer: Readonly<ReferAddrs<R1, R2>>
+    refer?: Partial<Readonly<ReferAddrs<R1, R2>>>
 }
