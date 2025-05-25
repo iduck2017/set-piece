@@ -1,43 +1,35 @@
-import { Model } from "@/model";
-import { Agent } from ".";
-import { DebugService } from "@/service/debug";
-import { 
-    EventHandler, 
-    EventConsumer, 
-    ModelEvent,
-    EventEmitter, 
-} from "@/types/event";
+import { Model } from "../model";
+import { Agent } from "./agent";
 
-export class EventProducer<E = any, M extends Model = Model> {
-   
-    public readonly type: 'event';
+export type OnStateChange<M extends Model> = { prev: Model.State<M>, next: Model.State<M> };
 
-    public readonly path: string;
-    
-    public readonly target: M;
-    
-    public constructor(target: M, path: string) {
-        this.path = path;
-        this.type = 'event';
-        this.target = target;
-    }
+export type OnChildChange<M extends Model> = { prev: Model.Child<M>, next: Model.Child<M> };
+
+export type OnReferChange<M extends Model> = { prev: Model.Refer<M>, next: Model.Refer<M> };
+
+export type OnParentChange<M extends Model> = { prev: Model.Parent<M>, next: Model.Parent<M> }
+
+export type BaseEvent<M extends Model> = {
+    onStateChange: OnStateChange<M>
+    onChildChange: OnChildChange<M>
+    onReferChange: OnReferChange<M>
+    onParentChange: OnParentChange<M>
 }
 
-@DebugService.is(target => target.target.name + '::event')
 export class EventAgent<
-    E extends Record<string, any> = Record<string, any>,
-    M extends Model = Model
+    M extends Model = Model,
+    E extends Record<string, any> = {},
 > extends Agent<M> {
-    public readonly current: Readonly<EventEmitter<E & ModelEvent<M>>>;
+    public readonly current: Readonly<EventEmitter<E & BaseEvent<M>>>;
     
-    private readonly _router: Readonly<{
+    private readonly router: Readonly<{
         consumers: Map<string, EventConsumer[]>,
         producers: Map<EventHandler, EventProducer[]>
     }>
     
     public constructor(target: M) {
         super(target)
-        this._router = {
+        this.router = {
             consumers: new Map(),
             producers: new Map()
         }
@@ -46,49 +38,44 @@ export class EventAgent<
         })
     }
 
-    @DebugService.log()
     public emit<E>(key: string, event: E) {
-        if (!this.target._cycle.isLoad) return;
-
-        console.log('emit', key);
+        if (!this.agent.route.isLoad) return;
 
         let target: Model | undefined = this.target;
         let path = key;
         while(target) {
-            const router = target._agent.event._router;
+            const router = target.agent.event.router;
             const consumers = router.consumers.get(path) ?? [];
-            for (const consumer of [...consumers]) {
+            for (const consumer of [ ...consumers ]) {
                 const target = consumer.target;
                 const handler = consumer.handler;
                 handler.call(target, this.target, event);
             }
-            path = target._agent.route.path + '/' + path;
-            target = target._agent.route.parent;
+            path = target.agent.route.key + '/' + path;
+            target = target.agent.route.parent;
         }
     }
 
 
-    @DebugService.log()
     public bind<E, M extends Model>(
         producer: EventProducer<E, M>, 
         handler: EventHandler<E, M>
     ) {
         const { target, path } = producer;
-        const router = target._agent.event._router;
+        const router = target.agent.event.router;
 
         const consumers = router.consumers.get(path) ?? [];
         const consumer: EventConsumer = { target: this.target, handler }
         consumers.push(consumer);
         router.consumers.set(path, consumers);
         
-        const producers = this._router.producers.get(handler) ?? [];
+        const producers = this.router.producers.get(handler) ?? [];
         producers.push(producer);
-        this._router.producers.set(handler, producers);
+        this.router.producers.set(handler, producers);
     }
 
 
 
-    @DebugService.log()
     public unbind<E, M extends Model>(
         producer: EventProducer<E, M>, 
         handler: EventHandler<E, M>
@@ -97,7 +84,7 @@ export class EventAgent<
         
         let index;
 
-        const router = target._agent.event._router;
+        const router = target.agent.event.router;
         const consumers = router.consumers.get(path) ?? [];
         index = consumers.findIndex(item => (
             item.handler === handler && 
@@ -105,7 +92,7 @@ export class EventAgent<
         ));
         if (index !== -1) consumers.splice(index, 1);
         
-        const producers = this._router.producers.get(handler) ?? [];
+        const producers = this.router.producers.get(handler) ?? [];
         index = producers.indexOf(producer);
         if (index !== -1) producers.splice(index, 1);
     
@@ -114,10 +101,10 @@ export class EventAgent<
     public load() {
         let constructor: any = this.target.constructor;
         while (constructor) {
-            const hooks = EventAgent._registry.get(constructor) ?? {};
+            const hooks = EventAgent.registry.get(constructor) ?? {};
             for (const key of Object.keys(hooks)) {
-                const accessors = hooks[key];
-                for (const accessor of accessors) {
+                const accessors = hooks[key] ?? [];
+                for (const accessor of [ ...accessors ]) {
                     const producer = accessor(this.target);
                     if (!producer) continue;
                     const target: any = this.target;
@@ -128,30 +115,30 @@ export class EventAgent<
         }
     }
 
-    @DebugService.log()
     public unload() {
-        for (const channel of this._router.producers) {
+        for (const channel of this.router.producers) {
             const [ handler, producers ] = channel;
-            for (const producer of [...producers]) {
+            for (const producer of [ ...producers ]) {
                 this.unbind(producer, handler);
             }
         }
     }
 
-    @DebugService.log()
     public uninit() {
-        for (const channel of this._router.consumers) {
+        for (const channel of this.router.consumers) {
             const [ path, consumers ] = channel;
-            const producer: EventProducer = this.target.proxy.event[path];
-            for (const consumer of [...consumers]) {
+            const event: Record<string, EventProducer> = this.target.proxy.event;
+            const producer: EventProducer | undefined = event[path];
+            if (!producer) continue;
+            for (const consumer of [ ...consumers ]) {
                 const { target, handler } = consumer;
-                target._agent.event.unbind(producer, handler);
+                target.agent.event.unbind(producer, handler);
             }
         }
     }
 
 
-    private static _registry: Map<Function, Record<string, Array<(model: Model) => EventProducer | undefined>>> = new Map();
+    private static registry: Map<Function, Record<string, Array<(model: Model) => EventProducer | undefined>>> = new Map();
 
 
     public static use<E, M extends Model, I extends Model>(
@@ -162,14 +149,31 @@ export class EventAgent<
             key: string,
             descriptor: TypedPropertyDescriptor<EventHandler<E, M>>
         ): TypedPropertyDescriptor<EventHandler<E, M>> {
-            
-            const hooks = EventAgent._registry.get(target.constructor) ?? {};
+            const hooks = EventAgent.registry.get(target.constructor) ?? {};
             if (!hooks[key]) hooks[key] = [];
             hooks[key].push(accessor);
-
-            EventAgent._registry.set(target.constructor, hooks);
+            EventAgent.registry.set(target.constructor, hooks);
             return descriptor;
         };
     }
 
 }
+
+
+export class EventProducer<E = any, M extends Model = Model> {
+   
+    public readonly path: string;
+    
+    public readonly target: M;
+    
+    public constructor(target: M, path: string) {
+        this.path = path;
+        this.target = target;
+    }
+}
+
+export type EventHandler<E = any, M extends Model = Model> = (target: M, event: E) => void
+
+export type EventEmitter<E = Record<string, any>> = { [K in keyof E]: (event: E[K]) => void }
+
+export type EventConsumer = { target: Model, handler: EventHandler }

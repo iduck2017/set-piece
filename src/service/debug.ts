@@ -1,6 +1,4 @@
-import { Agent } from "@/agent";
-import { Callback } from "@/types";
-import { ModelCycle } from "@/utils/cycle";
+type Callback<R = any, P extends any[] = any[]> = (...args: P) => R
 
 export enum LogLevel {
     INFO = 0,

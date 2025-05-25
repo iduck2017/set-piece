@@ -12,12 +12,10 @@
       "experimentalDecorators": true,
       "strictFunctionTypes": false,
       "stripInternal": true,
-      "paths": {
-        "@/*": ["./src/*"]
-      },
-      "baseUrl": "."
+      "paths": {},
+      "baseUrl": ".",
+      "noUncheckedIndexedAccess": true
     },
-    "include": [
-      "src/**/*",
-    ]
+    "include": [ "src/**/*" ],
+    "exclude": [ "tmp/**/*" ]
 }

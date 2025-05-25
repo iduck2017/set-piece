@@ -1,162 +1,106 @@
-import { Model } from "@/model";
-import { Agent } from ".";
-import { DebugService } from "@/service/debug";
-import { TranxService } from "@/service/tranx";
+import { TranxService } from "../service/tranx";
+import { Model } from "../model";
+import { Agent } from "./agent";
 
-
-export type ReferGroup<
-    R1 extends Record<string, Model>, 
-    R2 extends Record<string, Model>
-> = 
-    { [K in keyof R1]?: R1[K] } & 
-    { [K in keyof R2]?: Readonly<Required<R2>[K][]> }
-
-export type ReferAddrs<
-    R1 extends Record<string, Model>, 
-    R2 extends Record<string, Model>,
-> = 
-    { [K in keyof R1]?: string } & 
-    { [K in keyof R2]?: Readonly<string[]> } 
-
-
-@DebugService.is(target => target.target.name)
 export class ReferAgent<
-    R1 extends Record<string, Model> = Record<string, Model>,
-    R2 extends Record<string, Model> = Record<string, Model>,
     M extends Model = Model,
+    R1 extends Record<string, Model> = {},
+    R2 extends Record<string, Model> = {}
 > extends Agent<M> {
-    public get current(): Readonly<ReferGroup<R1, R2>> {
-        return { ...this.draft };
-    }
+    public get current(): Readonly<
+        { [K in keyof R1]?: R1[K] } &
+        { [K in keyof R2]?: ReadonlyArray<Required<R2>[K]> }
+    > { return { ...this.draft }; }
 
-    private readonly _addrs: ReferAddrs<R1, R2>;
-    public get addrs() {
-        return { ...this._addrs }
-    }
 
-    public readonly draft: ReferGroup<R1, R2>; 
+    public readonly draft: 
+        { [K in keyof R1]?: R1[K] } &
+        { [K in keyof R2]?: Array<Required<R2>[K]> }
 
-    constructor(
-        target: M,
-        props?: Partial<ReferAddrs<R1, R2>>
-    ) {
+    private readonly router: Map<Model, string[]>;
+
+
+    constructor(target: M, props?: Readonly<
+        { [K in keyof R1]?: R1[K] } &
+        { [K in keyof R2]?: Array<Required<R2>[K]> }
+    >) {
         super(target);
+        this.router = new Map();
 
-        this._addrs = props ?? {}
-        this.draft = new Proxy(this._addrs as any, {
-            get: this.get.bind(this),
-            set: this.set.bind(this),
-            deleteProperty: this.delete.bind(this)
-        })
-    }
-    
-    public bind() {
-        ReferAgent.registry[this.target.uuid] = this.target;
-    }
-
-    public load() {
-        for (const key of Object.keys(this._addrs)) {
-            let value: string[] | string | undefined = this._addrs[key];
-            if (!value) continue;
-            if (!Array.isArray(value)) value = [value];
-
-            for (const uuid of value) {
-                if (!uuid) continue;
-                const consumers = ReferAgent.router[uuid] ?? [];
-                consumers.push(this.target.uuid);
-                ReferAgent.router[uuid] = consumers;
-            }
-        }
-    }
-
-    public unload() {
-        for (const key of Object.keys(this._addrs)) {
-            let value: string[] | string | undefined = this._addrs[key];
-            if (!value) continue;
-            if (!Array.isArray(value)) value = [value];
-
-            for (const uuid of value) {
-                const consumers = ReferAgent.router[uuid] ?? [];
-                const index = consumers.indexOf(this.target.uuid);
-                if (index !== -1) consumers.splice(index, 1);
-            }
-        }
-    }
-
-    public uninit() {
-        const router = ReferAgent.router[this.target.uuid] ?? [];
-        for (const uuid of router) {
-            const model = ReferAgent.query(uuid);
-            if (!model) continue;
-
-            const refer: Record<string, string | string[]> = model._agent.refer._addrs;
-            for (const key of Object.keys(refer)) {
-                const value = refer[key];
-                if (Array.isArray(value)) {
-                    refer[key] = value.filter(item => item !== this.target.uuid);
+        const origin: any = {}
+        for (const key in props) {
+            let value: Model | Model[] | undefined = props[key];
+            if (Array.isArray(value)) {
+                origin[key] = [];
+                for (const model of value) {
+                    if (!Model.isModel(model)) continue;
+                    origin[key].push(model);
+                    model.agent.refer.bind(this.target, key);
                 }
-                if (value === this.target.uuid) delete refer[key];
+                origin[key] = this.array(origin[key], key);
+            }
+            if (Model.isModel(value)) {
+                origin[key] = value;
+                value.agent.refer.bind(this.target, key);
             }
         }
-        delete ReferAgent.router[this.target.uuid];
-        delete ReferAgent.registry[this.target.uuid];
+
+        this.draft = new Proxy(origin, {
+            set: this.set.bind(this),
+            deleteProperty: this.del.bind(this)
+        });
     }
 
-    public get(origin: any, key: string) {
-        if (!this.target._cycle.isLoad) return undefined;
-
-        const value = this._addrs[key];
-        if (Array.isArray(value)) {
-            return value.map(item => ReferAgent.query(item));
-        }
-        return ReferAgent.query(value)
+    private bind(value: Model, key: string) {
+        const router = this.router.get(value) ?? [];
+        router.push(key);
+        this.router.set(value, router);
     }
 
-        
-    @DebugService.log()
+    private unbind(value: Model, key: string) {
+        const router = this.router.get(value) ?? [];
+        const index = router.indexOf(key);
+        if (index === -1) return;
+        router.splice(index, 1);
+        this.router.set(value, router);
+    }
+
     @TranxService.span()
-    private set(origin: Record<string, string | string[]>, key: string, next: Model | Model[]) {
-        let prev = origin[key];
-
-        if (!(prev instanceof Array)) prev = [prev];
-        if (this.target._cycle.isLoad) {
-            for (const uuid of prev) {
-                const consumers = ReferAgent.router[uuid] ?? [];
-                const index = consumers.indexOf(this.target.uuid);
-                if (index !== -1) consumers.splice(index, 1);
-            }
+    private set(
+        origin: Record<string, Model | Model[] | undefined>, 
+        key: string, 
+        value: Model | Model[] | undefined
+    ) {
+        let prev= origin[key];
+        if (!prev) prev = [];
+        if (!Array.isArray(prev)) prev = [prev];
+        for (const model of prev) {
+            if (!Model.isModel(model)) continue;
+            model.agent.refer.unbind(this.target, key);
         }
 
-        const isArray = next instanceof Array;
+        let next = value;
+        if (!next) next = [];
+        if (!Array.isArray(next)) next = [next];
+        for (const model of next) {
+            if (!Model.isModel(model)) continue;
+            model.agent.refer.bind(this.target, key);
+        }
         
-        if (!(next instanceof Array)) next = [next];
-        if (this.target._cycle.isLoad) {
-            for (const model of next) {
-                if (!(model instanceof Model)) continue;
-                const consumers = ReferAgent.router[model.uuid] ?? [];
-                consumers.push(this.target.uuid);
-                ReferAgent.router[model.uuid] = consumers;
-            }
-        }
-
-        if (isArray) origin[key] = next.map(item => item.uuid);
-        else origin[key] = next[0].uuid;
-
-        return true;
+        if (Array.isArray(value)) origin[key] = this.array(value, key);
+        else origin[key] = value;
+        return true
     }
 
-    @DebugService.log()
-    @TranxService.span()
-    private delete(origin: any, key: string) {
-        let prev = origin[key];
 
-        if (!(prev instanceof Array)) prev = [prev];
-        if (this.target._cycle.isLoad) {
-            for (const uuid of prev) {
-                const consumers = ReferAgent.router[uuid] ?? [];
-                const index = consumers.indexOf(this.target.uuid);
-                if (index !== -1) consumers.splice(index, 1);
-            }
+    @TranxService.span()
+    private del(origin: Record<string, Model | Model[] | undefined>, key: string) {
+        let prev= origin[key];
+        if (!prev) prev = [];
+        if (!Array.isArray(prev)) prev = [prev];
+        for (const model of prev) {
+            if (!Model.isModel(model)) continue;
+            model.agent.refer.unbind(this.target, key);
         }
 
         delete origin[key];
@@ -164,14 +108,146 @@ export class ReferAgent<
     }
 
 
+    public uninit() {
+        for (const key of Object.keys(this.draft)) {
+            delete this.draft[key]            
+        }
+        for (const channel of this.router) {
+            const [model, keys] = channel;
+            for (const key of keys) {
+                const refer: Record<string, Model | Model[]> = model.agent.refer.draft
+                const value = refer[key];
+                if (Array.isArray(value)) {
+                    const index = value.indexOf(this.target);
+                    if (index === -1) continue;
+                    value.splice(index, 1);
+                }
+                if (Model.isModel(value)) delete refer[key];
+            }
+        }
+    }
 
-    private static readonly router: Record<string, string[]> = {}
+    private array(value: Model[], key: string): Model[] {
+        return new Proxy([ ...value ], {
+            get: this.arrayGet.bind(this, key),
+            set: this.arraySet.bind(this, key),
+            deleteProperty: this.arrayDel.bind(this, key),
+        })
+    }
 
-    private static readonly registry: Record<string, Model> = {}
+    private arrayGet(key: string,origin: any, index: string) {
+        if (key === 'push') return this.arrayPush.bind(this, key, origin);
+        if (key === 'pop') return this.arrayPop.bind(this, key, origin);
+        if (key === 'shift') return this.arrayShift.bind(this, key, origin);
+        if (key === 'unshift') return this.arrayUnshift.bind(this, key, origin);
+        if (key === 'fill') return this.arrayFill.bind(this, key, origin);
+        if (key === 'reverse') return this.arrayReverse.bind(this, origin);
+        if (key === 'sort') return this.arraySort.bind(this, origin);
+        if (key === 'splice') return this.arraySplice.bind(this, key, origin);
+        return origin[index];
+    }
 
-    public static query(uuid?: string): Model | undefined {
-        if (!uuid) return undefined;
-        return ReferAgent.registry[uuid];        
+    @TranxService.span()
+    private arraySet(key: string, origin: any, index: string, next: Model) {
+        const prev = origin[index];
+        if (Model.isModel(prev)) prev.agent.refer.unbind(this.target, key);
+        if (Model.isModel(next)) next.agent.refer.bind(this.target, key);
+
+        origin[index] = next;
+        return true;
     }
     
+    @TranxService.span()
+    private arrayDel(key: string, origin: any, index: string) {
+        const prev = origin[index];
+        if (Model.isModel(prev)) prev.agent.refer.unbind(this.target, key);
+        
+        delete origin[index];
+        return true;
+    }
+
+
+    @TranxService.span()
+    private arrayPush(key: string, origin: Model[], ...next: Model[]) {
+        for (const model of next) {
+            if (!Model.isModel(model)) continue;
+            model.agent.refer.bind(this.target, key);
+        }
+        const result = origin.push(...next);
+        return result;
+    }
+
+    @TranxService.span()
+    private arrayUnshift(key: string, origin: Model[], ...next: Model[]) {
+        for (const model of next) {
+            if (!Model.isModel(model)) continue;
+            model.agent.refer.bind(this.target, key);
+        }
+        const result = origin.unshift(...next);
+        return result;
+    }
+
+    @TranxService.span()
+    private arrayPop(key: string, origin: Model[]) {
+        const result = origin.pop();
+        if (Model.isModel(result)) result.agent.refer.unbind(this.target, key);
+        return result;
+    }
+
+
+    @TranxService.span()
+    private arrayShift(key: string, origin: Model[]) {
+        const result = origin.shift();
+        if (Model.isModel(result)) result.agent.refer.unbind(this.target, key);
+        return result;
+    }
+
+    @TranxService.span()
+    private arrayReverse(origin: Model[]) {
+        return origin.reverse();
+    }
+
+    @TranxService.span()
+    private arraySort(origin: Model[], handler: (a: Model, b: Model) => number) {
+        return origin.sort(handler);
+    }
+
+
+    @TranxService.span()
+    private arrayFill(key: string, origin: Model[], value: Model, start?: number, end?: number) {
+        if (start === undefined) start = 0;
+        if (end === undefined) end = origin.length;
+
+        const prev = origin.slice(start, end);
+        for (const model of prev) {
+            if (!Model.isModel(model)) continue;
+            model.agent.refer.unbind(this.target, key);
+        }
+
+        const length = end - start;
+        for (let index = 0; index < length; index++) {
+            value.agent.refer.bind(this.target, key);
+        }
+        return origin.fill(value)
+    }
+
+
+    @TranxService.span()
+    private arraySplice(key: string, origin: Model[], start: number, count: number, ...next: Model[]) {
+        const prev = origin.slice(start, start + count);
+        for (const model of prev) {
+            if (!Model.isModel(model)) continue;
+            model.agent.refer.unbind(this.target, key);
+        }
+
+        for (const model of next) {
+            if (!Model.isModel(model)) continue;
+            model.agent.refer.bind(this.target, key);
+        }
+
+        const result = origin.splice(start, count, ...next);
+        return result;
+    }
+
+
 }

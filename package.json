@@ -1,10 +1,12 @@
 {
   "name": "set-piece",
-  "version": "2.1.0",
+  "version": "2.2.0",
   "main": "dist/cjs/index.js",
   "module": "dist/esm/index.js",
   "types": "dist/type/index.d.ts",
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "publishConfig": {
     "access": "public",
     "registry": "https://registry.npmjs.org/"
@@ -24,10 +26,13 @@
   },
   "devDependencies": {
     "tsc-alias": "^1.8.16",
-    "typescript": "^5.6.2"
+    "typescript": "^5.6.2",
+    "utility-types": "^3.11.0"
   },
   "scripts": {
-    "build:cjs": "tsc -p tsconfig.cjs.json && tsc-alias -p tsconfig.cjs.json",
-    "build:esm": "tsc -p tsconfig.esm.json && tsc-alias -p tsconfig.esm.json"
+    "build:cjs": "tsc -p tsconfig.cjs.json",
+    "build:esm": "tsc -p tsconfig.esm.json",
+    "watch:esm": "tsc -p tsconfig.esm.json --watch",
+    "watch:cjs": "tsc -p tsconfig.cjs.json --watch"
   }
 }

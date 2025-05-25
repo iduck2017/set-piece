@@ -1,4 +1,4 @@
-import { Callback } from "@/types";
+type Callback<R = any, P extends any[] = any[]> = (...args: P) => R
 
 export class CheckService {
     private static readonly validators = new Map<Function, Record<string, Callback[]>>();

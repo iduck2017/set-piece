@@ -1,10 +1,9 @@
-import { Model } from "@/model";
-import { Value } from "@/types";
+import { Model } from "../model";
 
 interface Chunk {
     uuid?: string,
     code: string,
-    state: Record<string, Value>,
+    state: Record<string, any>,
     child: Record<string, Chunk | Chunk[]>,
     refer: Record<string, string | string[]>
 }
@@ -17,7 +16,7 @@ export class StoreService {
             uuid?: string,
             child: Record<string, Model | Model[]>,
             refer: Record<string, string | string[]>,
-            state: Record<string, Value>,
+            state: Record<string, any>,
         } = {
             state: {},
             child: {},
@@ -39,7 +38,7 @@ export class StoreService {
         for (const key of Object.keys(props.child)) {
             const value = props.child[key];
 
-            if (value instanceof Array) {
+            if (Array.isArray(value)) {
                 result.child[key] = [];
                 for (const model of value) {
                     if (!model) continue;
@@ -47,8 +46,7 @@ export class StoreService {
                     if (chunk) result.child[key].push(chunk);
                 }
             }
-
-            if (value instanceof Model) {
+            if (Model.isModel(value)) {
                 const chunk = StoreService.save(value);
                 if (chunk) result.child[key] = chunk;
             }
@@ -57,27 +55,22 @@ export class StoreService {
         return result;
     }
 
-    public static load(chunk: Chunk): Model | undefined {
-
+    private static init(chunk: Chunk, registry: Record<string, Model>): Model | undefined {
         const type = StoreService.registry.get(chunk.code);
         if (!type) return undefined;
 
         const child: Record<string, Model | Model[]> = {};
-
         for (const key of Object.keys(chunk.child)) {
             const value = chunk.child[key];
-
-            if (value instanceof Array) {
+            if (Array.isArray(value)) {
                 child[key] = [];
                 for (const chunk of value) {
                     if (!chunk) continue;
-                    const model = StoreService.load(chunk);
+                    const model = StoreService.init(chunk, registry);
                     if (model) child[key].push(model);
                 }
-            }
-            
-            else if (value) {
-                const model = StoreService.load(value);
+            } else if (value) {
+                const model = StoreService.init(value, registry);
                 if (model) child[key] = model;
             }
         }
@@ -85,12 +78,55 @@ export class StoreService {
         const result = new type({
             uuid: chunk.uuid,
             state: chunk.state,
-            refer: chunk.refer,
             child,
         })
+        registry[result.uuid] = result;
         return result;
     }
 
+    private static bind(chunk: Chunk, registry: Record<string, Model>) {
+        if (!chunk.uuid) return;
+
+        const model = registry[chunk.uuid];
+        if (!model) return;
+
+        for (const key of Object.keys(chunk.refer)) {
+            const value = chunk.refer[key];
+            const refer: Record<string, Model[] | Model> = model.agent.refer.draft;
+            if (!value) continue;
+
+            if (Array.isArray(value)) {
+                const array: Model[] = [];
+                for (const uuid of value) {
+                    const model = registry[uuid];
+                    if (model) array.push(model);
+                }
+                refer[key] = array;
+            } else if (value) {
+                const model = registry[value];
+                if (model) refer[key] = model;
+            }
+        }
+
+        for (const key of Object.keys(chunk.child)) {
+            let value = chunk.child[key];
+
+            if (!value) continue;
+            if (!Array.isArray(value)) value = [value];
+            for (const chunk of value) {
+                StoreService.bind(chunk, registry);
+            }
+        }
+    }
+
+    public static load(chunk: Chunk): Model | undefined {
+        const registry: Record<string, Model> = {};
+
+        const model = StoreService.init(chunk, registry);
+        StoreService.bind(chunk, registry);
+
+        return model;
+    }
 
 
 
