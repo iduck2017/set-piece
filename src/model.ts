@@ -129,13 +129,16 @@ export class Model<
         return this.agent.child.current; 
     }
 
+    public get parent(): P | undefined {
+        return this.agent.route.parent;
+    }
+
+
     protected readonly event: Readonly<EventEmitter<E>>;
 
     protected readonly draft: Draft<S1, S2, C1, C2, R1, R2>
 
     public readonly target: this
-
-    public readonly parent?: P
 
     public readonly agent: Agent<this, P, E, S1, S2, C1, C2, R1, R2>
 

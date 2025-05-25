@@ -48,6 +48,7 @@ export class RouteAgent<
     }
 
     public unbind() {
+        if (this._isLoad) this.unload();
         this._isBind = false;
         this._key = undefined;
         this._parent = undefined;

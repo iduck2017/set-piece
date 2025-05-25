@@ -2,8 +2,9 @@ import { Model } from "../model";
 import { Agent } from "./agent";
 import { DeepReadonly, Mutable, Writable } from "utility-types";
 import { TranxService } from "../service/tranx";
+import { DebugService } from "../service/debug";
 
-
+@DebugService.is(agent => agent.target.constructor.name + '::state')
 export class StateAgent<
     M extends Model = Model,
     S1 extends Record<string, any> = {},
@@ -72,6 +73,7 @@ export class StateAgent<
     }
 
     @TranxService.span()
+    @DebugService.log()
     public emit(key: string) {
         let state: any = { ...this.draft };
         let value = state[key];
@@ -93,7 +95,7 @@ export class StateAgent<
             path = target.agent.route.key + '/' + path;
             target = target.agent.route.parent;
         }
-
+        console.log(key, state[key], value);
         this._current = { ...state, [key]: value };
     }
 
@@ -159,10 +161,8 @@ export class StateAgent<
 
 
         const keys: string[] = [];
-        
         let target: Model | undefined = this.agent.route.parent;
         let prefix = this.agent.route.key ?? '';
-        
         while (target) {
             const consumers = target.agent.state.router.consumers;
             const paths = [...consumers]
@@ -177,7 +177,6 @@ export class StateAgent<
             prefix = target.agent.route.key + '/' + prefix;
             target = target.agent.route.parent;
         }
-        
         if (keys.length) console.log('update', keys.join(', '))
         for (const key of keys) this.emit(key);
     }

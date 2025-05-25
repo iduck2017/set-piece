@@ -56,6 +56,7 @@ export class TranxService {
                     TranxService.registry.clear();
 
                     TranxService._isSpan = false;
+                    console.groupEnd()
 
                     for (const [model, info] of registry) {
                         const { state, refer, child, route } = info;
@@ -67,7 +68,6 @@ export class TranxService {
                         if (route) model.agent.event.current.onParentChange({ prev: route, next: this.target.parent })
                     }
                     
-                    console.groupEnd()
                     return result;
                 }
             }

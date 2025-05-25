@@ -136,14 +136,14 @@ export class ReferAgent<
     }
 
     private arrayGet(key: string,origin: any, index: string) {
-        if (key === 'push') return this.arrayPush.bind(this, key, origin);
-        if (key === 'pop') return this.arrayPop.bind(this, key, origin);
-        if (key === 'shift') return this.arrayShift.bind(this, key, origin);
-        if (key === 'unshift') return this.arrayUnshift.bind(this, key, origin);
-        if (key === 'fill') return this.arrayFill.bind(this, key, origin);
-        if (key === 'reverse') return this.arrayReverse.bind(this, origin);
-        if (key === 'sort') return this.arraySort.bind(this, origin);
-        if (key === 'splice') return this.arraySplice.bind(this, key, origin);
+        if (index === 'push') return this.arrayPush.bind(this, key, origin);
+        if (index === 'pop') return this.arrayPop.bind(this, key, origin);
+        if (index === 'shift') return this.arrayShift.bind(this, key, origin);
+        if (index === 'unshift') return this.arrayUnshift.bind(this, key, origin);
+        if (index === 'fill') return this.arrayFill.bind(this, key, origin);
+        if (index === 'reverse') return this.arrayReverse.bind(this, origin);
+        if (index === 'sort') return this.arraySort.bind(this, origin);
+        if (index === 'splice') return this.arraySplice.bind(this, key, origin);
         return origin[index];
     }
 
