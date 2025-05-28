@@ -1,4 +1,4 @@
-import { Model } from "../model";
+import { Define, Model } from "../model";
 import { Agent } from "./agent";
 
 export type OnStateChange<M extends Model> = { prev: Model.State<M>, next: Model.State<M> };
@@ -16,11 +16,19 @@ export type BaseEvent<M extends Model> = {
     onParentChange: OnParentChange<M>
 }
 
+
+type EventHandler<E = any, M extends Model = Model> = (target: M, event: E) => void
+
+type EventConsumer = { target: Model, handler: EventHandler }
+
 export class EventAgent<
     M extends Model = Model,
-    E extends Record<string, any> = {},
+    E extends Define.E = {},
 > extends Agent<M> {
-    public readonly current: Readonly<EventEmitter<E & BaseEvent<M>>>;
+    public readonly current: Readonly<
+        { [K in keyof E]: (event: E[K]) => void } &
+        { [K in keyof BaseEvent<M>]: (event: BaseEvent<M>[K]) => void }
+    >;
     
     private readonly router: Readonly<{
         consumers: Map<string, EventConsumer[]>,
@@ -171,9 +179,3 @@ export class EventProducer<E = any, M extends Model = Model> {
         this.target = target;
     }
 }
-
-export type EventHandler<E = any, M extends Model = Model> = (target: M, event: E) => void
-
-export type EventEmitter<E = Record<string, any>> = { [K in keyof E]: (event: E[K]) => void }
-
-export type EventConsumer = { target: Model, handler: EventHandler }

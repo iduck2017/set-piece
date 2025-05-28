@@ -1,4 +1,4 @@
-import { EventAgent, EventEmitter } from "./agent/event";
+import { EventAgent  } from "./agent/event";
 import { StateAgent } from "./agent/state";
 import { RouteAgent } from "./agent/route";
 import { ChildAgent } from "./agent/child";
@@ -7,12 +7,12 @@ import { DeepReadonly, Mutable } from "utility-types";
 import { ReferAgent } from "./agent/refer";
 import { v4 as uuidv4 } from 'uuid';
 
-export namespace BaseDefine {
+export namespace Define {
     export type P = Model
     export type E = Record<string, any>
     export type S = Record<string, any>
-    export type C = Record<string, Model>
-    export type R = Record<string, Model>
+    export type C = Record<string, Model | Model[]>
+    export type R = Record<string, Model | Model[]>
 }
 
 export namespace Model {
@@ -24,108 +24,49 @@ export namespace Model {
     export type Parent<M extends Model = Model> = M['parent']
 }
 
-
 export type Agent<
     M extends Model = Model,
-    P extends BaseDefine.P = BaseDefine.P,
-    E extends BaseDefine.E = {},
-    S1 extends BaseDefine.S = {},
-    S2 extends BaseDefine.S = {},
-    C1 extends BaseDefine.C = {},
-    C2 extends BaseDefine.C = {},
-    R1 extends BaseDefine.R = {},
-    R2 extends BaseDefine.R = {},
+    P extends Define.P = Define.P,
+    E extends Define.E = {},
+    S extends Define.S = {},
+    C extends Define.C = {},
+    R extends Define.R = {},
 > = Readonly<{
     event: EventAgent<M, E>
     route: RouteAgent<M, P>
-    state: StateAgent<M, S1, S2>
-    child: ChildAgent<M, C1, C2>
-    refer: ReferAgent<M, R1, R2>
+    state: StateAgent<M, S>
+    child: ChildAgent<M, C>
+    refer: ReferAgent<M, R>
 }>
 
-type Draft<
-    S1 extends Record<string, any> = {},
-    S2 extends Record<string, any> = {},
-    C1 extends Record<string, any> = {},
-    C2 extends Record<string, any> = {},
-    R1 extends Record<string, any> = {},
-    R2 extends Record<string, any> = {},
-> = Readonly<{
-    state: Mutable<DeepReadonly<S1 & S2>> 
-    child: 
-        { [K in keyof C1]: C1[K] } & 
-        { [K in keyof C2]: Array<Required<C2>[K]> }
-    refer: 
-        { [K in keyof R1]?: R1[K] } & 
-        { [K in keyof R2]?: Array<Required<R2>[K]> }
-}>
 
 export type Props<
-    S1 extends BaseDefine.S = {},
-    S2 extends BaseDefine.S = {},
-    C1 extends BaseDefine.C = {},
-    C2 extends BaseDefine.C = {},
-    R1 extends BaseDefine.R = {},
-    R2 extends BaseDefine.R = {},
+    S extends Define.S = {},
+    C extends Define.C = {},
+    R extends Define.R = {},
 > = {
     uuid?: string
-    state: Mutable<DeepReadonly<S1 & S2>>
-    child: Readonly<
-        { [K in keyof C1]: C1[K] } & 
-        { [K in keyof C2]: Array<Required<C2>[K]> }
-    >
-    refer?: Readonly<
-        { [K in keyof R1]?: R1[K] } & 
-        { [K in keyof R2]?: Array<Required<R2>[K]> }
-    >
+    state: S
+    child: C
+    refer?: Partial<R>
 }
-
-type RawProps<
-    S1 extends BaseDefine.S = {},
-    S2 extends BaseDefine.S = {},
-    C1 extends BaseDefine.C = {},
-    C2 extends BaseDefine.C = {},
-    R1 extends BaseDefine.R = {},
-    R2 extends BaseDefine.R = {},
-> = {
-    uuid?: string
-    state?: Partial<Mutable<DeepReadonly<S1 & S2>>>,
-    child?: Partial<Readonly<
-        { [K in keyof C1]: C1[K] } & 
-        { [K in keyof C2]: Array<Required<C2>[K]> }
-    >>,
-    refer?: Readonly<
-        { [K in keyof R1]?: R1[K] } & 
-        { [K in keyof R2]?: Array<Required<R2>[K]> }
-    >,
-}
-
 
 export class Model<
-    P extends BaseDefine.P = BaseDefine.P,
-    E extends BaseDefine.E = {},
-    S1 extends BaseDefine.S = {},
-    S2 extends BaseDefine.S = {},
-    C1 extends BaseDefine.C = {},
-    C2 extends BaseDefine.C = {},
-    R1 extends BaseDefine.R = {},
-    R2 extends BaseDefine.R = {},
+    P extends Define.P = Define.P,
+    E extends Define.E = {},
+    S extends Define.S = {},
+    C extends Define.C = {},
+    R extends Define.R = {},
 > {
-    public get state(): Readonly<DeepReadonly<S1 & S2>> {
-        return this.agent.state.current;
+    public get state(): DeepReadonly<S> {
+        return this.agent.state.current as any;
     } 
     
-    public get refer(): Readonly<
-        { [K in keyof R1]?: R1[K] } & 
-        { [K in keyof R2]?: ReadonlyArray<Required<R2>[K]> }
-    > { 
+    public get refer(): Readonly<{ [K in keyof R]: R[K] extends any[] ? Readonly<R[K]> : R[K] }> { 
         return this.agent.refer.current; 
     }
 
-    public get child(): Readonly<
-        { [K in keyof C1]: C1[K] } & 
-        { [K in keyof C2]: ReadonlyArray<Required<C2>[K]> }
-    > { 
+    public get child(): Readonly<{ [K in keyof C]: C[K] extends any[] ? Readonly<C[K]> : C[K] }> { 
         return this.agent.child.current; 
     }
 
@@ -133,20 +74,28 @@ export class Model<
         return this.agent.route.parent;
     }
 
+    protected readonly event: Readonly<{ [K in keyof E]: (event: E[K]) => void }>;
 
-    protected readonly event: Readonly<EventEmitter<E>>;
-
-    protected readonly draft: Draft<S1, S2, C1, C2, R1, R2>
+    protected readonly draft: Readonly<{
+        state: S; 
+        child: C;
+        refer: R;
+    }>
 
     public readonly target: this
 
-    public readonly agent: Agent<this, P, E, S1, S2, C1, C2, R1, R2>
+    public readonly agent: Agent<this, P, E, S, C, R>
 
-    public readonly proxy: Proxy<this, E, S1, C1, C2>
+    public readonly proxy: Proxy<this, E, S, C>
 
     public readonly uuid: string
 
-    public get props(): RawProps<S1, S2, C1, C2, R1, R2> {
+    public get props(): {
+        uuid?: string
+        state?: Partial<S>,
+        child?: Partial<C>,
+        refer?: Partial<R>,
+    } {
         return {
             uuid: this.uuid,
             state: { ...this.draft.state },
@@ -155,7 +104,7 @@ export class Model<
         }
     }
 
-    constructor(props: Props<S1, S2, C1, C2, R1, R2>) {
+    constructor(props: Props<S, C, R>) {
         this.target = this;
         this.uuid = props.uuid ?? uuidv4();
         this.proxy = new Proxy(this);
@@ -163,9 +112,9 @@ export class Model<
         this.agent = {
             event: new EventAgent<this, E>(this),
             route: new RouteAgent<this, P>(this),
-            state: new StateAgent<this, S1, S2>(this, props.state),
-            child: new ChildAgent<this, C1, C2>(this, props.child),
-            refer: new ReferAgent<this, R1, R2>(this, props.refer),
+            state: new StateAgent<this, S>(this, props.state),
+            child: new ChildAgent<this, C>(this, props.child),
+            refer: new ReferAgent<this, R>(this, props.refer),
         }
 
         this.event = this.agent.event.current;

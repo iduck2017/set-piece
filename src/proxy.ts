@@ -1,21 +1,23 @@
 import { BaseEvent, EventProducer } from "./agent/event";
-import { Model } from "./model";
+import { Define, Model } from "./model";
 import { DecorProducer } from "./agent/state";
 
 export class Proxy<
     M extends Model = Model,
-    E extends Record<string, any> = {},
-    S1 extends Record<string, any> = {},
-    C1 extends Record<string, Model> = {},
-    C2 extends Record<string, Model> = {},
+    E extends Define.E = {},
+    S extends Define.S = {},
+    C extends Define.C = {},
 > {
     public readonly target: M;
 
     public readonly path?: string;
 
     public readonly child: Readonly<
-        { [K in keyof C1]: Model.Proxy<Required<C1>[K]> } & 
-        { [K in keyof C2]: Model.Proxy<Required<C2>[K]> }
+        { [K in keyof C]: 
+            Required<C>[K] extends Model ? Model.Proxy<Required<C>[K]> : 
+            Required<C>[K] extends Model[] ? Model.Proxy<Required<C>[K][number]> : 
+            never
+        }
     >;
     
     public readonly event: Readonly<
@@ -24,7 +26,7 @@ export class Proxy<
     >;
     
     public readonly decor: Readonly<
-        { [K in keyof S1]: DecorProducer<S1[K], M> }
+        { [K in keyof S]: DecorProducer<S[K], M> }
     >
 
     constructor(target: M, path?: string) {

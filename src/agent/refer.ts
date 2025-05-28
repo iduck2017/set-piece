@@ -1,29 +1,20 @@
 import { TranxService } from "../service/tranx";
-import { Model } from "../model";
+import { Define, Model } from "../model";
 import { Agent } from "./agent";
 
 export class ReferAgent<
     M extends Model = Model,
-    R1 extends Record<string, Model> = {},
-    R2 extends Record<string, Model> = {}
+    R extends Define.R = {},
 > extends Agent<M> {
-    public get current(): Readonly<
-        { [K in keyof R1]?: R1[K] } &
-        { [K in keyof R2]?: ReadonlyArray<Required<R2>[K]> }
-    > { return { ...this.draft }; }
+    public get current(): Readonly<{ [K in keyof R]: R[K] extends any[] ? Readonly<R[K]> : R[K] }> { 
+        return { ...this.draft }; 
+    }
 
-
-    public readonly draft: 
-        { [K in keyof R1]?: R1[K] } &
-        { [K in keyof R2]?: Array<Required<R2>[K]> }
+    public readonly draft: R
 
     private readonly router: Map<Model, string[]>;
 
-
-    constructor(target: M, props?: Readonly<
-        { [K in keyof R1]?: R1[K] } &
-        { [K in keyof R2]?: Array<Required<R2>[K]> }
-    >) {
+    constructor(target: M, props?: Partial<R>) {
         super(target);
         this.router = new Map();
 

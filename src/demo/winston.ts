@@ -7,26 +7,20 @@ export namespace WinstonDefine {
         onBetray: StaffModel,
         onHello: StaffModel,
     }
-    export type S1 = {}
-    export type S2 = {}
-    export type C1 = {
+    export type S = {}
+    export type C = {
         lover: StaffModel
     }
-    export type C2 = {}
-    export type R1 = {}
-    export type R2 = {}
+    export type R = {}
 }
 
 
 export class WinstonModel extends StaffModel<
     WinstonDefine.P,
     WinstonDefine.E,
-    WinstonDefine.S1,
-    WinstonDefine.S2,
-    WinstonDefine.C1,
-    WinstonDefine.C2,
-    WinstonDefine.R1,
-    WinstonDefine.R2
+    WinstonDefine.S,
+    WinstonDefine.C,
+    WinstonDefine.R
 > {
     constructor(props?: Model.Props<WinstonModel>) {
         const superProps = StaffModel.superProps(props);
@@ -37,6 +31,7 @@ export class WinstonModel extends StaffModel<
             },
             child: {
                 lover: new WinstonModel(),
+                vice: new WinstonModel(),
                 ...superProps?.child,
             },
             refer: {

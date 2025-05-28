@@ -1,30 +1,19 @@
 import { Agent } from "./agent";
-import { Model } from "../model";
+import { Define, Model } from "../model";
 import { TranxService } from "../service/tranx";
-import { DebugService } from "../service/debug";
 
 export class ChildAgent<
     M extends Model = Model,
-    C1 extends Record<string, Model> = {},
-    C2 extends Record<string, Model> = {},
+    C extends Define.C = {},
 > extends Agent<M> {
 
-    public readonly draft: 
-        { [K in keyof C1]: C1[K] } &
-        { [K in keyof C2]: Array<Required<C2>[K]> };
+    public readonly draft: C;
 
-    public get current(): Readonly<
-        { [K in keyof C1]: C1[K] } &
-        { [K in keyof C2]: ReadonlyArray<Required<C2>[K]> }
-    > {
+    public get current(): Readonly<{ [K in keyof C]: C[K] extends any[] ? Readonly<C[K]> : C[K] }> {
         return { ...this.draft };
     }
     
-
-    constructor(target: M, props: Readonly<
-        { [K in keyof C1]: C1[K] } &
-        { [K in keyof C2]: Array<Required<C2>[K]> }
-    >) {
+    constructor(target: M, props: C) {
         super(target);
 
         const origin: any = {};
@@ -218,11 +207,11 @@ export class ChildAgent<
             if (isLoad) next[index] = model.copy();
             next[index]?.agent.route.bind(this.target, key);
         }
-
         const result = origin.unshift(...next);
         for (const model of next) model.agent.route.load();
         return result;
     }
+
 
     @TranxService.span()
     private arrayPop(key: string, origin: Model[]) {

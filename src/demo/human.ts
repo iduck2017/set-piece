@@ -1,4 +1,4 @@
-import { BaseDefine, Model } from "../model"
+import { Define, Model } from "../model"
 import { StateAgent } from "../agent/state";
 import { WinstonModel } from "../demo/winston";
 
@@ -11,33 +11,26 @@ export namespace HumanDefine {
         onCount: number;
     }
   
-    export type S1 = {
+    export type S = {
         nickname?: string;
         tags: string[];
         meta: { foo: string, bar: number }
-    }
-    export type S2 = {
         gender: boolean;
         name: string;
         age: number;
     }
 
-    export type C1 = {
+    export type C = {
         cat?: PetModel
         dog: PetModel
-    }
-    export type C2 = {
-        subordinates: HumanModel
+        vice: HumanModel
+        subordinates: HumanModel[]
     }
 
-
-    export type R1 = {
+    export type R = {
         spouse?: HumanModel
         ancestor: HumanModel
-    }
-
-    export type R2 = { 
-        descendants: HumanModel 
+        descendants: HumanModel[]
     }
     
 }
@@ -45,35 +38,28 @@ export namespace HumanDefine {
 
 export class HumanModel<
     P extends HumanDefine.P = HumanDefine.P,
-    E extends BaseDefine.E & Partial<HumanDefine.E> = {},
-    S1 extends BaseDefine.S & Partial<HumanDefine.S1> = {},
-    S2 extends BaseDefine.S & Partial<HumanDefine.S2> = {},
-    C1 extends BaseDefine.C & Partial<HumanDefine.C1> = {},
-    C2 extends BaseDefine.C & Partial<HumanDefine.C2> = {},
-    R1 extends BaseDefine.R & Partial<HumanDefine.R1> = {},
-    R2 extends BaseDefine.R & Partial<HumanDefine.R2> = {},
+    E extends Define.E & Partial<HumanDefine.E> = {},
+    S extends Define.S & Partial<HumanDefine.S> = {},
+    C extends Define.C & Partial<HumanDefine.C> = {},
+    R extends Define.R & Partial<HumanDefine.R> = {},
 > extends Model<P, 
     E & HumanDefine.E, 
-    S1 & HumanDefine.S1, 
-    S2 & HumanDefine.S2, 
-    C1 & HumanDefine.C1, 
-    C2 & HumanDefine.C2,
-    R1 & HumanDefine.R1,
-    R2 & HumanDefine.R2
+    S & HumanDefine.S, 
+    C & HumanDefine.C, 
+    R & HumanDefine.R
 > {
-
-    
 
     public test() {
         
         this.event.onCount(3)
         this.event.onHello(this)
-        this.event.onHello(new WinstonModel())
+        // this.event.onHello(new WinstonModel())
         // this.event.onHello(new PetModel())
 
         const age: number = this.state.age
         const tags: ReadonlyArray<string> = this.state.tags
         const gender: boolean = this.state.gender
+        const meta: { foo: string, bar: number } = this.state.meta
         // const _age: string = this.state.age
         // this.state.meta.foo = 'hello'
         // this.state.age = 2;
@@ -88,8 +74,11 @@ export class HumanModel<
         // this.draft.state.xxx = 3;
 
         
+        const human: HumanModel = this;
         const cat: PetModel | undefined = this.child.cat;
         const dog: PetModel = this.child.dog;
+        const vice: Readonly<HumanModel> = this.child.vice;
+        const vice_2: HumanModel = human.child.vice;
         const subordinates: Readonly<HumanModel[]> = this.child.subordinates;
         const subordinate: HumanModel | undefined = this.child.subordinates[0]
         // const _dog: HumanModel | undefined = this.child.dog;
@@ -107,9 +96,9 @@ export class HumanModel<
         // this.draft.child.cat = new HumanModel()
         
         
-        const ancestor: HumanModel | undefined = this.refer.ancestor
+        const ancestor: Readonly<HumanModel> | undefined = this.refer.ancestor
         const descendants: Readonly<HumanModel[]> | undefined = this.refer.descendants
-        const spouse: HumanModel | undefined = this.refer.spouse
+        const spouse: Readonly<HumanModel> | undefined = this.refer.spouse
         // const _spouse: PetModel | undefined = this.refer.spouse
         // const _ancestor: PetModel | undefined = this.refer.ancestor
         // this.refer.ancestor?.push(new WinstonModel())
@@ -128,11 +117,11 @@ export class HumanModel<
         this.proxy.event.onStateChange;
         this.proxy.event.onReferChange;
         this.proxy.decor;
+        human.proxy.child.subordinates.event.onChildChange;
         this.proxy.child.subordinates.event.onChildChange;
-        this.proxy.child.subordinates.event.onCount;
-        this.proxy.child.subordinates.event.onHello;
-        this.proxy.child.subordinates.child.cat?.event.onPlay;
-        this.proxy.child.subordinates.child.dog.event.onPlay;
+        human.proxy.child.subordinates.event.onHello;
+        human.proxy.child.subordinates.child.cat?.event.onPlay;
+        human.proxy.child.subordinates.child.dog.event.onPlay;
         
         this.parent?.hello();
         this.child.subordinates[0]?.hello();
@@ -144,7 +133,7 @@ export class HumanModel<
         return { foo: 'hello', bar: state.bar + 1 };
     }
 
-    @StateAgent.use(model => model.proxy.child.subordinates.decor.nickname)
+    @StateAgent.use(model => model.proxy.child.subordinates.decor.)
     private checkChildState(target: HumanModel, state: string | undefined) {
         return state
     }
@@ -165,7 +154,7 @@ export class HumanModel<
     public hello() {}
 
     public static superProps<T extends HumanModel>(props?: Model.Props<T>) {
-        const tags: ReadonlyArray<string> = ['world'];
+        const tags: string[] = ['world'];
         return {
             ...props,
             state: { 
@@ -194,7 +183,7 @@ export class HumanModel<
 
 
 
-export class PetModel extends Model<HumanModel, { onPlay: void }, {}, {}, {}, { descendants?: PetModel }> {
+export class PetModel extends Model<HumanModel, { onPlay: void }, {}, { descendants?: PetModel[] }, {  }> {
     public play() {
         this.child.descendants?.[0]
     }

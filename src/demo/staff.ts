@@ -1,5 +1,5 @@
 import { HumanDefine, HumanModel } from "./human";
-import { BaseDefine, Model } from "../model";
+import { Define, Model } from "../model";
 
 export namespace StaffDefine {
 
@@ -11,46 +11,36 @@ export namespace StaffDefine {
         onHello: StaffModel;
     }
 
-    export type S2 = {}
-    export type S1 = {
+    export type S = {
         salary: number
         level: number
     }
 
-    export type C1 = {}
-    export type C2 = {
-        features: FeatureModel,
-        subordinates: StaffModel
+    export type C = {
+        features: FeatureModel[],
+        subordinates: StaffModel[]
     }
 
-    export type R1 = {
+    export type R = {
         spouse?: StaffModel
-    }
-    export type R2 = {
-        comrades: StaffModel
-        enemies: StaffModel
+        comrades: StaffModel[]
+        enemies: StaffModel[]
     }
 
 }
 
 export class StaffModel<
     P extends StaffDefine.P = StaffDefine.P,
-    E extends BaseDefine.E & Partial<StaffDefine.E & HumanDefine.E> = {},
-    S1 extends BaseDefine.S & Partial<StaffDefine.S1> = {},
-    S2 extends BaseDefine.S & Partial<StaffDefine.S2> = {},
-    C1 extends BaseDefine.C & Partial<StaffDefine.C1> = {},
-    C2 extends BaseDefine.C & Partial<StaffDefine.C2> = {},
-    R1 extends BaseDefine.R & Partial<StaffDefine.R1> = {},
-    R2 extends BaseDefine.R & Partial<StaffDefine.R2> = {},
+    E extends Define.E & Partial<StaffDefine.E & HumanDefine.E> = {},
+    S extends Define.S & Partial<StaffDefine.S & HumanDefine.S> = {},
+    C extends Define.C & Partial<StaffDefine.C & HumanDefine.C> = {},
+    R extends Define.R & Partial<StaffDefine.R & HumanDefine.R> = {},
 > extends HumanModel<
     P,
     E & StaffDefine.E,
-    S1 & StaffDefine.S1,
-    S2 & StaffDefine.S2,
-    C1 & StaffDefine.C1,
-    C2 & StaffDefine.C2,
-    R1 & StaffDefine.R1,
-    R2 & StaffDefine.R2
+    S & StaffDefine.S,
+    C & StaffDefine.C,
+    R & StaffDefine.R
 > {
 
     static superProps<T extends StaffModel>(props?: Model.Props<T>) {

@@ -1,4 +1,4 @@
-import { Model } from "../model";
+import { Define, Model } from "../model";
 import { Agent } from "./agent";
 import { DeepReadonly, Mutable, Writable } from "utility-types";
 import { TranxService } from "../service/tranx";
@@ -7,23 +7,22 @@ import { DebugService } from "../service/debug";
 @DebugService.is(agent => agent.target.constructor.name + '::state')
 export class StateAgent<
     M extends Model = Model,
-    S1 extends Record<string, any> = {},
-    S2 extends Record<string, any> = {},
+    S extends Define.S = {},
 > extends Agent<M> {
 
-    private _current: Readonly<DeepReadonly<S1 & S2>>
+    private _current: Readonly<S>
     public get current() {
         return { ...this._current }
     }
 
-    public readonly draft: Mutable<DeepReadonly<S1 & S2>> 
+    public readonly draft: S
     
     private readonly router: {
         consumers: Map<string, DecorConsumer[]>,
         producers: Map<DecorUpdater, DecorProducer[]>
     }
     
-    constructor(target: M, props: Mutable<DeepReadonly<S1 & S2>>) {
+    constructor(target: M, props: S) {
         super(target);
         
         this.router = {
