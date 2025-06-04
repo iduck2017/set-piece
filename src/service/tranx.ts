@@ -10,10 +10,10 @@ export class TranxService {
     public static get isSpan() { return TranxService._isSpan; }
 
     private static readonly registry: Map<Model, Readonly<{
-        state?: Model.State,
-        refer?: Model.Refer,
-        child?: Model.Child,
-        route?: Model,
+        state?: Model['state'],
+        refer?: Model['refer'],
+        child?: Model['child'],
+        route?: Model['route'],
     }>> = new Map();
 
     public static span() {
@@ -33,39 +33,47 @@ export class TranxService {
                     const isRouteChange = this.target.agent.route === this;
 
                     const prev = TranxService.registry.get(this.target) ?? {};
-                    const next = {
-                        state: isStateChange ? this.target.state : prev.state,
-                        refer: isReferChange ? this.target.refer : prev.refer,
-                        child: isChildChange ? this.target.child : prev.child,
-                        route: isRouteChange ? this.target.parent : prev.route,
-                    }
+                    const next = { ...prev }
+                    if (isStateChange && !prev.state) next.state = this.target.state;
+                    if (isReferChange && !prev.refer) next.refer = this.target.refer;
+                    if (isChildChange && !prev.child) next.child = this.target.child;
+                    if (isRouteChange && !prev.route) next.route = this.target.route;
                     TranxService.registry.set(this.target, next);
-                
 
                     if (TranxService._isSpan) return handler.call(this, ...args);
 
-                    const namespace = this.constructor.name + '::transaction'
+                    const namespace = 'Transaction'
                     console.group(namespace)
 
                     TranxService._isSpan = true;
 
                     const result = handler.call(this, ...args);
 
+                    for (const [model, info] of TranxService.registry) {
+                        if (!info.route) continue;
+                        model.agent.route.uninit();
+                        model.agent.route.unload();
+                        model.agent.route.load();
+                    }
+
                     const registry = new Map(TranxService.registry);
-
                     TranxService.registry.clear();
-
                     TranxService._isSpan = false;
                     console.groupEnd()
 
                     for (const [model, info] of registry) {
-                        const { state, refer, child, route } = info;
-                        if (!model.agent.route.isLoad) model.agent.route.uninit(); 
+                        const { state, refer, child, route } = model.target;
+                        const event = model.agent.event.current;
 
-                        if (state) model.agent.event.current.onStateChange({ prev: state, next: this.target.state })
-                        if (refer) model.agent.event.current.onReferChange({ prev: refer, next: this.target.refer })
-                        if (child) model.agent.event.current.onChildChange({ prev: child, next: this.target.child })
-                        if (route) model.agent.event.current.onParentChange({ prev: route, next: this.target.parent })
+                        if (info.state) event.onStateChange({ prev: info.state, next: state })
+                        if (info.refer) event.onReferChange({ prev: info.refer, next: refer })
+                        if (info.child) event.onChildChange({ prev: info.child, next: child })
+                        if (info.route) event.onRouteChange({ prev: info.route, next: route })
+
+                        if (info.state) console.log('stateChange');
+                        if (info.refer) console.log('referChange');
+                        if (info.child) console.log('childChange');
+                        if (info.route) console.log('routeChange');
                     }
                     
                     return result;
@@ -75,8 +83,6 @@ export class TranxService {
             return descriptor;
         }
     }
-
-
 
     public static task() {}
 }

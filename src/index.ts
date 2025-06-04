@@ -16,5 +16,5 @@ export {
     OnChildChange,
     OnStateChange,
     OnReferChange,
-    OnParentChange,
+    OnRouteChange,
 } from './agent/event';

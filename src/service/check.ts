@@ -3,7 +3,7 @@ type Callback<R = any, P extends any[] = any[]> = (...args: P) => R
 export class CheckService {
     private static readonly validators = new Map<Function, Record<string, Callback[]>>();
     
-    static if<T extends Object, R = any, P extends any[] = any[]>(
+    public static if<T extends Object, R = any, P extends any[] = any[]>(
         validator: Callback<any, [T, ...P]>,
         error?: string | Error,
     ) {
@@ -24,7 +24,6 @@ export class CheckService {
             }
             descriptor.value = instance[key];
 
-
             const validators = CheckService.validators.get(target.constructor) || {}
             validators[key] = validators[key] || [];
             validators[key].push(validator);
@@ -34,7 +33,7 @@ export class CheckService {
         };
     }
 
-    static precheck<F extends Callback>(target: Object, method: F, ...args: Parameters<F>) {
+    public static precheck<F extends Callback>(target: Object, method: F, ...args: Parameters<F>) {
         let validators: Callback[] = [];
         let constructor = target.constructor;
         while (constructor) {

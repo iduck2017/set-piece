@@ -17,12 +17,7 @@ export class StoreService {
             child: Record<string, Model | Model[]>,
             refer: Record<string, string | string[]>,
             state: Record<string, any>,
-        } = {
-            state: {},
-            child: {},
-            refer: {},
-            ...model.props,
-        };
+        } = model.props;
 
         const code = StoreService.registry.get(model.constructor);
         if (!code) return undefined;
@@ -55,6 +50,17 @@ export class StoreService {
         return result;
     }
 
+    public static load(chunk: Chunk): Model | undefined {
+        const registry: Record<string, Model> = {};
+
+        const model = StoreService.init(chunk, registry);
+        StoreService.bind(chunk, registry);
+
+        return model;
+    }
+
+    
+    
     private static init(chunk: Chunk, registry: Record<string, Model>): Model | undefined {
         const type = StoreService.registry.get(chunk.code);
         if (!type) return undefined;
@@ -119,22 +125,12 @@ export class StoreService {
         }
     }
 
-    public static load(chunk: Chunk): Model | undefined {
-        const registry: Record<string, Model> = {};
-
-        const model = StoreService.init(chunk, registry);
-        StoreService.bind(chunk, registry);
-
-        return model;
-    }
-
-
 
     private constructor() {}
 
     public static is<I extends string, M extends Model>(code: I) {
         return function (
-            constructor: new (props: Model.Props<M>) => M
+            constructor: new (props: M['props']) => M
         ) {
             console.log('useProduct', constructor.name, code)
             StoreService.registry.set(code, constructor);

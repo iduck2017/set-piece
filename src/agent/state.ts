@@ -1,19 +1,29 @@
-import { Define, Model } from "../model";
+import { Model } from "../model";
 import { Agent } from "./agent";
-import { DeepReadonly, Mutable, Writable } from "utility-types";
 import { TranxService } from "../service/tranx";
-import { DebugService } from "../service/debug";
+import * as lodash from 'lodash';
+import { DeepReadonly } from "utility-types";
 
-@DebugService.is(agent => agent.target.constructor.name + '::state')
+export type DecorUpdater<S = any, M extends Model = Model> = (target: M, state: DeepReadonly<S>) => DeepReadonly<S>
+
+export type DecorConsumer = { target: Model, updater: DecorUpdater }
+
+export class DecorProducer<S = any, M extends Model = Model> {
+    public readonly path: string;
+
+    public readonly target: M;
+
+    constructor(target: M, path?: string) {
+        this.path = path ? path + '/decor' : 'decor';
+        this.target = target;
+    }
+}
+
+
 export class StateAgent<
     M extends Model = Model,
-    S extends Define.S = {},
+    S extends Model.S = Model.S,
 > extends Agent<M> {
-
-    private _current: Readonly<S>
-    public get current() {
-        return { ...this._current }
-    }
 
     public readonly draft: S
     
@@ -21,6 +31,15 @@ export class StateAgent<
         consumers: Map<string, DecorConsumer[]>,
         producers: Map<DecorUpdater, DecorProducer[]>
     }
+
+    private _current: S
+
+    public get current() { return { ...this._current } }
+    
+
+
+
+
     
     constructor(target: M, props: S) {
         super(target);
@@ -37,78 +56,82 @@ export class StateAgent<
         })
     }
 
+
+    
     public update(path: string) {
         const keys = path.split('/');
         const key = keys.shift();
-        if (!key) return;
+        path = keys.join('/');
 
+        if (!key) return;
         if (keys.length) {
             const child: Record<string, Model | Model[]> = this.agent.child.current;
-            let value: Model | Model[] | undefined = child[key];
-            if (!value) return;
-            if (Model.isModel(value)) value = [value];
 
-            const path = keys.join('/');
-            for (const model of value) {
-                if (!Model.isModel(model)) continue;
-                model.agent.state.update(path);
+            let value: Model | Model[] | undefined = child[key];
+            if (Array.isArray(value)) {
+                value.forEach(value => {
+                    value.agent.state.update(path);
+                })
+            } else if (value) {
+                value.agent.state.update(path);
             }
-        } else {
-            this.emit(key);
-        }
+
+        } else this.emit();
+
     } 
 
 
+
+
+    @TranxService.span()
     private set(origin: any, key: string, next: any) {
         origin[key] = next;
-        this.update(key);
-        return true;
-    }
-    
-    private del(origin: any, key: string) {
-        delete origin[key];
-        this.update(key);
-        return true;
+        return this.emit();
     }
 
     @TranxService.span()
-    @DebugService.log()
-    public emit(key: string) {
+    private del(origin: any, key: string) {
+        delete origin[key];
+        return this.emit();
+    }
+
+    @TranxService.span()
+    public emit() {
+        let path: string = 'decor';
         let state: any = { ...this.draft };
-        let value = state[key];
-
-        if (!this.target.agent.route.isLoad) return value;
-
         let target: Model | undefined = this.target;
-        let path: string = key;
         while (target) {
             const router = target.agent.state.router;
-            
             const consumers = router.consumers.get(path) ?? [];
             for (const consumer of [ ...consumers ]) {
                 const target = consumer.target;
                 const updater = consumer.updater;
-                value = updater.call(target, this.target, value);
+                state = updater.call(target, this.target, state);
             }
-            
             path = target.agent.route.key + '/' + path;
             target = target.agent.route.parent;
         }
-        console.log(key, state[key], value);
-        this._current = { ...state, [key]: value };
+        this._current = state;
+        return true;
     }
 
+
+
+
+
+    
 
     public bind<S, M extends Model>(
         producer: DecorProducer<S, M>, 
         updater: DecorUpdater<S, M>
     ) {
         const { target, path } = producer;
-        const router = target.agent.state.router;
 
-        const consumers = router.consumers.get(path) ?? [];
+        if (this.target.agent.route.root !== target.agent.route.root) return;
+
+        const consumers = target.agent.state.router.consumers.get(path) ?? [];
         consumers.push({ target: this.target, updater });
-        router.consumers.set(path, consumers);
+        target.agent.state.router.consumers.set(path, consumers);
         
         const producers = this.router.producers.get(updater) ?? [];
         producers.push(producer);
@@ -117,7 +140,7 @@ export class StateAgent<
         target.agent.state.update(path);
     }
 
-
+    
     public unbind<S, M extends Model>(
         producer: DecorProducer<S, M>, 
         updater: DecorUpdater<S, M>
@@ -125,9 +148,7 @@ export class StateAgent<
         const { target, path } = producer;
 
         let index;
-
-        const router = target.agent.state.router;
-        const comsumers = router.consumers.get(path) ?? [];
+        const comsumers = target.agent.state.router.consumers.get(path) ?? [];
         index = comsumers.findIndex(item => (
             item.updater === updater &&
             item.target === this.target
@@ -140,6 +161,8 @@ export class StateAgent<
         
         target.agent.state.update(path);
     }
+
+
 
 
     public load() {
@@ -157,55 +180,39 @@ export class StateAgent<
             }
             constructor = constructor.__proto__;
         }
-
-
-        const keys: string[] = [];
-        let target: Model | undefined = this.agent.route.parent;
-        let prefix = this.agent.route.key ?? '';
-        while (target) {
-            const consumers = target.agent.state.router.consumers;
-            const paths = [...consumers]
-                .filter(entry => entry[0].startsWith(prefix))
-                .map(entry => entry[0].split('/').pop())
-                
-            for (const path of paths) {
-                if (!path) continue;
-                if (keys.includes(path)) continue;
-                keys.push(path);
-            }
-            prefix = target.agent.route.key + '/' + prefix;
-            target = target.agent.route.parent;
-        }
-        if (keys.length) console.log('update', keys.join(', '))
-        for (const key of keys) this.emit(key);
     }
 
     public unload() {
         for(const channel of this.router.producers) {
             const [ handler, producers ] = channel;
-            for (const producer of [...producers]) {
+            for (const producer of [ ...producers ]) {
                 this.unbind(producer, handler);
             }
         }
-        this._current = this.draft;
     }
 
     public uninit() {
         for (const channel of this.router.consumers) {
             const [ path, consumers ] = channel;
-            const decor: Record<string, DecorProducer> = this.target.proxy.decor;
+            const decor: Record<string, DecorProducer> = this.target.proxy.state;
             const producer: DecorProducer | undefined = decor[path];
-            
             if (!producer) continue;
             for (const consumer of [ ...consumers ]) {
                 const { target, updater } = consumer;
+                if (target.agent.route.root !== this.target.agent.route.root) continue;
                 target.agent.state.unbind(producer, updater);
             }
         }
+        this.emit();
     }
 
 
-    private static registry: Map<Function, Record<string, Array<(model: Model) => DecorProducer | undefined>>> = new Map();
+
+
+
+    private static registry: Map<Function, 
+        Record<string, Array<(model: Model) => DecorProducer | undefined>>
+    > = new Map();
 
     public static use<S, M extends Model, I extends Model>(
         accessor: (model: I) => DecorProducer<S, M> | undefined
@@ -223,21 +230,5 @@ export class StateAgent<
         }
     }
 
-
 }
 
-
-export type DecorUpdater<S = any, M extends Model = Model> = (target: M, state: S) => S
-
-export type DecorConsumer = { target: Model, updater: DecorUpdater }
-
-export class DecorProducer<S = any, M extends Model = Model> {
-    public readonly path: string;
-
-    public readonly target: M;
-
-    constructor(target: M, path: string) {
-        this.path = path;
-        this.target = target;
-    }
-}

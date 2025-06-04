@@ -1,30 +1,43 @@
-import { Define, Model } from "../model";
+import { Model } from "../model";
 import { Agent } from "./agent";
 
-export type OnStateChange<M extends Model> = { prev: Model.State<M>, next: Model.State<M> };
+export type OnStateChange<M extends Model> = { prev: M['state'], next: M['state'] };
 
-export type OnChildChange<M extends Model> = { prev: Model.Child<M>, next: Model.Child<M> };
+export type OnChildChange<M extends Model> = { prev: M['child'], next: M['child'] };
 
-export type OnReferChange<M extends Model> = { prev: Model.Refer<M>, next: Model.Refer<M> };
+export type OnReferChange<M extends Model> = { prev: M['refer'], next: M['refer'] };
 
-export type OnParentChange<M extends Model> = { prev: Model.Parent<M>, next: Model.Parent<M> }
+export type OnRouteChange<M extends Model> = { prev: M['route'], next: M['route'] }
 
 export type BaseEvent<M extends Model> = {
     onStateChange: OnStateChange<M>
     onChildChange: OnChildChange<M>
     onReferChange: OnReferChange<M>
-    onParentChange: OnParentChange<M>
+    onRouteChange: OnRouteChange<M>
 }
-
 
 type EventHandler<E = any, M extends Model = Model> = (target: M, event: E) => void
 
 type EventConsumer = { target: Model, handler: EventHandler }
 
+export class EventProducer<E = any, M extends Model = Model> {
+   
+    public readonly path: string;
+    
+    public readonly target: M;
+    
+    public constructor(target: M, path: string) {
+        this.path = path;
+        this.target = target;
+    }
+}
+
+
 export class EventAgent<
     M extends Model = Model,
-    E extends Define.E = {},
+    E extends Model.E = Model.E,
 > extends Agent<M> {
+    
     public readonly current: Readonly<
         { [K in keyof E]: (event: E[K]) => void } &
         { [K in keyof BaseEvent<M>]: (event: BaseEvent<M>[K]) => void }
@@ -46,11 +59,12 @@ export class EventAgent<
         })
     }
 
-    public emit<E>(key: string, event: E) {
-        if (!this.agent.route.isLoad) return;
 
-        let target: Model | undefined = this.target;
+
+
+    public emit<E>(key: string, event: E) {
         let path = key;
+        let target: Model | undefined = this.target;
         while(target) {
             const router = target.agent.event.router;
             const consumers = router.consumers.get(path) ?? [];
@@ -70,18 +84,17 @@ export class EventAgent<
         handler: EventHandler<E, M>
     ) {
         const { target, path } = producer;
-        const router = target.agent.event.router;
 
-        const consumers = router.consumers.get(path) ?? [];
-        const consumer: EventConsumer = { target: this.target, handler }
-        consumers.push(consumer);
-        router.consumers.set(path, consumers);
+        if (this.target.agent.route.root !== target.agent.route.root) return;
+
+        const consumers = target.agent.event.router.consumers.get(path) ?? [];
+        consumers.push({ target: this.target, handler });
+        target.agent.event.router.consumers.set(path, consumers);
         
         const producers = this.router.producers.get(handler) ?? [];
         producers.push(producer);
         this.router.producers.set(handler, producers);
     }
-
 
 
     public unbind<E, M extends Model>(
@@ -91,9 +104,7 @@ export class EventAgent<
         const { target, path } = producer;
         
         let index;
-
-        const router = target.agent.event.router;
-        const consumers = router.consumers.get(path) ?? [];
+        const consumers = target.agent.event.router.consumers.get(path) ?? [];
         index = consumers.findIndex(item => (
             item.handler === handler && 
             item.target === this.target
@@ -103,8 +114,11 @@ export class EventAgent<
         const producers = this.router.producers.get(handler) ?? [];
         index = producers.indexOf(producer);
         if (index !== -1) producers.splice(index, 1);
-    
     }
+
+
+
+
 
     public load() {
         let constructor: any = this.target.constructor;
@@ -138,16 +152,22 @@ export class EventAgent<
             const event: Record<string, EventProducer> = this.target.proxy.event;
             const producer: EventProducer | undefined = event[path];
             if (!producer) continue;
+
             for (const consumer of [ ...consumers ]) {
                 const { target, handler } = consumer;
+                if (target.agent.route.root !== this.target.agent.route.root) continue;
                 target.agent.event.unbind(producer, handler);
             }
         }
     }
 
 
-    private static registry: Map<Function, Record<string, Array<(model: Model) => EventProducer | undefined>>> = new Map();
 
+
+
+    private static registry: Map<Function, 
+        Record<string, Array<(model: Model) => EventProducer | undefined>>
+    > = new Map();
 
     public static use<E, M extends Model, I extends Model>(
         accessor: (model: I) => EventProducer<E, M> | undefined
@@ -167,15 +187,3 @@ export class EventAgent<
 
 }
 
-
-export class EventProducer<E = any, M extends Model = Model> {
-   
-    public readonly path: string;
-    
-    public readonly target: M;
-    
-    public constructor(target: M, path: string) {
-        this.path = path;
-        this.target = target;
-    }
-}
