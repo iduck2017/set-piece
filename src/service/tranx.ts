@@ -7,6 +7,7 @@ export class TranxService {
     private constructor() {}
 
     private static _isSpan = false;
+
     public static get isSpan() { return TranxService._isSpan; }
 
     private static readonly registry: Map<Model, Readonly<{
@@ -26,19 +27,26 @@ export class TranxService {
             if (!handler) return descriptor;
             const instance = {
                 [key](this: Model | Agent, ...args: any[]) {
+                    console.log('tranx', key, this)
 
-                    const isStateChange = this.target.agent.state === this;
-                    const isReferChange = this.target.agent.refer === this;
-                    const isChildChange = this.target.agent.child === this;
-                    const isRouteChange = this.target.agent.route === this;
+                    let target = this.target;
 
-                    const prev = TranxService.registry.get(this.target) ?? {};
-                    const next = { ...prev }
-                    if (isStateChange && !prev.state) next.state = this.target.state;
-                    if (isReferChange && !prev.refer) next.refer = this.target.refer;
-                    if (isChildChange && !prev.child) next.child = this.target.child;
-                    if (isRouteChange && !prev.route) next.route = this.target.route;
-                    TranxService.registry.set(this.target, next);
+                    if (target) {
+                        const isStateChange = target.agent.state === this;
+                        const isReferChange = target.agent.refer === this;
+                        const isChildChange = target.agent.child === this;
+                        const isRouteChange = target.agent.route === this;
+
+                        const prev = TranxService.registry.get(target) ?? {};
+                        const next = { ...prev }
+
+                        if (isStateChange && !prev.state) next.state = target.state;
+                        if (isReferChange && !prev.refer) next.refer = target.refer;
+                        if (isChildChange && !prev.child) next.child = target.child;
+                        if (isRouteChange && !prev.route) next.route = target.route;
+                        TranxService.registry.set(target, next);
+                    }
+
 
                     if (TranxService._isSpan) return handler.call(this, ...args);
 
@@ -49,14 +57,25 @@ export class TranxService {
 
                     const result = handler.call(this, ...args);
 
+                    console.log('clean')
+
                     for (const [model, info] of TranxService.registry) {
                         if (!info.route) continue;
+                        console.log('reload', model, model.state)
                         model.agent.route.uninit();
                         model.agent.route.unload();
                         model.agent.route.load();
                     }
 
+                    for (const [model, info] of TranxService.registry) {
+                        if (!info.refer) continue;
+                        console.log('reload refer', model)
+                        model.agent.refer.unload();
+                        model.agent.refer.uninit();
+                    }
+
                     const registry = new Map(TranxService.registry);
+
                     TranxService.registry.clear();
                     TranxService._isSpan = false;
                     console.groupEnd()
@@ -83,6 +102,7 @@ export class TranxService {
             return descriptor;
         }
     }
+
 
     public static task() {}
 }

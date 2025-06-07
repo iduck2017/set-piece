@@ -6,6 +6,7 @@ import { Proxy } from "./proxy";
 import { DeepReadonly, Primitive } from "utility-types";
 import { ReferAgent } from "./agent/refer";
 import { v4 as uuidv4 } from 'uuid';
+import { TranxService } from "./service/tranx";
 
 export type Agent<
     M extends Model = Model,
@@ -62,7 +63,10 @@ export class Model<
         return this.agent.child.current; 
     }
 
-    public get route(): Partial<{ parent: P, root: Model }> {
+    public get route(): { 
+        parent?: P, 
+        root?: Model 
+    } {
         return {
             parent: this.agent.route.parent,
             root: this.agent.route.root,
@@ -100,10 +104,12 @@ export class Model<
         }
     }
 
+    // @tranx
     constructor(props: {
         uuid?: string
         state: S
         child: C
+        refer: { [K in keyof R]: R[K] extends any[] ? Readonly<R[K]> : R[K] | undefined }
     }) {
         this.target = this;
         this.uuid = props.uuid ?? uuidv4();

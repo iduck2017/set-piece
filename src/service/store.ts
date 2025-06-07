@@ -1,4 +1,5 @@
 import { Model } from "../model";
+import { TranxService } from "./tranx";
 
 interface Chunk {
     uuid?: string,
@@ -35,13 +36,12 @@ export class StoreService {
 
             if (Array.isArray(value)) {
                 result.child[key] = [];
-                for (const model of value) {
-                    if (!model) continue;
-                    const chunk = StoreService.save(model);
-                    if (chunk) result.child[key].push(chunk);
-                }
-            }
-            if (Model.isModel(value)) {
+                value.forEach(value => {
+                    const chunk = StoreService.save(value);
+                    const array = result.child[key];
+                    if (chunk && Array.isArray(array)) array.push(chunk);
+                })
+            } else if (value) {
                 const chunk = StoreService.save(value);
                 if (chunk) result.child[key] = chunk;
             }

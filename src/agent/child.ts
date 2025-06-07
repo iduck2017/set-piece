@@ -9,7 +9,9 @@ export class ChildAgent<
 
     public readonly draft: C;
 
-    public get current(): Readonly<{ [K in keyof C]: C[K] extends any[] ? Readonly<C[K]> : C[K] }> {
+    public get current(): Readonly<{ 
+        [K in keyof C]: C[K] extends any[] ? Readonly<C[K]> : C[K] 
+    }> {
         const result: any = {}
         for (const key of Object.keys(this.draft)) {
             const value = this.draft[key];
@@ -17,6 +19,7 @@ export class ChildAgent<
         }
         return result;
     }
+
     
     constructor(target: M, props: C) {
         super(target);
@@ -58,10 +61,11 @@ export class ChildAgent<
         key: string, 
         next: Model | Model[] | undefined
     ) {
+        
         const prev = origin[key];
         if (Array.isArray(prev)) {
             prev.forEach(prev => {
-                prev.agent.route.unbind();
+                prev.agent.route.unbind()
             })
         } else if (prev) {
             prev.agent.route.unbind();
@@ -88,7 +92,7 @@ export class ChildAgent<
         const prev = origin[key];
         if (Array.isArray(prev)) {
             prev.forEach(prev => {
-                prev.agent.route.unbind();
+                prev.agent.route.unbind()
             })
         } else if (prev) {
             prev.agent.route.unbind();
@@ -171,7 +175,6 @@ export class ChildAgent<
         if (Model.isModel(prev)) {
             prev.agent.route.unbind();
         }
-        
         if (Model.isModel(next)) {
             if (next.agent.route.isBind) next = next.copy();
             next.agent.route.bind(this.target, key);
@@ -271,6 +274,5 @@ export class ChildAgent<
         });
         return origin.splice(start, count, ...next);
     }
-
 
 }

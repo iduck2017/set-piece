@@ -1,7 +1,6 @@
 import { Model } from "../model";
 import { Agent } from "./agent";
 import { TranxService } from "../service/tranx";
-import * as lodash from 'lodash';
 import { DeepReadonly } from "utility-types";
 
 export type DecorUpdater<S = any, M extends Model = Model> = (target: M, state: DeepReadonly<S>) => DeepReadonly<S>
@@ -36,8 +35,6 @@ export class StateAgent<
 
     public get current() { return { ...this._current } }
     
-
-
 
 
     
@@ -77,7 +74,6 @@ export class StateAgent<
             }
 
         } else this.emit();
-
     } 
 
 
@@ -101,6 +97,7 @@ export class StateAgent<
         let state: any = { ...this.draft };
         let target: Model | undefined = this.target;
         while (target) {
+            console.log('target', target)
             const router = target.agent.state.router;
             const consumers = router.consumers.get(path) ?? [];
             for (const consumer of [ ...consumers ]) {

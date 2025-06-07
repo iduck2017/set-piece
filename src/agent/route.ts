@@ -39,10 +39,10 @@ export class RouteAgent<
 
     @TranxService.span()
     public bind(parent: P | undefined, key: string) {
+        console.log('bind', parent, key, this.target.state)
         this._isBind = true;
         this._key = key;
         this._parent = parent;
-        this.agent.state.emit()
     }
 
     @TranxService.span()
@@ -50,7 +50,6 @@ export class RouteAgent<
         this._isBind = false;
         this._key = undefined;
         this._parent = undefined;
-        this.agent.state.emit()
     }
 
     @TranxService.span()
@@ -72,6 +71,7 @@ export class RouteAgent<
     @DebugService.log()
     public unload() {
         this.agent.child.unload();
+        this.agent.refer.unload();
         this.agent.event.unload();
         this.agent.state.unload();
     }
