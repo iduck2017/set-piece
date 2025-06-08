@@ -81,9 +81,9 @@ export class RouteAgent<
 
     public static root: Model[] = [];
 
-    @DebugService.log()
     public static boot<T extends Model>(root: T): T {
         if (RouteAgent.root.includes(root)) return root;
+        console.log('boot', root.name)
         RouteAgent.root.push(root);
         root.agent.route.bind(undefined, 'root')
         return root;

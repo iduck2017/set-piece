@@ -20,13 +20,14 @@ export class ReferAgent<
         return result;
     }
 
-    constructor(target: M, props: { [K in keyof R]: R[K] extends any[] ? Readonly<R[K]> : R[K] | undefined }) {
+    constructor(target: M, props: () => R) {
         super(target);
         this.router = new Map();
 
+        const refer = props();
         const origin: any = {};
-        for (const key in props) {
-            let value: Model | Model[] | undefined = props[key];
+        for (const key in refer) {
+            let value: Model | Model[] | undefined = refer[key];
             if (value instanceof Array) {
                 origin[key] = [];
                 value.forEach((value, index) => {
@@ -43,7 +44,6 @@ export class ReferAgent<
             set: this.set.bind(this),
             deleteProperty: this.del.bind(this)
         });
-        // this.reload();
     }
     
 
@@ -136,6 +136,7 @@ export class ReferAgent<
         origin[key] = next;
         return true;
     }
+
 
 
     @TranxService.span()

@@ -25,13 +25,17 @@ export class TranxService {
             const result: any = 
                 class Model extends constructor {
                     constructor(...args: any[]) {
-                        console.group('Transaction::' + args[0].state.name)
-                        TranxService._isSpan = true;
-                        super(...args);
-                        TranxService.reload();
-                        TranxService._isSpan = false;
-                        console.groupEnd()
-                        TranxService.emit();
+                        if (TranxService._isSpan) {
+                            super(...args);
+                        } else {
+                            console.group('Transaction::' + args[0].state.name)
+                            TranxService._isSpan = true;
+                            super(...args);
+                            TranxService.reload();
+                            TranxService._isSpan = false;
+                            console.groupEnd()
+                            TranxService.emit();
+                        }
                     }
                 };
             return result;
@@ -67,17 +71,18 @@ export class TranxService {
                     }
 
 
-                    if (TranxService._isSpan) return handler.call(this, ...args);
-
-                    console.group('Transaction')
-                    TranxService._isSpan = true;
-                    const result = handler.call(this, ...args);
-                    TranxService.reload();
-                    TranxService._isSpan = false;
-                    console.groupEnd()
-                    TranxService.emit();
-                    
-                    return result;
+                    if (TranxService._isSpan) {
+                        return handler.call(this, ...args);
+                    } else {
+                        console.group('Transaction')
+                        TranxService._isSpan = true;
+                        const result = handler.call(this, ...args);
+                        TranxService.reload();
+                        TranxService._isSpan = false;
+                        console.groupEnd()
+                        TranxService.emit();
+                        return result;
+                    }
                 }
             }
             descriptor.value = instance[key];
@@ -87,35 +92,36 @@ export class TranxService {
 
 
     private static reload() {
-        let reloader: Model[] = [];
-        for (const [model, info] of TranxService.registry) {
+        const queue: {
+            load: Model[],
+            bind: Model[],
+            done: Model[]
+        } = {
+            load: [],
+            bind: [],
+            done: [],
+        }
+        TranxService.registry.forEach((info, model) => {
             if (info.route) {
                 const descendants = model.agent.child.descendants;
-                reloader.push(model, ...descendants);
+                queue.load.push(model, ...descendants);
             }
-        }
-        reloader = reloader.filter((model, index) => {
-            if (index === reloader.indexOf(model)) return true;
-            return false;
         })
-        console.log('reloader', reloader.map(model => model.name))
-        reloader.forEach(model => {
-            model.agent.route.uninit();
+        queue.load.forEach(model => {
+            if (queue.done.includes(model)) return;
+            queue.done.push(model);
             model.agent.route.unload();
+            model.agent.route.uninit();
             model.agent.route.load();
         })
 
-        let rebinder: Model[] = [];
-        for (const [model, info] of TranxService.registry) {
-            if (info.refer) rebinder.push(model);
-        }
-        rebinder = rebinder.filter((model, index) => {
-            if (reloader.includes(model)) return false;
-            if (index === rebinder.indexOf(model)) return true;
-            return false;
+
+        TranxService.registry.forEach((info, model) => {
+            if (info.refer) queue.bind.push(model);
         })
-        console.log('rebinder', rebinder.map(model => model.name))
-        rebinder.forEach(model => {
+        queue.bind.forEach(model => {
+            if (queue.done.includes(model)) return;
+            queue.done.push(model);
             model.agent.refer.unload();
             model.agent.refer.uninit();
         })
@@ -134,6 +140,4 @@ export class TranxService {
             if (info.route) event.onRouteChange({ prev: info.route, next: route })
         }
     }
-
-    public static task() {}
 }

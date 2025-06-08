@@ -31,8 +31,8 @@ export type Props<
 > = {
     uuid?: string
     state?: Partial<S>,
-    child?: Partial<C>,
-    refer?: Partial<R>,
+    child?: () => Partial<C>,
+    refer?: () => Partial<R>,
 }
 
 
@@ -113,8 +113,8 @@ export class Model<
     constructor(props: {
         uuid?: string
         state: S
-        child: C
-        refer: { [K in keyof R]: R[K] extends any[] ? Readonly<R[K]> : R[K] | undefined }
+        child: () => C
+        refer: () => R
     }) {
         this.target = this;
         this.uuid = props.uuid ?? uuidv4();
@@ -134,6 +134,7 @@ export class Model<
             child: this.agent.child.draft,
             refer: this.agent.refer.draft,
         }
+        this.reload()
     }
 
     

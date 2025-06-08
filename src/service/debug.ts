@@ -1,3 +1,6 @@
+import { Agent } from "../agent/agent";
+import {  Model } from "../model";
+
 type Callback<R = any, P extends any[] = any[]> = (...args: P) => R
 
 export class DebugService {
@@ -5,15 +8,15 @@ export class DebugService {
 
     public static log() {
         return function(
-            target: Object,
+            target: Model | Agent,
             key: string,
             descriptor: TypedPropertyDescriptor<Callback>
         ): TypedPropertyDescriptor<Callback> {
             const handler = descriptor.value;
             if (!handler) return descriptor;
             const instance = {
-                [key](this: Object, ...args: any[]) {
-                    const namespace = this.constructor.name + '::' + key
+                [key](this: Model | Agent, ...args: any[]) {
+                    const namespace = this.target.name + '::' + key
                     console.group(namespace)
 
                     DebugService.stack.push(namespace);

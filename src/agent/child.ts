@@ -38,12 +38,13 @@ export class ChildAgent<
         return result;
     }
     
-    constructor(target: M, props: C) {
+    constructor(target: M, props: () => C) {
         super(target);
 
+        const child = props();
         const origin: any = {};
-        for (const key in props) {
-            let value: Model | Model[] | undefined = props[key];
+        for (const key in child) {
+            let value: Model | Model[] | undefined = child[key];
             if (value instanceof Array) {
                 origin[key] = [];
                 value.forEach((value, index) => {
@@ -84,9 +85,7 @@ export class ChildAgent<
             prev.forEach(prev => {
                 prev.agent.route.unbind()
             })
-        } else if (prev) {
-            prev.agent.route.unbind();
-        }
+        } else prev?.agent.route.unbind();
 
         if (next instanceof Array) {
             next = next.map(next => {
