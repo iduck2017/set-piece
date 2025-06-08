@@ -34,12 +34,12 @@ export class StoreService {
         for (const key of Object.keys(props.child)) {
             const value = props.child[key];
 
-            if (Array.isArray(value)) {
+            if (value instanceof Array) {
                 result.child[key] = [];
                 value.forEach(value => {
                     const chunk = StoreService.save(value);
                     const array = result.child[key];
-                    if (chunk && Array.isArray(array)) array.push(chunk);
+                    if (chunk && array instanceof Array) array.push(chunk);
                 })
             } else if (value) {
                 const chunk = StoreService.save(value);
@@ -60,7 +60,7 @@ export class StoreService {
     }
 
     
-    
+
     private static init(chunk: Chunk, registry: Record<string, Model>): Model | undefined {
         const type = StoreService.registry.get(chunk.code);
         if (!type) return undefined;
@@ -68,7 +68,7 @@ export class StoreService {
         const child: Record<string, Model | Model[]> = {};
         for (const key of Object.keys(chunk.child)) {
             const value = chunk.child[key];
-            if (Array.isArray(value)) {
+            if (value instanceof Array) {
                 child[key] = [];
                 for (const chunk of value) {
                     if (!chunk) continue;
@@ -101,7 +101,7 @@ export class StoreService {
             const refer: Record<string, Model[] | Model> = model.agent.refer.draft;
             if (!value) continue;
 
-            if (Array.isArray(value)) {
+            if (value instanceof Array) {
                 const array: Model[] = [];
                 for (const uuid of value) {
                     const model = registry[uuid];
@@ -117,10 +117,12 @@ export class StoreService {
         for (const key of Object.keys(chunk.child)) {
             let value = chunk.child[key];
 
-            if (!value) continue;
-            if (!Array.isArray(value)) value = [value];
-            for (const chunk of value) {
-                StoreService.bind(chunk, registry);
+            if (value instanceof Array) {
+                value.forEach(value => {
+                    StoreService.bind(value, registry);
+                })
+            } else if (value) {
+                StoreService.bind(value, registry);
             }
         }
     }
@@ -130,7 +132,7 @@ export class StoreService {
 
     public static is<I extends string, M extends Model>(code: I) {
         return function (
-            constructor: new (props: M['props']) => M
+            constructor: new (props: any) => M
         ) {
             console.log('useProduct', constructor.name, code)
             StoreService.registry.set(code, constructor);

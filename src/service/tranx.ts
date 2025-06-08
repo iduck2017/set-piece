@@ -17,6 +17,27 @@ export class TranxService {
         route?: Model['route'],
     }>> = new Map();
 
+
+    public static wrap() {
+        return function (
+            constructor: new (...props: any[]) => Model
+        ) {
+            const result: any = 
+                class Model extends constructor {
+                    constructor(...args: any[]) {
+                        console.group('Transaction::' + args[0].state.name)
+                        TranxService._isSpan = true;
+                        super(...args);
+                        TranxService.reload();
+                        TranxService._isSpan = false;
+                        console.groupEnd()
+                        TranxService.emit();
+                    }
+                };
+            return result;
+        }
+    }
+
     public static span() {
         return function(
             target: Model | Agent,
@@ -27,8 +48,6 @@ export class TranxService {
             if (!handler) return descriptor;
             const instance = {
                 [key](this: Model | Agent, ...args: any[]) {
-                    console.log('tranx', key, this)
-
                     let target = this.target;
 
                     if (target) {
@@ -50,50 +69,13 @@ export class TranxService {
 
                     if (TranxService._isSpan) return handler.call(this, ...args);
 
-                    const namespace = 'Transaction'
-                    console.group(namespace)
-
+                    console.group('Transaction')
                     TranxService._isSpan = true;
-
                     const result = handler.call(this, ...args);
-
-                    console.log('clean')
-
-                    for (const [model, info] of TranxService.registry) {
-                        if (!info.route) continue;
-                        console.log('reload', model, model.state)
-                        model.agent.route.uninit();
-                        model.agent.route.unload();
-                        model.agent.route.load();
-                    }
-
-                    for (const [model, info] of TranxService.registry) {
-                        if (!info.refer) continue;
-                        console.log('reload refer', model)
-                        model.agent.refer.unload();
-                        model.agent.refer.uninit();
-                    }
-
-                    const registry = new Map(TranxService.registry);
-
-                    TranxService.registry.clear();
+                    TranxService.reload();
                     TranxService._isSpan = false;
                     console.groupEnd()
-
-                    for (const [model, info] of registry) {
-                        const { state, refer, child, route } = model.target;
-                        const event = model.agent.event.current;
-
-                        if (info.state) event.onStateChange({ prev: info.state, next: state })
-                        if (info.refer) event.onReferChange({ prev: info.refer, next: refer })
-                        if (info.child) event.onChildChange({ prev: info.child, next: child })
-                        if (info.route) event.onRouteChange({ prev: info.route, next: route })
-
-                        if (info.state) console.log('stateChange');
-                        if (info.refer) console.log('referChange');
-                        if (info.child) console.log('childChange');
-                        if (info.route) console.log('routeChange');
-                    }
+                    TranxService.emit();
                     
                     return result;
                 }
@@ -103,6 +85,55 @@ export class TranxService {
         }
     }
 
+
+    private static reload() {
+        let reloader: Model[] = [];
+        for (const [model, info] of TranxService.registry) {
+            if (info.route) {
+                const descendants = model.agent.child.descendants;
+                reloader.push(model, ...descendants);
+            }
+        }
+        reloader = reloader.filter((model, index) => {
+            if (index === reloader.indexOf(model)) return true;
+            return false;
+        })
+        console.log('reloader', reloader.map(model => model.name))
+        reloader.forEach(model => {
+            model.agent.route.uninit();
+            model.agent.route.unload();
+            model.agent.route.load();
+        })
+
+        let rebinder: Model[] = [];
+        for (const [model, info] of TranxService.registry) {
+            if (info.refer) rebinder.push(model);
+        }
+        rebinder = rebinder.filter((model, index) => {
+            if (reloader.includes(model)) return false;
+            if (index === rebinder.indexOf(model)) return true;
+            return false;
+        })
+        console.log('rebinder', rebinder.map(model => model.name))
+        rebinder.forEach(model => {
+            model.agent.refer.unload();
+            model.agent.refer.uninit();
+        })
+    }
+
+
+    private static emit() {
+        const registry = new Map(TranxService.registry);
+        TranxService.registry.clear();
+        for (const [model, info] of registry) {
+            const { state, refer, child, route } = model.target;
+            const event = model.agent.event.current;
+            if (info.state) event.onStateChange({ prev: info.state, next: state })
+            if (info.refer) event.onReferChange({ prev: info.refer, next: refer })
+            if (info.child) event.onChildChange({ prev: info.child, next: child })
+            if (info.route) event.onRouteChange({ prev: info.route, next: route })
+        }
+    }
 
     public static task() {}
 }

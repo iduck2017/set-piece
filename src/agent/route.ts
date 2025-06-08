@@ -39,7 +39,6 @@ export class RouteAgent<
 
     @TranxService.span()
     public bind(parent: P | undefined, key: string) {
-        console.log('bind', parent, key, this.target.state)
         this._isBind = true;
         this._key = key;
         this._parent = parent;
@@ -59,26 +58,20 @@ export class RouteAgent<
 
 
 
-    @DebugService.log()
     public load() {
         if (RouteAgent.root.includes(this.root)) {
-            this.agent.child.load();
             this.agent.event.load();
             this.agent.state.load();
         }
     }
 
-    @DebugService.log()
     public unload() {
-        this.agent.child.unload();
         this.agent.refer.unload();
         this.agent.event.unload();
         this.agent.state.unload();
     }
 
-    @DebugService.log()
     public uninit() {
-        this.agent.child.uninit();
         this.agent.refer.uninit();
         this.agent.event.uninit();
         this.agent.state.uninit();
@@ -88,6 +81,7 @@ export class RouteAgent<
 
     public static root: Model[] = [];
 
+    @DebugService.log()
     public static boot<T extends Model>(root: T): T {
         if (RouteAgent.root.includes(root)) return root;
         RouteAgent.root.push(root);

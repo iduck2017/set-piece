@@ -65,7 +65,7 @@ export class StateAgent<
             const child: Record<string, Model | Model[]> = this.agent.child.current;
 
             let value: Model | Model[] | undefined = child[key];
-            if (Array.isArray(value)) {
+            if (value instanceof Array) {
                 value.forEach(value => {
                     value.agent.state.update(path);
                 })
@@ -97,7 +97,6 @@ export class StateAgent<
         let state: any = { ...this.draft };
         let target: Model | undefined = this.target;
         while (target) {
-            console.log('target', target)
             const router = target.agent.state.router;
             const consumers = router.consumers.get(path) ?? [];
             for (const consumer of [ ...consumers ]) {

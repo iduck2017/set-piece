@@ -44,6 +44,7 @@ export namespace Model {
     export type R = Record<string, Model | Model[]>
 }
 
+@TranxService.wrap()
 export class Model<
     P extends Model.P = Model.P,
     E extends Model.E = {},
@@ -51,6 +52,10 @@ export class Model<
     C extends Model.C = {},
     R extends Model.R = {},
 > {
+    public get name() {
+        return this.constructor.name;
+    }
+
     public get state(): DeepReadonly<S> {
         return this.agent.state.current as any;
     } 
@@ -143,10 +148,6 @@ export class Model<
 
     public reload() {
         this.agent.route.reload();
-    }
-
-    public static isModel(value: any): value is Model {
-        return value instanceof Model;
     }
 }
 

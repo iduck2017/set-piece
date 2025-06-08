@@ -15,11 +15,28 @@ export class ChildAgent<
         const result: any = {}
         for (const key of Object.keys(this.draft)) {
             const value = this.draft[key];
-            result[key] = Array.isArray(value) ? [ ...value ] : value;
+            result[key] = value instanceof Array ? [ ...value ] : value;
         }
         return result;
     }
 
+    
+    public get descendants(): Model[] {
+        const result: Model[] = [];
+        for (const key in this.draft) {
+            const value = this.draft[key];
+            if (value instanceof Array) {
+                result.push(...value);
+                value.forEach(value => {
+                    result.push(...value.agent.child.descendants);
+                })
+            } else if (value) {
+                result.push(value);
+                result.push(...value.agent.child.descendants);
+            }
+        }
+        return result;
+    }
     
     constructor(target: M, props: C) {
         super(target);
@@ -27,7 +44,7 @@ export class ChildAgent<
         const origin: any = {};
         for (const key in props) {
             let value: Model | Model[] | undefined = props[key];
-            if (Array.isArray(value)) {
+            if (value instanceof Array) {
                 origin[key] = [];
                 value.forEach((value, index) => {
                     if (value.agent.route.isBind) value = value.copy();
@@ -51,7 +68,7 @@ export class ChildAgent<
 
     private get(origin: Record<string, Model | Model[] | undefined>, key: string) {
         const value = origin[key];
-        if (Array.isArray(value)) return this.proxy(value, key);
+        if (value instanceof Array) return this.proxy(value, key);
         return value;
     }
    
@@ -63,7 +80,7 @@ export class ChildAgent<
     ) {
         
         const prev = origin[key];
-        if (Array.isArray(prev)) {
+        if (prev instanceof Array) {
             prev.forEach(prev => {
                 prev.agent.route.unbind()
             })
@@ -71,7 +88,7 @@ export class ChildAgent<
             prev.agent.route.unbind();
         }
 
-        if (Array.isArray(next)) {
+        if (next instanceof Array) {
             next = next.map(next => {
                 if (next.agent.route.isBind) next = next.copy();
                 next.agent.route.bind(this.target, key);
@@ -90,7 +107,7 @@ export class ChildAgent<
     @TranxService.span()
     private del(origin: Record<string, Model | Model[] | undefined>, key: string) {
         const prev = origin[key];
-        if (Array.isArray(prev)) {
+        if (prev instanceof Array) {
             prev.forEach(prev => {
                 prev.agent.route.unbind()
             })
@@ -100,49 +117,6 @@ export class ChildAgent<
 
         delete origin[key];
         return true;
-    }
-
-
-
-
-
-    public load() {
-        for (const key of Object.keys(this.current)) {
-            let value: Model | Model[] | undefined = this.current[key];
-            if (Array.isArray(value)) {
-                value.forEach(value => {
-                    value.agent.route.load();
-                })
-            } else if (value) {
-                value.agent.route.load();
-            }
-        }
-    }
-
-    public unload() {
-        for (const key of Object.keys(this.current)) {
-            let value: Model | Model[] | undefined = this.current[key];
-            if (Array.isArray(value)) {
-                value.forEach(value => {
-                    value.agent.route.unload();
-                })
-            } else if (value) {
-                value.agent.route.unload();
-            }
-        }
-    }
-
-    public uninit() {
-        for (const key of Object.keys(this.current)) {
-            let value: Model | Model[] | undefined = this.current[key];
-            if (Array.isArray(value)) {
-                value.forEach(value => {
-                    value.agent.route.uninit();
-                })
-            } else if (value) {
-                value.agent.route.uninit();
-            }
-        }
     }
 
 
@@ -172,10 +146,8 @@ export class ChildAgent<
     @TranxService.span()
     private lset(key: string, origin: Record<string, unknown>, index: string, next: Model) {
         const prev = origin[index];
-        if (Model.isModel(prev)) {
-            prev.agent.route.unbind();
-        }
-        if (Model.isModel(next)) {
+        if (prev instanceof Model) prev.agent.route.unbind();
+        if (next instanceof Model) {
             if (next.agent.route.isBind) next = next.copy();
             next.agent.route.bind(this.target, key);
         }
@@ -186,9 +158,7 @@ export class ChildAgent<
     @TranxService.span()
     private ldel(key: string, origin: any, index: string) {
         const prev = origin[index];
-        if (Model.isModel(prev)) {
-            prev.agent.route.unbind();
-        }
+        if (prev instanceof Model) prev.agent.route.unbind();
         delete origin[index];
         return true;
     }

@@ -15,7 +15,7 @@ export class ReferAgent<
         const result: any = {}
         for (const key of Object.keys(this.draft)) {
             const value = this.draft[key];
-            result[key] = Array.isArray(value) ? [...value] : value;
+            result[key] = value instanceof Array ? [...value] : value;
         }
         return result;
     }
@@ -27,7 +27,7 @@ export class ReferAgent<
         const origin: any = {};
         for (const key in props) {
             let value: Model | Model[] | undefined = props[key];
-            if (Array.isArray(value)) {
+            if (value instanceof Array) {
                 origin[key] = [];
                 value.forEach((value, index) => {
                     origin[key].push(value);
@@ -68,7 +68,7 @@ export class ReferAgent<
         const origin: Record<string, Model | Model[] | undefined> = this.draft
         for (const key of Object.keys(this.draft)) {
             const value = this.draft[key];
-            if (Array.isArray(value)) {
+            if (value instanceof Array) {
                 origin[key] = value.filter(value => {
                     if (value.agent.route.root === this.target.agent.route.root) return true;
                     value.agent.refer.unbind(this.target, key);
@@ -91,7 +91,7 @@ export class ReferAgent<
             for (const key of [ ...keys ]) {
                 const origin: Record<string, Model | Model[]> = model.agent.refer.draft;
                 const value = origin[key];
-                if (Array.isArray(value)) {
+                if (value instanceof Array) {
                     const index = value.indexOf(this.target);
                     if (index === -1) continue;
                     value.splice(index, 1);
@@ -107,7 +107,7 @@ export class ReferAgent<
 
     private get(origin: Record<string, Model | Model[] | undefined>, key: string) {
         const value = origin[key];
-        if (Array.isArray(value)) return this.proxy(value, key);
+        if (value instanceof Array) return this.proxy(value, key);
         return value;
     }
 
@@ -118,7 +118,7 @@ export class ReferAgent<
         next: Model | Model[] | undefined
     ) {
         let prev = origin[key];
-        if (Array.isArray(prev)) {
+        if (prev instanceof Array) {
             prev.forEach(prev => {
                 prev.agent.refer.unbind(this.target, key)
             });
@@ -126,7 +126,7 @@ export class ReferAgent<
             prev.agent.refer.unbind(this.target, key);
         }
 
-        if (Array.isArray(next)) {
+        if (next instanceof Array) {
             next.forEach(next => {
                 next.agent.refer.bind(this.target, key);
             })
@@ -142,7 +142,7 @@ export class ReferAgent<
     private del(origin: Record<string, Model | Model[] | undefined>, key: string) {
         
         let prev = origin[key];
-        if (Array.isArray(prev)) {
+        if (prev instanceof Array) {
             prev.forEach(prev => {
                 prev.agent.refer.unbind(this.target, key)
             });
@@ -181,8 +181,8 @@ export class ReferAgent<
     @TranxService.span()
     private lset(key: string, origin: any, index: string, next: Model) {
         const prev = origin[index];
-        if (Model.isModel(prev)) prev.agent.refer.unbind(this.target, key);
-        if (Model.isModel(next)) next.agent.refer.bind(this.target, key);
+        if (prev instanceof Model) prev.agent.refer.unbind(this.target, key);
+        if (next instanceof Model) next.agent.refer.bind(this.target, key);
         origin[index] = next;
         return true;
     }
@@ -190,7 +190,7 @@ export class ReferAgent<
     @TranxService.span()
     private ldel(key: string, origin: any, index: string) {
         const prev = origin[index];
-        if (Model.isModel(prev)) prev.agent.refer.unbind(this.target, key);
+        if (prev instanceof Model) prev.agent.refer.unbind(this.target, key);
         delete origin[index];
         return true;
     }
