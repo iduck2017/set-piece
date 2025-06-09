@@ -79,19 +79,22 @@ export class StateAgent<
 
 
 
-    @TranxService.span()
+    @TranxService.diff()
+    @TranxService.use()
     private set(origin: any, key: string, next: any) {
         origin[key] = next;
         return this.emit();
     }
 
-    @TranxService.span()
+    @TranxService.diff()
+    @TranxService.use()
     private del(origin: any, key: string) {
         delete origin[key];
         return this.emit();
     }
 
-    @TranxService.span()
+    @TranxService.diff()
+    @TranxService.use()
     public emit() {
         let path: string = 'decor';
         let state: any = { ...this.draft };

@@ -44,7 +44,7 @@ export namespace Model {
     export type R = Record<string, Model | Model[]>
 }
 
-@TranxService.wrap()
+@TranxService.use(true)
 export class Model<
     P extends Model.P = Model.P,
     E extends Model.E = {},

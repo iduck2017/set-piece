@@ -20,7 +20,6 @@ export class ChildAgent<
         return result;
     }
 
-    
     public get descendants(): Model[] {
         const result: Model[] = [];
         for (const key in this.draft) {
@@ -37,6 +36,8 @@ export class ChildAgent<
         }
         return result;
     }
+
+
     
     constructor(target: M, props: () => C) {
         super(target);
@@ -73,20 +74,21 @@ export class ChildAgent<
         return value;
     }
    
-    @TranxService.span()
+    @TranxService.diff()
+    @TranxService.use()
     private set(
         origin: Record<string, Model | Model[] | undefined>, 
         key: string, 
         next: Model | Model[] | undefined
     ) {
-        
         const prev = origin[key];
         if (prev instanceof Array) {
             prev.forEach(prev => {
                 prev.agent.route.unbind()
             })
-        } else prev?.agent.route.unbind();
-
+        } else if (prev) {
+            prev.agent.route.unbind();
+        }
         if (next instanceof Array) {
             next = next.map(next => {
                 if (next.agent.route.isBind) next = next.copy();
@@ -97,13 +99,13 @@ export class ChildAgent<
             if (next.agent.route.isBind) next = next.copy();
             next.agent.route.bind(this.target, key);
         }
-
         origin[key] = next;
         return true;
     }
 
 
-    @TranxService.span()
+    @TranxService.diff()
+    @TranxService.use()
     private del(origin: Record<string, Model | Model[] | undefined>, key: string) {
         const prev = origin[key];
         if (prev instanceof Array) {
@@ -113,7 +115,6 @@ export class ChildAgent<
         } else if (prev) {
             prev.agent.route.unbind();
         }
-
         delete origin[key];
         return true;
     }
@@ -142,7 +143,8 @@ export class ChildAgent<
         return origin[index];
     }
 
-    @TranxService.span()
+    @TranxService.diff()
+    @TranxService.use()
     private lset(key: string, origin: Record<string, unknown>, index: string, next: Model) {
         const prev = origin[index];
         if (prev instanceof Model) prev.agent.route.unbind();
@@ -153,8 +155,9 @@ export class ChildAgent<
         origin[index] = next;
         return true;
     }
-    
-    @TranxService.span()
+
+    @TranxService.diff()
+    @TranxService.use()
     private ldel(key: string, origin: any, index: string) {
         const prev = origin[index];
         if (prev instanceof Model) prev.agent.route.unbind();
@@ -163,7 +166,8 @@ export class ChildAgent<
     }
 
 
-    @TranxService.span()
+    @TranxService.diff()
+    @TranxService.use()
     private push(key: string, origin: Model[], ...next: Model[]) {
         next = next.map(next => {
             if (next.agent.route.isBind) next = next.copy();
@@ -173,7 +177,8 @@ export class ChildAgent<
         return origin.push(...next);
     }
 
-    @TranxService.span()
+    @TranxService.diff()
+    @TranxService.use()
     private unshift(key: string, origin: Model[], ...next: Model[]) {
         next = next.map(next => {
             if (next.agent.route.isBind) next = next.copy();
@@ -184,7 +189,8 @@ export class ChildAgent<
     }
 
 
-    @TranxService.span()
+    @TranxService.diff()
+    @TranxService.use()
     private pop(key: string, origin: Model[]) {
         const result = origin.pop();
         if (result) result.agent.route.unbind();
@@ -192,24 +198,28 @@ export class ChildAgent<
     }
 
 
-    @TranxService.span()
+    @TranxService.diff()
+    @TranxService.use()
     private shift(key: string, origin: Model[]) {
         const result = origin.shift();
         if (result) result.agent.route.unbind();
         return result;
     }
 
-    @TranxService.span()
+    @TranxService.diff()
+    @TranxService.use()
     private reverse(origin: Model[]) {
         return origin.reverse();
     }
 
-    @TranxService.span()
+    @TranxService.diff()
+    @TranxService.use()
     private sort(origin: Model[], handler: (a: Model, b: Model) => number) {
         return origin.sort(handler);
     }
 
-    @TranxService.span()
+    @TranxService.diff()
+    @TranxService.use()
     private fill(key: string, origin: Model[], sample: Model, start?: number, end?: number) {
         start = start ?? 0;
         end = end ?? origin.length;
@@ -218,7 +228,6 @@ export class ChildAgent<
         prev.forEach(prev => {
             prev.agent.route.unbind();
         })
-
         const next = prev.map(() => {
             const next = sample.copy();
             next.agent.route.bind(this.target, key);
@@ -228,14 +237,13 @@ export class ChildAgent<
         return;
     }
 
-
-    @TranxService.span()
+    @TranxService.diff()
+    @TranxService.use()
     private splice(key: string, origin: Model[], start: number, count: number, ...next: Model[]) {
         const prev = origin.slice(start, start + count);
         prev.forEach(prev => {
             prev.agent.route.unbind();
         })
-
         next = next.map(next => {
             if (next.agent.route.isBind) next = next.copy();
             next.agent.route.bind(this.target, key);

@@ -20,6 +20,8 @@ export class ReferAgent<
         return result;
     }
 
+
+    
     constructor(target: M, props: () => R) {
         super(target);
         this.router = new Map();
@@ -62,6 +64,7 @@ export class ReferAgent<
         this.router.set(value, router);
     }
     
+
 
 
     public unload() {
@@ -111,7 +114,8 @@ export class ReferAgent<
         return value;
     }
 
-    @TranxService.span()
+    @TranxService.diff()
+    @TranxService.use()
     private set(
         origin: Record<string, Model | Model[] | undefined>, 
         key: string, 
@@ -139,7 +143,8 @@ export class ReferAgent<
 
 
 
-    @TranxService.span()
+    @TranxService.diff()
+    @TranxService.use()
     private del(origin: Record<string, Model | Model[] | undefined>, key: string) {
         
         let prev = origin[key];
@@ -179,7 +184,8 @@ export class ReferAgent<
         return origin[index];
     }
 
-    @TranxService.span()
+    @TranxService.diff()
+    @TranxService.use()
     private lset(key: string, origin: any, index: string, next: Model) {
         const prev = origin[index];
         if (prev instanceof Model) prev.agent.refer.unbind(this.target, key);
@@ -188,7 +194,8 @@ export class ReferAgent<
         return true;
     }
     
-    @TranxService.span()
+    @TranxService.diff()
+    @TranxService.use()
     private ldel(key: string, origin: any, index: string) {
         const prev = origin[index];
         if (prev instanceof Model) prev.agent.refer.unbind(this.target, key);
@@ -197,7 +204,8 @@ export class ReferAgent<
     }
 
 
-    @TranxService.span()
+    @TranxService.diff()
+    @TranxService.use()
     private push(key: string, origin: Model[], ...next: Model[]) {
         next.forEach(next => {
             next.agent.refer.bind(this.target, key);
@@ -206,7 +214,8 @@ export class ReferAgent<
         return result;
     }
 
-    @TranxService.span()
+    @TranxService.diff()
+    @TranxService.use()
     private unshift(key: string, origin: Model[], ...next: Model[]) {
         next.forEach(next => {
             next.agent.refer.bind(this.target, key);
@@ -215,7 +224,8 @@ export class ReferAgent<
         return result;
     }
 
-    @TranxService.span()
+    @TranxService.diff()
+    @TranxService.use()
     private pop(key: string, origin: Model[]) {
         const result = origin.pop();
         if (result) result.agent.refer.unbind(this.target, key);
@@ -223,25 +233,29 @@ export class ReferAgent<
     }
 
 
-    @TranxService.span()
+    @TranxService.diff()
+    @TranxService.use()
     private shift(key: string, origin: Model[]) {
         const result = origin.shift();
         if (result) result.agent.refer.unbind(this.target, key);
         return result;
     }
 
-    @TranxService.span()
+    @TranxService.diff()
+    @TranxService.use()
     private reverse(origin: Model[]) {
         return origin.reverse();
     }
 
-    @TranxService.span()
+    @TranxService.diff()
+    @TranxService.use()
     private sort(origin: Model[], handler: (a: Model, b: Model) => number) {
         return origin.sort(handler);
     }
 
 
-    @TranxService.span()
+    @TranxService.diff()
+    @TranxService.use()
     private fill(key: string, origin: Model[], value: Model, start?: number, end?: number) {
         if (start === undefined) start = 0;
         if (end === undefined) end = origin.length;
@@ -259,7 +273,8 @@ export class ReferAgent<
     }
 
 
-    @TranxService.span()
+    @TranxService.diff()
+    @TranxService.use()
     private splice(key: string, origin: Model[], start: number, count: number, ...next: Model[]) {
         const prev = origin.slice(start, start + count);
         prev.forEach(prev => {

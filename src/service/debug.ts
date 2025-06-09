@@ -6,20 +6,21 @@ type Callback<R = any, P extends any[] = any[]> = (...args: P) => R
 export class DebugService {
     private static readonly stack: string[] = []
 
-    public static log() {
+    public static log<T extends Object>(accessor?: (target: T) => string) {
         return function(
-            target: Model | Agent,
+            target: T,
             key: string,
             descriptor: TypedPropertyDescriptor<Callback>
         ): TypedPropertyDescriptor<Callback> {
             const handler = descriptor.value;
             if (!handler) return descriptor;
             const instance = {
-                [key](this: Model | Agent, ...args: any[]) {
-                    const namespace = this.target.name + '::' + key
-                    console.group(namespace)
+                [key](this: T, ...args: any[]) {
 
-                    DebugService.stack.push(namespace);
+                    const name = accessor?.(this) ?? this.constructor.name
+                    console.group(name + '::' + key)
+
+                    DebugService.stack.push(name);
                     const result = handler.call(this, ...args);
                     DebugService.stack.pop();
                   

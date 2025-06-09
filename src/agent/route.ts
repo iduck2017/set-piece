@@ -1,4 +1,3 @@
-import { DebugService } from "../service/debug";
 import { Model } from "../model";
 import { Agent } from "./agent";
 import { TranxService } from "../service/tranx";
@@ -37,23 +36,25 @@ export class RouteAgent<
     }
 
 
-    @TranxService.span()
+    @TranxService.diff()
+    @TranxService.use()
     public bind(parent: P | undefined, key: string) {
         this._isBind = true;
         this._key = key;
         this._parent = parent;
     }
 
-    @TranxService.span()
+    @TranxService.diff()
+    @TranxService.use()
     public unbind() {
         this._isBind = false;
         this._key = undefined;
         this._parent = undefined;
     }
 
-    @TranxService.span()
+    @TranxService.diff()
+    @TranxService.use()
     public reload() {}
-
 
 
 
