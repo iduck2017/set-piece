@@ -2,16 +2,18 @@ import { TranxService } from "../service/tranx";
 import { Model } from "../model";
 import { Agent } from "./agent";
 
+export type Refer<R extends Model.R = Model.R> = { 
+    [K in keyof R]?: R[K] extends any[] ? Readonly<R[K]> : R[K] 
+}
+
 export class ReferAgent<
     M extends Model = Model,
     R extends Model.R = Model.R,
 > extends Agent<M> {
 
-    public readonly draft: { [K in keyof R]: R[K] extends any[] ? R[K] : R[K] | undefined }
+    public readonly draft: Refer<R>
 
-    private readonly router: Map<Model, string[]>;
-
-    public get current(): Readonly<{ [K in keyof R]: R[K] extends any[] ? Readonly<R[K]> : R[K] | undefined }> { 
+    public get current(): Readonly<Refer<R>> { 
         const result: any = {}
         for (const key of Object.keys(this.draft)) {
             const value = this.draft[key];
@@ -21,8 +23,9 @@ export class ReferAgent<
     }
 
 
+    private readonly router: Map<Model, string[]>;
     
-    constructor(target: M, props: () => R) {
+    constructor(target: M, props: () => Refer<R>) {
         super(target);
         this.router = new Map();
 
@@ -47,7 +50,6 @@ export class ReferAgent<
             deleteProperty: this.del.bind(this)
         });
     }
-    
 
     private bind(value: Model, key: string) {
         const router = this.router.get(value) ?? [];
@@ -63,16 +65,15 @@ export class ReferAgent<
         router.splice(index, 1);
         this.router.set(value, router);
     }
-    
 
 
 
     public unload() {
-        const origin: Record<string, Model | Model[] | undefined> = this.draft
-        for (const key of Object.keys(this.draft)) {
-            const value = this.draft[key];
+        const draft: Partial<Record<string, Model | Model[]>> = this.draft
+        for (const key of Object.keys(draft)) {
+            const value = draft[key];
             if (value instanceof Array) {
-                origin[key] = value.filter(value => {
+                draft[key] = value.filter(value => {
                     if (value.agent.route.root === this.target.agent.route.root) return true;
                     value.agent.refer.unbind(this.target, key);
                     return false;
@@ -80,7 +81,7 @@ export class ReferAgent<
             } else if (value) {
                 if (value.agent.route.root === this.target.agent.route.root) return;
                 value.agent.refer.unbind(this.target, key);
-                delete origin[key] 
+                delete draft[key]
             }
         }
     }
@@ -108,7 +109,7 @@ export class ReferAgent<
 
 
 
-    private get(origin: Record<string, Model | Model[] | undefined>, key: string) {
+    private get(origin: Partial<Record<string, Model | Model[]>>, key: string) {
         const value = origin[key];
         if (value instanceof Array) return this.proxy(value, key);
         return value;
@@ -117,26 +118,23 @@ export class ReferAgent<
     @TranxService.diff()
     @TranxService.use()
     private set(
-        origin: Record<string, Model | Model[] | undefined>, 
+        origin: Partial<Record<string, Model | Model[]>>, 
         key: string, 
-        next: Model | Model[] | undefined
+        next?: Model | Model[]
     ) {
         let prev = origin[key];
         if (prev instanceof Array) {
             prev.forEach(prev => {
                 prev.agent.refer.unbind(this.target, key)
             });
-        } else if (prev) {
-            prev.agent.refer.unbind(this.target, key);
-        }
+        } else prev?.agent.refer.unbind(this.target, key);
 
         if (next instanceof Array) {
             next.forEach(next => {
                 next.agent.refer.bind(this.target, key);
             })
-        } else if (next) {
-            next.agent.refer.bind(this.target, key);
-        }
+        } else next?.agent.refer.bind(this.target, key);
+
         origin[key] = next;
         return true;
     }
@@ -145,8 +143,7 @@ export class ReferAgent<
 
     @TranxService.diff()
     @TranxService.use()
-    private del(origin: Record<string, Model | Model[] | undefined>, key: string) {
-        
+    private del(origin: Partial<Record<string, Model | Model[]>>, key: string) {
         let prev = origin[key];
         if (prev instanceof Array) {
             prev.forEach(prev => {

@@ -4,7 +4,7 @@ import { RouteAgent } from "./agent/route";
 import { ChildAgent } from "./agent/child";
 import { Proxy } from "./proxy";
 import { DeepReadonly, Primitive } from "utility-types";
-import { ReferAgent } from "./agent/refer";
+import { Refer, ReferAgent } from "./agent/refer";
 import { v4 as uuidv4 } from 'uuid';
 import { TranxService } from "./service/tranx";
 
@@ -60,7 +60,7 @@ export class Model<
         return this.agent.state.current as any;
     } 
     
-    public get refer(): Readonly<{ [K in keyof R]: R[K] extends any[] ? Readonly<R[K]> : R[K] | undefined }> { 
+    public get refer(): Readonly<Refer<R>> { 
         return this.agent.refer.current; 
     }
 
@@ -83,7 +83,7 @@ export class Model<
     protected readonly draft: Readonly<{
         child: C;
         state: { [K in keyof S]: S[K] extends Primitive ? S[K] : DeepReadonly<S[K]> }; 
-        refer: { [K in keyof R]: R[K] extends any[] ? R[K] : R[K] | undefined }
+        refer: { [K in keyof R]?: R[K] extends any[] ? Readonly<R[K]> : R[K] }
     }>
 
     public readonly target: this
@@ -99,7 +99,7 @@ export class Model<
         uuid: string
         state: S
         child: C
-        refer: { [K in keyof R]: R[K] extends any[] ? R[K] : R[K] | undefined }
+        refer: { [K in keyof R]?: R[K] extends any[] ? Readonly<R[K]> : R[K] }
     } {
         return {
             uuid: this.uuid,
@@ -114,7 +114,7 @@ export class Model<
         uuid?: string
         state: S
         child: () => C
-        refer: () => R
+        refer: () => Partial<R>
     }) {
         this.target = this;
         this.uuid = props.uuid ?? uuidv4();

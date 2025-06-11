@@ -51,15 +51,13 @@ export class StoreService {
     @TranxService.use()
     public static load(chunk: Chunk): Model | undefined {
         const registry: Record<string, Model> = {};
-
-        const model = StoreService.init(chunk, registry);
+        const model = StoreService.create(chunk, registry);
         StoreService.bind(chunk, registry);
-
         return model;
     }
 
     
-    private static init(chunk: Chunk, registry: Record<string, Model>): Model | undefined {
+    private static create(chunk: Chunk, registry: Record<string, Model>): Model | undefined {
         const type = StoreService.registry.get(chunk.code);
         if (!type) return undefined;
         const result = new type({
@@ -72,13 +70,13 @@ export class StoreService {
                     if (value instanceof Array) {
                         child[key] = [];
                         value.forEach(value => {
-                            const model = StoreService.init(value, registry);
+                            const model = StoreService.create(value, registry);
                             if (model && child[key] instanceof Array) {
                                 child[key].push(model);
                             }
                         })
                     } else if (value) {
-                        const model = StoreService.init(value, registry);
+                        const model = StoreService.create(value, registry);
                         if (model) child[key] = model;
                     }
                 })
@@ -89,6 +87,8 @@ export class StoreService {
         return result;
     }
 
+
+    
     private static bind(chunk: Chunk, registry: Record<string, Model>) {
         if (!chunk.uuid) return;
 
