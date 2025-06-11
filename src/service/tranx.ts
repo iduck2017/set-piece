@@ -21,33 +21,7 @@ export class TranxService {
     public static use(): (target: Object, key: string, descriptor: TypedPropertyDescriptor<Callback>) => TypedPropertyDescriptor<Callback>;
     public static use(isType: true): (constructor: new (...props: any[]) => Model) => any;
     public static use(isType?: boolean) {
-        if (!isType) {
-            return function(
-                target: Object,
-                key: string,
-                descriptor: TypedPropertyDescriptor<Callback>
-            ): TypedPropertyDescriptor<Callback> {
-                const handler = descriptor.value;
-                if (!handler) return descriptor;
-                const instance = {
-                    [key](this: Object, ...args: any[]) {
-                        if (TranxService._isSpan) {
-                            return handler.call(this, ...args);
-                        } else {
-                            console.group('Transaction')
-                            TranxService._isSpan = true;
-                            const result = handler.call(this, ...args);
-                            TranxService.reload();
-                            TranxService._isSpan = false;
-                            console.groupEnd()
-                            return result;
-                        }
-                    }
-                }
-                descriptor.value = instance[key];
-                return descriptor;
-            }
-        } else {
+        if (isType) {
             return function (
                 constructor: new (...props: any[]) => Model
             ) {
@@ -63,55 +37,49 @@ export class TranxService {
                                 TranxService.reload();
                                 TranxService._isSpan = false;
                                 console.groupEnd()
+                                TranxService.emit();
                             }
                         }
                     };
                 return result;
             }
-        }
-    }
-
-
-    public static diff() {
+        } 
         return function(
-            target: Agent,
+            target: unknown,
             key: string,
             descriptor: TypedPropertyDescriptor<Callback>
         ): TypedPropertyDescriptor<Callback> {
             const handler = descriptor.value;
             if (!handler) return descriptor;
             const instance = {
-                [key](this: Agent, ...args: any[]) {
-                    const target = this.target;
-                    const isStateChange = target.agent.state === this;
-                    const isReferChange = target.agent.refer === this;
-                    const isChildChange = target.agent.child === this;
-                    const isRouteChange = target.agent.route === this;
-
-                    const prev = TranxService.registry.get(target) ?? {};
-                    const next = { ...prev }
-                    
-                    if (isStateChange && !prev.state) next.state = target.state;
-                    if (isReferChange && !prev.refer) next.refer = target.refer;
-                    if (isChildChange && !prev.child) next.child = target.child;
-                    if (isRouteChange && !prev.route) next.route = target.route;
-                    TranxService.registry.set(target, next);
-
-                    const result = handler.call(this, ...args);
-                    
-                    if (TranxService._isSpan) return result;
-
-                    const registry = new Map(TranxService.registry);
-                    TranxService.registry.clear();
-                    for (const [model, info] of registry) {
-                        const { state, refer, child, route } = model.target;
-                        const event = model.agent.event.current;
-                        if (info.state) event.onStateChange({ prev: info.state, next: state })
-                        if (info.refer) event.onReferChange({ prev: info.refer, next: refer })
-                        if (info.child) event.onChildChange({ prev: info.child, next: child })
-                        if (info.route) event.onRouteChange({ prev: info.route, next: route })
+                [key](this: unknown, ...args: any[]) {
+                    if (this instanceof Agent) {
+                        const target = this.target;
+                        const isStateChange = target.agent.state === this;
+                        const isReferChange = target.agent.refer === this;
+                        const isChildChange = target.agent.child === this;
+                        const isRouteChange = target.agent.route === this;
+                        const prev = TranxService.registry.get(target) ?? {};
+                        const next = { ...prev }
+                        if (isStateChange && !prev.state) next.state = target.state;
+                        if (isReferChange && !prev.refer) next.refer = target.refer;
+                        if (isChildChange && !prev.child) next.child = target.child;
+                        if (isRouteChange && !prev.route) next.route = target.route;
+                        TranxService.registry.set(target, next);
                     }
-                    return result;
+
+                    if (TranxService._isSpan) {
+                        return handler.call(this, ...args);
+                    } else {
+                        console.group('Transaction::' + key)
+                        TranxService._isSpan = true;
+                        const result = handler.call(this, ...args);
+                        TranxService.reload();
+                        TranxService._isSpan = false;
+                        console.groupEnd()
+                        TranxService.emit();
+                        return result;
+                    }
                 }
             }
             descriptor.value = instance[key];
@@ -123,37 +91,51 @@ export class TranxService {
     private static reload() {
         const queue: {
             load: Model[],
-            bind: Model[],
-            done: Model[]
+            unload: Model[],
+            unbind: Model[],
         } = {
             load: [],
-            bind: [],
-            done: [],
+            unload: [],
+            unbind: [],
         }
         TranxService.registry.forEach((info, model) => {
-            if (info.route) {
-                const descendants = model.agent.child.descendants;
-                queue.load.push(model, ...descendants);
+            const parent = info.route?.parent;
+            if (parent || model.agent.route.isRoot) {
+                queue.unload.push(model);
             }
         })
-        queue.load.forEach(model => {
-            if (queue.done.includes(model)) return;
-            queue.done.push(model);
-            model.agent.route.unload();
-            model.agent.route.uninit();
-            model.agent.route.load();
-        })
-
-
         TranxService.registry.forEach((info, model) => {
-            if (info.refer) queue.bind.push(model);
+            if (info.refer) queue.unbind.push(model);
         })
-        queue.bind.forEach(model => {
-            if (queue.done.includes(model)) return;
-            queue.done.push(model);
+        console.log('unbind', queue.unbind.map(model => model.name))
+        console.log('unload', queue.unload.map(model => model.name))
+        queue.unload.forEach(model => model.agent.route.unload());
+        queue.unbind.forEach(model => {
+            if (queue.unload.includes(model)) return;
             model.agent.refer.unload();
-            model.agent.refer.uninit();
         })
+        TranxService.registry.forEach((info, model) => {
+            const parent = model.agent.route.parent;
+            if (parent?.agent.route.isLoad || model.agent.route.isRoot) {
+                queue.load.push(model);
+            }
+        })
+        console.log('load', queue.load.map(model => model.name))
+        queue.load.forEach(model => model.agent.route.load());
+    }
+
+
+    private static emit() {
+        const registry = new Map(TranxService.registry);
+        TranxService.registry.clear();
+        for (const [model, info] of registry) {
+            const { state, refer, child, route } = model.target;
+            const event = model.agent.event.current;
+            if (info.state) event.onStateChange({ prev: info.state, next: state })
+            if (info.refer) event.onReferChange({ prev: info.refer, next: refer })
+            if (info.child) event.onChildChange({ prev: info.child, next: child })
+            if (info.route) event.onRouteChange({ prev: info.route, next: route })
+        }
     }
 
 }

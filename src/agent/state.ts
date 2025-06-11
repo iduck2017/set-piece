@@ -1,7 +1,7 @@
 import { Model } from "../model";
 import { Agent } from "./agent";
 import { TranxService } from "../service/tranx";
-import { DeepReadonly } from "utility-types";
+import { DeepReadonly, Primitive } from "utility-types";
 
 export type DecorUpdater<S = any, M extends Model = Model> = (target: M, state: DeepReadonly<S>) => DeepReadonly<S>
 
@@ -19,12 +19,14 @@ export class DecorProducer<S = any, M extends Model = Model> {
 }
 
 
+export type State<S> = { [K in keyof S]: S[K] extends Primitive ? S[K] : DeepReadonly<S[K]> }
+
 export class StateAgent<
     M extends Model = Model,
     S extends Model.S = Model.S,
 > extends Agent<M> {
 
-    public readonly draft: S
+    public readonly draft: State<S>
     
     private readonly router: {
         consumers: Map<string, DecorConsumer[]>,
@@ -76,24 +78,21 @@ export class StateAgent<
         } else this.emit();
     } 
 
-
-
-
-    @TranxService.diff()
+    
     @TranxService.use()
     private set(origin: any, key: string, next: any) {
         origin[key] = next;
         return this.emit();
     }
 
-    @TranxService.diff()
+    
     @TranxService.use()
     private del(origin: any, key: string) {
         delete origin[key];
         return this.emit();
     }
 
-    @TranxService.diff()
+    
     @TranxService.use()
     public emit() {
         let path: string = 'decor';
@@ -179,6 +178,7 @@ export class StateAgent<
             }
             constructor = constructor.__proto__;
         }
+        this.emit();
     }
 
     public unload() {
@@ -188,9 +188,6 @@ export class StateAgent<
                 this.unbind(producer, handler);
             }
         }
-    }
-
-    public uninit() {
         for (const channel of this.router.consumers) {
             const [ path, consumers ] = channel;
             const decor: Record<string, DecorProducer> = this.target.proxy.state;

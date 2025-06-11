@@ -144,9 +144,6 @@ export class EventAgent<
                 this.unbind(producer, handler);
             }
         }
-    }
-
-    public uninit() {
         for (const channel of this.router.consumers) {
             const [ path, consumers ] = channel;
             const event: Record<string, EventProducer> = this.target.proxy.event;

@@ -23,12 +23,10 @@ export class CheckService {
                 }
             }
             descriptor.value = instance[key];
-
             const validators = CheckService.validators.get(target.constructor) || {}
             validators[key] = validators[key] || [];
             validators[key].push(validator);
             CheckService.validators.set(target.constructor, validators);
-
             return descriptor;
         };
     }

@@ -2,6 +2,10 @@ import { Agent } from "./agent";
 import { Model } from "../model";
 import { TranxService } from "../service/tranx";
 
+export type Child<C extends Model.C = Model.C> = { 
+    [K in keyof C]: C[K] extends any[] ? Readonly<C[K]> : C[K] 
+}
+
 export class ChildAgent<
     M extends Model = Model,
     C extends Model.C = Model.C,
@@ -9,9 +13,7 @@ export class ChildAgent<
 
     public readonly draft: C;
 
-    public get current(): Readonly<{ 
-        [K in keyof C]: C[K] extends any[] ? Readonly<C[K]> : C[K] 
-    }> {
+    public get current(): Readonly<Child<C>> {
         const result: any = {}
         for (const key of Object.keys(this.draft)) {
             const value = this.draft[key];
@@ -20,32 +22,13 @@ export class ChildAgent<
         return result;
     }
 
-    public get descendants(): Model[] {
-        const result: Model[] = [];
-        for (const key in this.draft) {
-            const value = this.draft[key];
-            if (value instanceof Array) {
-                result.push(...value);
-                value.forEach(value => {
-                    result.push(...value.agent.child.descendants);
-                })
-            } else if (value) {
-                result.push(value);
-                result.push(...value.agent.child.descendants);
-            }
-        }
-        return result;
-    }
-
-
     
-    constructor(target: M, props: () => C) {
+    constructor(target: M, props: C) {
         super(target);
 
-        const child = props();
         const origin: any = {};
-        for (const key in child) {
-            let value: Model | Model[] | undefined = child[key];
+        for (const key in props) {
+            let value: Model | Model[] | undefined = props[key];
             if (value instanceof Array) {
                 origin[key] = [];
                 value.forEach((value, index) => {
@@ -74,7 +57,6 @@ export class ChildAgent<
         return value;
     }
    
-    @TranxService.diff()
     @TranxService.use()
     private set(
         origin: Record<string, Model | Model[] | undefined>, 
@@ -104,7 +86,6 @@ export class ChildAgent<
     }
 
 
-    @TranxService.diff()
     @TranxService.use()
     private del(origin: Record<string, Model | Model[] | undefined>, key: string) {
         const prev = origin[key];
@@ -120,6 +101,32 @@ export class ChildAgent<
     }
 
 
+
+    public unload() {
+        for (const key in this.draft) {
+            const value = this.draft[key];
+            if (value instanceof Array) {
+                value.forEach(value => {
+                    value.agent.route.unload();
+                })
+            } else if (value) {
+                value.agent.route.unload();
+            }
+        }
+    }
+
+    public load() {
+        for (const key in this.draft) {
+            const value = this.draft[key];
+            if (value instanceof Array) {
+                value.forEach(value => {
+                    value.agent.route.load();
+                })
+            } else if (value) {
+                value.agent.route.load();
+            }
+        }
+    }
 
 
     
@@ -143,7 +150,6 @@ export class ChildAgent<
         return origin[index];
     }
 
-    @TranxService.diff()
     @TranxService.use()
     private lset(key: string, origin: Record<string, unknown>, index: string, next: Model) {
         const prev = origin[index];
@@ -156,7 +162,6 @@ export class ChildAgent<
         return true;
     }
 
-    @TranxService.diff()
     @TranxService.use()
     private ldel(key: string, origin: any, index: string) {
         const prev = origin[index];
@@ -166,7 +171,6 @@ export class ChildAgent<
     }
 
 
-    @TranxService.diff()
     @TranxService.use()
     private push(key: string, origin: Model[], ...next: Model[]) {
         next = next.map(next => {
@@ -177,7 +181,6 @@ export class ChildAgent<
         return origin.push(...next);
     }
 
-    @TranxService.diff()
     @TranxService.use()
     private unshift(key: string, origin: Model[], ...next: Model[]) {
         next = next.map(next => {
@@ -189,7 +192,6 @@ export class ChildAgent<
     }
 
 
-    @TranxService.diff()
     @TranxService.use()
     private pop(key: string, origin: Model[]) {
         const result = origin.pop();
@@ -198,7 +200,6 @@ export class ChildAgent<
     }
 
 
-    @TranxService.diff()
     @TranxService.use()
     private shift(key: string, origin: Model[]) {
         const result = origin.shift();
@@ -206,19 +207,16 @@ export class ChildAgent<
         return result;
     }
 
-    @TranxService.diff()
     @TranxService.use()
     private reverse(origin: Model[]) {
         return origin.reverse();
     }
 
-    @TranxService.diff()
     @TranxService.use()
     private sort(origin: Model[], handler: (a: Model, b: Model) => number) {
         return origin.sort(handler);
     }
 
-    @TranxService.diff()
     @TranxService.use()
     private fill(key: string, origin: Model[], sample: Model, start?: number, end?: number) {
         start = start ?? 0;
@@ -237,7 +235,6 @@ export class ChildAgent<
         return;
     }
 
-    @TranxService.diff()
     @TranxService.use()
     private splice(key: string, origin: Model[], start: number, count: number, ...next: Model[]) {
         const prev = origin.slice(start, start + count);

@@ -1,6 +1,7 @@
 import { Model } from "../model";
 import { Agent } from "./agent";
 import { TranxService } from "../service/tranx";
+import { DebugService } from "../service/debug";
 
 export class RouteAgent<
     M extends Model = Model,
@@ -10,6 +11,10 @@ export class RouteAgent<
     private _key: string | undefined;
     
     private _isBind: boolean;
+
+    private _isLoad: boolean;
+
+    private _isRoot: boolean;
     
     private _parent: P | undefined;
 
@@ -18,6 +23,10 @@ export class RouteAgent<
     public get key() { return this._key; }
 
     public get isBind() { return this._isBind; }
+
+    public get isLoad() { return this._isLoad; }
+
+    public get isRoot() { return this._isRoot; }
 
     public get parent() { return this._parent; }
 
@@ -33,10 +42,11 @@ export class RouteAgent<
     constructor(target: M) {
         super(target);
         this._isBind = false;
+        this._isLoad = false;
+        this._isRoot = false;
     }
 
 
-    @TranxService.diff()
     @TranxService.use()
     public bind(parent: P | undefined, key: string) {
         this._isBind = true;
@@ -44,7 +54,6 @@ export class RouteAgent<
         this._parent = parent;
     }
 
-    @TranxService.diff()
     @TranxService.use()
     public unbind() {
         this._isBind = false;
@@ -52,40 +61,30 @@ export class RouteAgent<
         this._parent = undefined;
     }
 
-    @TranxService.diff()
     @TranxService.use()
     public reload() {}
 
 
-
-
     public load() {
-        if (RouteAgent.root.includes(this.root)) {
-            this.agent.event.load();
-            this.agent.state.load();
-        }
+        this.agent.child.load();
+        this.agent.event.load();
+        this.agent.state.load();
+        this._isLoad = true;
     }
 
     public unload() {
+        this._isLoad = false;
+        this.agent.child.unload();
         this.agent.refer.unload();
         this.agent.event.unload();
         this.agent.state.unload();
     }
 
-    public uninit() {
-        this.agent.refer.uninit();
-        this.agent.event.uninit();
-        this.agent.state.uninit();
-    }
 
-
-
-    public static root: Model[] = [];
-
+    @DebugService.log()
     public static boot<T extends Model>(root: T): T {
-        if (RouteAgent.root.includes(root)) return root;
         console.log('boot', root.name)
-        RouteAgent.root.push(root);
+        root.agent.route._isRoot = true;
         root.agent.route.bind(undefined, 'root')
         return root;
     }

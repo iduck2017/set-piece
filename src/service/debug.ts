@@ -16,14 +16,11 @@ export class DebugService {
             if (!handler) return descriptor;
             const instance = {
                 [key](this: T, ...args: any[]) {
-
                     const name = accessor?.(this) ?? this.constructor.name
                     console.group(name + '::' + key)
-
                     DebugService.stack.push(name);
                     const result = handler.call(this, ...args);
                     DebugService.stack.pop();
-                  
                     console.groupEnd()
                     return result;
                 }

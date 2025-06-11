@@ -60,34 +60,30 @@ export class StoreService {
     private static create(chunk: Chunk, registry: Record<string, Model>): Model | undefined {
         const type = StoreService.registry.get(chunk.code);
         if (!type) return undefined;
+        const child: Record<string, Model | Model[]> = {};
+        Object.keys(chunk.child).forEach(key => {
+            const value = chunk.child[key];
+            if (value instanceof Array) {
+                child[key] = [];
+                value.forEach(value => {
+                    const model = StoreService.create(value, registry);
+                    if (model && child[key] instanceof Array) {
+                        child[key].push(model);
+                    }
+                })
+            } else if (value) {
+                const model = StoreService.create(value, registry);
+                if (model) child[key] = model;
+            }
+        })
         const result = new type({
             uuid: chunk.uuid,
             state: chunk.state,
-            child: () => {
-                const child: Record<string, Model | Model[]> = {};
-                Object.keys(chunk.child).forEach(key => {
-                    const value = chunk.child[key];
-                    if (value instanceof Array) {
-                        child[key] = [];
-                        value.forEach(value => {
-                            const model = StoreService.create(value, registry);
-                            if (model && child[key] instanceof Array) {
-                                child[key].push(model);
-                            }
-                        })
-                    } else if (value) {
-                        const model = StoreService.create(value, registry);
-                        if (model) child[key] = model;
-                    }
-                })
-                return child;
-            },
+            child
         })
         registry[result.uuid] = result;
         return result;
     }
-
-
     
     private static bind(chunk: Chunk, registry: Record<string, Model>) {
         if (!chunk.uuid) return;

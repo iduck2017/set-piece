@@ -28,17 +28,13 @@ export class Proxy<
         { [K in keyof BaseEvent<M>]: EventProducer<BaseEvent<M>[K], M> }
     >;
     
-
     constructor(target: M, path?: string) {
         this.path = path;
         this.target = target;
-        
         const origin: any = {}
-
         this.event = new globalThis.Proxy({ ...origin }, { get: this.getEvent.bind(this) })
         this.child = new globalThis.Proxy({ ...origin }, { get: this.getChild.bind(this) })
         this.state = new globalThis.Proxy({ ...origin }, { get: this.getDecor.bind(this) })
-        
         this.decor = new DecorProducer(this.target, path)
     }
   
@@ -63,7 +59,6 @@ export class Proxy<
             const child: any = this.child[key];
             return child.event[path]
         }
-        
         if (!origin[key]) {
             const path = this.path ? this.path + '/' + key : key;
             origin[key] = new EventProducer(this.target, path);

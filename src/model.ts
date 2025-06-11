@@ -1,7 +1,7 @@
 import { EventAgent  } from "./agent/event";
-import { StateAgent } from "./agent/state";
+import { State, StateAgent } from "./agent/state";
 import { RouteAgent } from "./agent/route";
-import { ChildAgent } from "./agent/child";
+import { Child, ChildAgent } from "./agent/child";
 import { Proxy } from "./proxy";
 import { DeepReadonly, Primitive } from "utility-types";
 import { Refer, ReferAgent } from "./agent/refer";
@@ -25,14 +25,14 @@ export type Agent<
 
 
 export type Props<
-    S extends Model.S = {},
+    S extends Model.S = Record<string, never>,
     C extends Model.C = {},
     R extends Model.R = {},
 > = {
     uuid?: string
     state?: Partial<S>,
-    child?: () => Partial<C>,
-    refer?: () => Partial<R>,
+    child?: Partial<C>,
+    refer?: Partial<R>,
 }
 
 
@@ -43,6 +43,8 @@ export namespace Model {
     export type C = Record<string, Model | Model[]>
     export type R = Record<string, Model | Model[]>
 }
+
+
 
 @TranxService.use(true)
 export class Model<
@@ -64,7 +66,7 @@ export class Model<
         return this.agent.refer.current; 
     }
 
-    public get child(): Readonly<{ [K in keyof C]: C[K] extends any[] ? Readonly<C[K]> : C[K] }> { 
+    public get child(): Readonly<Child<C>> { 
         return this.agent.child.current; 
     }
 
@@ -82,8 +84,8 @@ export class Model<
 
     protected readonly draft: Readonly<{
         child: C;
-        state: { [K in keyof S]: S[K] extends Primitive ? S[K] : DeepReadonly<S[K]> }; 
-        refer: { [K in keyof R]?: R[K] extends any[] ? Readonly<R[K]> : R[K] }
+        state: State<S>
+        refer: Partial<R>
     }>
 
     public readonly target: this
@@ -99,7 +101,7 @@ export class Model<
         uuid: string
         state: S
         child: C
-        refer: { [K in keyof R]?: R[K] extends any[] ? Readonly<R[K]> : R[K] }
+        refer: Refer<R>
     } {
         return {
             uuid: this.uuid,
@@ -112,29 +114,27 @@ export class Model<
     // @tranx
     constructor(props: {
         uuid?: string
-        state: S
-        child: () => C
-        refer: () => Partial<R>
+        state: S extends Record<string, never> ? Record<string, never> : S
+        child: C extends Record<string, never> ? Record<string, never> : C
+        refer: R extends Record<string, never> ? Record<string, never> : R
     }) {
         this.target = this;
         this.uuid = props.uuid ?? uuidv4();
         this.proxy = new Proxy(this);
-
         this.agent = {
             event: new EventAgent<this, E>(this),
             route: new RouteAgent<this, P>(this),
-            state: new StateAgent<this, S>(this, props.state),
-            child: new ChildAgent<this, C>(this, props.child),
-            refer: new ReferAgent<this, R>(this, props.refer),
+            refer: new ReferAgent<this, R>(this),
+            state: new StateAgent<this, S>(this, props.state as S),
+            child: new ChildAgent<this, C>(this, props.child as C),
         }
-
         this.event = this.agent.event.current;
         this.draft = {
             state: this.agent.state.draft,
             child: this.agent.child.draft,
             refer: this.agent.refer.draft,
         }
-        this.reload()
+        this.agent.refer.init(props.refer as R);
     }
 
     
