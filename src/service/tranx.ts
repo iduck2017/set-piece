@@ -31,7 +31,7 @@ export class TranxService {
                             if (TranxService._isSpan) {
                                 super(...args);
                             } else {
-                                console.group('Transaction::' + args[0].state.name)
+                                console.group('Transaction::' + constructor.name)
                                 TranxService._isSpan = true;
                                 super(...args);
                                 TranxService.reload();
@@ -99,7 +99,8 @@ export class TranxService {
             unbind: [],
         }
         TranxService.registry.forEach((info, model) => {
-            const parent = info.route?.parent;
+            if (!info.route) return;
+            const parent = info.route.parent;
             if (parent || model.agent.route.isRoot) {
                 queue.unload.push(model);
             }
@@ -115,6 +116,7 @@ export class TranxService {
             model.agent.refer.unload();
         })
         TranxService.registry.forEach((info, model) => {
+            if (!info.route) return;
             const parent = model.agent.route.parent;
             if (parent?.agent.route.isLoad || model.agent.route.isRoot) {
                 queue.load.push(model);
