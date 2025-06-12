@@ -150,6 +150,15 @@ export class Model<
     public reload() {
         this.agent.route.reload();
     }
+
+    public debug() {
+        const dependency = {
+            event: this.agent.event.debug().map(item => item.name),
+            state: this.agent.state.debug().map(item => item.name),
+            refer: this.agent.refer.debug().map(item => item.name),
+        }
+        console.log('debug', dependency);
+    }
 }
 
 

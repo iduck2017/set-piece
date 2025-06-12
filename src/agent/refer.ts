@@ -95,6 +95,24 @@ export class ReferAgent<
     }
 
 
+    public debug(): Model[] {
+        const dependency: Model[] = [];
+        this.router.forEach((value, key) => {
+            dependency.push(key);
+        })
+        for (const key in this.draft) {
+            const value = this.draft[key];
+            if (value instanceof Array) {
+                dependency.push(...value);
+            } else if (value) {
+                dependency.push(value);
+            }
+        }
+        return dependency;
+    }
+
+
+
 
     private get(origin: Partial<Record<string, Model | Model[]>>, key: string) {
         const value = origin[key];

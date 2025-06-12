@@ -31,12 +31,10 @@ export class TranxService {
                             if (TranxService._isSpan) {
                                 super(...args);
                             } else {
-                                console.group('Transaction::' + constructor.name)
                                 TranxService._isSpan = true;
                                 super(...args);
                                 TranxService.reload();
                                 TranxService._isSpan = false;
-                                console.groupEnd()
                                 TranxService.emit();
                             }
                         }
@@ -108,8 +106,6 @@ export class TranxService {
         TranxService.registry.forEach((info, model) => {
             if (info.refer) queue.unbind.push(model);
         })
-        console.log('unbind', queue.unbind.map(model => model.name))
-        console.log('unload', queue.unload.map(model => model.name))
         queue.unload.forEach(model => model.agent.route.unload());
         queue.unbind.forEach(model => {
             if (queue.unload.includes(model)) return;
@@ -122,8 +118,12 @@ export class TranxService {
                 queue.load.push(model);
             }
         })
-        console.log('load', queue.load.map(model => model.name))
         queue.load.forEach(model => model.agent.route.load());
+        console.log('task', {
+            unbind: queue.unbind.map(model => model.name),
+            unload: queue.unload.map(model => model.name),
+            load: queue.load.map(model => model.name),
+        })
     }
 
 

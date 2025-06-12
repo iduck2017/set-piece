@@ -203,6 +203,17 @@ export class StateAgent<
     }
 
 
+    public debug(): Model[] {
+        const dependency: Model[] = [];
+        this.router.producers.forEach((value) => {
+            dependency.push(...value.map(item => item.target));
+        })
+        this.router.consumers.forEach((value) => {
+            dependency.push(...value.map(item => item.target));
+        })
+        return dependency;
+    }
+
 
 
 
