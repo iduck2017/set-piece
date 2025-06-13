@@ -2,13 +2,13 @@ import { TranxService } from "../service/tranx";
 import { Model } from "../model";
 import { Agent } from "./agent";
 
-export type Refer<R extends Model.R = Model.R> = { 
+export type Refer<R extends Model.Refer = Model.Refer> = { 
     [K in keyof R]?: R[K] extends any[] ? Readonly<R[K]> : R[K] 
 }
 
 export class ReferAgent<
     M extends Model = Model,
-    R extends Model.R = Model.R,
+    R extends Model.Refer = Model.Refer,
 > extends Agent<M> {
 
     public readonly draft: Partial<R>

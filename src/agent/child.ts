@@ -2,13 +2,13 @@ import { Agent } from "./agent";
 import { Model } from "../model";
 import { TranxService } from "../service/tranx";
 
-export type Child<C extends Model.C = Model.C> = { 
+export type Child<C extends Model.Child = Model.Child> = { 
     [K in keyof C]: C[K] extends any[] ? Readonly<C[K]> : C[K] 
 }
 
 export class ChildAgent<
     M extends Model = Model,
-    C extends Model.C = Model.C,
+    C extends Model.Child = Model.Child,
 > extends Agent<M> {
 
     public readonly draft: C;

@@ -10,11 +10,11 @@ import { TranxService } from "./service/tranx";
 
 export type Agent<
     M extends Model = Model,
-    P extends Model.P = Model.P,
-    E extends Model.E = Model.E,
-    S extends Model.S = Model.S,
-    C extends Model.C = Model.C,
-    R extends Model.R = Model.R,
+    P extends Model.Parent = Model.Parent,
+    E extends Model.Event = Model.Event,
+    S extends Model.State = Model.State,
+    C extends Model.Child = Model.Child,
+    R extends Model.Refer = Model.Refer,
 > = Readonly<{
     event: EventAgent<M, E>
     route: RouteAgent<M, P>
@@ -25,9 +25,9 @@ export type Agent<
 
 
 export type Props<
-    S extends Model.S = Record<string, never>,
-    C extends Model.C = {},
-    R extends Model.R = {},
+    S extends Model.State = Record<string, never>,
+    C extends Model.Child = {},
+    R extends Model.Refer = {},
 > = {
     uuid?: string
     state?: Partial<S>,
@@ -37,22 +37,22 @@ export type Props<
 
 
 export namespace Model {
-    export type P = Model
-    export type E = Record<string, any>
-    export type S = Record<string, any>
-    export type C = Record<string, Model | Model[]>
-    export type R = Record<string, Model | Model[]>
+    export type Parent = Model
+    export type Event = Record<string, any>
+    export type State = Record<string, any>
+    export type Child = Record<string, Model | Model[]>
+    export type Refer = Record<string, Model | Model[]>
 }
 
 
 
 @TranxService.use(true)
 export class Model<
-    P extends Model.P = Model.P,
-    E extends Model.E = {},
-    S extends Model.S = {},
-    C extends Model.C = {},
-    R extends Model.R = {},
+    P extends Model.Parent = Model.Parent,
+    E extends Model.Event = {},
+    S extends Model.State = {},
+    C extends Model.Child = {},
+    R extends Model.Refer = {},
 > {
     public get name() {
         return this.constructor.name;
@@ -70,14 +70,19 @@ export class Model<
         return this.agent.child.current; 
     }
 
-    public get route(): { 
-        parent?: P, 
-        root?: Model 
-    } {
+    public get route() {
         return {
             parent: this.agent.route.parent,
             root: this.agent.route.root,
         };
+    }
+
+    public get status() {
+        return {
+            isLoad: this.agent.route.isLoad,
+            isBind: this.agent.route.isBind,
+            isRoot: this.agent.route.isRoot,
+        }
     }
 
     protected readonly event: Readonly<{ [K in keyof E]: (event: E[K]) => void }>;

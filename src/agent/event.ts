@@ -35,7 +35,7 @@ export class EventProducer<E = any, M extends Model = Model> {
 
 export class EventAgent<
     M extends Model = Model,
-    E extends Model.E = Model.E,
+    E extends Model.Event = Model.Event,
 > extends Agent<M> {
     
     public readonly current: Readonly<
@@ -146,8 +146,12 @@ export class EventAgent<
         }
         for (const channel of this.router.consumers) {
             const [ path, consumers ] = channel;
-            const event: Record<string, EventProducer> = this.target.proxy.event;
-            const producer: EventProducer | undefined = event[path];
+            const keys = path.split('/');
+            const key = keys.pop();
+            if (!key) continue;
+
+            const proxy: any = this.target.proxy;
+            const producer = proxy.child[keys.join('/')].event[key];
             if (!producer) continue;
 
             for (const consumer of [ ...consumers ]) {

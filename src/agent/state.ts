@@ -23,7 +23,7 @@ export type State<S> = { [K in keyof S]: S[K] extends Primitive ? S[K] : DeepRea
 
 export class StateAgent<
     M extends Model = Model,
-    S extends Model.S = Model.S,
+    S extends Model.State = Model.State,
 > extends Agent<M> {
 
     public readonly draft: State<S>
@@ -190,8 +190,10 @@ export class StateAgent<
         }
         for (const channel of this.router.consumers) {
             const [ path, consumers ] = channel;
-            const decor: Record<string, DecorProducer> = this.target.proxy.state;
-            const producer: DecorProducer | undefined = decor[path];
+            const keys = path.split('/');
+            const key = keys.pop();
+            const proxy: any = this.target.proxy;
+            const producer = proxy.child[keys.join('/')].decor;
             if (!producer) continue;
             for (const consumer of [ ...consumers ]) {
                 const { target, updater } = consumer;

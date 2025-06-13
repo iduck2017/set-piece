@@ -5,9 +5,9 @@ import { DecorProducer } from "./agent/state";
 
 export class Proxy<
     M extends Model = Model,
-    E extends Model.E = {},
-    S extends Model.S = {},
-    C extends Model.C = {},
+    E extends Model.Event = {},
+    S extends Model.State = {},
+    C extends Model.Child = {},
 > {
     public readonly path?: string;
 
@@ -17,9 +17,6 @@ export class Proxy<
         { [K in keyof C]: C[K] extends Model ? C[K]['proxy'] : unknown } & 
         { [K in keyof C]: C[K] extends Model[] ? C[K][number]['proxy'] : unknown }
     >
-
-    /** @internal */
-    public readonly state: Record<string, DecorProducer>
 
     public readonly decor: DecorProducer<S, M>
 
@@ -34,31 +31,10 @@ export class Proxy<
         const origin: any = {}
         this.event = new globalThis.Proxy({ ...origin }, { get: this.getEvent.bind(this) })
         this.child = new globalThis.Proxy({ ...origin }, { get: this.getChild.bind(this) })
-        this.state = new globalThis.Proxy({ ...origin }, { get: this.getDecor.bind(this) })
         this.decor = new DecorProducer(this.target, path)
     }
-  
-    private getDecor(origin: Record<string, DecorProducer>, path: string): DecorProducer | undefined {
-        const keys = path.split('/');
-        const key = keys.shift();
-        if (!key) return;
-        if (keys.length) {
-            const path = keys.join('/');
-            const child: any = this.child[key];
-            return child.state[path]
-        }
-        return this.decor;
-    }
 
-    private getEvent(origin: Record<string, EventProducer>, path: string): EventProducer | undefined {
-        const keys = path.split('/');
-        const key = keys.shift();
-        if (!key) return;
-        if (keys.length) {
-            const path = keys.join('/');
-            const child: any = this.child[key];
-            return child.event[path]
-        }
+    private getEvent(origin: Record<string, EventProducer>, key: string): EventProducer | undefined {
         if (!origin[key]) {
             const path = this.path ? this.path + '/' + key : key;
             origin[key] = new EventProducer(this.target, path);
@@ -66,12 +42,21 @@ export class Proxy<
         return origin[key];
     }
 
-    private getChild(origin: Record<string, Proxy>, key: string): Proxy {
+    private getChild(origin: Record<string, Proxy>, path: string): Proxy | undefined {
+        const keys = path.split('/');
+        const key = keys.shift();
+        if (!key) return;
+
         if (!origin[key]) {
             const path = this.path ? this.path + '/' + key : key;
             origin[key] = new Proxy(this.target, path);
         }
-        return origin[key];
+        if (keys.length) {
+            const child: Record<string, Proxy> = origin[key].child;
+            const path = keys.join('/');
+            return child[path];
+        }
+        return origin[key]
     }
 }
 
