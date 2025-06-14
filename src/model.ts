@@ -93,7 +93,7 @@ export class Model<
         refer: Partial<R>
     }>
 
-    public readonly target: this
+    public readonly model: this
 
     /** @internal */
     public readonly agent: Agent<this, P, E, S, C, R>
@@ -123,7 +123,7 @@ export class Model<
         child: C extends Record<string, never> ? Record<string, never> : C
         refer: R extends Record<string, never> ? Record<string, never> : R
     }) {
-        this.target = this;
+        this.model = this;
         this.uuid = props.uuid ?? uuidv4();
         this.proxy = new Proxy(this);
         this.agent = {

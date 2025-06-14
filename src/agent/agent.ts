@@ -1,10 +1,10 @@
 import { Model } from "../model";
 
 export class Agent<M extends Model = Model> {
-    public get agent() { return this.target.agent; }
+    public get agent() { return this.model.agent; }
 
-    public readonly target: M;
-    constructor(target: M) { 
-        this.target = target; 
+    public readonly model: M;
+    constructor(model: M) { 
+        this.model = model; 
     }
 }

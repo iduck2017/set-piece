@@ -52,18 +52,18 @@ export class TranxService {
             const instance = {
                 [key](this: unknown, ...args: any[]) {
                     if (this instanceof Agent) {
-                        const target = this.target;
-                        const isStateChange = target.agent.state === this;
-                        const isReferChange = target.agent.refer === this;
-                        const isChildChange = target.agent.child === this;
-                        const isRouteChange = target.agent.route === this;
-                        const prev = TranxService.reg.get(target) ?? {};
+                        const model = this.model;
+                        const isStateChange = model.agent.state === this;
+                        const isReferChange = model.agent.refer === this;
+                        const isChildChange = model.agent.child === this;
+                        const isRouteChange = model.agent.route === this;
+                        const prev = TranxService.reg.get(model) ?? {};
                         const next = { ...prev }
-                        if (isStateChange && !prev.state) next.state = target.state;
-                        if (isReferChange && !prev.refer) next.refer = target.refer;
-                        if (isChildChange && !prev.child) next.child = target.child;
-                        if (isRouteChange && !prev.route) next.route = target.route;
-                        TranxService.reg.set(target, next);
+                        if (isStateChange && !prev.state) next.state = model.state;
+                        if (isReferChange && !prev.refer) next.refer = model.refer;
+                        if (isChildChange && !prev.child) next.child = model.child;
+                        if (isRouteChange && !prev.route) next.route = model.route;
+                        TranxService.reg.set(model, next);
                     }
 
                     if (TranxService._isSpan) {
@@ -131,7 +131,7 @@ export class TranxService {
         const reg = new Map(TranxService.reg);
         TranxService.reg.clear();
         for (const [model, info] of reg) {
-            const { state, refer, child, route } = model.target;
+            const { state, refer, child, route } = model.model;
             const event = model.agent.event.current;
             if (info.state) event.onStateChange({ prev: info.state, next: state })
             if (info.refer) event.onReferChange({ prev: info.refer, next: refer })

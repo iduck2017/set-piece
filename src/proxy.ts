@@ -11,7 +11,7 @@ export class Proxy<
 > {
     public readonly path?: string;
 
-    public readonly target: M;
+    public readonly model: M;
 
     public readonly child: Readonly<
         { [K in keyof C]: C[K] extends Model ? C[K]['proxy'] : unknown } & 
@@ -25,19 +25,19 @@ export class Proxy<
         { [K in keyof BaseEvent<M>]: EventProducer<BaseEvent<M>[K], M> }
     >;
     
-    constructor(target: M, path?: string) {
+    constructor(model: M, path?: string) {
         this.path = path;
-        this.target = target;
+        this.model = model;
         const origin: any = {}
         this.event = new globalThis.Proxy({ ...origin }, { get: this.getEvent.bind(this) })
         this.child = new globalThis.Proxy({ ...origin }, { get: this.getChild.bind(this) })
-        this.decor = new DecorProducer(this.target, path)
+        this.decor = new DecorProducer(this.model, path)
     }
 
     private getEvent(origin: Record<string, EventProducer>, key: string): EventProducer | undefined {
         if (!origin[key]) {
             const path = this.path ? this.path + '/' + key : key;
-            origin[key] = new EventProducer(this.target, path);
+            origin[key] = new EventProducer(this.model, path);
         }
         return origin[key];
     }
@@ -49,7 +49,7 @@ export class Proxy<
 
         if (!origin[key]) {
             const path = this.path ? this.path + '/' + key : key;
-            origin[key] = new Proxy(this.target, path);
+            origin[key] = new Proxy(this.model, path);
         }
         if (keys.length) {
             const child: Record<string, Proxy> = origin[key].child;

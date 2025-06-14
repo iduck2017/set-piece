@@ -34,13 +34,13 @@ export class RouteAgent<
         if (this.parent) {
             return this.parent.agent.route.root;
         }
-        return this.target;
+        return this.model;
     }
 
 
 
-    constructor(target: M) {
-        super(target);
+    constructor(model: M) {
+        super(model);
         this._isBind = false;
         this._isLoad = false;
         this._isRoot = false;

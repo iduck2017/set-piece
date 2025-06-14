@@ -3,18 +3,18 @@ import { Agent } from "./agent";
 import { TranxService } from "../service/tranx";
 import { DeepReadonly, Primitive } from "utility-types";
 
-export type DecorUpdater<S = any, M extends Model = Model> = (target: M, state: DeepReadonly<S>) => DeepReadonly<S>
+export type DecorUpdater<S = any, M extends Model = Model> = (model: M, state: DeepReadonly<S>) => DeepReadonly<S>
 
-export type DecorConsumer = { target: Model, updater: DecorUpdater }
+export type DecorConsumer = { model: Model, updater: DecorUpdater }
 
 export class DecorProducer<S = any, M extends Model = Model> {
     public readonly path: string;
 
-    public readonly target: M;
+    public readonly model: M;
 
-    constructor(target: M, path?: string) {
+    constructor(model: M, path?: string) {
         this.path = path ? path + '/decor' : 'decor';
-        this.target = target;
+        this.model = model;
     }
 }
 
@@ -38,10 +38,8 @@ export class StateAgent<
     public get current() { return { ...this._current } }
     
 
-
-    
-    constructor(target: M, props: S) {
-        super(target);
+    constructor(model: M, props: S) {
+        super(model);
         
         this.router = {
             consumers: new Map(),
@@ -97,17 +95,17 @@ export class StateAgent<
     public emit() {
         let path: string = 'decor';
         let state: any = { ...this.draft };
-        let target: Model | undefined = this.target;
-        while (target) {
-            const router = target.agent.state.router;
+        let model: Model | undefined = this.model;
+        while (model) {
+            const router = model.agent.state.router;
             const consumers = router.consumers.get(path) ?? [];
             for (const consumer of [ ...consumers ]) {
-                const target = consumer.target;
+                const that = consumer.model;
                 const updater = consumer.updater;
-                state = updater.call(target, this.target, state);
+                state = updater.call(that, this.model, state);
             }
-            path = target.agent.route.key + '/' + path;
-            target = target.agent.route.parent;
+            path = model.agent.route.key + '/' + path;
+            model = model.agent.route.parent;
         }
         this._current = state;
         return true;
@@ -123,19 +121,19 @@ export class StateAgent<
         producer: DecorProducer<S, M>, 
         updater: DecorUpdater<S, M>
     ) {
-        const { target, path } = producer;
+        const { model: that, path } = producer;
 
-        if (this.target.agent.route.root !== target.agent.route.root) return;
+        if (this.agent.route.root !== that.agent.route.root) return;
 
-        const consumers = target.agent.state.router.consumers.get(path) ?? [];
-        consumers.push({ target: this.target, updater });
-        target.agent.state.router.consumers.set(path, consumers);
+        const consumers = that.agent.state.router.consumers.get(path) ?? [];
+        consumers.push({ model: this.model, updater });
+        that.agent.state.router.consumers.set(path, consumers);
         
         const producers = this.router.producers.get(updater) ?? [];
         producers.push(producer);
         this.router.producers.set(updater, producers);
 
-        target.agent.state.update(path);
+        that.agent.state.update(path);
     }
 
     
@@ -143,13 +141,13 @@ export class StateAgent<
         producer: DecorProducer<S, M>, 
         updater: DecorUpdater<S, M>
     ) {
-        const { target, path } = producer;
+        const { model: that, path } = producer;
 
         let index;
-        const comsumers = target.agent.state.router.consumers.get(path) ?? [];
+        const comsumers = that.agent.state.router.consumers.get(path) ?? [];
         index = comsumers.findIndex(item => (
             item.updater === updater &&
-            item.target === this.target
+            item.model === this.model
         ));
         if (index !== -1) comsumers.splice(index, 1);
 
@@ -157,23 +155,23 @@ export class StateAgent<
         index = producers.indexOf(producer);
         if (index !== -1) producers.splice(index, 1);
         
-        target.agent.state.update(path);
+        that.agent.state.update(path);
     }
 
 
 
 
     public load() {
-        let constructor: any = this.target.constructor;
+        let constructor: any = this.model.constructor;
         while (constructor) {
             const reg = StateAgent.reg.get(constructor) ?? {};
             for (const key of Object.keys(reg)) {
                 const accessors = reg[key] ?? [];
                 for (const accessor of [ ...accessors ]) {
-                    const producer = accessor(this.target);
+                    const producer = accessor(this.model);
                     if (!producer) continue;
-                    const target: any = this.target;
-                    this.bind(producer, target[key]);
+                    const model: any = this.model;
+                    this.bind(producer, model[key]);
                 }
             }
             constructor = constructor.__proto__;
@@ -193,13 +191,13 @@ export class StateAgent<
             const keys = path.split('/');
             const key = keys.pop();
 
-            const proxy: any = this.target.proxy;
+            const proxy: any = this.model.proxy;
             const producer = proxy.child[keys.join('/')].decor;
             if (!producer) continue;
             for (const consumer of [ ...consumers ]) {
-                const { target, updater } = consumer;
-                if (target.agent.route.root !== this.target.agent.route.root) continue;
-                target.agent.state.unbind(producer, updater);
+                const { model: that, updater } = consumer;
+                if (that.agent.route.root !== this.agent.route.root) continue;
+                that.agent.state.unbind(producer, updater);
             }
         }
         this.emit();
@@ -209,10 +207,10 @@ export class StateAgent<
     public debug(): Model[] {
         const dependency: Model[] = [];
         this.router.producers.forEach((value) => {
-            dependency.push(...value.map(item => item.target));
+            dependency.push(...value.map(item => item.model));
         })
         this.router.consumers.forEach((value) => {
-            dependency.push(...value.map(item => item.target));
+            dependency.push(...value.map(item => item.model));
         })
         return dependency;
     }

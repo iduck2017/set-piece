@@ -23,8 +23,8 @@ export class ChildAgent<
     }
 
     
-    constructor(target: M, props: C) {
-        super(target);
+    constructor(model: M, props: C) {
+        super(model);
 
         const origin: any = {};
         for (const key in props) {
@@ -34,12 +34,12 @@ export class ChildAgent<
                 value.forEach((value, index) => {
                     if (value.agent.route.isBind) value = value.copy();
                     origin[key].push(value);
-                    origin[key][index].agent.route.bind(this.target, key);
+                    origin[key][index].agent.route.bind(this.model, key);
                 })
             } else if (value) {
                 if (value.agent.route.isBind) value = value.copy();
                 origin[key] = value;
-                origin[key].agent.route.bind(this.target, key)
+                origin[key].agent.route.bind(this.model, key)
             }
         }
         this.draft = new Proxy({ ...origin }, {
@@ -74,12 +74,12 @@ export class ChildAgent<
         if (next instanceof Array) {
             next = next.map(next => {
                 if (next.agent.route.isBind) next = next.copy();
-                next.agent.route.bind(this.target, key);
+                next.agent.route.bind(this.model, key);
                 return next;
             });
         } else if (next) {
             if (next.agent.route.isBind) next = next.copy();
-            next.agent.route.bind(this.target, key);
+            next.agent.route.bind(this.model, key);
         }
         origin[key] = next;
         return true;
@@ -156,7 +156,7 @@ export class ChildAgent<
         if (prev instanceof Model) prev.agent.route.unbind();
         if (next instanceof Model) {
             if (next.agent.route.isBind) next = next.copy();
-            next.agent.route.bind(this.target, key);
+            next.agent.route.bind(this.model, key);
         }
         origin[index] = next;
         return true;
@@ -175,7 +175,7 @@ export class ChildAgent<
     private push(key: string, origin: Model[], ...next: Model[]) {
         next = next.map(next => {
             if (next.agent.route.isBind) next = next.copy();
-            next.agent.route.bind(this.target, key);
+            next.agent.route.bind(this.model, key);
             return next;
         });
         return origin.push(...next);
@@ -185,7 +185,7 @@ export class ChildAgent<
     private unshift(key: string, origin: Model[], ...next: Model[]) {
         next = next.map(next => {
             if (next.agent.route.isBind) next = next.copy();
-            next.agent.route.bind(this.target, key);
+            next.agent.route.bind(this.model, key);
             return next;
         });
         return origin.unshift(...next);
@@ -228,7 +228,7 @@ export class ChildAgent<
         })
         const next = prev.map(() => {
             const next = sample.copy();
-            next.agent.route.bind(this.target, key);
+            next.agent.route.bind(this.model, key);
             return next;
         });
         origin.splice(start, end - start, ...next);
@@ -243,7 +243,7 @@ export class ChildAgent<
         })
         next = next.map(next => {
             if (next.agent.route.isBind) next = next.copy();
-            next.agent.route.bind(this.target, key);
+            next.agent.route.bind(this.model, key);
             return next;
         });
         return origin.splice(start, count, ...next);

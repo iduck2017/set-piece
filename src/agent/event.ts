@@ -16,19 +16,19 @@ export type BaseEvent<M extends Model> = {
     onRouteChange: OnRouteChange<M>
 }
 
-type EventHandler<E = any, M extends Model = Model> = (target: M, event: E) => void
+type EventHandler<E = any, M extends Model = Model> = (model: M, event: E) => void
 
-type EventConsumer = { target: Model, handler: EventHandler }
+type EventConsumer = { model: Model, handler: EventHandler }
 
 export class EventProducer<E = any, M extends Model = Model> {
    
     public readonly path: string;
     
-    public readonly target: M;
+    public readonly model: M;
     
-    public constructor(target: M, path: string) {
+    public constructor(model: M, path: string) {
         this.path = path;
-        this.target = target;
+        this.model = model;
     }
 }
 
@@ -48,8 +48,8 @@ export class EventAgent<
         producers: Map<EventHandler, EventProducer[]>
     }>
     
-    public constructor(target: M) {
-        super(target)
+    public constructor(model: M) {
+        super(model)
         this.router = {
             consumers: new Map(),
             producers: new Map()
@@ -64,17 +64,17 @@ export class EventAgent<
 
     public emit<E>(key: string, event: E) {
         let path = key;
-        let target: Model | undefined = this.target;
-        while(target) {
-            const router = target.agent.event.router;
+        let model: Model | undefined = this.model;
+        while(model) {
+            const router = model.agent.event.router;
             const consumers = router.consumers.get(path) ?? [];
             for (const consumer of [ ...consumers ]) {
-                const target = consumer.target;
+                const that = consumer.model;
                 const handler = consumer.handler;
-                handler.call(target, this.target, event);
+                handler.call(that, this.model, event);
             }
-            path = target.agent.route.key + '/' + path;
-            target = target.agent.route.parent;
+            path = model.agent.route.key + '/' + path;
+            model = model.agent.route.parent;
         }
     }
 
@@ -83,13 +83,13 @@ export class EventAgent<
         producer: EventProducer<E, M>, 
         handler: EventHandler<E, M>
     ) {
-        const { target, path } = producer;
+        const { model: that, path } = producer;
 
-        if (this.target.agent.route.root !== target.agent.route.root) return;
+        if (this.agent.route.root !== that.agent.route.root) return;
 
-        const consumers = target.agent.event.router.consumers.get(path) ?? [];
-        consumers.push({ target: this.target, handler });
-        target.agent.event.router.consumers.set(path, consumers);
+        const consumers = that.agent.event.router.consumers.get(path) ?? [];
+        consumers.push({ model: this.model, handler });
+        that.agent.event.router.consumers.set(path, consumers);
         
         const producers = this.router.producers.get(handler) ?? [];
         producers.push(producer);
@@ -101,13 +101,13 @@ export class EventAgent<
         producer: EventProducer<E, M>, 
         handler: EventHandler<E, M>
     ) {
-        const { target, path } = producer;
+        const { model: that, path } = producer;
         
         let index;
-        const consumers = target.agent.event.router.consumers.get(path) ?? [];
+        const consumers = that.agent.event.router.consumers.get(path) ?? [];
         index = consumers.findIndex(item => (
             item.handler === handler && 
-            item.target === this.target
+            item.model === this.model
         ));
         if (index !== -1) consumers.splice(index, 1);
         
@@ -121,16 +121,16 @@ export class EventAgent<
 
 
     public load() {
-        let constructor: any = this.target.constructor;
+        let constructor: any = this.model.constructor;
         while (constructor) {
             const hooks = EventAgent.reg.get(constructor) ?? {};
             for (const key of Object.keys(hooks)) {
                 const accessors = hooks[key] ?? [];
                 for (const accessor of [ ...accessors ]) {
-                    const producer = accessor(this.target);
+                    const producer = accessor(this.model);
                     if (!producer) continue;
-                    const target: any = this.target;
-                    this.bind(producer, target[key]);
+                    const model: any = this.model;
+                    this.bind(producer, model[key]);
                 }
             }
             constructor = constructor.__proto__
@@ -150,13 +150,13 @@ export class EventAgent<
             const key = keys.pop();
             if (!key) continue;
             
-            const proxy: any = this.target.proxy;
+            const proxy: any = this.model.proxy;
             const producer = proxy.child[keys.join('/')].event[key];
             if (!producer) continue;
             for (const consumer of [ ...consumers ]) {
-                const { target, handler } = consumer;
-                if (target.agent.route.root !== this.target.agent.route.root) continue;
-                target.agent.event.unbind(producer, handler);
+                const { model: that, handler } = consumer;
+                if (that.agent.route.root !== this.agent.route.root) continue;
+                that.agent.event.unbind(producer, handler);
             }
         }
     }
@@ -164,10 +164,10 @@ export class EventAgent<
     public debug(): Model[] {
         const dependency: Model[] = [];
         this.router.producers.forEach((value) => {
-            dependency.push(...value.map(item => item.target));
+            dependency.push(...value.map(item => item.model));
         })
         this.router.consumers.forEach((value) => {
-            dependency.push(...value.map(item => item.target));
+            dependency.push(...value.map(item => item.model));
         })
         return dependency;
     }
