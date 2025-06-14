@@ -1,4 +1,4 @@
-import { TranxService } from "../service/tranx";
+import { TrxService } from "../service/trx";
 import { Model } from "../model";
 import { Agent } from "./agent";
 
@@ -120,7 +120,7 @@ export class ReferAgent<
         return value;
     }
 
-    @TranxService.use()
+    @TrxService.use()
     private set(
         origin: Partial<Record<string, Model | Model[]>>, 
         key: string, 
@@ -147,7 +147,7 @@ export class ReferAgent<
 
 
 
-    @TranxService.use()
+    @TrxService.use()
     private del(origin: Partial<Record<string, Model | Model[]>>, key: string) {
         let prev = origin[key];
         if (prev instanceof Array) {
@@ -186,7 +186,7 @@ export class ReferAgent<
         return origin[index];
     }
 
-    @TranxService.use()
+    @TrxService.use()
     private lset(key: string, origin: any, index: string, next: Model) {
         const prev = origin[index];
         if (prev instanceof Model) prev.agent.refer.unbind(this.model, key);
@@ -195,7 +195,7 @@ export class ReferAgent<
         return true;
     }
     
-    @TranxService.use()
+    @TrxService.use()
     private ldel(key: string, origin: any, index: string) {
         const prev = origin[index];
         if (prev instanceof Model) prev.agent.refer.unbind(this.model, key);
@@ -204,7 +204,7 @@ export class ReferAgent<
     }
 
 
-    @TranxService.use()
+    @TrxService.use()
     private push(key: string, origin: Model[], ...next: Model[]) {
         next.forEach(next => {
             next.agent.refer.bind(this.model, key);
@@ -213,7 +213,7 @@ export class ReferAgent<
         return result;
     }
 
-    @TranxService.use()
+    @TrxService.use()
     private unshift(key: string, origin: Model[], ...next: Model[]) {
         next.forEach(next => {
             next.agent.refer.bind(this.model, key);
@@ -222,7 +222,7 @@ export class ReferAgent<
         return result;
     }
 
-    @TranxService.use()
+    @TrxService.use()
     private pop(key: string, origin: Model[]) {
         const result = origin.pop();
         if (result) result.agent.refer.unbind(this.model, key);
@@ -230,25 +230,25 @@ export class ReferAgent<
     }
 
 
-    @TranxService.use()
+    @TrxService.use()
     private shift(key: string, origin: Model[]) {
         const result = origin.shift();
         if (result) result.agent.refer.unbind(this.model, key);
         return result;
     }
 
-    @TranxService.use()
+    @TrxService.use()
     private reverse(origin: Model[]) {
         return origin.reverse();
     }
 
-    @TranxService.use()
+    @TrxService.use()
     private sort(origin: Model[], handler: (a: Model, b: Model) => number) {
         return origin.sort(handler);
     }
 
 
-    @TranxService.use()
+    @TrxService.use()
     private fill(key: string, origin: Model[], value: Model, start?: number, end?: number) {
         if (start === undefined) start = 0;
         if (end === undefined) end = origin.length;
@@ -264,7 +264,7 @@ export class ReferAgent<
     }
 
 
-    @TranxService.use()
+    @TrxService.use()
     private splice(key: string, origin: Model[], start: number, count: number, ...next: Model[]) {
         const prev = origin.slice(start, start + count);
         prev.forEach(prev => {

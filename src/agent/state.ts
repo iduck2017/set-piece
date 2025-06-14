@@ -1,6 +1,6 @@
 import { Model } from "../model";
 import { Agent } from "./agent";
-import { TranxService } from "../service/tranx";
+import { TrxService } from "../service/trx";
 import { DeepReadonly, Primitive } from "utility-types";
 
 export type DecorUpdater<S = any, M extends Model = Model> = (model: M, state: DeepReadonly<S>) => DeepReadonly<S>
@@ -77,21 +77,21 @@ export class StateAgent<
     } 
 
     
-    @TranxService.use()
+    @TrxService.use()
     private set(origin: any, key: string, next: any) {
         origin[key] = next;
         return this.emit();
     }
 
     
-    @TranxService.use()
+    @TrxService.use()
     private del(origin: any, key: string) {
         delete origin[key];
         return this.emit();
     }
 
     
-    @TranxService.use()
+    @TrxService.use()
     public emit() {
         let path: string = 'decor';
         let state: any = { ...this.draft };

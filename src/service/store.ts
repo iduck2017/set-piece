@@ -1,5 +1,5 @@
 import { Model } from "../model";
-import { TranxService } from "./tranx";
+import { TrxService } from "./trx";
 
 interface Chunk {
     uuid?: string,
@@ -48,7 +48,7 @@ export class StoreService {
         return result;
     }
 
-    @TranxService.use()
+    @TrxService.use()
     public static load(chunk: Chunk): Model | undefined {
         const reg: Record<string, Model> = {};
         const model = StoreService.create(chunk, reg);

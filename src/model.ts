@@ -6,7 +6,7 @@ import { Proxy } from "./proxy";
 import { DeepReadonly, Primitive } from "utility-types";
 import { Refer, ReferAgent } from "./agent/refer";
 import { v4 as uuidv4 } from 'uuid';
-import { TranxService } from "./service/tranx";
+import { TrxService } from "./service/trx";
 
 export type Agent<
     M extends Model = Model,
@@ -46,7 +46,7 @@ export namespace Model {
 
 
 
-@TranxService.use(true)
+@TrxService.use(true)
 export class Model<
     P extends Model.Parent = Model.Parent,
     E extends Model.Event = {},
