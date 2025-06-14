@@ -1,20 +1,21 @@
-export { Model, Props } from "./model";
-export { Proxy } from './proxy';
+export { Model } from "./model";
+export { Proxy } from './utils/proxy';
 
-export { EventAgent } from "./agent/event";
 export { StateAgent } from "./agent/state";
 export { ReferAgent } from "./agent/refer";
 export { ChildAgent } from "./agent/child";
+export { EventAgent } from "./agent/event";
 export { RouteAgent } from "./agent/route";
 
-export { TrxService } from './service/trx';
+export { TranxService } from './service/tranx';
 export { DebugService } from "./service/debug";
 export { StoreService } from "./service/store";
 export { CheckService } from "./service/check";
 
+export { State, Refer, Child, Event, Props } from "./types";
 export { 
     OnChildChange,
     OnStateChange,
     OnReferChange,
     OnRouteChange,
-} from './agent/event';
+} from './types';

@@ -1,7 +1,7 @@
 import { Model } from "../model";
-import { TrxService } from "./trx";
+import { TranxService } from "./tranx";
 
-interface Chunk {
+type Chunk = {
     uuid?: string,
     code: string,
     state: Record<string, any>,
@@ -48,7 +48,7 @@ export class StoreService {
         return result;
     }
 
-    @TrxService.use()
+    @TranxService.use()
     public static load(chunk: Chunk): Model | undefined {
         const reg: Record<string, Model> = {};
         const model = StoreService.create(chunk, reg);
@@ -120,9 +120,9 @@ export class StoreService {
 
     private constructor() {}
 
-    public static is<I extends string, M extends Model>(code: I) {
+    public static is(code: string) {
         return function (
-            constructor: new (props: any) => M
+            constructor: new (...props: any[]) => Model
         ) {
             console.log('useProduct', constructor.name, code)
             StoreService.reg.set(code, constructor);

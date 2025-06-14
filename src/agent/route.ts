@@ -1,6 +1,6 @@
 import { Model } from "../model";
 import { Agent } from "./agent";
-import { TrxService } from "../service/trx";
+import { TranxService } from "../service/tranx";
 import { DebugService } from "../service/debug";
 
 export class RouteAgent<
@@ -47,21 +47,21 @@ export class RouteAgent<
     }
 
 
-    @TrxService.use()
+    @TranxService.use()
     public bind(parent: P | undefined, key: string) {
         this._isBind = true;
         this._key = key;
         this._parent = parent;
     }
 
-    @TrxService.use()
+    @TranxService.use()
     public unbind() {
         this._isBind = false;
         this._key = undefined;
         this._parent = undefined;
     }
 
-    @TrxService.use()
+    @TranxService.use()
     public reload() {}
 
 

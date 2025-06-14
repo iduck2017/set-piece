@@ -1,7 +1,7 @@
-import { BaseEvent, EventProducer } from "./agent/event";
-import { Model } from "./model";
-import { DecorProducer } from "./agent/state";
-
+import { Event } from "../types";
+import { Model } from "../model";
+import { EventProducer } from "./event";
+import { DecorProducer } from "./decor";
 
 export class Proxy<
     M extends Model = Model,
@@ -22,7 +22,7 @@ export class Proxy<
 
     public readonly event: Readonly<
         { [K in keyof E]: EventProducer<Required<E>[K], M> } &
-        { [K in keyof BaseEvent<M>]: EventProducer<BaseEvent<M>[K], M> }
+        { [K in keyof Event<M>]: EventProducer<Event<M>[K], M> }
     >;
     
     constructor(model: M, path?: string) {
@@ -34,9 +34,9 @@ export class Proxy<
         this.decor = new DecorProducer(this.model, path)
     }
 
-    private getEvent(origin: Record<string, EventProducer>, key: string): EventProducer | undefined {
+    private getEvent(origin: Record<string, EventProducer>, key: string) {
         if (!origin[key]) {
-            const path = this.path ? this.path + '/' + key : key;
+            const path = this.path ? `${this.path}/${key}` : key;
             origin[key] = new EventProducer(this.model, path);
         }
         return origin[key];
@@ -46,9 +46,8 @@ export class Proxy<
         const keys = path.split('/');
         const key = keys.shift();
         if (!key) return this;
-
         if (!origin[key]) {
-            const path = this.path ? this.path + '/' + key : key;
+            const path = this.path ? `${this.path}/${key}` : key;
             origin[key] = new Proxy(this.model, path);
         }
         if (keys.length) {

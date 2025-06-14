@@ -1,25 +1,8 @@
 import { Model } from "../model";
 import { Agent } from "./agent";
-import { TrxService } from "../service/trx";
-import { DeepReadonly, Primitive } from "utility-types";
-
-export type DecorUpdater<S = any, M extends Model = Model> = (model: M, state: DeepReadonly<S>) => DeepReadonly<S>
-
-export type DecorConsumer = { model: Model, updater: DecorUpdater }
-
-export class DecorProducer<S = any, M extends Model = Model> {
-    public readonly path: string;
-
-    public readonly model: M;
-
-    constructor(model: M, path?: string) {
-        this.path = path ? path + '/decor' : 'decor';
-        this.model = model;
-    }
-}
-
-
-export type State<S> = { [K in keyof S]: S[K] extends Primitive ? S[K] : DeepReadonly<S[K]> }
+import { TranxService } from "../service/tranx";
+import { DecorConsumer, DecorProducer, DecorUpdater } from "../utils/decor";
+import { State } from "../types";
 
 export class StateAgent<
     M extends Model = Model,
@@ -77,21 +60,21 @@ export class StateAgent<
     } 
 
     
-    @TrxService.use()
+    @TranxService.use()
     private set(origin: any, key: string, next: any) {
         origin[key] = next;
         return this.emit();
     }
 
     
-    @TrxService.use()
+    @TranxService.use()
     private del(origin: any, key: string) {
         delete origin[key];
         return this.emit();
     }
 
     
-    @TrxService.use()
+    @TranxService.use()
     public emit() {
         let path: string = 'decor';
         let state: any = { ...this.draft };

@@ -1,6 +1,3 @@
-import { Agent } from "../agent/agent";
-import {  Model } from "../model";
-
 type Callback<R = any, P extends any[] = any[]> = (...args: P) => R
 
 export class DebugService {

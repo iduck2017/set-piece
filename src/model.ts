@@ -1,14 +1,15 @@
 import { EventAgent  } from "./agent/event";
-import { State, StateAgent } from "./agent/state";
+import { StateAgent } from "./agent/state";
 import { RouteAgent } from "./agent/route";
-import { Child, ChildAgent } from "./agent/child";
-import { Proxy } from "./proxy";
-import { DeepReadonly, Primitive } from "utility-types";
-import { Refer, ReferAgent } from "./agent/refer";
+import { ChildAgent } from "./agent/child";
+import { Proxy } from "./utils/proxy";
+import { DeepReadonly } from "utility-types";
+import { ReferAgent } from "./agent/refer";
 import { v4 as uuidv4 } from 'uuid';
-import { TrxService } from "./service/trx";
+import { TranxService } from "./service/tranx";
+import { State, Refer, Child, OnRouteChange } from "./types";
 
-export type Agent<
+type Agent<
     M extends Model = Model,
     P extends Model.Parent = Model.Parent,
     E extends Model.Event = Model.Event,
@@ -24,18 +25,6 @@ export type Agent<
 }>
 
 
-export type Props<
-    S extends Model.State = Record<string, never>,
-    C extends Model.Child = {},
-    R extends Model.Refer = {},
-> = {
-    uuid?: string
-    state?: Partial<S>,
-    child?: Partial<C>,
-    refer?: Partial<R>,
-}
-
-
 export namespace Model {
     export type Parent = Model
     export type Event = Record<string, any>
@@ -44,9 +33,7 @@ export namespace Model {
     export type Refer = Record<string, Model | Model[]>
 }
 
-
-
-@TrxService.use(true)
+@TranxService.use(true)
 export class Model<
     P extends Model.Parent = Model.Parent,
     E extends Model.Event = {},
@@ -54,23 +41,18 @@ export class Model<
     C extends Model.Child = {},
     R extends Model.Refer = {},
 > {
-    public get name() {
-        return this.constructor.name;
-    }
+    public get name() { return this.constructor.name; }
 
-    public get state(): DeepReadonly<S> {
-        return this.agent.state.current as any;
-    } 
+    public get state(): DeepReadonly<S> { return this.agent.state.current as any; } 
     
-    public get refer(): Readonly<Refer<R>> { 
-        return this.agent.refer.current; 
-    }
+    public get refer(): Readonly<Refer<R>> { return this.agent.refer.current; }
 
-    public get child(): Readonly<Child<C>> { 
-        return this.agent.child.current; 
-    }
+    public get child(): Readonly<Child<C>> { return this.agent.child.current; }
 
-    public get route() {
+    public get route(): Readonly<{
+        parent: P | undefined
+        root: Model
+    }> {
         return {
             parent: this.agent.route.parent,
             root: this.agent.route.root,
@@ -93,7 +75,6 @@ export class Model<
         refer: Partial<R>
     }>
 
-    public readonly model: this
 
     /** @internal */
     public readonly agent: Agent<this, P, E, S, C, R>
@@ -116,14 +97,12 @@ export class Model<
         }
     }
 
-    // @tranx
     constructor(props: {
         uuid?: string
         state: S extends Record<string, never> ? Record<string, never> : S
         child: C extends Record<string, never> ? Record<string, never> : C
         refer: R extends Record<string, never> ? Record<string, never> : R
     }) {
-        this.model = this;
         this.uuid = props.uuid ?? uuidv4();
         this.proxy = new Proxy(this);
         this.agent = {
@@ -144,10 +123,9 @@ export class Model<
 
     
     public copy(): this {
-        const props = this.props;
         const type: any = this.constructor;
         return new type({
-            ...props,
+            ...this.props,
             uuid: undefined
         });
     }

@@ -1,14 +1,13 @@
+import { Callback } from "../types";
 import { Agent } from "../agent/agent";
 import { Model } from "../model";
 
-type Callback = (...args: any[]) => any
-
-export class TrxService {
+export class TranxService {
     private constructor() {}
 
     private static _isSpan = false;
 
-    public static get isSpan() { return TrxService._isSpan; }
+    public static get isSpan() { return TranxService._isSpan; }
 
     private static readonly reg: Map<Model, Readonly<{
         state?: Model['state'],
@@ -28,14 +27,14 @@ export class TrxService {
                 const result: any = 
                     class Model extends constructor {
                         constructor(...args: any[]) {
-                            if (TrxService._isSpan) {
+                            if (TranxService._isSpan) {
                                 super(...args);
                             } else {
-                                TrxService._isSpan = true;
+                                TranxService._isSpan = true;
                                 super(...args);
-                                TrxService.reload();
-                                TrxService._isSpan = false;
-                                TrxService.emit();
+                                TranxService.reload();
+                                TranxService._isSpan = false;
+                                TranxService.emit();
                             }
                         }
                     };
@@ -57,25 +56,25 @@ export class TrxService {
                         const isReferChange = model.agent.refer === this;
                         const isChildChange = model.agent.child === this;
                         const isRouteChange = model.agent.route === this;
-                        const prev = TrxService.reg.get(model) ?? {};
+                        const prev = TranxService.reg.get(model) ?? {};
                         const next = { ...prev }
                         if (isStateChange && !prev.state) next.state = model.state;
                         if (isReferChange && !prev.refer) next.refer = model.refer;
                         if (isChildChange && !prev.child) next.child = model.child;
                         if (isRouteChange && !prev.route) next.route = model.route;
-                        TrxService.reg.set(model, next);
+                        TranxService.reg.set(model, next);
                     }
 
-                    if (TrxService._isSpan) {
+                    if (TranxService._isSpan) {
                         return handler.call(this, ...args);
                     } else {
                         console.group('Transaction::' + key)
-                        TrxService._isSpan = true;
+                        TranxService._isSpan = true;
                         const result = handler.call(this, ...args);
-                        TrxService.reload();
-                        TrxService._isSpan = false;
+                        TranxService.reload();
+                        TranxService._isSpan = false;
                         console.groupEnd()
-                        TrxService.emit();
+                        TranxService.emit();
                         return result;
                     }
                 }
@@ -96,14 +95,14 @@ export class TrxService {
             unload: [],
             unbind: [],
         }
-        TrxService.reg.forEach((info, model) => {
+        TranxService.reg.forEach((info, model) => {
             if (!info.route) return;
             const parent = info.route.parent;
             if (parent || model.agent.route.isRoot) {
                 queue.unload.push(model);
             }
         })
-        TrxService.reg.forEach((info, model) => {
+        TranxService.reg.forEach((info, model) => {
             if (info.refer) queue.unbind.push(model);
         })
         queue.unload.forEach(model => model.agent.route.unload());
@@ -111,7 +110,7 @@ export class TrxService {
             if (queue.unload.includes(model)) return;
             model.agent.refer.unload();
         })
-        TrxService.reg.forEach((info, model) => {
+        TranxService.reg.forEach((info, model) => {
             if (!info.route) return;
             const parent = model.agent.route.parent;
             if (parent?.agent.route.isLoad || model.agent.route.isRoot) {
@@ -128,10 +127,10 @@ export class TrxService {
 
 
     private static emit() {
-        const reg = new Map(TrxService.reg);
-        TrxService.reg.clear();
+        const reg = new Map(TranxService.reg);
+        TranxService.reg.clear();
         for (const [model, info] of reg) {
-            const { state, refer, child, route } = model.model;
+            const { state, refer, child, route } = model;
             const event = model.agent.event.current;
             if (info.state) event.onStateChange({ prev: info.state, next: state })
             if (info.refer) event.onReferChange({ prev: info.refer, next: refer })
