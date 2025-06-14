@@ -10,7 +10,7 @@ export class TranxService {
 
     public static get isSpan() { return TranxService._isSpan; }
 
-    private static readonly registry: Map<Model, Readonly<{
+    private static readonly reg: Map<Model, Readonly<{
         state?: Model['state'],
         refer?: Model['refer'],
         child?: Model['child'],
@@ -57,13 +57,13 @@ export class TranxService {
                         const isReferChange = target.agent.refer === this;
                         const isChildChange = target.agent.child === this;
                         const isRouteChange = target.agent.route === this;
-                        const prev = TranxService.registry.get(target) ?? {};
+                        const prev = TranxService.reg.get(target) ?? {};
                         const next = { ...prev }
                         if (isStateChange && !prev.state) next.state = target.state;
                         if (isReferChange && !prev.refer) next.refer = target.refer;
                         if (isChildChange && !prev.child) next.child = target.child;
                         if (isRouteChange && !prev.route) next.route = target.route;
-                        TranxService.registry.set(target, next);
+                        TranxService.reg.set(target, next);
                     }
 
                     if (TranxService._isSpan) {
@@ -96,14 +96,14 @@ export class TranxService {
             unload: [],
             unbind: [],
         }
-        TranxService.registry.forEach((info, model) => {
+        TranxService.reg.forEach((info, model) => {
             if (!info.route) return;
             const parent = info.route.parent;
             if (parent || model.agent.route.isRoot) {
                 queue.unload.push(model);
             }
         })
-        TranxService.registry.forEach((info, model) => {
+        TranxService.reg.forEach((info, model) => {
             if (info.refer) queue.unbind.push(model);
         })
         queue.unload.forEach(model => model.agent.route.unload());
@@ -111,7 +111,7 @@ export class TranxService {
             if (queue.unload.includes(model)) return;
             model.agent.refer.unload();
         })
-        TranxService.registry.forEach((info, model) => {
+        TranxService.reg.forEach((info, model) => {
             if (!info.route) return;
             const parent = model.agent.route.parent;
             if (parent?.agent.route.isLoad || model.agent.route.isRoot) {
@@ -128,9 +128,9 @@ export class TranxService {
 
 
     private static emit() {
-        const registry = new Map(TranxService.registry);
-        TranxService.registry.clear();
-        for (const [model, info] of registry) {
+        const reg = new Map(TranxService.reg);
+        TranxService.reg.clear();
+        for (const [model, info] of reg) {
             const { state, refer, child, route } = model.target;
             const event = model.agent.event.current;
             if (info.state) event.onStateChange({ prev: info.state, next: state })

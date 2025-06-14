@@ -10,7 +10,7 @@ interface Chunk {
 }
 
 export class StoreService {
-    private static readonly registry: Map<any, any> = new Map();
+    private static readonly reg: Map<any, any> = new Map();
     
     public static save(model: Model): Chunk | undefined {
         const props: {
@@ -20,7 +20,7 @@ export class StoreService {
             state: Record<string, any>,
         } = model.props;
 
-        const code = StoreService.registry.get(model.constructor);
+        const code = StoreService.reg.get(model.constructor);
         if (!code) return undefined;
 
         const result: Chunk = {
@@ -50,15 +50,15 @@ export class StoreService {
 
     @TranxService.use()
     public static load(chunk: Chunk): Model | undefined {
-        const registry: Record<string, Model> = {};
-        const model = StoreService.create(chunk, registry);
-        StoreService.bind(chunk, registry);
+        const reg: Record<string, Model> = {};
+        const model = StoreService.create(chunk, reg);
+        StoreService.bind(chunk, reg);
         return model;
     }
 
     
-    private static create(chunk: Chunk, registry: Record<string, Model>): Model | undefined {
-        const type = StoreService.registry.get(chunk.code);
+    private static create(chunk: Chunk, reg: Record<string, Model>): Model | undefined {
+        const type = StoreService.reg.get(chunk.code);
         if (!type) return undefined;
         const child: Record<string, Model | Model[]> = {};
         Object.keys(chunk.child).forEach(key => {
@@ -66,13 +66,13 @@ export class StoreService {
             if (value instanceof Array) {
                 child[key] = [];
                 value.forEach(value => {
-                    const model = StoreService.create(value, registry);
+                    const model = StoreService.create(value, reg);
                     if (model && child[key] instanceof Array) {
                         child[key].push(model);
                     }
                 })
             } else if (value) {
-                const model = StoreService.create(value, registry);
+                const model = StoreService.create(value, reg);
                 if (model) child[key] = model;
             }
         })
@@ -81,14 +81,14 @@ export class StoreService {
             state: chunk.state,
             child
         })
-        registry[result.uuid] = result;
+        reg[result.uuid] = result;
         return result;
     }
     
-    private static bind(chunk: Chunk, registry: Record<string, Model>) {
+    private static bind(chunk: Chunk, reg: Record<string, Model>) {
         if (!chunk.uuid) return;
 
-        const model = registry[chunk.uuid];
+        const model = reg[chunk.uuid];
         if (!model) return;
         for (const key of Object.keys(chunk.refer)) {
             const value = chunk.refer[key];
@@ -96,12 +96,12 @@ export class StoreService {
             if (value instanceof Array) {
                 const array: Model[] = [];
                 for (const uuid of value) {
-                    const model = registry[uuid];
+                    const model = reg[uuid];
                     if (model) array.push(model);
                 }
                 refer[key] = array;
             } else if (value) {
-                const model = registry[value];
+                const model = reg[value];
                 if (model) refer[key] = model;
             }
         }
@@ -109,10 +109,10 @@ export class StoreService {
             let value = chunk.child[key];
             if (value instanceof Array) {
                 value.forEach(value => {
-                    StoreService.bind(value, registry);
+                    StoreService.bind(value, reg);
                 })
             } else if (value) {
-                StoreService.bind(value, registry);
+                StoreService.bind(value, reg);
             }
         }
     }
@@ -125,8 +125,8 @@ export class StoreService {
             constructor: new (props: any) => M
         ) {
             console.log('useProduct', constructor.name, code)
-            StoreService.registry.set(code, constructor);
-            StoreService.registry.set(constructor, code);
+            StoreService.reg.set(code, constructor);
+            StoreService.reg.set(constructor, code);
         }
     }
 }

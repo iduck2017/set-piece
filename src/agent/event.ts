@@ -123,7 +123,7 @@ export class EventAgent<
     public load() {
         let constructor: any = this.target.constructor;
         while (constructor) {
-            const hooks = EventAgent.registry.get(constructor) ?? {};
+            const hooks = EventAgent.reg.get(constructor) ?? {};
             for (const key of Object.keys(hooks)) {
                 const accessors = hooks[key] ?? [];
                 for (const accessor of [ ...accessors ]) {
@@ -149,11 +149,10 @@ export class EventAgent<
             const keys = path.split('/');
             const key = keys.pop();
             if (!key) continue;
-
+            
             const proxy: any = this.target.proxy;
             const producer = proxy.child[keys.join('/')].event[key];
             if (!producer) continue;
-
             for (const consumer of [ ...consumers ]) {
                 const { target, handler } = consumer;
                 if (target.agent.route.root !== this.target.agent.route.root) continue;
@@ -176,7 +175,7 @@ export class EventAgent<
 
 
 
-    private static registry: Map<Function, 
+    private static reg: Map<Function, 
         Record<string, Array<(model: Model) => EventProducer | undefined>>
     > = new Map();
 
@@ -188,10 +187,10 @@ export class EventAgent<
             key: string,
             descriptor: TypedPropertyDescriptor<EventHandler<E, M>>
         ): TypedPropertyDescriptor<EventHandler<E, M>> {
-            const hooks = EventAgent.registry.get(target.constructor) ?? {};
+            const hooks = EventAgent.reg.get(target.constructor) ?? {};
             if (!hooks[key]) hooks[key] = [];
             hooks[key].push(accessor);
-            EventAgent.registry.set(target.constructor, hooks);
+            EventAgent.reg.set(target.constructor, hooks);
             return descriptor;
         };
     }

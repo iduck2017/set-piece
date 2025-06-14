@@ -45,7 +45,7 @@ export class Proxy<
     private getChild(origin: Record<string, Proxy>, path: string): Proxy | undefined {
         const keys = path.split('/');
         const key = keys.shift();
-        if (!key) return;
+        if (!key) return this;
 
         if (!origin[key]) {
             const path = this.path ? this.path + '/' + key : key;

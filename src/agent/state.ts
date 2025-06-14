@@ -166,9 +166,9 @@ export class StateAgent<
     public load() {
         let constructor: any = this.target.constructor;
         while (constructor) {
-            const registry = StateAgent.registry.get(constructor) ?? {};
-            for (const key of Object.keys(registry)) {
-                const accessors = registry[key] ?? [];
+            const reg = StateAgent.reg.get(constructor) ?? {};
+            for (const key of Object.keys(reg)) {
+                const accessors = reg[key] ?? [];
                 for (const accessor of [ ...accessors ]) {
                     const producer = accessor(this.target);
                     if (!producer) continue;
@@ -192,6 +192,7 @@ export class StateAgent<
             const [ path, consumers ] = channel;
             const keys = path.split('/');
             const key = keys.pop();
+
             const proxy: any = this.target.proxy;
             const producer = proxy.child[keys.join('/')].decor;
             if (!producer) continue;
@@ -219,7 +220,7 @@ export class StateAgent<
 
 
 
-    private static registry: Map<Function, 
+    private static reg: Map<Function, 
         Record<string, Array<(model: Model) => DecorProducer | undefined>>
     > = new Map();
 
@@ -231,10 +232,10 @@ export class StateAgent<
             key: string,
             descriptor: TypedPropertyDescriptor<DecorUpdater<S, M>>
         ): TypedPropertyDescriptor<DecorUpdater<S, M>> {
-            const registry = StateAgent.registry.get(target.constructor) ?? {};
-            if (!registry[key]) registry[key] = [];
-            registry[key].push(accessor);
-            StateAgent.registry.set(target.constructor, registry);
+            const reg = StateAgent.reg.get(target.constructor) ?? {};
+            if (!reg[key]) reg[key] = [];
+            reg[key].push(accessor);
+            StateAgent.reg.set(target.constructor, reg);
             return descriptor;
         }
     }
