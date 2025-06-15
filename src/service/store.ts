@@ -19,10 +19,8 @@ export class StoreService {
             refer: Record<string, string | string[]>,
             state: Record<string, any>,
         } = model.props;
-
         const code = StoreService.reg.get(model.constructor);
         if (!code) return undefined;
-
         const result: Chunk = {
             code,
             uuid: props.uuid,
@@ -51,13 +49,13 @@ export class StoreService {
     @TranxService.use()
     public static load(chunk: Chunk): Model | undefined {
         const reg: Record<string, Model> = {};
-        const model = StoreService.create(chunk, reg);
+        const model = StoreService.gen(chunk, reg);
         StoreService.bind(chunk, reg);
         return model;
     }
 
     
-    private static create(chunk: Chunk, reg: Record<string, Model>): Model | undefined {
+    private static gen(chunk: Chunk, reg: Record<string, Model>): Model | undefined {
         const type = StoreService.reg.get(chunk.code);
         if (!type) return undefined;
         const child: Record<string, Model | Model[]> = {};
@@ -66,13 +64,11 @@ export class StoreService {
             if (value instanceof Array) {
                 child[key] = [];
                 value.forEach(value => {
-                    const model = StoreService.create(value, reg);
-                    if (model && child[key] instanceof Array) {
-                        child[key].push(model);
-                    }
+                    const model = StoreService.gen(value, reg);
+                    if (model && child[key] instanceof Array) child[key].push(model);
                 })
             } else if (value) {
-                const model = StoreService.create(value, reg);
+                const model = StoreService.gen(value, reg);
                 if (model) child[key] = model;
             }
         })
@@ -95,26 +91,22 @@ export class StoreService {
             const refer: Record<string, Model[] | Model> = model.agent.refer.draft;
             if (value instanceof Array) {
                 const array: Model[] = [];
-                for (const uuid of value) {
-                    const model = reg[uuid];
-                    if (model) array.push(model);
-                }
+                value.forEach(value => {
+                    const model = reg[value];
+                    if (model) refer[key] = model;
+                })
                 refer[key] = array;
             } else if (value) {
                 const model = reg[value];
                 if (model) refer[key] = model;
             }
         }
-        for (const key of Object.keys(chunk.child)) {
+        Object.keys(chunk.state).forEach(key => {
             let value = chunk.child[key];
             if (value instanceof Array) {
-                value.forEach(value => {
-                    StoreService.bind(value, reg);
-                })
-            } else if (value) {
-                StoreService.bind(value, reg);
-            }
-        }
+                value.forEach(value => StoreService.bind(value, reg))
+            } else if (value) StoreService.bind(value, reg);
+        })
     }
 
 

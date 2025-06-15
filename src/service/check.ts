@@ -1,4 +1,4 @@
-import { Callback } from "src/types";
+import { Callback } from "../types";
 
 export class CheckService {
     private static readonly validators = new Map<Function, Record<string, Callback[]>>();

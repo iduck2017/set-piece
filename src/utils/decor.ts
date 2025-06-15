@@ -1,11 +1,18 @@
 import { Model } from "../model";
 import { DeepReadonly } from "utility-types";
+import { State } from "../types";
 
-export type DecorUpdater<S = any, M extends Model = Model> = (model: M, state: DeepReadonly<S>) => DeepReadonly<S>
+export type DecorUpdater<
+    S extends Record<string, any> = Record<string, any>,
+    M extends Model = Model,
+> = (model: M, state: Readonly<State<S>>) => Readonly<State<S>>
 
 export type DecorConsumer = { model: Model, updater: DecorUpdater }
 
-export class DecorProducer<S = any, M extends Model = Model> {
+export class DecorProducer<
+    S extends Record<string, any> = Record<string, any>,
+    M extends Model = Model,
+> {
     public readonly path: string;
 
     public readonly model: M;

@@ -100,7 +100,7 @@ export class StateAgent<
 
     
 
-    public bind<S, M extends Model>(
+    public bind<S extends Record<string, any>, M extends Model>(
         producer: DecorProducer<S, M>, 
         updater: DecorUpdater<S, M>
     ) {
@@ -120,7 +120,7 @@ export class StateAgent<
     }
 
     
-    public unbind<S, M extends Model>(
+    public unbind<S extends Record<string, any>, M extends Model>(
         producer: DecorProducer<S, M>, 
         updater: DecorUpdater<S, M>
     ) {
@@ -165,15 +165,12 @@ export class StateAgent<
     public unload() {
         for(const channel of this.router.producers) {
             const [ handler, producers ] = channel;
-            for (const producer of [ ...producers ]) {
-                this.unbind(producer, handler);
-            }
+            [ ...producers ].forEach(value => this.unbind(value, handler));
         }
         for (const channel of this.router.consumers) {
             const [ path, consumers ] = channel;
             const keys = path.split('/');
             const key = keys.pop();
-
             const proxy: any = this.model.proxy;
             const producer = proxy.child[keys.join('/')].decor;
             if (!producer) continue;
@@ -205,7 +202,7 @@ export class StateAgent<
         Record<string, Array<(model: Model) => DecorProducer | undefined>>
     > = new Map();
 
-    public static use<S, M extends Model, I extends Model>(
+    public static use<S extends Record<string, any>, M extends Model, I extends Model>(
         accessor: (model: I) => DecorProducer<S, M> | undefined
     ) {
         return function(

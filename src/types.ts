@@ -5,7 +5,6 @@ import { Model } from "./model"
 export type Callback<R = any, P extends any[] = any[]> = (...args: P) => R
 
 
-
 export type Refer<R extends Model.Refer = Model.Refer> = { [K in keyof R]?: R[K] extends any[] ? Readonly<R[K]> : R[K] }
 
 export type Child<C extends Model.Child = Model.Child> = { [K in keyof C]: C[K] extends any[] ? Readonly<C[K]> : C[K] }
@@ -13,16 +12,15 @@ export type Child<C extends Model.Child = Model.Child> = { [K in keyof C]: C[K] 
 export type State<S extends Model.State = Model.State> = { [K in keyof S]: S[K] extends Primitive ? S[K] : DeepReadonly<S[K]> }
 
 export type Props<
-    S extends Model.State = Record<string, never>,
-    C extends Model.Child = {},
-    R extends Model.Refer = {},
+    S1 extends Model.State = {},
+    C1 extends Model.Child = {},
+    R1 extends Model.Refer = {},
 > = {
     uuid?: string
-    state?: Partial<S>,
-    child?: Partial<C>,
-    refer?: Partial<R>,
+    state?: Partial<S1>
+    child?: Partial<C1>
+    refer?: Partial<R1>
 }
-
 
 
 export type OnStateChange<M extends Model> = { prev: M['state'], next: M['state'] };
@@ -39,4 +37,5 @@ export type Event<M extends Model> = {
     onReferChange: OnReferChange<M>
     onRouteChange: OnRouteChange<M>
 }
+
 

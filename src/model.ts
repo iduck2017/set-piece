@@ -3,11 +3,10 @@ import { StateAgent } from "./agent/state";
 import { RouteAgent } from "./agent/route";
 import { ChildAgent } from "./agent/child";
 import { Proxy } from "./utils/proxy";
-import { DeepReadonly } from "utility-types";
 import { ReferAgent } from "./agent/refer";
 import { v4 as uuidv4 } from 'uuid';
 import { TranxService } from "./service/tranx";
-import { State, Refer, Child, OnRouteChange } from "./types";
+import { State, Refer, Child, Props } from "./types";
 
 type Agent<
     M extends Model = Model,
@@ -43,15 +42,15 @@ export class Model<
 > {
     public get name() { return this.constructor.name; }
 
-    public get state(): DeepReadonly<S> { return this.agent.state.current as any; } 
+    public get state(): Readonly<State<S>> { return this.agent.state.current as any; } 
     
     public get refer(): Readonly<Refer<R>> { return this.agent.refer.current; }
 
     public get child(): Readonly<Child<C>> { return this.agent.child.current; }
 
     public get route(): Readonly<{
-        parent: P | undefined
-        root: Model
+        parent?: P
+        root?: Model
     }> {
         return {
             parent: this.agent.route.parent,
@@ -84,10 +83,10 @@ export class Model<
     public readonly uuid: string
 
     public get props(): {
-        uuid: string
-        state: S
-        child: C
-        refer: Refer<R>
+        uuid?: string
+        state: S,
+        child: C,
+        refer: Partial<R>,
     } {
         return {
             uuid: this.uuid,
@@ -98,10 +97,10 @@ export class Model<
     }
 
     constructor(props: {
-        uuid?: string
-        state: S extends Record<string, never> ? Record<string, never> : S
-        child: C extends Record<string, never> ? Record<string, never> : C
-        refer: R extends Record<string, never> ? Record<string, never> : R
+        uuid: string | undefined;
+        state: S;
+        child: C;
+        refer: R;
     }) {
         this.uuid = props.uuid ?? uuidv4();
         this.proxy = new Proxy(this);
@@ -109,8 +108,8 @@ export class Model<
             event: new EventAgent<this, E>(this),
             route: new RouteAgent<this, P>(this),
             refer: new ReferAgent<this, R>(this),
-            state: new StateAgent<this, S>(this, props.state as S),
-            child: new ChildAgent<this, C>(this, props.child as C),
+            state: new StateAgent<this, S>(this, props.state),
+            child: new ChildAgent<this, C>(this, props.child),
         }
         this.event = this.agent.event.current;
         this.draft = {
@@ -118,7 +117,7 @@ export class Model<
             child: this.agent.child.draft,
             refer: this.agent.refer.draft,
         }
-        this.agent.refer.init(props.refer as R);
+        this.agent.refer.init(props.refer);
     }
 
     
