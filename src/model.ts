@@ -107,7 +107,7 @@ export class Model<
         this.agent = {
             event: new EventAgent<this, E>(this),
             route: new RouteAgent<this, P>(this),
-            refer: new ReferAgent<this, R>(this),
+            refer: new ReferAgent<this, R>(this, props.refer),
             state: new StateAgent<this, S>(this, props.state),
             child: new ChildAgent<this, C>(this, props.child),
         }
@@ -117,7 +117,6 @@ export class Model<
             child: this.agent.child.draft,
             refer: this.agent.refer.draft,
         }
-        this.agent.refer.init(props.refer);
     }
 
     

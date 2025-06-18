@@ -44,7 +44,8 @@ export class StoreService {
                         result.child[key].push(chunk);
                     }
                 })
-            } else if (value) {
+            }
+            if (value instanceof Model) {
                 const chunk = StoreService.save(value);
                 if (chunk) result.child[key] = chunk;
             }

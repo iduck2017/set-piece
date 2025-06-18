@@ -9,33 +9,18 @@ export class RouteAgent<
 > extends Agent<M> {
 
     private _key: string | undefined;
+    public get key() { return this._key; }
     
     private _isBind: boolean;
-
     private _isLoad: boolean;
-
     private _isRoot: boolean;
-    
-    private _parent: P | undefined;
-
-
-    public get key() { return this._key; }
-
     public get isBind() { return this._isBind; }
-
     public get isLoad() { return this._isLoad; }
-
     public get isRoot() { return this._isRoot; }
 
+    private _parent: P | undefined;
     public get parent() { return this._parent; }
-
-    public get root(): Model { 
-        if (this.parent) {
-            return this.parent.agent.route.root;
-        }
-        return this.model;
-    }
-
+    public get root(): Model { return this.parent?.agent.route.root ?? this.model; }
 
     constructor(model: M) {
         super(model);

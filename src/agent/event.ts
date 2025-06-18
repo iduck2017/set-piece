@@ -25,21 +25,21 @@ export class EventAgent<
             producers: new Map()
         }
         this.current = new Proxy({} as any, {
-            get: (origin: never, key: string) => this.emit.bind(this, key)
+            get: (origin, key: string) => this.emit.bind(this, key)
         })
     }
 
     public emit<E>(key: string, event: E) {
         let path = key;
         let model: Model | undefined = this.model;
-        while(model) {
+        while (model) {
             const router = model.agent.event.router;
             const consumers = router.consumers.get(path) ?? [];
-            for (const consumer of [ ...consumers ]) {
+            [...consumers].forEach(consumer => {
                 const that = consumer.model;
                 const handler = consumer.handler;
                 handler.call(that, this.model, event);
-            }
+            })
             path = model.agent.route.key + '/' + path;
             model = model.agent.route.parent;
         }
@@ -52,10 +52,10 @@ export class EventAgent<
         const { model: that, path } = producer;
         if (this.agent.route.root !== that.agent.route.root) return;
         const consumers = that.agent.event.router.consumers.get(path) ?? [];
-        consumers.push({ model: this.model, handler });
-        that.agent.event.router.consumers.set(path, consumers);
         const producers = this.router.producers.get(handler) ?? [];
+        consumers.push({ model: this.model, handler });
         producers.push(producer);
+        that.agent.event.router.consumers.set(path, consumers);
         this.router.producers.set(handler, producers);
     }
 
@@ -65,12 +65,9 @@ export class EventAgent<
     ) {
         const { model: that, path } = producer;
         const consumers = that.agent.event.router.consumers.get(path) ?? [];
-        let index = consumers.findIndex(item => (
-            item.handler === handler && 
-            item.model === this.model
-        ));
-        if (index !== -1) consumers.splice(index, 1);
         const producers = this.router.producers.get(handler) ?? [];
+        let index = consumers.findIndex(item => item.handler === handler &&  item.model === this.model);
+        if (index !== -1) consumers.splice(index, 1);
         index = producers.indexOf(producer);
         if (index !== -1) producers.splice(index, 1);
     }
@@ -93,25 +90,21 @@ export class EventAgent<
     }
 
     public unload() {
-        for (const channel of this.router.producers) {
-            const [ handler, producers ] = channel;
-            [ ...producers ].forEach(producer => this.unbind(producer, handler));
-        }
-        for (const channel of this.router.consumers) {
-            const [ path, consumers ] = channel;
+        this.router.producers.forEach((producers, handler) => {
+            [...producers].forEach(producer => this.unbind(producer, handler));
+        })
+        this.router.consumers.forEach((consumers, path) => {
             const keys = path.split('/');
             const key = keys.pop();
-            if (!key) continue;
-            
+            if (!key) return;
             const proxy: any = this.model.proxy;
             const producer = proxy.child[keys.join('/')].event[key];
-            if (!producer) continue;
-            for (const consumer of [ ...consumers ]) {
+            [...consumers].forEach(consumer => {
                 const { model: that, handler } = consumer;
-                if (that.agent.route.root !== this.agent.route.root) continue;
+                if (that.agent.route.root !== this.agent.route.root) return;
                 that.agent.event.unbind(producer, handler);
-            }
-        }
+            })
+        })
     }
 
     public debug(): Model[] {
@@ -125,9 +118,7 @@ export class EventAgent<
         return dependency;
     }
 
-    private static reg: Map<Function, 
-        Record<string, Array<(model: Model) => EventProducer | undefined>>
-    > = new Map();
+    private static reg: Map<Function, Record<string, Array<(model: Model) => EventProducer | undefined>>> = new Map();
 
     public static use<E, M extends Model, I extends Model>(
         accessor: (model: I) => EventProducer<E, M> | undefined

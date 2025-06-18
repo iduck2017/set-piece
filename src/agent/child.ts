@@ -10,14 +10,7 @@ export class ChildAgent<
 
     public readonly draft: C;
 
-    public get current(): Readonly<Child<C>> {
-        const result: any = {}
-        Object.keys(this.draft).forEach(key => {
-            const value = this.draft[key];
-            result[key] = value instanceof Array ? [ ...value ] : value;
-        })
-        return result;
-    }
+    public get current(): Readonly<Child<C>> { return { ...this.draft }; }
     
     constructor(model: M, props: C) {
         super(model);
@@ -25,19 +18,19 @@ export class ChildAgent<
         Object.keys(props).forEach(key => {
             let value = props[key];
             if (value instanceof Array) {
-                origin[key] = [];
-                value.forEach((value, index) => {
+                origin[key] = value.map((value) => {
                     if (value.agent.route.isBind) value = value.copy();
-                    origin[key].push(value);
-                    origin[key][index].agent.route.bind(this.model, key);
+                    value.agent.route.bind(this.model, key);
+                    return value;
                 })
-            } else if (value) {
+            }
+            if (value instanceof Model) {
                 if (value.agent.route.isBind) value = value.copy();
+                value.agent.route.bind(this.model, key);
                 origin[key] = value;
-                origin[key].agent.route.bind(this.model, key)
             }
         });
-        this.draft = new Proxy({ ...origin }, {
+        this.draft = new Proxy(origin, {
             get: this.get.bind(this),
             set: this.set.bind(this),
             deleteProperty: this.del.bind(this),
@@ -58,15 +51,15 @@ export class ChildAgent<
     ) {
         const prev = origin[key];
         if (prev instanceof Array) prev.forEach(prev => prev.agent.route.unbind())
-        else if (prev) prev.agent.route.unbind();
-
+        if (prev instanceof Model) prev.agent.route.unbind();
         if (next instanceof Array) {
             next = next.map(next => {
                 if (next.agent.route.isBind) next = next.copy();
                 next.agent.route.bind(this.model, key);
                 return next;
             });
-        } else if (next) {
+        } 
+        if (next instanceof Model) {
             if (next.agent.route.isBind) next = next.copy();
             next.agent.route.bind(this.model, key);
         }
@@ -78,7 +71,7 @@ export class ChildAgent<
     private del(origin: Partial<Record<string, Model | Model[]>>, key: string) {
         const prev = origin[key];
         if (prev instanceof Array) prev.forEach(prev => prev.agent.route.unbind())
-        else if (prev) prev.agent.route.unbind();
+        if (prev instanceof Model) prev.agent.route.unbind();
         delete origin[key];
         return true;
     }
@@ -87,7 +80,7 @@ export class ChildAgent<
         Object.keys(this.draft).forEach(key => {
             const value = this.draft[key];
             if (value instanceof Array) value.forEach(value => value.agent.route.unload())
-            else if (value) value.agent.route.unload();
+            if (value instanceof Model) value.agent.route.unload();
         })
     }
 
@@ -95,11 +88,10 @@ export class ChildAgent<
         Object.keys(this.draft).forEach(key => {
             const value = this.draft[key];
             if (value instanceof Array) value.forEach(value => value.agent.route.load())
-            else if (value) value.agent.route.load();
+            if (value instanceof Model) value.agent.route.load();
         })
     }
 
-    
     private proxy(value: Model[], key: string): Model[] {
         return new Proxy(value, {
             get: this.lget.bind(this, key),
@@ -198,15 +190,13 @@ export class ChildAgent<
             return next;
         });
         origin.splice(start, end - start, ...next);
-        return;
+        return origin;
     }
 
     @TranxService.use()
     private splice(key: string, origin: Model[], start: number, count: number, ...next: Model[]) {
         const prev = origin.slice(start, start + count);
-        prev.forEach(prev => {
-            prev.agent.route.unbind();
-        })
+        prev.forEach(prev => prev.agent.route.unbind())
         next = next.map(next => {
             if (next.agent.route.isBind) next = next.copy();
             next.agent.route.bind(this.model, key);

@@ -17,18 +17,14 @@ export class StateAgent<
     }
 
     private _current: S
-
     public get current() { return { ...this._current } }
     
-
     constructor(model: M, props: S) {
         super(model);
-        
         this.router = {
             consumers: new Map(),
             producers: new Map()
         }
-
         this._current = { ...props }
         this.draft = new Proxy({ ...props }, {
             set: this.set.bind(this),
@@ -40,21 +36,14 @@ export class StateAgent<
         const keys = path.split('/');
         const key = keys.shift();
         path = keys.join('/');
-
         if (!key) return;
         if (keys.length) {
             const child: Record<string, Model | Model[]> = this.agent.child.current;
-
             let value: Model | Model[] | undefined = child[key];
-            if (value instanceof Array) {
-                value.forEach(value => {
-                    value.agent.state.update(path);
-                })
-            } else if (value) {
-                value.agent.state.update(path);
-            }
-
-        } else this.reset();
+            if (value instanceof Array) value.forEach(value => value.agent.state.update(path))
+            if (value instanceof Model) value.agent.state.update(path);
+        } 
+        else this.reset();
     } 
 
     @TranxService.use()
@@ -79,11 +68,11 @@ export class StateAgent<
         while (model) {
             const router = model.agent.state.router;
             const consumers = router.consumers.get(path) ?? [];
-            for (const consumer of [ ...consumers ]) {
+            [...consumers].forEach(consumer => {
                 const that = consumer.model;
                 const updater = consumer.updater;
                 state = updater.call(that, this.model, state);
-            }
+            });
             path = model.agent.route.key + '/' + path;
             model = model.agent.route.parent;
         }
@@ -95,17 +84,13 @@ export class StateAgent<
         updater: DecorUpdater<S, M>
     ) {
         const { model: that, path } = producer;
-
         if (this.agent.route.root !== that.agent.route.root) return;
-
         const consumers = that.agent.state.router.consumers.get(path) ?? [];
-        consumers.push({ model: this.model, updater });
-        that.agent.state.router.consumers.set(path, consumers);
-        
         const producers = this.router.producers.get(updater) ?? [];
+        consumers.push({ model: this.model, updater });
         producers.push(producer);
+        that.agent.state.router.consumers.set(path, consumers);
         this.router.producers.set(updater, producers);
-
         that.agent.state.update(path);
     }
     
@@ -114,19 +99,12 @@ export class StateAgent<
         updater: DecorUpdater<S, M>
     ) {
         const { model: that, path } = producer;
-
-        let index;
         const comsumers = that.agent.state.router.consumers.get(path) ?? [];
-        index = comsumers.findIndex(item => (
-            item.updater === updater &&
-            item.model === this.model
-        ));
-        if (index !== -1) comsumers.splice(index, 1);
-
         const producers = this.router.producers.get(updater) ?? [];
+        let index = comsumers.findIndex(item => item.updater === updater && item.model === this.model);
+        if (index !== -1) comsumers.splice(index, 1);
         index = producers.indexOf(producer);
         if (index !== -1) producers.splice(index, 1);
-        
         that.agent.state.update(path);
     }
 
@@ -170,18 +148,12 @@ export class StateAgent<
 
     public debug(): Model[] {
         const dependency: Model[] = [];
-        this.router.producers.forEach((value) => {
-            dependency.push(...value.map(item => item.model));
-        })
-        this.router.consumers.forEach((value) => {
-            dependency.push(...value.map(item => item.model));
-        })
+        this.router.producers.forEach((value) => dependency.push(...value.map(item => item.model)))
+        this.router.consumers.forEach((value) => dependency.push(...value.map(item => item.model)))
         return dependency;
     }
 
-    private static reg: Map<Function, 
-        Record<string, Array<(model: Model) => DecorProducer | undefined>>
-    > = new Map();
+    private static reg: Map<Function, Record<string, Array<(model: Model) => DecorProducer | undefined>>> = new Map();
 
     public static use<S extends Record<string, any>, M extends Model, I extends Model>(
         accessor: (model: I) => DecorProducer<S, M> | undefined

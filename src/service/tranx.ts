@@ -21,24 +21,26 @@ export class TranxService {
     public static use(isType: true): (constructor: new (...props: any[]) => Model) => any;
     public static use(isType?: boolean) {
         if (isType) {
-            return function (
-                constructor: new (...props: any[]) => Model
-            ) {
-                const result: any = 
-                    class Model extends constructor {
-                        constructor(...args: any[]) {
-                            if (TranxService._isSpan) {
-                                super(...args);
-                            } else {
-                                TranxService._isSpan = true;
-                                super(...args);
-                                TranxService.reload();
-                                TranxService._isSpan = false;
-                                TranxService.emit();
-                            }
+            return function (constructor: new (...props: any[]) => Model) {
+                return class Model extends constructor {
+                    constructor(...args: any[]) {
+                        if (TranxService._isSpan) {
+                            super(...args);
+                            const prev = TranxService.reg.get(this) ?? {};
+                            const next = { ...prev, route: this.route };
+                            TranxService.reg.set(this, next);
+                        } else {
+                            TranxService._isSpan = true;
+                            super(...args);
+                            const prev = TranxService.reg.get(this) ?? {};
+                            const next = { ...prev, route: this.route };
+                            TranxService.reg.set(this, next);
+                            TranxService.reload();
+                            TranxService._isSpan = false;
+                            TranxService.emit();
                         }
-                    };
-                return result;
+                    }
+                };
             }
         } 
         return function(
@@ -57,11 +59,13 @@ export class TranxService {
                         const isChildChange = model.agent.child === this;
                         const isRouteChange = model.agent.route === this;
                         const prev = TranxService.reg.get(model) ?? {};
-                        const next = { ...prev }
-                        if (isStateChange && !prev.state) next.state = model.state;
-                        if (isReferChange && !prev.refer) next.refer = model.refer;
-                        if (isChildChange && !prev.child) next.child = model.child;
-                        if (isRouteChange && !prev.route) next.route = model.route;
+                        const next = { 
+                            ...prev,
+                            state: isStateChange && !prev.state ? model.state : undefined,
+                            refer: isReferChange && !prev.refer ? model.refer : undefined,
+                            child: isChildChange && !prev.child ? model.child : undefined,
+                            route: isRouteChange && !prev.route ? model.route : undefined,
+                        }
                         TranxService.reg.set(model, next);
                     }
 
