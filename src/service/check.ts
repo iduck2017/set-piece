@@ -38,7 +38,6 @@ export class CheckService {
             validators = validators.concat(CheckService.validators.get(constructor)?.[method.name] ?? []);
             constructor = (constructor as any).__proto__;
         }
-        
         for (const validator of validators) {
             const result = validator(target, ...args);
             if (!result) return false;

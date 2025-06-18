@@ -169,7 +169,6 @@ export class ChildAgent<
         return result;
     }
 
-
     @TranxService.use()
     private shift(key: string, origin: Model[]) {
         const result = origin.shift();
@@ -189,13 +188,10 @@ export class ChildAgent<
 
     @TranxService.use()
     private fill(key: string, origin: Model[], sample: Model, start?: number, end?: number) {
-        start = start ?? 0;
-        end = end ?? origin.length;
-
+        if (!start) start = 0;
+        if (!end) end = origin.length;
         const prev = origin.slice(start, end);
-        prev.forEach(prev => {
-            prev.agent.route.unbind();
-        })
+        prev.forEach(prev => prev.agent.route.unbind())
         const next = prev.map(() => {
             const next = sample.copy();
             next.agent.route.bind(this.model, key);

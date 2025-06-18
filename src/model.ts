@@ -84,9 +84,9 @@ export class Model<
 
     public get props(): {
         uuid?: string
-        state: S,
-        child: C,
-        refer: Partial<R>,
+        state?: Partial<S>,
+        child?: Partial<C>,
+        refer?: Partial<R>,
     } {
         return {
             uuid: this.uuid,

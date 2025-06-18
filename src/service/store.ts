@@ -18,7 +18,13 @@ export class StoreService {
             child: Record<string, Model | Model[]>,
             refer: Record<string, string | string[]>,
             state: Record<string, any>,
-        } = model.props;
+        } = {
+            child: {},
+            refer: {},
+            state: {},
+            ...model.props
+        };
+
         const code = StoreService.reg.get(model.constructor);
         if (!code) return undefined;
         const result: Chunk = {
@@ -86,21 +92,20 @@ export class StoreService {
 
         const model = reg[chunk.uuid];
         if (!model) return;
-        for (const key of Object.keys(chunk.refer)) {
+        Object.keys(chunk.child).forEach(key => {
             const value = chunk.refer[key];
             const refer: Record<string, Model[] | Model> = model.agent.refer.draft;
             if (value instanceof Array) {
-                const array: Model[] = [];
+                refer[key] = [];
                 value.forEach(value => {
                     const model = reg[value];
-                    if (model) refer[key] = model;
+                    if (model && refer[key] instanceof Array) refer[key].push(model);
                 })
-                refer[key] = array;
             } else if (value) {
                 const model = reg[value];
                 if (model) refer[key] = model;
             }
-        }
+        });
         Object.keys(chunk.state).forEach(key => {
             let value = chunk.child[key];
             if (value instanceof Array) {

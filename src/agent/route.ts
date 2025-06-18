@@ -19,7 +19,6 @@ export class RouteAgent<
     private _parent: P | undefined;
 
 
-
     public get key() { return this._key; }
 
     public get isBind() { return this._isBind; }
@@ -38,14 +37,12 @@ export class RouteAgent<
     }
 
 
-
     constructor(model: M) {
         super(model);
         this._isBind = false;
         this._isLoad = false;
         this._isRoot = false;
     }
-
 
     @TranxService.use()
     public bind(parent: P | undefined, key: string) {
@@ -64,7 +61,6 @@ export class RouteAgent<
     @TranxService.use()
     public reload() {}
 
-
     public load() {
         this.agent.child.load();
         this.agent.event.load();
@@ -79,7 +75,6 @@ export class RouteAgent<
         this.agent.event.unload();
         this.agent.state.unload();
     }
-
 
     @DebugService.log()
     public static boot<T extends Model>(root: T): T {

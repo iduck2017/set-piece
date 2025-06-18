@@ -88,22 +88,22 @@ export class TranxService {
     private static reload() {
         const queue: {
             load: Model[],
+            calc: Model[],
             unload: Model[],
             unbind: Model[],
         } = {
             load: [],
+            calc: [],
             unload: [],
             unbind: [],
         }
         TranxService.reg.forEach((info, model) => {
-            if (!info.route) return;
-            const parent = info.route.parent;
-            if (parent || model.agent.route.isRoot) {
-                queue.unload.push(model);
+            if (info.route) {
+                if (info.route.parent || model.agent.route.isRoot) queue.unload.push(model);
+                if (!info.state) queue.calc.push(model);
             }
-        })
-        TranxService.reg.forEach((info, model) => {
             if (info.refer) queue.unbind.push(model);
+            if (info.state) queue.calc.push(model);
         })
         queue.unload.forEach(model => model.agent.route.unload());
         queue.unbind.forEach(model => {
@@ -111,17 +111,18 @@ export class TranxService {
             model.agent.refer.unload();
         })
         TranxService.reg.forEach((info, model) => {
-            if (!info.route) return;
-            const parent = model.agent.route.parent;
-            if (parent?.agent.route.isLoad || model.agent.route.isRoot) {
-                queue.load.push(model);
+            if (info.route) {
+                const parent = model.agent.route.parent;
+                if (parent?.agent.route.isLoad || model.agent.route.isRoot) queue.load.push(model);
             }
         })
         queue.load.forEach(model => model.agent.route.load());
+        queue.calc.forEach(model => model.agent.state.emit());
         console.log('task', {
             unbind: queue.unbind.map(model => model.name),
             unload: queue.unload.map(model => model.name),
             load: queue.load.map(model => model.name),
+            calc: queue.calc.map(model => model.name),
         })
     }
 

@@ -125,9 +125,6 @@ export class EventAgent<
         return dependency;
     }
 
-
-
-
     private static reg: Map<Function, 
         Record<string, Array<(model: Model) => EventProducer | undefined>>
     > = new Map();
@@ -147,8 +144,5 @@ export class EventAgent<
             return descriptor;
         };
     }
-
-
-
 }
 

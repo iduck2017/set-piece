@@ -19,7 +19,6 @@ export class ReferAgent<
         return result;
     }
 
-
     private readonly router: Map<Model, string[]>;
     
     constructor(model: M) {
@@ -155,11 +154,6 @@ export class ReferAgent<
         delete origin[key];
         return true;
     }
-
-
-    
-
-
 
     private proxy(value: Model[], key: string): Model[] {
         return new Proxy(value, {

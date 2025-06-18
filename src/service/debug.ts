@@ -1,4 +1,4 @@
-type Callback<R = any, P extends any[] = any[]> = (...args: P) => R
+import { Callback } from "../types";
 
 export class DebugService {
     private static readonly stack: string[] = []

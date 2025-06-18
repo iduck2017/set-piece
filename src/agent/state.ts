@@ -36,8 +36,6 @@ export class StateAgent<
         })
     }
 
-
-    
     public update(path: string) {
         const keys = path.split('/');
         const key = keys.shift();
@@ -56,25 +54,24 @@ export class StateAgent<
                 value.agent.state.update(path);
             }
 
-        } else this.emit();
+        } else this.reset();
     } 
 
-    
+    @TranxService.use()
+    private reset() {}
+
     @TranxService.use()
     private set(origin: any, key: string, next: any) {
         origin[key] = next;
-        return this.emit();
+        return true
     }
-
     
     @TranxService.use()
     private del(origin: any, key: string) {
         delete origin[key];
-        return this.emit();
+        return true;
     }
 
-    
-    @TranxService.use()
     public emit() {
         let path: string = 'decor';
         let state: any = { ...this.draft };
@@ -91,14 +88,7 @@ export class StateAgent<
             model = model.agent.route.parent;
         }
         this._current = state;
-        return true;
     }
-
-
-
-
-
-    
 
     public bind<S extends Record<string, any>, M extends Model>(
         producer: DecorProducer<S, M>, 
@@ -118,7 +108,6 @@ export class StateAgent<
 
         that.agent.state.update(path);
     }
-
     
     public unbind<S extends Record<string, any>, M extends Model>(
         producer: DecorProducer<S, M>, 
@@ -141,9 +130,6 @@ export class StateAgent<
         that.agent.state.update(path);
     }
 
-
-
-
     public load() {
         let constructor: any = this.model.constructor;
         while (constructor) {
@@ -159,7 +145,6 @@ export class StateAgent<
             }
             constructor = constructor.__proto__;
         }
-        this.emit();
     }
 
     public unload() {
@@ -180,7 +165,6 @@ export class StateAgent<
                 that.agent.state.unbind(producer, updater);
             }
         }
-        this.emit();
     }
 
 
@@ -194,9 +178,6 @@ export class StateAgent<
         })
         return dependency;
     }
-
-
-
 
     private static reg: Map<Function, 
         Record<string, Array<(model: Model) => DecorProducer | undefined>>

@@ -1,5 +1,4 @@
 import { Model } from "../model";
-import { DeepReadonly } from "utility-types";
 import { State } from "../types";
 
 export type DecorUpdater<
