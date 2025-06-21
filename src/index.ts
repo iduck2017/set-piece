@@ -12,7 +12,7 @@ export { DebugService } from "./service/debug";
 export { StoreService } from "./service/store";
 export { CheckService } from "./service/check";
 
-export { State, Refer, Child, Event, Props } from "./types";
+export { State, Refer, Child, Event } from "./types";
 export { 
     OnChildChange,
     OnStateChange,

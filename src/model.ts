@@ -6,7 +6,7 @@ import { Proxy } from "./utils/proxy";
 import { ReferAgent } from "./agent/refer";
 import { v4 as uuidv4 } from 'uuid';
 import { TranxService } from "./service/tranx";
-import { State, Refer, Child, Props } from "./types";
+import { State, Refer, Child } from "./types";
 
 type Agent<
     M extends Model = Model,
@@ -40,14 +40,12 @@ export class Model<
     C extends Model.Child = {},
     R extends Model.Refer = {},
 > {
+    public readonly uuid: string
     public get name() { return this.constructor.name; }
 
     public get state(): Readonly<State<S>> { return this.agent.state.current as any; } 
-    
     public get refer(): Readonly<Refer<R>> { return this.agent.refer.current; }
-
     public get child(): Readonly<Child<C>> { return this.agent.child.current; }
-
     public get route(): Readonly<{
         parent?: P
         root?: Model
@@ -57,7 +55,6 @@ export class Model<
             root: this.agent.route.root,
         };
     }
-
     public get status() {
         return {
             isLoad: this.agent.route.isLoad,
@@ -67,7 +64,6 @@ export class Model<
     }
 
     protected readonly event: Readonly<{ [K in keyof E]: (event: E[K]) => void }>;
-
     protected readonly draft: Readonly<{
         child: C;
         state: State<S>
@@ -77,10 +73,7 @@ export class Model<
 
     /** @internal */
     public readonly agent: Agent<this, P, E, S, C, R>
-
     public readonly proxy: Proxy<this, E, S, C>
-
-    public readonly uuid: string
 
     public get props(): {
         uuid?: string

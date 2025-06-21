@@ -13,13 +13,11 @@ export class Proxy<
 
     public readonly model: M;
 
+    public readonly decor: DecorProducer<S, M>
     public readonly child: Readonly<
         { [K in keyof C]: C[K] extends Model ? C[K]['proxy'] : unknown } & 
         { [K in keyof C]: C[K] extends Model[] ? C[K][number]['proxy'] : unknown }
     >
-
-    public readonly decor: DecorProducer<S, M>
-
     public readonly event: Readonly<
         { [K in keyof E]: EventProducer<Required<E>[K], M> } &
         { [K in keyof Event<M>]: EventProducer<Event<M>[K], M> }

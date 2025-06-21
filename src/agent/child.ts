@@ -16,18 +16,18 @@ export class ChildAgent<
         super(model);
         const origin: any = {};
         Object.keys(props).forEach(key => {
-            let value = props[key];
-            if (value instanceof Array) {
-                origin[key] = value.map((value) => {
-                    if (value.agent.route.isBind) value = value.copy();
-                    value.agent.route.bind(this.model, key);
-                    return value;
+            if (props[key] instanceof Array) {
+                origin[key] = props[key].map(item => {
+                    if (item.agent.route.isBind) item = item.copy();
+                    item.agent.route.bind(this.model, key);
+                    return item;
                 })
             }
-            if (value instanceof Model) {
-                if (value.agent.route.isBind) value = value.copy();
-                value.agent.route.bind(this.model, key);
-                origin[key] = value;
+            if (props[key] instanceof Model) {
+                let item = props[key];
+                if (item.agent.route.isBind) item = item.copy();
+                item.agent.route.bind(this.model, key);
+                origin[key] = item;
             }
         });
         this.draft = new Proxy(origin, {
@@ -78,22 +78,20 @@ export class ChildAgent<
 
     public unload() {
         Object.keys(this.draft).forEach(key => {
-            const value = this.draft[key];
-            if (value instanceof Array) value.forEach(value => value.agent.route.unload())
-            if (value instanceof Model) value.agent.route.unload();
+            if (this.draft[key] instanceof Array) this.draft[key].forEach(item => item.agent.route.unload())
+            if (this.draft[key] instanceof Model) this.draft[key].agent.route.unload();
         })
     }
 
     public load() {
         Object.keys(this.draft).forEach(key => {
-            const value = this.draft[key];
-            if (value instanceof Array) value.forEach(value => value.agent.route.load())
-            if (value instanceof Model) value.agent.route.load();
+            if (this.draft[key] instanceof Array) this.draft[key].forEach(item => item.agent.route.load())
+            if (this.draft[key] instanceof Model) this.draft[key].agent.route.load();
         })
     }
 
-    private proxy(value: Model[], key: string): Model[] {
-        return new Proxy(value, {
+    private proxy(origin: Model[], key: string): Model[] {
+        return new Proxy(origin, {
             get: this.lget.bind(this, key),
             set: this.lset.bind(this, key),
             deleteProperty: this.ldel.bind(this, key),

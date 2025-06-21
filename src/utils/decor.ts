@@ -13,9 +13,7 @@ export class DecorProducer<
     M extends Model = Model,
 > {
     public readonly path: string;
-
     public readonly model: M;
-
     constructor(model: M, path?: string) {
         this.model = model;
         this.path = path ? `${path}/decor` : 'decor';
