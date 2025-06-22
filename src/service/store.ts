@@ -24,7 +24,6 @@ export class StoreService {
             state: {},
             ...model.props
         };
-
         const code = StoreService.reg.get(model.constructor);
         if (!code) return undefined;
         const result: Chunk = {
@@ -34,22 +33,21 @@ export class StoreService {
             refer: props.refer,
             child: {},
         }
-        for (const key of Object.keys(props.child)) {
-            const value = props.child[key];
-            if (value instanceof Array) {
+        Object.keys(props.child).forEach(key => {
+            if (props.child[key] instanceof Array) {
                 result.child[key] = [];
-                value.forEach(value => {
-                    const chunk = StoreService.save(value);
+                props.child[key].forEach(item => {
+                    const chunk = StoreService.save(item);
                     if (chunk && result.child[key] instanceof Array) {
                         result.child[key].push(chunk);
                     }
                 })
             }
-            if (value instanceof Model) {
-                const chunk = StoreService.save(value);
+            if (props.child[key] instanceof Model) {
+                const chunk = StoreService.save(props.child[key]);
                 if (chunk) result.child[key] = chunk;
             }
-        }
+        });
         return result;
     }
 
@@ -67,15 +65,14 @@ export class StoreService {
         if (!type) return undefined;
         const child: Record<string, Model | Model[]> = {};
         Object.keys(chunk.child).forEach(key => {
-            const value = chunk.child[key];
-            if (value instanceof Array) {
+            if (chunk.child[key] instanceof Array) {
                 child[key] = [];
-                value.forEach(value => {
-                    const model = StoreService.gen(value, reg);
+                chunk.child[key].forEach(item => {
+                    const model = StoreService.gen(item, reg);
                     if (model && child[key] instanceof Array) child[key].push(model);
                 })
-            } else if (value) {
-                const model = StoreService.gen(value, reg);
+            } else if (chunk.child[key]) {
+                const model = StoreService.gen(chunk.child[key], reg);
                 if (model) child[key] = model;
             }
         })
@@ -94,24 +91,22 @@ export class StoreService {
         const model = reg[chunk.uuid];
         if (!model) return;
         Object.keys(chunk.child).forEach(key => {
-            const value = chunk.refer[key];
             const refer: Record<string, Model[] | Model> = model.agent.refer.draft;
-            if (value instanceof Array) {
+            if (chunk.refer[key] instanceof Array) {
                 refer[key] = [];
-                value.forEach(value => {
-                    const model = reg[value];
+                chunk.refer[key].forEach(item => {
+                    const model = reg[item];
                     if (model && refer[key] instanceof Array) refer[key].push(model);
                 })
-            } else if (value) {
-                const model = reg[value];
+            } else if (chunk.refer[key]) {
+                const model = reg[chunk.refer[key]];
                 if (model) refer[key] = model;
             }
         });
         Object.keys(chunk.state).forEach(key => {
-            let value = chunk.child[key];
-            if (value instanceof Array) {
-                value.forEach(value => StoreService.bind(value, reg))
-            } else if (value) StoreService.bind(value, reg);
+            if (chunk.child[key] instanceof Array) {
+                chunk.child[key].forEach(item => StoreService.bind(item, reg))
+            } else if (chunk.child[key]) StoreService.bind(chunk.child[key], reg);
         })
     }
 
@@ -122,7 +117,6 @@ export class StoreService {
         return function (
             constructor: new (...props: any[]) => Model
         ) {
-            console.log('useProduct', constructor.name, code)
             StoreService.reg.set(code, constructor);
             StoreService.reg.set(constructor, code);
         }

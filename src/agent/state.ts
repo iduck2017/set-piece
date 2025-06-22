@@ -39,9 +39,8 @@ export class StateAgent<
         if (!key) return;
         if (keys.length) {
             const child: Record<string, Model | Model[]> = this.agent.child.current;
-            let value: Model | Model[] | undefined = child[key];
-            if (value instanceof Array) value.forEach(value => value.agent.state.update(path))
-            if (value instanceof Model) value.agent.state.update(path);
+            if (child[key] instanceof Array) child[key].forEach(item => item.agent.state.update(path))
+            if (child[key] instanceof Model) child[key].agent.state.update(path);
         } 
         else this.reset();
     } 
@@ -64,17 +63,17 @@ export class StateAgent<
     public emit() {
         let path: string = 'decor';
         let state: any = { ...this.draft };
-        let model: Model | undefined = this.model;
-        while (model) {
-            const router = model.agent.state.router;
+        let parent: Model | undefined = this.model;
+        while (parent) {
+            const router = parent.agent.state.router;
             const consumers = router.consumers.get(path) ?? [];
             [...consumers].forEach(consumer => {
                 const that = consumer.model;
                 const updater = consumer.updater;
                 state = updater.call(that, this.model, state);
             });
-            path = model.agent.route.key + '/' + path;
-            model = model.agent.route.parent;
+            path = parent.agent.route.key + '/' + path;
+            parent = parent.agent.route.parent;
         }
         this._current = state;
     }
@@ -112,61 +111,59 @@ export class StateAgent<
         let constructor: any = this.model.constructor;
         while (constructor) {
             const reg = StateAgent.reg.get(constructor) ?? {};
-            for (const key of Object.keys(reg)) {
+            Object.keys(reg).forEach(key => {
                 const accessors = reg[key] ?? [];
-                for (const accessor of [ ...accessors ]) {
+                [...accessors].forEach(accessor => {
                     const producer = accessor(this.model);
-                    if (!producer) continue;
+                    if (!producer) return;
                     const model: any = this.model;
                     this.bind(producer, model[key]);
-                }
-            }
+                })
+            })
             constructor = constructor.__proto__;
         }
     }
 
     public unload() {
-        for(const channel of this.router.producers) {
-            const [ handler, producers ] = channel;
-            [ ...producers ].forEach(value => this.unbind(value, handler));
-        }
-        for (const channel of this.router.consumers) {
-            const [ path, consumers ] = channel;
+        this.router.producers.forEach((producers, handler) => {
+            [...producers].forEach(item => this.unbind(item, handler));
+        });
+        this.router.consumers.forEach((consumers, path) => {
             const keys = path.split('/');
-            const key = keys.pop();
+            keys.pop();
             const proxy: any = this.model.proxy;
             const producer = proxy.child[keys.join('/')].decor;
-            if (!producer) continue;
-            for (const consumer of [ ...consumers ]) {
-                const { model: that, updater } = consumer;
-                if (that.agent.route.root !== this.agent.route.root) continue;
+            if (!producer) return;
+            [ ...consumers ].forEach(item => {
+                const { model: that, updater } = item;
+                if (that.agent.route.root !== this.agent.route.root) return;
                 that.agent.state.unbind(producer, updater);
-            }
-        }
+            });
+        });
     }
 
 
     public debug(): Model[] {
         const dependency: Model[] = [];
-        this.router.producers.forEach((value) => dependency.push(...value.map(item => item.model)))
-        this.router.consumers.forEach((value) => dependency.push(...value.map(item => item.model)))
+        this.router.producers.forEach(item => dependency.push(...item.map(item => item.model)))
+        this.router.consumers.forEach(item => dependency.push(...item.map(item => item.model)))
         return dependency;
     }
 
-    private static reg: Map<Function, Record<string, Array<(model: Model) => DecorProducer | undefined>>> = new Map();
+    private static reg: Map<Function, Record<string, Array<(self: Model) => DecorProducer | undefined>>> = new Map();
 
     public static use<S extends Record<string, any>, M extends Model, I extends Model>(
-        accessor: (model: I) => DecorProducer<S, M> | undefined
+        accessor: (self: I) => DecorProducer<S, M> | undefined
     ) {
         return function(
-            target: I,
+            prototype: I,
             key: string,
             descriptor: TypedPropertyDescriptor<DecorUpdater<S, M>>
         ): TypedPropertyDescriptor<DecorUpdater<S, M>> {
-            const reg = StateAgent.reg.get(target.constructor) ?? {};
+            const reg = StateAgent.reg.get(prototype.constructor) ?? {};
             if (!reg[key]) reg[key] = [];
             reg[key].push(accessor);
-            StateAgent.reg.set(target.constructor, reg);
+            StateAgent.reg.set(prototype.constructor, reg);
             return descriptor;
         }
     }

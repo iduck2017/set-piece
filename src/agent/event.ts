@@ -31,17 +31,17 @@ export class EventAgent<
 
     public emit<E>(key: string, event: E) {
         let path = key;
-        let model: Model | undefined = this.model;
-        while (model) {
-            const router = model.agent.event.router;
+        let parent: Model | undefined = this.model;
+        while (parent) {
+            const router = parent.agent.event.router;
             const consumers = router.consumers.get(path) ?? [];
-            [...consumers].forEach(consumer => {
-                const that = consumer.model;
-                const handler = consumer.handler;
+            [...consumers].forEach(item => {
+                const that = item.model;
+                const handler = item.handler;
                 handler.call(that, this.model, event);
             })
-            path = model.agent.route.key + '/' + path;
-            model = model.agent.route.parent;
+            path = parent.agent.route.key + '/' + path;
+            parent = parent.agent.route.parent;
         }
     }
 
@@ -66,7 +66,7 @@ export class EventAgent<
         const { model: that, path } = producer;
         const consumers = that.agent.event.router.consumers.get(path) ?? [];
         const producers = this.router.producers.get(handler) ?? [];
-        let index = consumers.findIndex(item => item.handler === handler &&  item.model === this.model);
+        let index = consumers.findIndex(item => item.handler === handler && item.model === this.model);
         if (index !== -1) consumers.splice(index, 1);
         index = producers.indexOf(producer);
         if (index !== -1) producers.splice(index, 1);
@@ -109,29 +109,25 @@ export class EventAgent<
 
     public debug(): Model[] {
         const dependency: Model[] = [];
-        this.router.producers.forEach((value) => {
-            dependency.push(...value.map(item => item.model));
-        })
-        this.router.consumers.forEach((value) => {
-            dependency.push(...value.map(item => item.model));
-        })
+        this.router.producers.forEach(item => dependency.push(...item.map(item => item.model)))
+        this.router.consumers.forEach(item => dependency.push(...item.map(item => item.model)))
         return dependency;
     }
 
-    private static reg: Map<Function, Record<string, Array<(model: Model) => EventProducer | undefined>>> = new Map();
+    private static reg: Map<Function, Record<string, Array<(self: Model) => EventProducer | undefined>>> = new Map();
 
     public static use<E, M extends Model, I extends Model>(
-        accessor: (model: I) => EventProducer<E, M> | undefined
+        accessor: (self: I) => EventProducer<E, M> | undefined
     ) {
         return function(
-            target: I,
+            prototype: I,
             key: string,
             descriptor: TypedPropertyDescriptor<EventHandler<E, M>>
         ): TypedPropertyDescriptor<EventHandler<E, M>> {
-            const hooks = EventAgent.reg.get(target.constructor) ?? {};
+            const hooks = EventAgent.reg.get(prototype.constructor) ?? {};
             if (!hooks[key]) hooks[key] = [];
             hooks[key].push(accessor);
-            EventAgent.reg.set(target.constructor, hooks);
+            EventAgent.reg.set(prototype.constructor, hooks);
             return descriptor;
         };
     }

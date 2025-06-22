@@ -13,9 +13,3 @@ export { StoreService } from "./service/store";
 export { CheckService } from "./service/check";
 
 export { State, Refer, Child, Event } from "./types";
-export { 
-    OnChildChange,
-    OnStateChange,
-    OnReferChange,
-    OnRouteChange,
-} from './types';

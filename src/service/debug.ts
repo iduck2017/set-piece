@@ -3,9 +3,9 @@ import { Callback } from "../types";
 export class DebugService {
     private static readonly stack: string[] = []
 
-    public static log<T extends Object>(accessor?: (target: T) => string) {
+    public static log<T extends Object>(accessor?: (self: T) => string) {
         return function(
-            target: T,
+            prototype: T,
             key: string,
             descriptor: TypedPropertyDescriptor<Callback>
         ): TypedPropertyDescriptor<Callback> {

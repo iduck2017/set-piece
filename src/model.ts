@@ -47,8 +47,8 @@ export class Model<
     public get refer(): Readonly<Refer<R>> { return this.agent.refer.current; }
     public get child(): Readonly<Child<C>> { return this.agent.child.current; }
     public get route(): Readonly<{
-        parent?: P
-        root?: Model
+        parent: P | undefined
+        root: Model | undefined
     }> {
         return {
             parent: this.agent.route.parent,
@@ -67,7 +67,7 @@ export class Model<
     protected readonly draft: Readonly<{
         child: C;
         state: State<S>
-        refer: Partial<R>
+        refer: { [K in keyof R]: R[K] extends any[] ? R[K] : R[K] | undefined }
     }>
 
 

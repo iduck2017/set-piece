@@ -8,7 +8,7 @@ export class CheckService {
         error?: string | Error,
     ) {
         return function (
-            target: T,
+            prototype: T,
             key: string,
             descriptor: TypedPropertyDescriptor<Callback<R | undefined, P>>
         ): TypedPropertyDescriptor<Callback<R | undefined, P>> {
@@ -23,10 +23,10 @@ export class CheckService {
                 }
             }
             descriptor.value = instance[key];
-            const validators = CheckService.validators.get(target.constructor) || {}
+            const validators = CheckService.validators.get(prototype.constructor) || {}
             validators[key] = validators[key] || [];
             validators[key].push(validator);
-            CheckService.validators.set(target.constructor, validators);
+            CheckService.validators.set(prototype.constructor, validators);
             return descriptor;
         };
     }

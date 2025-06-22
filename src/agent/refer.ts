@@ -8,7 +8,7 @@ export class ReferAgent<
     R extends Model.Refer = Model.Refer,
 > extends Agent<M> {
 
-    public readonly draft: Partial<R>
+    public readonly draft: { [K in keyof R]: R[K] extends any[] ? R[K] : R[K] | undefined }
 
     public get current(): Readonly<Refer<R>> { return { ...this.draft }; }
 
@@ -18,9 +18,8 @@ export class ReferAgent<
         super(model);
         this.router = new Map();
         Object.keys(props).forEach(key => {
-            let value = props[key];
-            if (value instanceof Array) value.forEach(value => value.agent.route.bind(this.model, key));
-            if (value instanceof Model) value.agent.route.bind(this.model, key);
+            if (props[key] instanceof Array) props[key].forEach(item => item.agent.route.bind(this.model, key));
+            if (props[key] instanceof Model) props[key].agent.route.bind(this.model, key);
         });
         const origin: any = { ...props };
         this.draft = new Proxy(origin, {
@@ -48,30 +47,28 @@ export class ReferAgent<
     public unload() {
         const draft: Partial<Record<string, Model | Model[]>> = this.draft
         Object.keys(draft).forEach(key => {
-            const value = draft[key];
-            if (value instanceof Array) {
-                draft[key] = value.filter(value => {
-                    if (value.agent.route.root === this.agent.route.root) return true;
-                    value.agent.refer.unbind(this.model, key);
+            if (draft[key] instanceof Array) {
+                draft[key] = draft[key].filter(item => {
+                    if (item.agent.route.root === this.agent.route.root) return true;
+                    item.agent.refer.unbind(this.model, key);
                     return false;
                 })
             }
-            if (value instanceof Model) {
-                if (value.agent.route.root === this.agent.route.root) return;
-                value.agent.refer.unbind(this.model, key);
+            if (draft[key] instanceof Model) {
+                if (draft[key].agent.route.root === this.agent.route.root) return;
+                draft[key].agent.refer.unbind(this.model, key);
                 delete draft[key]
             }
         })
-        this.router.forEach((keys, that) => {
-            if (that.agent.route.root === this.agent.route.root) return;
+        this.router.forEach((keys, item) => {
+            if (item.agent.route.root === this.agent.route.root) return;
             [...keys].forEach(key => {
-                const origin: Record<string, Model | Model[]> = that.agent.refer.draft;
-                const value = origin[key];
-                if (value instanceof Array) {
-                    const index = value.indexOf(this.model);
-                    if (index !== -1) value.splice(index, 1);
+                const origin: Record<string, Model | Model[]> = item.agent.refer.draft;
+                if (origin[key] instanceof Array) {
+                    const index = origin[key].indexOf(this.model);
+                    if (index !== -1) origin[key].splice(index, 1);
                 }
-                if (value === this.model) delete origin[key];
+                if (origin[key] === this.model) delete origin[key];
             });
         });
         this.router.clear();
@@ -80,10 +77,10 @@ export class ReferAgent<
 
     public debug(): Model[] {
         const dependency: Model[] = [];
-        this.router.forEach((value, key) => dependency.push(key));
-        Object.values(this.draft).forEach(value => {
-            if (value instanceof Array) dependency.push(...value);
-            if (value instanceof Model) dependency.push(value);
+        this.router.forEach((item, key) => dependency.push(key));
+        Object.values(this.draft).forEach(item => {
+            if (item instanceof Array) dependency.push(...item);
+            if (item instanceof Model) dependency.push(item);
         });
         return dependency;
     }
@@ -118,8 +115,8 @@ export class ReferAgent<
         return true;
     }
 
-    private proxy(value: Model[], key: string): Model[] {
-        return new Proxy(value, {
+    private proxy(origin: Model[], key: string): Model[] {
+        return new Proxy(origin, {
             get: this.lget.bind(this, key),
             set: this.lset.bind(this, key),
             deleteProperty: this.ldel.bind(this, key),

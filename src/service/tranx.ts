@@ -14,10 +14,11 @@ export class TranxService {
         refer?: Model['refer'],
         child?: Model['child'],
         route?: Model['route'],
+        event?: []
     }>> = new Map();
 
 
-    public static use(): (target: Object, key: string, descriptor: TypedPropertyDescriptor<Callback>) => TypedPropertyDescriptor<Callback>;
+    public static use(): (prototype: Object, key: string, descriptor: TypedPropertyDescriptor<Callback>) => TypedPropertyDescriptor<Callback>;
     public static use(isType: true): (constructor: new (...props: any[]) => Model) => any;
     public static use(isType?: boolean) {
         if (isType) {
@@ -44,7 +45,7 @@ export class TranxService {
             }
         } 
         return function(
-            target: unknown,
+            prototype: unknown,
             key: string,
             descriptor: TypedPropertyDescriptor<Callback>
         ): TypedPropertyDescriptor<Callback> {
@@ -134,14 +135,14 @@ export class TranxService {
     private static emit() {
         const reg = new Map(TranxService.reg);
         TranxService.reg.clear();
-        for (const [model, info] of reg) {
+        reg.forEach((info, model) => {
             const { state, refer, child, route } = model;
             const event = model.agent.event.current;
             if (info.state) event.onStateChange({ prev: info.state, next: state })
             if (info.refer) event.onReferChange({ prev: info.refer, next: refer })
             if (info.child) event.onChildChange({ prev: info.child, next: child })
             if (info.route) event.onRouteChange({ prev: info.route, next: route })
-        }
+        })
     }
 
 }
