@@ -21,9 +21,8 @@ export class TranxService {
             return function (constructor: new (...props: any[]) => Model) {
                 return class Model extends constructor {
                     constructor(...args: any[]) {
-                        if (TranxService._isLock) {
-                            super(...args);
-                        } else {
+                        if (TranxService._isLock) super(...args);
+                        else {
                             console.group('%cTransaction::Constructor', 'color: gray')
                             TranxService._isLock = true;
                             super(...args);

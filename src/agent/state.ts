@@ -85,17 +85,15 @@ export class StateAgent<
         let path: string = 'decor';
         let state: any = { ...this.draft };
         let parent: Model | undefined = this.model;
+        const consumers: DecorConsumer[] = [];
         while (parent) {
             const router = parent.agent.state.router;
-            const consumers = router.consumers.get(path) ?? [];
-            [...consumers].forEach(consumer => {
-                const that = consumer.model;
-                const updater = consumer.updater;
-                state = updater.call(that, this.model, state);
-            });
+            consumers.push(...router.consumers.get(path) ?? []);
             path = parent.agent.route.key + '/' + path;
             parent = parent.agent.route.parent;
         }
+        consumers.sort((a, b) => a.model.uuid.localeCompare(b.model.uuid));
+        consumers.forEach(item => state = item.updater.call(item.model, this.model, state));
         this._current = state;
     }
 

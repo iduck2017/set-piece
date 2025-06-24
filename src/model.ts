@@ -4,7 +4,6 @@ import { RouteAgent } from "./agent/route";
 import { ChildAgent } from "./agent/child";
 import { Proxy } from "./utils/proxy";
 import { ReferAgent } from "./agent/refer";
-import { v4 as uuidv4 } from 'uuid';
 import { TranxService } from "./service/tranx";
 import { State, Refer, Child } from "./types";
 
@@ -40,6 +39,18 @@ export class Model<
     C extends Model.Child = {},
     R extends Model.Refer = {},
 > {
+    private static ticket: number = 36 ** 7;
+    private static get uuid() {
+        let time = Date.now();
+        const ticket = Model.ticket += 1;
+        if (Model.ticket >= 36 ** 8) {
+            Model.ticket = 36 ** 7;
+            while (Date.now() === time) {}
+            time = Date.now();
+        };
+        return `${time.toString(36)}-${ticket.toString(36)}`;
+    }
+
     public readonly uuid: string
     public get name() { return this.constructor.name; }
 
@@ -47,14 +58,15 @@ export class Model<
     public get refer(): Readonly<Refer<R>> { return this.agent.refer.current; }
     public get child(): Readonly<Child<C>> { return this.agent.child.current; }
     public get route(): Readonly<Partial<{
-        parent: P, 
-        root: Model,
-    }>> {
-        return {
+        parent: P,
+        root: Model
+    }>> { 
+        return { 
             parent: this.agent.route.parent,
             root: this.agent.route.root,
-        };
+        }
     }
+    
     public get status() {
         return {
             isLoad: this.agent.route.isLoad,
@@ -94,7 +106,7 @@ export class Model<
         child: C;
         refer: R;
     }) {
-        this.uuid = props.uuid ?? uuidv4();
+        this.uuid = props.uuid ?? Model.uuid;
         this.proxy = new Proxy(this);
         this.agent = {
             event: new EventAgent<this, E>(this),

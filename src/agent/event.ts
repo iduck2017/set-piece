@@ -1,8 +1,16 @@
 import { EventConsumer, EventHandler, EventProducer } from "../utils/event";
 import { Model } from "../model";
 import { Agent } from "./agent";
-import { Event } from "../types";
+import { Callback, Event } from "../types";
+import { DebugService } from "../service/debug";
 
+type Decorator<M, R> = (
+    prototype: M, 
+    key: string, 
+    descriptor: TypedPropertyDescriptor<Callback<R>>
+) => TypedPropertyDescriptor<Callback<R>>;
+
+@DebugService.is(self => `${self.model.name}::event`)
 export class EventAgent<
     M extends Model = Model,
     E extends Model.Event = Model.Event,
@@ -22,6 +30,56 @@ export class EventAgent<
             if (!hooks[key]) hooks[key] = [];
             hooks[key].push(accessor);
             EventAgent.registry.set(prototype.constructor, hooks);
+            return descriptor;
+        };
+    }
+
+    public static prev<E, M extends Model>(
+        accessor: (self: M) => (event: E) => void | undefined
+    ) {
+        return function(
+            prototype: M,
+            key: string,
+            descriptor: TypedPropertyDescriptor<Callback<unknown, [E]>>
+        ): TypedPropertyDescriptor<Callback<unknown, [E]>> {
+            const handler = descriptor.value;
+            if (!handler) return descriptor;
+            const instance = {
+                [key](this: M, event: E) {
+                    accessor(this)?.(event);
+                    return handler.call(this, event);
+                }
+            }
+            descriptor.value = instance[key];
+            return descriptor;
+        };
+    }
+
+    public static next<E, M extends Model>(accessor: (self: M) => (event: E) => void | undefined): Decorator<M, E>;
+    public static next<E, M extends Model>(accessor: (self: M) => (event: E) => void | undefined, mode: 'async'): Decorator<M, Promise<E>>;
+    public static next<E, M extends Model>(
+        accessor: (self: M) => (event: E) => void | undefined,
+        mode?: 'async'
+    ) {
+        return function(
+            prototype: M,
+            key: string,
+            descriptor: TypedPropertyDescriptor<Callback<E | Promise<E>>>
+        ): TypedPropertyDescriptor<Callback<E | Promise<E>>> {
+            const handler = descriptor.value;
+            if (!handler) return descriptor;
+            const instance = {
+                [key](this: M, ...args: any[]) {
+                    const result = handler.call(this, ...args);
+                    if (result instanceof Promise) return result.then((result) => {
+                        accessor(this)?.(result);
+                        return result;
+                    });
+                    else accessor(this)?.(result);
+                    return result;
+                }
+            }
+            descriptor.value = instance[key];
             return descriptor;
         };
     }
@@ -47,20 +105,19 @@ export class EventAgent<
         })
     }
 
+    @DebugService.log('gray')
     public emit<E>(key: string, event: E) {
         let path = key;
         let parent: Model | undefined = this.model;
+        const consumers: EventConsumer[] = [];
         while (parent) {
             const router = parent.agent.event.router;
-            const consumers = router.consumers.get(path) ?? [];
-            [...consumers].forEach(item => {
-                const that = item.model;
-                const handler = item.handler;
-                handler.call(that, this.model, event);
-            })
+            consumers.push(...router.consumers.get(path) ?? []);
             path = parent.agent.route.key + '/' + path;
             parent = parent.agent.route.parent;
         }
+        consumers.sort((a, b) => a.model.uuid.localeCompare(b.model.uuid));
+        consumers.forEach(item => item.handler.call(item.model, this.model, event));
     }
 
     public bind<E, M extends Model>(
