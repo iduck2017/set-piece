@@ -1,7 +1,7 @@
 import { Model } from "../model";
 import { Agent } from "./agent";
 import { TranxService } from "../service/tranx";
-import { DebugService } from "../service/debug";
+import { DebugService, LogLevel } from "../service/debug";
 
 @DebugService.is(self => `${self.model.name}::route`)
 export class RouteAgent<
@@ -54,7 +54,7 @@ export class RouteAgent<
     @TranxService.use()
     public reload() {}
 
-    @DebugService.log('gray')
+    @DebugService.log(LogLevel.DEBUG)
     public load() {
         this.agent.child.load();
         this.agent.event.load();
@@ -62,7 +62,7 @@ export class RouteAgent<
         this._isLoad = true;
     }
 
-    @DebugService.log('gray')
+    @DebugService.log(LogLevel.DEBUG)
     public unload() {
         this._isLoad = false;
         this.agent.child.unload();

@@ -1,6 +1,7 @@
 import { Callback } from "../types";
 import { Agent } from "../agent/agent";
 import { Model } from "../model";
+import { DebugService, LogLevel } from "./debug";
 
 export class TranxService {
     private constructor() {}
@@ -12,7 +13,7 @@ export class TranxService {
     private static readonly refer: Map<Model, Model['refer']> = new Map();
     private static readonly child: Map<Model, Model['child']> = new Map();
     private static readonly route: Map<Model, Model['route']> = new Map();
-    private static readonly event: Map<Model, unknown> = new Map();
+    private static event: Array<[Model, ...any[]]> = [];
 
     public static use(): (prototype: Object, key: string, descriptor: TypedPropertyDescriptor<Callback>) => TypedPropertyDescriptor<Callback>;
     public static use(isType: true): (constructor: new (...props: any[]) => Model) => any;
@@ -23,12 +24,13 @@ export class TranxService {
                     constructor(...args: any[]) {
                         if (TranxService._isLock) super(...args);
                         else {
-                            console.group('%cTransaction::Constructor', 'color: gray')
+                            const isDebug = DebugService.level <= LogLevel.DEBUG;
+                            if (isDebug) console.group('%cTransaction::Constructor', 'color: gray')
                             TranxService._isLock = true;
                             super(...args);
                             TranxService.reload();
                             TranxService._isLock = false;
-                            console.groupEnd()
+                            if (isDebug) console.groupEnd()
                             TranxService.emit();
                         }
                     }
@@ -50,20 +52,23 @@ export class TranxService {
                         const isReferChange = model.agent.refer === this;
                         const isChildChange = model.agent.child === this;
                         const isRouteChange = model.agent.route === this;
+                        const isEventEmit = model.agent.event === this && instance[key] === model.agent.event.yield;
                         if (isStateChange && !TranxService.state.has(model)) TranxService.state.set(model, model.state);
                         if (isReferChange && !TranxService.refer.has(model)) TranxService.refer.set(model, model.refer);
                         if (isChildChange && !TranxService.child.has(model)) TranxService.child.set(model, model.child);
                         if (isRouteChange && !TranxService.route.has(model)) TranxService.route.set(model, model.route);
+                        if (isEventEmit) TranxService.event.push([this.model, ...args]);
                     }
                     if (TranxService._isLock) {
                         return handler.call(this, ...args);
                     } else {
-                        console.group(`%cTransaction::${key}`, 'color: gray')
+                        const isDebug = DebugService.level <= LogLevel.DEBUG;
+                        if (isDebug) console.group(`%cTransaction::${key}`, 'color: gray')
                         TranxService._isLock = true;
                         const result = handler.call(this, ...args);
                         TranxService.reload();
                         TranxService._isLock = false;
-                        console.groupEnd()
+                        if (isDebug) console.groupEnd()
                         TranxService.emit();
                         return result;
                     }
@@ -95,16 +100,17 @@ export class TranxService {
         const refer = new Map(TranxService.refer);
         const child = new Map(TranxService.child);
         const route = new Map(TranxService.route);
-        const event = new Map(TranxService.event);
+        const event = [...TranxService.event];
         TranxService.state.clear();
         TranxService.refer.clear();
         TranxService.child.clear();
         TranxService.route.clear();
-        TranxService.event.clear();
+        TranxService.event = []
         state.forEach((info, model) => model.agent.event.current.onStateChange({ prev: info, next: model.state }));
         refer.forEach((info, model) => model.agent.event.current.onReferChange({ prev: info, next: model.refer }));
         child.forEach((info, model) => model.agent.event.current.onChildChange({ prev: info, next: model.child }));
         route.forEach((info, model) => model.agent.event.current.onRouteChange({ prev: info, next: model.route }));
+        event.forEach(([model, ...args]) => model.agent.event.emit(args[0], args[1]));
     }
 
 }

@@ -1,9 +1,20 @@
-import { Callback } from "../types";
+import { Callback, Decorator } from "../types";
+
+export enum LogLevel {
+    DEBUG,
+    INFO,
+    WARN,
+    ERROR,
+    FATAL,
+}
+
 
 export class DebugService {
     private static registry: Map<any, any> = new Map();
 
-    public static log<T extends Object>(color?: string) {
+    public static level: LogLevel = LogLevel.INFO;
+
+    public static log<T extends Object>(level = LogLevel.INFO) {
         return function(
             prototype: T,
             key: string,
@@ -14,8 +25,15 @@ export class DebugService {
             const instance = {
                 [key](this: T, ...args: any[]) {
                     const accessor = DebugService.registry.get(this.constructor);
-                    const name = accessor?.(this) ?? this.constructor.name
-                    console.group(`%c${name}::${key}`, `color: ${color}`)
+                    const name = accessor?.(this) ?? this.constructor.name;
+                    if (level < DebugService.level) return handler.call(this, ...args);
+                    console.group(`%c${name}::${key}`, `color: ${{
+                        [LogLevel.DEBUG]: 'gray',
+                        [LogLevel.INFO]: '',
+                        [LogLevel.WARN]: 'yellow',
+                        [LogLevel.ERROR]: 'orange',
+                        [LogLevel.FATAL]: 'red',
+                    }[level]}`)
                     const result = handler.call(this, ...args);
                     if (result instanceof Promise) return result.finally(() => console.groupEnd());
                     else console.groupEnd();
@@ -33,7 +51,13 @@ export class DebugService {
         }
     }
 
-    public static mute<T>() {
+
+    public static mute<T>(): Decorator<T, any>
+    public static mute<T>(color: string): Decorator<T, any>
+    public static mute<T>(color?: string) {
+        if (color) {
+
+        }
         return function(
             prototype: T,
             key: string,

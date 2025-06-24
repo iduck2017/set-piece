@@ -1,14 +1,10 @@
 import { EventConsumer, EventHandler, EventProducer } from "../utils/event";
 import { Model } from "../model";
 import { Agent } from "./agent";
-import { Callback, Event } from "../types";
-import { DebugService } from "../service/debug";
+import { Callback, Decorator, Event } from "../types";
+import { DebugService, LogLevel } from "../service/debug";
+import { TranxService } from "../service/tranx";
 
-type Decorator<M, R> = (
-    prototype: M, 
-    key: string, 
-    descriptor: TypedPropertyDescriptor<Callback<R>>
-) => TypedPropertyDescriptor<Callback<R>>;
 
 @DebugService.is(self => `${self.model.name}::event`)
 export class EventAgent<
@@ -101,11 +97,14 @@ export class EventAgent<
             producers: new Map()
         }
         this.current = new Proxy({} as any, {
-            get: (origin, key: string) => this.emit.bind(this, key)
+            get: (origin, key: string) => this.yield.bind(this, key)
         })
     }
 
-    @DebugService.log('gray')
+    @TranxService.use()
+    public yield(key: string, event: E) {}
+
+    @DebugService.log(LogLevel.DEBUG)
     public emit<E>(key: string, event: E) {
         let path = key;
         let parent: Model | undefined = this.model;

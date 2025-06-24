@@ -8,7 +8,7 @@ export { EventAgent } from "./agent/event";
 export { RouteAgent } from "./agent/route";
 
 export { TranxService } from './service/tranx';
-export { DebugService } from "./service/debug";
+export { DebugService, LogLevel } from "./service/debug";
 export { StoreService } from "./service/store";
 export { CheckService } from "./service/check";
 

@@ -3,7 +3,7 @@ import { Agent } from "./agent";
 import { TranxService } from "../service/tranx";
 import { DecorConsumer, DecorProducer, DecorUpdater } from "../utils/decor";
 import { State } from "../types";
-import { DebugService } from "../service/debug";
+import { DebugService, LogLevel } from "../service/debug";
 
 @DebugService.is(self => `${self.model.name}::state`)
 export class StateAgent<
@@ -80,7 +80,7 @@ export class StateAgent<
         return true;
     }
 
-    @DebugService.log('gray')
+    @DebugService.log(LogLevel.DEBUG)
     public emit() {
         let path: string = 'decor';
         let state: any = { ...this.draft };
