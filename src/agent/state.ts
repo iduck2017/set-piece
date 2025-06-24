@@ -5,10 +5,29 @@ import { DecorConsumer, DecorProducer, DecorUpdater } from "../utils/decor";
 import { State } from "../types";
 import { DebugService } from "../service/debug";
 
+@DebugService.is(self => `${self.model.name}::state`)
 export class StateAgent<
     M extends Model = Model,
     S extends Model.State = Model.State,
 > extends Agent<M> {
+
+    private static registry: Map<Function, Record<string, Array<(self: Model) => DecorProducer | undefined>>> = new Map();
+
+    public static use<S extends Record<string, any>, M extends Model, I extends Model>(
+        accessor: (self: I) => DecorProducer<S, M> | undefined
+    ) {
+        return function(
+            prototype: I,
+            key: string,
+            descriptor: TypedPropertyDescriptor<DecorUpdater<S, M>>
+        ): TypedPropertyDescriptor<DecorUpdater<S, M>> {
+            const hooks = StateAgent.registry.get(prototype.constructor) ?? {};
+            if (!hooks[key]) hooks[key] = [];
+            hooks[key].push(accessor);
+            StateAgent.registry.set(prototype.constructor, hooks);
+            return descriptor;
+        }
+    }
 
     public readonly draft: State<S>
     
@@ -61,7 +80,7 @@ export class StateAgent<
         return true;
     }
 
-    @DebugService.log(self => `${self.model.name}::state`, 'gray')
+    @DebugService.log('gray')
     public emit() {
         let path: string = 'decor';
         let state: any = { ...this.draft };
@@ -112,9 +131,9 @@ export class StateAgent<
     public load() {
         let constructor: any = this.model.constructor;
         while (constructor) {
-            const registry = StateAgent.registry.get(constructor) ?? {};
-            Object.keys(registry).forEach(key => {
-                const accessors = registry[key] ?? [];
+            const hooks = StateAgent.registry.get(constructor) ?? {};
+            Object.keys(hooks).forEach(key => {
+                const accessors = hooks[key] ?? [];
                 [...accessors].forEach(accessor => {
                     const producer = accessor(this.model);
                     if (!producer) return;
@@ -154,23 +173,6 @@ export class StateAgent<
         return dependency;
     }
 
-    private static registry: Map<Function, Record<string, Array<(self: Model) => DecorProducer | undefined>>> = new Map();
-
-    public static use<S extends Record<string, any>, M extends Model, I extends Model>(
-        accessor: (self: I) => DecorProducer<S, M> | undefined
-    ) {
-        return function(
-            prototype: I,
-            key: string,
-            descriptor: TypedPropertyDescriptor<DecorUpdater<S, M>>
-        ): TypedPropertyDescriptor<DecorUpdater<S, M>> {
-            const registry = StateAgent.registry.get(prototype.constructor) ?? {};
-            if (!registry[key]) registry[key] = [];
-            registry[key].push(accessor);
-            StateAgent.registry.set(prototype.constructor, registry);
-            return descriptor;
-        }
-    }
 
 }
 

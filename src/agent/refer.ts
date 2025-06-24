@@ -4,6 +4,7 @@ import { Agent } from "./agent";
 import { Refer } from "../types";
 import { DebugService } from "../service/debug";
 
+@DebugService.is(self => `${self.model.name}::refer`)
 export class ReferAgent<
     M extends Model = Model,
     R extends Model.Refer = Model.Refer,
@@ -45,7 +46,7 @@ export class ReferAgent<
         this.router.set(value, router);
     }
 
-    @DebugService.log(self => `${self.model.name}::refer`, 'gray')
+    @DebugService.log('gray')
     public unload() {
         const draft: Partial<Record<string, Model | Model[]>> = this.draft
         Object.keys(draft).forEach(key => {

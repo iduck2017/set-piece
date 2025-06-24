@@ -3,10 +3,18 @@ import { Agent } from "./agent";
 import { TranxService } from "../service/tranx";
 import { DebugService } from "../service/debug";
 
+@DebugService.is(self => `${self.model.name}::route`)
 export class RouteAgent<
     M extends Model = Model,
     P extends Model = Model,
 > extends Agent<M> {
+    
+    public static boot<T extends Model>(root: T): T {
+        console.log('boot', root.name)
+        root.agent.route._isRoot = true;
+        root.agent.route.bind(undefined, 'root')
+        return root;
+    }
 
     private _key: string | undefined;
     public get key() { return this._key; }
@@ -46,7 +54,7 @@ export class RouteAgent<
     @TranxService.use()
     public reload() {}
 
-    @DebugService.log(self => `${self.model.name}::route`, 'gray')
+    @DebugService.log('gray')
     public load() {
         this.agent.child.load();
         this.agent.event.load();
@@ -54,19 +62,12 @@ export class RouteAgent<
         this._isLoad = true;
     }
 
-    @DebugService.log(self => `${self.model.name}::route`, 'gray')
+    @DebugService.log('gray')
     public unload() {
         this._isLoad = false;
         this.agent.child.unload();
         this.agent.event.unload();
         this.agent.state.unload();
         this.agent.refer.reset();
-    }
-
-    public static boot<T extends Model>(root: T): T {
-        console.log('boot', root.name)
-        root.agent.route._isRoot = true;
-        root.agent.route.bind(undefined, 'root')
-        return root;
     }
 }

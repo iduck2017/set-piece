@@ -8,6 +8,24 @@ export class EventAgent<
     E extends Model.Event = Model.Event,
 > extends Agent<M> {
     
+    private static registry: Map<Function, Record<string, Array<(self: Model) => EventProducer | undefined>>> = new Map();
+
+    public static use<E, M extends Model, I extends Model>(
+        accessor: (self: I) => EventProducer<E, M> | undefined
+    ) {
+        return function(
+            prototype: I,
+            key: string,
+            descriptor: TypedPropertyDescriptor<EventHandler<E, M>>
+        ): TypedPropertyDescriptor<EventHandler<E, M>> {
+            const hooks = EventAgent.registry.get(prototype.constructor) ?? {};
+            if (!hooks[key]) hooks[key] = [];
+            hooks[key].push(accessor);
+            EventAgent.registry.set(prototype.constructor, hooks);
+            return descriptor;
+        };
+    }
+    
     public readonly current: Readonly<
         { [K in keyof E]: (event: E[K]) => void } &
         { [K in keyof Event<M>]: (event: Event<M>[K]) => void }
@@ -114,22 +132,5 @@ export class EventAgent<
         return dependency;
     }
 
-    private static registry: Map<Function, Record<string, Array<(self: Model) => EventProducer | undefined>>> = new Map();
-
-    public static use<E, M extends Model, I extends Model>(
-        accessor: (self: I) => EventProducer<E, M> | undefined
-    ) {
-        return function(
-            prototype: I,
-            key: string,
-            descriptor: TypedPropertyDescriptor<EventHandler<E, M>>
-        ): TypedPropertyDescriptor<EventHandler<E, M>> {
-            const hooks = EventAgent.registry.get(prototype.constructor) ?? {};
-            if (!hooks[key]) hooks[key] = [];
-            hooks[key].push(accessor);
-            EventAgent.registry.set(prototype.constructor, hooks);
-            return descriptor;
-        };
-    }
 }
 
