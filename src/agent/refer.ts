@@ -45,7 +45,7 @@ export class ReferAgent<
         this.router.set(value, router);
     }
 
-    @DebugService.log(self => self.model.name + '::refer')
+    @DebugService.log(self => `${self.model.name}::refer`, 'gray')
     public unload() {
         const draft: Partial<Record<string, Model | Model[]>> = this.draft
         Object.keys(draft).forEach(key => {
@@ -92,6 +92,9 @@ export class ReferAgent<
         if (value instanceof Array) return this.proxy(value, key);
         return value;
     }
+
+    @TranxService.use()
+    public reset() {}
 
     @TranxService.use()
     private set(

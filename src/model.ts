@@ -70,7 +70,6 @@ export class Model<
         refer: { [K in keyof R]: R[K] extends any[] ? R[K] : R[K] | undefined }
     }>
 
-
     /** @internal */
     public readonly agent: Agent<this, P, E, S, C, R>
     public readonly proxy: Proxy<this, E, S, C>
@@ -110,19 +109,17 @@ export class Model<
             child: this.agent.child.draft,
             refer: this.agent.refer.draft,
         }
+        this.agent.refer.reset();
     }
 
-    
+    public reload() { this.agent.route.reload(); }
+
     public copy(): this {
         const type: any = this.constructor;
         return new type({
             ...this.props,
             uuid: undefined
         });
-    }
-
-    public reload() {
-        this.agent.route.reload();
     }
 
     public debug() {

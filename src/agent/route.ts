@@ -46,7 +46,7 @@ export class RouteAgent<
     @TranxService.use()
     public reload() {}
 
-    @DebugService.log(self => self.model.name + '::route')
+    @DebugService.log(self => `${self.model.name}::route`, 'gray')
     public load() {
         this.agent.child.load();
         this.agent.event.load();
@@ -54,13 +54,13 @@ export class RouteAgent<
         this._isLoad = true;
     }
 
-    @DebugService.log(self => self.model.name + '::route')
+    @DebugService.log(self => `${self.model.name}::route`, 'gray')
     public unload() {
         this._isLoad = false;
         this.agent.child.unload();
-        this.agent.refer.unload();
         this.agent.event.unload();
         this.agent.state.unload();
+        this.agent.refer.reset();
     }
 
     public static boot<T extends Model>(root: T): T {

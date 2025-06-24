@@ -23,12 +23,10 @@ export class TranxService {
                     constructor(...args: any[]) {
                         if (TranxService._isLock) {
                             super(...args);
-                            if (!TranxService.refer.has(this)) TranxService.refer.set(this, this.refer)
                         } else {
-                            console.group('Transaction::Constructor')
+                            console.group('%cTransaction::Constructor', 'color: gray')
                             TranxService._isLock = true;
                             super(...args);
-                            if (!TranxService.refer.has(this)) TranxService.refer.set(this, this.refer)
                             TranxService.reload();
                             TranxService._isLock = false;
                             console.groupEnd()
@@ -61,7 +59,7 @@ export class TranxService {
                     if (TranxService._isLock) {
                         return handler.call(this, ...args);
                     } else {
-                        console.group('Transaction::' + key)
+                        console.group(`%cTransaction::${key}`, 'color: gray')
                         TranxService._isLock = true;
                         const result = handler.call(this, ...args);
                         TranxService.reload();
@@ -79,24 +77,17 @@ export class TranxService {
 
 
     private static reload() {
-        const unloader: Model[] = [];
         TranxService.route.forEach((info, item) => {
             if (!info.parent && !item.agent.route.isRoot) return;
             item.agent.route.unload();
-            unloader.push(item);
         })
-        TranxService.refer.forEach((info, item) => {
-            if (unloader.includes(item)) return;
-            item.agent.refer.unload();
-        });
+        TranxService.refer.forEach((info, item) => item.agent.refer.unload());
         TranxService.route.forEach((info, item) => {
             const parent = item.agent.route.parent;
             if (!parent?.agent.route.isLoad && !item.agent.route.isRoot) return;
             item.agent.route.load();
         })
-        TranxService.state.forEach((info, item) => {
-            item.agent.state.emit()
-        })
+        TranxService.state.forEach((info, item) => item.agent.state.emit());
     }
 
 

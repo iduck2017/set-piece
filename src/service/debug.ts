@@ -3,7 +3,10 @@ import { Callback } from "../types";
 export class DebugService {
     private static readonly stack: string[] = []
 
-    public static log<T extends Object>(accessor?: (self: T) => string) {
+    public static log<T extends Object>(
+        accessor?: (self: T) => string,
+        color?: string
+    ) {
         return function(
             prototype: T,
             key: string,
@@ -14,7 +17,7 @@ export class DebugService {
             const instance = {
                 [key](this: T, ...args: any[]) {
                     const name = accessor?.(this) ?? this.constructor.name
-                    console.group(name + '::' + key)
+                    console.group(`%c${name}::${key}`, `color: ${color}`)
                     DebugService.stack.push(name);
                     const result = handler.call(this, ...args);
                     if (result instanceof Promise) {

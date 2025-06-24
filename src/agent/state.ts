@@ -61,7 +61,7 @@ export class StateAgent<
         return true;
     }
 
-    @DebugService.log(self => self.model.name + '::state')
+    @DebugService.log(self => `${self.model.name}::state`, 'gray')
     public emit() {
         let path: string = 'decor';
         let state: any = { ...this.draft };
