@@ -17,9 +17,16 @@ export class DebugService {
                     console.group(name + '::' + key)
                     DebugService.stack.push(name);
                     const result = handler.call(this, ...args);
-                    DebugService.stack.pop();
-                    console.groupEnd()
-                    return result;
+                    if (result instanceof Promise) {
+                        return result.finally(() => {
+                            DebugService.stack.pop();
+                            console.groupEnd();
+                        });
+                    } else {
+                        DebugService.stack.pop();
+                        console.groupEnd();
+                        return result;
+                    }
                 }
             }
             descriptor.value = instance[key];

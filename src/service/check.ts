@@ -17,7 +17,7 @@ export class CheckService {
                 [key](this: T, ...args: P) {
                     const result = validator(this, ...args);
                     if (result && handler) return handler.apply(this, args);
-                    if (error instanceof Error) throw error;
+                    if (error instanceof Error) console.error(error);
                     if (error) console.warn(error);
                     return
                 }

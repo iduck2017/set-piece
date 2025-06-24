@@ -1,7 +1,6 @@
 import { DeepReadonly, Primitive } from "utility-types"
 import { Model } from "./model"
 
-
 export type Callback<R = any, P extends any[] = any[]> = (...args: P) => R
 export type Refer<R extends Model.Refer = {}> = { [K in keyof R]: R[K] extends any[] ? Readonly<R[K]> : R[K] | undefined }
 export type Child<C extends Model.Child = {}> = { [K in keyof C]: C[K] extends any[] ? Readonly<C[K]> : C[K] }

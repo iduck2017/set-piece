@@ -2,6 +2,7 @@ import { TranxService } from "../service/tranx";
 import { Model } from "../model";
 import { Agent } from "./agent";
 import { Refer } from "../types";
+import { DebugService } from "../service/debug";
 
 export class ReferAgent<
     M extends Model = Model,
@@ -44,6 +45,7 @@ export class ReferAgent<
         this.router.set(value, router);
     }
 
+    @DebugService.log(self => self.model.name + '::refer')
     public unload() {
         const draft: Partial<Record<string, Model | Model[]>> = this.draft
         Object.keys(draft).forEach(key => {

@@ -46,6 +46,7 @@ export class RouteAgent<
     @TranxService.use()
     public reload() {}
 
+    @DebugService.log(self => self.model.name + '::route')
     public load() {
         this.agent.child.load();
         this.agent.event.load();
@@ -53,6 +54,7 @@ export class RouteAgent<
         this._isLoad = true;
     }
 
+    @DebugService.log(self => self.model.name + '::route')
     public unload() {
         this._isLoad = false;
         this.agent.child.unload();
@@ -61,7 +63,6 @@ export class RouteAgent<
         this.agent.state.unload();
     }
 
-    @DebugService.log()
     public static boot<T extends Model>(root: T): T {
         console.log('boot', root.name)
         root.agent.route._isRoot = true;

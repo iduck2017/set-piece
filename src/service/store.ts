@@ -36,12 +36,10 @@ export class StoreService {
         Object.keys(props.child).forEach(key => {
             if (props.child[key] instanceof Array) {
                 result.child[key] = [];
-                props.child[key].forEach(item => {
+                for (const item of props.child[key]) {
                     const chunk = StoreService.save(item);
-                    if (chunk && result.child[key] instanceof Array) {
-                        result.child[key].push(chunk);
-                    }
-                })
+                    if (chunk) result.child[key].push(chunk);
+                }
             }
             if (props.child[key] instanceof Model) {
                 const chunk = StoreService.save(props.child[key]);
@@ -53,26 +51,26 @@ export class StoreService {
 
     @TranxService.use()
     public static load(chunk: Chunk): Model | undefined {
-        const registry: Record<string, Model> = {};
-        const model = StoreService.gen(chunk, registry);
-        StoreService.bind(chunk, registry);
+        const refer: Record<string, Model> = {};
+        const model = StoreService.create(chunk, refer);
+        StoreService.bind(chunk, refer);
         return model;
     }
 
-    
-    private static gen(chunk: Chunk, registry: Record<string, Model>): Model | undefined {
+    private static create(chunk: Chunk, refer: Record<string, Model>): Model | undefined {
         const type = StoreService.registry.get(chunk.code);
         if (!type) return undefined;
         const child: Record<string, Model | Model[]> = {};
         Object.keys(chunk.child).forEach(key => {
             if (chunk.child[key] instanceof Array) {
                 child[key] = [];
-                chunk.child[key].forEach(item => {
-                    const model = StoreService.gen(item, registry);
-                    if (model && child[key] instanceof Array) child[key].push(model);
-                })
-            } else if (chunk.child[key]) {
-                const model = StoreService.gen(chunk.child[key], registry);
+                for (const item of chunk.child[key]) {
+                    const model = StoreService.create(item, refer);
+                    if (model) child[key].push(model);
+                }
+            }
+            else if (chunk.child[key]) {
+                const model = StoreService.create(chunk.child[key], refer);
                 if (model) child[key] = model;
             }
         })
@@ -81,35 +79,34 @@ export class StoreService {
             state: chunk.state,
             child
         })
-        registry[result.uuid] = result;
+        refer[result.uuid] = result;
         return result;
     }
     
-    private static bind(chunk: Chunk, registry: Record<string, Model>) {
+    private static bind(chunk: Chunk, refer: Record<string, Model>) {
         if (!chunk.uuid) return;
 
-        const model = registry[chunk.uuid];
+        const model = refer[chunk.uuid];
         if (!model) return;
         Object.keys(chunk.child).forEach(key => {
-            const refer: Record<string, Model[] | Model> = model.agent.refer.draft;
+            const draft: Record<string, Model[] | Model> = model.agent.refer.draft;
             if (chunk.refer[key] instanceof Array) {
-                refer[key] = [];
-                chunk.refer[key].forEach(item => {
-                    const model = registry[item];
-                    if (model && refer[key] instanceof Array) refer[key].push(model);
-                })
-            } else if (chunk.refer[key]) {
-                const model = registry[chunk.refer[key]];
-                if (model) refer[key] = model;
+                draft[key] = [];
+                for (const item of chunk.refer[key]) {
+                    const model = refer[item];
+                    if (model) draft[key].push(model);
+                }
+            } 
+            else if (chunk.refer[key]) {
+                const model = refer[chunk.refer[key]];
+                if (model) draft[key] = model;
             }
         });
-        Object.keys(chunk.state).forEach(key => {
-            if (chunk.child[key] instanceof Array) {
-                chunk.child[key].forEach(item => StoreService.bind(item, registry))
-            } else if (chunk.child[key]) StoreService.bind(chunk.child[key], registry);
+        Object.keys(chunk.child).forEach(key => {
+            if (chunk.child[key] instanceof Array) chunk.child[key].forEach(item => StoreService.bind(item, refer))
+            else if (chunk.child[key]) StoreService.bind(chunk.child[key], refer);
         })
     }
-
 
     private constructor() {}
 

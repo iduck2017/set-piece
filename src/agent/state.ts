@@ -46,7 +46,6 @@ export class StateAgent<
         else this.reset();
     } 
 
-    @DebugService.log()
     @TranxService.use()
     private reset() {}
 
@@ -62,7 +61,7 @@ export class StateAgent<
         return true;
     }
 
-    @TranxService.use()
+    @DebugService.log(self => self.model.name + '::state')
     public emit() {
         let path: string = 'decor';
         let state: any = { ...this.draft };
@@ -125,7 +124,7 @@ export class StateAgent<
             })
             constructor = constructor.__proto__;
         }
-        this.emit();
+        this.reset();
     }
 
     public unload() {
@@ -144,7 +143,7 @@ export class StateAgent<
                 that.agent.state.unbind(producer, updater);
             });
         });
-        this.emit();
+        this.reset();
     }
 
 
