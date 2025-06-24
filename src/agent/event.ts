@@ -75,7 +75,7 @@ export class EventAgent<
     public load() {
         let constructor: any = this.model.constructor;
         while (constructor) {
-            const hooks = EventAgent.reg.get(constructor) ?? {};
+            const hooks = EventAgent.registry.get(constructor) ?? {};
             Object.keys(hooks).forEach(key => {
                 const accessors = hooks[key] ?? [];
                 accessors.forEach(accessor => {
@@ -114,7 +114,7 @@ export class EventAgent<
         return dependency;
     }
 
-    private static reg: Map<Function, Record<string, Array<(self: Model) => EventProducer | undefined>>> = new Map();
+    private static registry: Map<Function, Record<string, Array<(self: Model) => EventProducer | undefined>>> = new Map();
 
     public static use<E, M extends Model, I extends Model>(
         accessor: (self: I) => EventProducer<E, M> | undefined
@@ -124,10 +124,10 @@ export class EventAgent<
             key: string,
             descriptor: TypedPropertyDescriptor<EventHandler<E, M>>
         ): TypedPropertyDescriptor<EventHandler<E, M>> {
-            const hooks = EventAgent.reg.get(prototype.constructor) ?? {};
+            const hooks = EventAgent.registry.get(prototype.constructor) ?? {};
             if (!hooks[key]) hooks[key] = [];
             hooks[key].push(accessor);
-            EventAgent.reg.set(prototype.constructor, hooks);
+            EventAgent.registry.set(prototype.constructor, hooks);
             return descriptor;
         };
     }

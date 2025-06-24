@@ -3,6 +3,7 @@ import { Agent } from "./agent";
 import { TranxService } from "../service/tranx";
 import { DecorConsumer, DecorProducer, DecorUpdater } from "../utils/decor";
 import { State } from "../types";
+import { DebugService } from "../service/debug";
 
 export class StateAgent<
     M extends Model = Model,
@@ -45,6 +46,7 @@ export class StateAgent<
         else this.reset();
     } 
 
+    @DebugService.log()
     @TranxService.use()
     private reset() {}
 
@@ -60,6 +62,7 @@ export class StateAgent<
         return true;
     }
 
+    @TranxService.use()
     public emit() {
         let path: string = 'decor';
         let state: any = { ...this.draft };
@@ -110,9 +113,9 @@ export class StateAgent<
     public load() {
         let constructor: any = this.model.constructor;
         while (constructor) {
-            const reg = StateAgent.reg.get(constructor) ?? {};
-            Object.keys(reg).forEach(key => {
-                const accessors = reg[key] ?? [];
+            const registry = StateAgent.registry.get(constructor) ?? {};
+            Object.keys(registry).forEach(key => {
+                const accessors = registry[key] ?? [];
                 [...accessors].forEach(accessor => {
                     const producer = accessor(this.model);
                     if (!producer) return;
@@ -122,6 +125,7 @@ export class StateAgent<
             })
             constructor = constructor.__proto__;
         }
+        this.emit();
     }
 
     public unload() {
@@ -140,6 +144,7 @@ export class StateAgent<
                 that.agent.state.unbind(producer, updater);
             });
         });
+        this.emit();
     }
 
 
@@ -150,7 +155,7 @@ export class StateAgent<
         return dependency;
     }
 
-    private static reg: Map<Function, Record<string, Array<(self: Model) => DecorProducer | undefined>>> = new Map();
+    private static registry: Map<Function, Record<string, Array<(self: Model) => DecorProducer | undefined>>> = new Map();
 
     public static use<S extends Record<string, any>, M extends Model, I extends Model>(
         accessor: (self: I) => DecorProducer<S, M> | undefined
@@ -160,10 +165,10 @@ export class StateAgent<
             key: string,
             descriptor: TypedPropertyDescriptor<DecorUpdater<S, M>>
         ): TypedPropertyDescriptor<DecorUpdater<S, M>> {
-            const reg = StateAgent.reg.get(prototype.constructor) ?? {};
-            if (!reg[key]) reg[key] = [];
-            reg[key].push(accessor);
-            StateAgent.reg.set(prototype.constructor, reg);
+            const registry = StateAgent.registry.get(prototype.constructor) ?? {};
+            if (!registry[key]) registry[key] = [];
+            registry[key].push(accessor);
+            StateAgent.registry.set(prototype.constructor, registry);
             return descriptor;
         }
     }

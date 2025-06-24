@@ -46,10 +46,10 @@ export class Model<
     public get state(): Readonly<State<S>> { return this.agent.state.current as any; } 
     public get refer(): Readonly<Refer<R>> { return this.agent.refer.current; }
     public get child(): Readonly<Child<C>> { return this.agent.child.current; }
-    public get route(): Readonly<{
-        parent: P | undefined
-        root: Model | undefined
-    }> {
+    public get route(): Readonly<Partial<{
+        parent: P, 
+        root: Model,
+    }>> {
         return {
             parent: this.agent.route.parent,
             root: this.agent.route.root,

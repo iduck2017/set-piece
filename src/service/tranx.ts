@@ -5,11 +5,10 @@ import { Model } from "../model";
 export class TranxService {
     private constructor() {}
 
-    private static _isSpan = false;
+    private static _isLock = false;
+    public static get isLock() { return TranxService._isLock; }
 
-    public static get isSpan() { return TranxService._isSpan; }
-
-    private static readonly reg: Map<Model, Readonly<{
+    private static readonly registry: Map<Model, Readonly<{
         state?: Model['state'],
         refer?: Model['refer'],
         child?: Model['child'],
@@ -25,19 +24,19 @@ export class TranxService {
             return function (constructor: new (...props: any[]) => Model) {
                 return class Model extends constructor {
                     constructor(...args: any[]) {
-                        if (TranxService._isSpan) {
+                        if (TranxService._isLock) {
                             super(...args);
-                            const prev = TranxService.reg.get(this) ?? {};
-                            const next = { ...prev, route: this.route };
-                            TranxService.reg.set(this, next);
+                            const prev = TranxService.registry.get(this) ?? {};
+                            const next = { ...prev, route: !prev.route ? this.route : prev.route };
+                            TranxService.registry.set(this, next);
                         } else {
-                            TranxService._isSpan = true;
+                            TranxService._isLock = true;
                             super(...args);
-                            const prev = TranxService.reg.get(this) ?? {};
-                            const next = { ...prev, route: this.route };
-                            TranxService.reg.set(this, next);
+                            const prev = TranxService.registry.get(this) ?? {};
+                            const next = { ...prev, route: !prev.route ? this.route : prev.route };
+                            TranxService.registry.set(this, next);
                             TranxService.reload();
-                            TranxService._isSpan = false;
+                            TranxService._isLock = false;
                             TranxService.emit();
                         }
                     }
@@ -59,25 +58,25 @@ export class TranxService {
                         const isReferChange = model.agent.refer === this;
                         const isChildChange = model.agent.child === this;
                         const isRouteChange = model.agent.route === this;
-                        const prev = TranxService.reg.get(model) ?? {};
+                        const prev = TranxService.registry.get(model) ?? {};
                         const next = { 
                             ...prev,
-                            state: isStateChange && !prev.state ? model.state : undefined,
-                            refer: isReferChange && !prev.refer ? model.refer : undefined,
-                            child: isChildChange && !prev.child ? model.child : undefined,
-                            route: isRouteChange && !prev.route ? model.route : undefined,
+                            state: isStateChange && !prev.state ? model.state : prev.state,
+                            refer: isReferChange && !prev.refer ? model.refer : prev.refer,
+                            child: isChildChange && !prev.child ? model.child : prev.child,
+                            route: isRouteChange && !prev.route ? model.route : prev.route,
                         }
-                        TranxService.reg.set(model, next);
+                        TranxService.registry.set(model, next);
                     }
 
-                    if (TranxService._isSpan) {
+                    if (TranxService._isLock) {
                         return handler.call(this, ...args);
                     } else {
                         console.group('Transaction::' + key)
-                        TranxService._isSpan = true;
+                        TranxService._isLock = true;
                         const result = handler.call(this, ...args);
                         TranxService.reload();
-                        TranxService._isSpan = false;
+                        TranxService._isLock = false;
                         console.groupEnd()
                         TranxService.emit();
                         return result;
@@ -102,40 +101,39 @@ export class TranxService {
             unload: [],
             unbind: [],
         }
-        TranxService.reg.forEach((info, model) => {
-            if (info.route) {
-                if (info.route.parent || model.agent.route.isRoot) queue.unload.push(model);
-                if (!info.state) queue.calc.push(model);
-            }
-            if (info.refer) queue.unbind.push(model);
-            if (info.state) queue.calc.push(model);
+        TranxService.registry.forEach((info, item) => {
+            if (info.route && (info.route.parent || item.agent.route.isRoot)) queue.unload.push(item);
+            if (info.refer) queue.unbind.push(item);
         })
-        queue.unload.forEach(model => model.agent.route.unload());
-        queue.unbind.forEach(model => {
-            if (queue.unload.includes(model)) return;
-            model.agent.refer.unload();
+        queue.unload.forEach(item => item.agent.route.unload());
+        queue.unbind.forEach(item => {
+            if (queue.unload.includes(item)) return;
+            item.agent.refer.unload();
         })
-        TranxService.reg.forEach((info, model) => {
-            if (info.route) {
-                const parent = model.agent.route.parent;
-                if (parent?.agent.route.isLoad || model.agent.route.isRoot) queue.load.push(model);
-            }
+        TranxService.registry.forEach((info, item) => {
+            const parent = item.agent.route.parent;
+            if (info.route && (parent?.agent.route.isLoad || item.agent.route.isRoot)) queue.load.push(item);
         })
-        queue.load.forEach(model => model.agent.route.load());
-        queue.calc.forEach(model => model.agent.state.emit());
-        console.log('task', {
-            unbind: queue.unbind.map(model => model.name),
-            unload: queue.unload.map(model => model.name),
-            load: queue.load.map(model => model.name),
-            calc: queue.calc.map(model => model.name),
+        queue.load.forEach(item => item.agent.route.load());
+        TranxService.registry.forEach((info, item) => {
+            if (info.state) queue.calc.push(item);
         })
+        queue.calc.forEach(item => {
+            if (queue.unload.includes(item)) return;
+            if (queue.load.includes(item)) return;
+            item.agent.state.emit()
+        });
+        if (queue.unbind.length) console.log('unbind:', queue.unbind.map(model => model.name).join(','))
+        if (queue.unload.length) console.log('unload:', queue.unload.map(model => model.name).join(','))
+        if (queue.load.length) console.log('load:', queue.load.map(model => model.name).join(','))
+        if (queue.calc.length) console.log('calc:', queue.calc.map(model => model.name).join(',')) 
     }
 
 
     private static emit() {
-        const reg = new Map(TranxService.reg);
-        TranxService.reg.clear();
-        reg.forEach((info, model) => {
+        const registry = new Map(TranxService.registry);
+        TranxService.registry.clear();
+        registry.forEach((info, model) => {
             const { state, refer, child, route } = model;
             const event = model.agent.event.current;
             if (info.state) event.onStateChange({ prev: info.state, next: state })

@@ -19,4 +19,3 @@ export namespace Event {
     export type OnReferChange<M extends Model> = { prev: M['refer'], next: M['refer'] };
     export type OnRouteChange<M extends Model> = { prev: M['route'], next: M['route'] }
 }
-
