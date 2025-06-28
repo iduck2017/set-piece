@@ -5,7 +5,6 @@ import { Callback, Decorator, Event } from "../types";
 import { DebugService, LogLevel } from "../service/debug";
 import { TranxService } from "../service/tranx";
 
-
 @DebugService.is(self => `${self.model.name}::event`)
 export class EventAgent<
     M extends Model = Model,
@@ -31,7 +30,7 @@ export class EventAgent<
     }
 
     public static prev<E, M extends Model>(
-        accessor: (self: M) => (event: E) => void | undefined
+        accessor: Callback<Callback<unknown, [E]> | undefined, [M]>
     ) {
         return function(
             prototype: M,
@@ -51,10 +50,10 @@ export class EventAgent<
         };
     }
 
-    public static next<E, M extends Model>(accessor: (self: M) => (event: E) => void | undefined): Decorator<M, E>;
-    public static next<E, M extends Model>(accessor: (self: M) => (event: E) => void | undefined, mode: 'async'): Decorator<M, Promise<E>>;
+    public static next<E, M extends Model>(accessor: Callback<Callback<unknown, [E]> | undefined, [M, E]>): Decorator<M, E>;
+    public static next<E, M extends Model>(accessor: Callback<Callback<unknown, [E]> | undefined, [M, E]>, mode: 'async'): Decorator<M, Promise<E>>;
     public static next<E, M extends Model>(
-        accessor: (self: M) => (event: E) => void | undefined,
+        accessor: Callback<Callback<unknown, [E]> | undefined, [M, E]>,
         mode?: 'async'
     ) {
         return function(
@@ -68,10 +67,10 @@ export class EventAgent<
                 [key](this: M, ...args: any[]) {
                     const result = handler.call(this, ...args);
                     if (result instanceof Promise) return result.then((result) => {
-                        accessor(this)?.(result);
+                        accessor(this, result)?.(result);
                         return result;
                     });
-                    else accessor(this)?.(result);
+                    else accessor(this, result)?.(result);
                     return result;
                 }
             }

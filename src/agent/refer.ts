@@ -20,8 +20,8 @@ export class ReferAgent<
         super(model);
         this.router = new Map();
         Object.keys(props).forEach(key => {
-            if (props[key] instanceof Array) props[key].forEach(item => item.agent.route.bind(this.model, key));
-            if (props[key] instanceof Model) props[key].agent.route.bind(this.model, key);
+            if (props[key] instanceof Array) props[key].forEach(item => item.agent.refer.bind(this.model, key));
+            if (props[key] instanceof Model) props[key].agent.refer.bind(this.model, key);
         });
         const origin: any = { ...props };
         this.draft = new Proxy(origin, {

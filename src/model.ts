@@ -128,10 +128,12 @@ export class Model<
 
     public copy(): this {
         const type: any = this.constructor;
-        return new type({
+        const copy = new type({
             ...this.props,
             uuid: undefined
         });
+        console.warn('copy', this.name);
+        return copy;
     }
 
     public debug() {
