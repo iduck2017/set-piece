@@ -13,3 +13,5 @@ export { StoreService } from "./service/store";
 export { CheckService } from "./service/check";
 
 export { State, Refer, Child, Event } from "./types";
+export { Callback, Decorator } from "./types";
+export { Optional } from "./types";
