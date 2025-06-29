@@ -19,13 +19,11 @@
   "dependencies": {
     "dayjs": "^1.11.10",
     "lodash": "^4.17.21",
-    "pixi.js": "^8.1.1",
     "random": "^5.1.1",
     "uuid": "^11.1.0"
   },
   "devDependencies": {
     "@types/lodash": "^4.17.17",
-    "tsc-alias": "^1.8.16",
     "typescript": "^5.6.2",
     "utility-types": "^3.11.0"
   },
