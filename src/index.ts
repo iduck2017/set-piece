@@ -1,17 +1,18 @@
 export { Model } from "./model";
-export { Proxy } from './utils/proxy';
 
-export { StateAgent } from "./agent/state";
-export { ReferAgent } from "./agent/refer";
-export { ChildAgent } from "./agent/child";
-export { EventAgent } from "./agent/event";
-export { RouteAgent } from "./agent/route";
+export { AgentUtil } from './utils/agent';
+export { StateUtil } from "./utils/state";
+export { ReferUtil } from "./utils/refer";
+export { ChildUtil } from "./utils/child";
+export { EventUtil } from "./utils/event";
+export { RouteUtil } from "./utils/route";
 
-export { TranxService } from './service/tranx';
-export { DebugService as DebugService, LogLevel } from "./service/debug";
-export { StoreService } from "./service/store";
-export { CheckService as CheckService } from "./service/check";
+export { TranxUtil } from './utils/tranx';
+export { DebugUtil } from "./utils/debug";
+export { StoreUtil } from "./utils/store";
+export { CheckUtil } from "./utils/check";
 
-export { State, Refer, Child, Event } from "./types";
-export { Callback, Decorator } from "./types";
+export { LogLevel } from "./utils/debug"
 export { Optional } from "./types";
+export { Callback, Decorator } from "./types";
+export { State, Refer, Child, Event } from "./types/model";

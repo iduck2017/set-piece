@@ -1,9 +1,9 @@
-import { Event } from "../types";
 import { Model } from "../model";
-import { EventProducer } from "./event";
-import { DecorProducer } from "./decor";
+import { EventProducer } from "../types/event";
+import { DecorProducer } from "../types/decor";
+import { Event } from "src/types/model";
 
-export class Proxy<
+export class AgentUtil<
     M extends Model = Model,
     E extends Model.Event = {},
     S extends Model.State = {},
@@ -26,30 +26,32 @@ export class Proxy<
     constructor(model: M, path?: string) {
         this.path = path;
         this.model = model;
-        const origin: any = {}
-        this.event = new globalThis.Proxy({ ...origin }, { get: this.getEvent.bind(this) })
-        this.child = new globalThis.Proxy({ ...origin }, { get: this.getChild.bind(this) })
-        this.decor = new DecorProducer(this.model, path)
+        this.event = new Proxy({} as any, { get: this.getEvent.bind(this) })
+        this.child = new Proxy({} as any, { get: this.getChild.bind(this) })
+        this.decor = { 
+            path: path ? `${path}/decor` : 'decor', 
+            model
+        }
     }
 
     private getEvent(origin: Record<string, EventProducer>, key: string) {
         if (!origin[key]) {
             const path = this.path ? `${this.path}/${key}` : key;
-            origin[key] = new EventProducer(this.model, path);
+            origin[key] = { path, model: this.model };
         }
         return origin[key];
     }
 
-    private getChild(origin: Record<string, Proxy>, path: string): Proxy | undefined {
+    private getChild(origin: Record<string, AgentUtil>, path: string): AgentUtil | undefined {
         const keys = path.split('/');
         const key = keys.shift();
         if (!key) return this;
         if (!origin[key]) {
             const path = this.path ? `${this.path}/${key}` : key;
-            origin[key] = new Proxy(this.model, path);
+            origin[key] = new AgentUtil(this.model, path);
         }
         if (keys.length) {
-            const child: Record<string, Proxy> = origin[key].child;
+            const child: Record<string, AgentUtil> = origin[key].child;
             const path = keys.join('/');
             return child[path];
         }

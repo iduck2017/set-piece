@@ -1,6 +1,6 @@
 import { Callback } from "../types";
 
-export class CheckService {
+export class CheckUtil {
     private static readonly validators = new Map<Function, Record<string, Callback[]>>();
     
     public static if<T extends Object, R = any, P extends any[] = any[]>(
@@ -23,10 +23,10 @@ export class CheckService {
                 }
             }
             descriptor.value = instance[key];
-            const validators = CheckService.validators.get(prototype.constructor) || {}
+            const validators = CheckUtil.validators.get(prototype.constructor) || {}
             validators[key] = validators[key] || [];
             validators[key].push(validator);
-            CheckService.validators.set(prototype.constructor, validators);
+            CheckUtil.validators.set(prototype.constructor, validators);
             return descriptor;
         };
     }
@@ -35,7 +35,7 @@ export class CheckService {
         let validators: Callback[] = [];
         let constructor = target.constructor;
         while (constructor) {
-            validators = validators.concat(CheckService.validators.get(constructor)?.[method.name] ?? []);
+            validators = validators.concat(CheckUtil.validators.get(constructor)?.[method.name] ?? []);
             constructor = (constructor as any).__proto__;
         }
         for (const validator of validators) {

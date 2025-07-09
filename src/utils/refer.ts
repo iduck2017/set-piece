@@ -1,14 +1,14 @@
-import { TranxService } from "../service/tranx";
+import { TranxUtil } from "./tranx";
 import { Model } from "../model";
-import { Agent } from "./agent";
-import { Refer } from "../types";
-import { DebugService, LogLevel } from "../service/debug";
+import { Util } from ".";
+import { Refer } from "../types/model";
+import { DebugUtil, LogLevel } from "./debug";
 
-@DebugService.is(self => `${self.model.name}::refer`)
-export class ReferAgent<
+@DebugUtil.is(self => `${self.model.name}::refer`)
+export class ReferUtil<
     M extends Model = Model,
     R extends Model.Refer = Model.Refer,
-> extends Agent<M> {
+> extends Util<M> {
 
     public readonly draft: { [K in keyof R]: R[K] extends any[] ? R[K] : R[K] | undefined }
 
@@ -20,8 +20,8 @@ export class ReferAgent<
         super(model);
         this.router = new Map();
         Object.keys(props).forEach(key => {
-            if (props[key] instanceof Array) props[key].forEach(item => item.agent.refer.bind(this.model, key));
-            if (props[key] instanceof Model) props[key].agent.refer.bind(this.model, key);
+            if (props[key] instanceof Array) props[key].forEach(item => item.utils.refer.bind(this.model, key));
+            if (props[key] instanceof Model) props[key].utils.refer.bind(this.model, key);
         });
         const origin: any = { ...props };
         this.draft = new Proxy(origin, {
@@ -46,27 +46,27 @@ export class ReferAgent<
         this.router.set(value, router);
     }
 
-    @DebugService.log(LogLevel.DEBUG)
+    @DebugUtil.log(LogLevel.DEBUG)
     public unload() {
         const draft: Partial<Record<string, Model | Model[]>> = this.draft
         Object.keys(draft).forEach(key => {
             if (draft[key] instanceof Array) {
                 draft[key] = draft[key].filter(item => {
-                    if (item.agent.route.root === this.agent.route.root) return true;
-                    item.agent.refer.unbind(this.model, key);
+                    if (item.utils.route.root === this.utils.route.root) return true;
+                    item.utils.refer.unbind(this.model, key);
                     return false;
                 })
             }
             if (draft[key] instanceof Model) {
-                if (draft[key].agent.route.root === this.agent.route.root) return;
-                draft[key].agent.refer.unbind(this.model, key);
+                if (draft[key].utils.route.root === this.utils.route.root) return;
+                draft[key].utils.refer.unbind(this.model, key);
                 delete draft[key]
             }
         })
         this.router.forEach((keys, item) => {
-            if (item.agent.route.root === this.agent.route.root) return;
+            if (item.utils.route.root === this.utils.route.root) return;
             [...keys].forEach(key => {
-                const origin: Record<string, Model | Model[]> = item.agent.refer.draft;
+                const origin: Record<string, Model | Model[]> = item.utils.refer.draft;
                 if (origin[key] instanceof Array) {
                     const index = origin[key].indexOf(this.model);
                     if (index !== -1) origin[key].splice(index, 1);
@@ -94,29 +94,29 @@ export class ReferAgent<
         return value;
     }
 
-    @TranxService.span()
+    @TranxUtil.span()
     public reset() {}
 
-    @TranxService.span()
+    @TranxUtil.span()
     private set(
         origin: Partial<Record<string, Model | Model[]>>, 
         key: string, 
         next?: Model | Model[]
     ) {
         let prev = origin[key];
-        if (prev instanceof Array) prev.forEach(prev => prev.agent.refer.unbind(this.model, key));
-        if (prev instanceof Model) prev.agent.refer.unbind(this.model, key);
-        if (next instanceof Array) next.forEach(next => next.agent.refer.bind(this.model, key));
-        if (next instanceof Model) next.agent.refer.bind(this.model, key);
+        if (prev instanceof Array) prev.forEach(prev => prev.utils.refer.unbind(this.model, key));
+        if (prev instanceof Model) prev.utils.refer.unbind(this.model, key);
+        if (next instanceof Array) next.forEach(next => next.utils.refer.bind(this.model, key));
+        if (next instanceof Model) next.utils.refer.bind(this.model, key);
         origin[key] = next;
         return true;
     }
 
-    @TranxService.span()
+    @TranxUtil.span()
     private del(origin: Partial<Record<string, Model | Model[]>>, key: string) {
         let prev = origin[key];
-        if (prev instanceof Array) prev.forEach(prev => prev.agent.refer.unbind(this.model, key));
-        if (prev instanceof Model) prev.agent.refer.unbind(this.model, key);
+        if (prev instanceof Array) prev.forEach(prev => prev.utils.refer.unbind(this.model, key));
+        if (prev instanceof Model) prev.utils.refer.unbind(this.model, key);
         delete origin[key];
         return true;
     }
@@ -141,75 +141,75 @@ export class ReferAgent<
         return origin[index];
     }
 
-    @TranxService.span()
+    @TranxUtil.span()
     private lset(key: string, origin: any, index: string, next: Model) {
         const prev = origin[index];
-        if (prev instanceof Model) prev.agent.refer.unbind(this.model, key);
-        if (next instanceof Model) next.agent.refer.bind(this.model, key);
+        if (prev instanceof Model) prev.utils.refer.unbind(this.model, key);
+        if (next instanceof Model) next.utils.refer.bind(this.model, key);
         origin[index] = next;
         return true;
     }
     
-    @TranxService.span()
+    @TranxUtil.span()
     private ldel(key: string, origin: any, index: string) {
         const prev = origin[index];
-        if (prev instanceof Model) prev.agent.refer.unbind(this.model, key);
+        if (prev instanceof Model) prev.utils.refer.unbind(this.model, key);
         delete origin[index];
         return true;
     }
 
-    @TranxService.span()
+    @TranxUtil.span()
     private push(key: string, origin: Model[], ...next: Model[]) {
-        next.forEach(next => next.agent.refer.bind(this.model, key))
+        next.forEach(next => next.utils.refer.bind(this.model, key))
         return origin.push(...next);
     }
 
-    @TranxService.span()
+    @TranxUtil.span()
     private unshift(key: string, origin: Model[], ...next: Model[]) {
-        next.forEach(next => next.agent.refer.bind(this.model, key));
+        next.forEach(next => next.utils.refer.bind(this.model, key));
         return origin.unshift(...next);
     }
 
-    @TranxService.span()
+    @TranxUtil.span()
     private pop(key: string, origin: Model[]) {
         const result = origin.pop();
-        if (result) result.agent.refer.unbind(this.model, key);
+        if (result) result.utils.refer.unbind(this.model, key);
         return result;
     }
 
-    @TranxService.span()
+    @TranxUtil.span()
     private shift(key: string, origin: Model[]) {
         const result = origin.shift();
-        if (result) result.agent.refer.unbind(this.model, key);
+        if (result) result.utils.refer.unbind(this.model, key);
         return result;
     }
 
-    @TranxService.span()
+    @TranxUtil.span()
     private reverse(origin: Model[]) {
         return origin.reverse();
     }
 
-    @TranxService.span()
+    @TranxUtil.span()
     private sort(origin: Model[], handler: (a: Model, b: Model) => number) {
         return origin.sort(handler);
     }
 
-    @TranxService.span()
+    @TranxUtil.span()
     private fill(key: string, origin: Model[], value: Model, start?: number, end?: number) {
         if (start === undefined) start = 0;
         if (end === undefined) end = origin.length;
         const prev = origin.slice(start, end);
-        const next = new Array(end - start).fill(value);
-        prev.forEach(prev => prev.agent.refer.unbind(this.model, key));
-        next.forEach(next => next.agent.refer.bind(this.model, key));
+        const next: Model[] = new Array(end - start).fill(value);
+        prev.forEach(prev => prev.utils.refer.unbind(this.model, key));
+        next.forEach(next => next.utils.refer.bind(this.model, key));
         return origin.fill(value, start, end)
     }
 
-    @TranxService.span()
+    @TranxUtil.span()
     private splice(key: string, origin: Model[], start: number, count: number, ...next: Model[]) {
         const prev = origin.slice(start, start + count);
-        prev.forEach(prev => prev.agent.refer.unbind(this.model, key));
-        next.forEach(next => next.agent.refer.bind(this.model, key))
+        prev.forEach(prev => prev.utils.refer.unbind(this.model, key));
+        next.forEach(next => next.utils.refer.bind(this.model, key))
         const result = origin.splice(start, count, ...next);
         return result;
     }

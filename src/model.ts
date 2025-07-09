@@ -1,11 +1,11 @@
-import { EventAgent  } from "./agent/event";
-import { StateAgent } from "./agent/state";
-import { RouteAgent } from "./agent/route";
-import { ChildAgent } from "./agent/child";
-import { Proxy } from "./utils/proxy";
-import { ReferAgent } from "./agent/refer";
-import { TranxService } from "./service/tranx";
-import { State, Refer, Child } from "./types";
+import { EventUtil  } from "./utils/event";
+import { StateUtil } from "./utils/state";
+import { RouteUtil } from "./utils/route";
+import { ChildUtil } from "./utils/child";
+import { AgentUtil } from "./utils/agent";
+import { ReferUtil } from "./utils/refer";
+import { TranxUtil } from "./utils/tranx";
+import { State, Refer, Child } from "./types/model";
 
 type Agent<
     M extends Model = Model,
@@ -15,11 +15,11 @@ type Agent<
     C extends Model.Child = Model.Child,
     R extends Model.Refer = Model.Refer,
 > = Readonly<{
-    event: EventAgent<M, E>
-    route: RouteAgent<M, P>
-    state: StateAgent<M, S>
-    child: ChildAgent<M, C>
-    refer: ReferAgent<M, R>
+    event: EventUtil<M, E>
+    route: RouteUtil<M, P>
+    state: StateUtil<M, S>
+    child: ChildUtil<M, C>
+    refer: ReferUtil<M, R>
 }>
 
 
@@ -31,7 +31,7 @@ export namespace Model {
     export type Refer = Record<string, Model | Model[]>
 }
 
-@TranxService.span(true)
+@TranxUtil.span(true)
 export class Model<
     P extends Model.Parent = Model.Parent,
     E extends Model.Event = {},
@@ -54,24 +54,24 @@ export class Model<
     public readonly uuid: string
     public get name() { return this.constructor.name; }
 
-    public get state(): Readonly<State<S>> { return this.agent.state.current as any; } 
-    public get refer(): Readonly<Refer<R>> { return this.agent.refer.current; }
-    public get child(): Readonly<Child<C>> { return this.agent.child.current; }
+    public get state(): Readonly<State<S>> { return this.utils.state.current as any; } 
+    public get refer(): Readonly<Refer<R>> { return this.utils.refer.current; }
+    public get child(): Readonly<Child<C>> { return this.utils.child.current; }
     public get route(): Readonly<Partial<{
         parent: P,
         root: Model
     }>> { 
         return { 
-            parent: this.agent.route.parent,
-            root: this.agent.route.root,
+            parent: this.utils.route.parent,
+            root: this.utils.route.root,
         }
     }
     
     public get status() {
         return {
-            isLoad: this.agent.route.isLoad,
-            isBind: this.agent.route.isBind,
-            isRoot: this.agent.route.isRoot,
+            isLoad: this.utils.route.isLoad,
+            isBind: this.utils.route.isBind,
+            isRoot: this.utils.route.isRoot,
         }
     }
 
@@ -83,8 +83,8 @@ export class Model<
     }>
 
     /** @internal */
-    public readonly agent: Agent<this, P, E, S, C, R>
-    public readonly proxy: Proxy<this, E, S, C>
+    public readonly utils: Agent<this, P, E, S, C, R>
+    public readonly proxy: AgentUtil<this, E, S, C>
 
     public get props(): {
         uuid?: string
@@ -107,24 +107,24 @@ export class Model<
         refer: R;
     }) {
         this.uuid = props.uuid ?? Model.uuid;
-        this.proxy = new Proxy(this);
-        this.agent = {
-            event: new EventAgent<this, E>(this),
-            route: new RouteAgent<this, P>(this),
-            refer: new ReferAgent<this, R>(this, props.refer),
-            state: new StateAgent<this, S>(this, props.state),
-            child: new ChildAgent<this, C>(this, props.child),
+        this.proxy = new AgentUtil(this);
+        this.utils = {
+            event: new EventUtil<this, E>(this),
+            route: new RouteUtil<this, P>(this),
+            refer: new ReferUtil<this, R>(this, props.refer),
+            state: new StateUtil<this, S>(this, props.state),
+            child: new ChildUtil<this, C>(this, props.child),
         }
-        this.event = this.agent.event.current;
+        this.event = this.utils.event.current;
         this.draft = {
-            state: this.agent.state.draft,
-            child: this.agent.child.draft,
-            refer: this.agent.refer.draft,
+            state: this.utils.state.draft,
+            child: this.utils.child.draft,
+            refer: this.utils.refer.draft,
         }
-        this.agent.refer.reset();
+        this.utils.refer.reset();
     }
 
-    public reload() { this.agent.route.reload(); }
+    public reload() { this.utils.route.reload(); }
 
     public copy(): this {
         const type: any = this.constructor;
@@ -138,9 +138,9 @@ export class Model<
 
     public debug() {
         const dependency = {
-            event: this.agent.event.debug().map(item => item.name),
-            state: this.agent.state.debug().map(item => item.name),
-            refer: this.agent.refer.debug().map(item => item.name),
+            event: this.utils.event.debug().map(item => item.name),
+            state: this.utils.state.debug().map(item => item.name),
+            refer: this.utils.refer.debug().map(item => item.name),
         }
         console.log('debug', dependency);
     }

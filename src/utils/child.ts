@@ -1,12 +1,12 @@
-import { Agent } from "./agent";
+import { Util } from ".";
 import { Model } from "../model";
-import { TranxService } from "../service/tranx";
-import { Child } from "../types";
+import { TranxUtil } from "./tranx";
+import { Child } from "../types/model";
 
-export class ChildAgent<
+export class ChildUtil<
     M extends Model = Model,
     C extends Model.Child = Model.Child,
-> extends Agent<M> {
+> extends Util<M> {
 
     public readonly draft: C;
 
@@ -18,15 +18,15 @@ export class ChildAgent<
         Object.keys(props).forEach(key => {
             if (props[key] instanceof Array) {
                 origin[key] = props[key].map(item => {
-                    if (item.agent.route.isBind) item = item.copy();
-                    item.agent.route.bind(this.model, key);
+                    if (item.utils.route.isBind) item = item.copy();
+                    item.utils.route.bind(this.model, key);
                     return item;
                 })
             }
             if (props[key] instanceof Model) {
                 let item = props[key];
-                if (item.agent.route.isBind) item = item.copy();
-                item.agent.route.bind(this.model, key);
+                if (item.utils.route.isBind) item = item.copy();
+                item.utils.route.bind(this.model, key);
                 origin[key] = item;
             }
         });
@@ -43,50 +43,50 @@ export class ChildAgent<
         return value;
     }
    
-    @TranxService.span()
+    @TranxUtil.span()
     private set(
         origin: Partial<Record<string, Model | Model[]>>, 
         key: string, 
         next?: Model | Model[]
     ) {
         const prev = origin[key];
-        if (prev instanceof Array) prev.forEach(prev => prev.agent.route.unbind())
-        if (prev instanceof Model) prev.agent.route.unbind();
+        if (prev instanceof Array) prev.forEach(prev => prev.utils.route.unbind())
+        if (prev instanceof Model) prev.utils.route.unbind();
         if (next instanceof Array) {
             next = next.map(next => {
-                if (next.agent.route.isBind) next = next.copy();
-                next.agent.route.bind(this.model, key);
+                if (next.utils.route.isBind) next = next.copy();
+                next.utils.route.bind(this.model, key);
                 return next;
             });
         } 
         if (next instanceof Model) {
-            if (next.agent.route.isBind) next = next.copy();
-            next.agent.route.bind(this.model, key);
+            if (next.utils.route.isBind) next = next.copy();
+            next.utils.route.bind(this.model, key);
         }
         origin[key] = next;
         return true;
     }
 
-    @TranxService.span()
+    @TranxUtil.span()
     private del(origin: Partial<Record<string, Model | Model[]>>, key: string) {
         const prev = origin[key];
-        if (prev instanceof Array) prev.forEach(prev => prev.agent.route.unbind())
-        if (prev instanceof Model) prev.agent.route.unbind();
+        if (prev instanceof Array) prev.forEach(prev => prev.utils.route.unbind())
+        if (prev instanceof Model) prev.utils.route.unbind();
         delete origin[key];
         return true;
     }
 
     public unload() {
         Object.keys(this.draft).forEach(key => {
-            if (this.draft[key] instanceof Array) this.draft[key].forEach(item => item.agent.route.unload())
-            if (this.draft[key] instanceof Model) this.draft[key].agent.route.unload();
+            if (this.draft[key] instanceof Array) this.draft[key].forEach(item => item.utils.route.unload())
+            if (this.draft[key] instanceof Model) this.draft[key].utils.route.unload();
         })
     }
 
     public load() {
         Object.keys(this.draft).forEach(key => {
-            if (this.draft[key] instanceof Array) this.draft[key].forEach(item => item.agent.route.load())
-            if (this.draft[key] instanceof Model) this.draft[key].agent.route.load();
+            if (this.draft[key] instanceof Array) this.draft[key].forEach(item => item.utils.route.load())
+            if (this.draft[key] instanceof Model) this.draft[key].utils.route.load();
         })
     }
 
@@ -110,94 +110,94 @@ export class ChildAgent<
         return origin[index];
     }
 
-    @TranxService.span()
+    @TranxUtil.span()
     private lset(key: string, origin: Record<string, unknown>, index: string, next: Model) {
         const prev = origin[index];
-        if (prev instanceof Model) prev.agent.route.unbind();
+        if (prev instanceof Model) prev.utils.route.unbind();
         if (next instanceof Model) {
-            if (next.agent.route.isBind) next = next.copy();
-            next.agent.route.bind(this.model, key);
+            if (next.utils.route.isBind) next = next.copy();
+            next.utils.route.bind(this.model, key);
         }
         origin[index] = next;
         return true;
     }
 
-    @TranxService.span()
+    @TranxUtil.span()
     private ldel(key: string, origin: any, index: string) {
         const prev = origin[index];
-        if (prev instanceof Model) prev.agent.route.unbind();
+        if (prev instanceof Model) prev.utils.route.unbind();
         delete origin[index];
         return true;
     }
 
 
-    @TranxService.span()
+    @TranxUtil.span()
     private push(key: string, origin: Model[], ...next: Model[]) {
         next = next.map(next => {
-            if (next.agent.route.isBind) next = next.copy();
-            next.agent.route.bind(this.model, key);
+            if (next.utils.route.isBind) next = next.copy();
+            next.utils.route.bind(this.model, key);
             return next;
         });
         return origin.push(...next);
     }
 
-    @TranxService.span()
+    @TranxUtil.span()
     private unshift(key: string, origin: Model[], ...next: Model[]) {
         next = next.map(next => {
-            if (next.agent.route.isBind) next = next.copy();
-            next.agent.route.bind(this.model, key);
+            if (next.utils.route.isBind) next = next.copy();
+            next.utils.route.bind(this.model, key);
             return next;
         });
         return origin.unshift(...next);
     }
 
 
-    @TranxService.span()
+    @TranxUtil.span()
     private pop(key: string, origin: Model[]) {
         const result = origin.pop();
-        if (result) result.agent.route.unbind();
+        if (result) result.utils.route.unbind();
         return result;
     }
 
-    @TranxService.span()
+    @TranxUtil.span()
     private shift(key: string, origin: Model[]) {
         const result = origin.shift();
-        if (result) result.agent.route.unbind();
+        if (result) result.utils.route.unbind();
         return result;
     }
 
-    @TranxService.span()
+    @TranxUtil.span()
     private reverse(origin: Model[]) {
         return origin.reverse();
     }
 
-    @TranxService.span()
+    @TranxUtil.span()
     private sort(origin: Model[], handler: (a: Model, b: Model) => number) {
         return origin.sort(handler);
     }
 
-    @TranxService.span()
+    @TranxUtil.span()
     private fill(key: string, origin: Model[], sample: Model, start?: number, end?: number) {
         if (!start) start = 0;
         if (!end) end = origin.length;
         const prev = origin.slice(start, end);
-        prev.forEach(prev => prev.agent.route.unbind())
+        prev.forEach(prev => prev.utils.route.unbind())
         const next = prev.map(() => {
             const next = sample.copy();
-            next.agent.route.bind(this.model, key);
+            next.utils.route.bind(this.model, key);
             return next;
         });
         origin.splice(start, end - start, ...next);
         return origin;
     }
 
-    @TranxService.span()
+    @TranxUtil.span()
     private splice(key: string, origin: Model[], start: number, count: number, ...next: Model[]) {
         const prev = origin.slice(start, start + count);
-        prev.forEach(prev => prev.agent.route.unbind())
+        prev.forEach(prev => prev.utils.route.unbind())
         next = next.map(next => {
-            if (next.agent.route.isBind) next = next.copy();
-            next.agent.route.bind(this.model, key);
+            if (next.utils.route.isBind) next = next.copy();
+            next.utils.route.bind(this.model, key);
             return next;
         });
         return origin.splice(start, count, ...next);

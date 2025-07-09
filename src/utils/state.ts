@@ -1,15 +1,16 @@
 import { Model } from "../model";
-import { Agent } from "./agent";
-import { TranxService } from "../service/tranx";
-import { DecorConsumer, DecorProducer, DecorUpdater } from "../utils/decor";
-import { State } from "../types";
-import { DebugService, LogLevel } from "../service/debug";
+import { Util } from ".";
+import { TranxUtil } from "./tranx";
+import { DecorConsumer, DecorProducer, DecorUpdater } from "../types/decor";
+import { State } from "../types/model";
+import { DebugUtil, LogLevel } from "./debug";
+import { AgentUtil } from "./agent";
 
-@DebugService.is(self => `${self.model.name}::state`)
-export class StateAgent<
+@DebugUtil.is(self => `${self.model.name}::state`)
+export class StateUtil<
     M extends Model = Model,
     S extends Model.State = Model.State,
-> extends Agent<M> {
+> extends Util<M> {
 
     private static registry: Map<Function, Record<string, Array<(self: Model) => DecorProducer | undefined>>> = new Map();
 
@@ -21,10 +22,10 @@ export class StateAgent<
             key: string,
             descriptor: TypedPropertyDescriptor<DecorUpdater<S, M>>
         ): TypedPropertyDescriptor<DecorUpdater<S, M>> {
-            const hooks = StateAgent.registry.get(prototype.constructor) ?? {};
+            const hooks = StateUtil.registry.get(prototype.constructor) ?? {};
             if (!hooks[key]) hooks[key] = [];
             hooks[key].push(accessor);
-            StateAgent.registry.set(prototype.constructor, hooks);
+            StateUtil.registry.set(prototype.constructor, hooks);
             return descriptor;
         }
     }
@@ -58,39 +59,39 @@ export class StateAgent<
         path = keys.join('/');
         if (!key) return;
         if (keys.length) {
-            const child: Record<string, Model | Model[]> = this.agent.child.current;
-            if (child[key] instanceof Array) child[key].forEach(item => item.agent.state.update(path))
-            if (child[key] instanceof Model) child[key].agent.state.update(path);
+            const child: Record<string, Model | Model[]> = this.utils.child.current;
+            if (child[key] instanceof Array) child[key].forEach(item => item.utils.state.update(path))
+            if (child[key] instanceof Model) child[key].utils.state.update(path);
         } 
         else this.reset();
     } 
 
-    @TranxService.span()
+    @TranxUtil.span()
     private reset() {}
 
-    @TranxService.span()
+    @TranxUtil.span()
     private set(origin: any, key: string, next: any) {
         origin[key] = next;
         return true
     }
     
-    @TranxService.span()
+    @TranxUtil.span()
     private del(origin: any, key: string) {
         delete origin[key];
         return true;
     }
 
-    @DebugService.log(LogLevel.DEBUG)
+    @DebugUtil.log(LogLevel.DEBUG)
     public emit() {
         let path: string = 'decor';
         let state: any = { ...this.draft };
         let parent: Model | undefined = this.model;
         const consumers: DecorConsumer[] = [];
         while (parent) {
-            const router = parent.agent.state.router;
+            const router = parent.utils.state.router;
             consumers.push(...router.consumers.get(path) ?? []);
-            path = parent.agent.route.key + '/' + path;
-            parent = parent.agent.route.parent;
+            path = parent.utils.route.key + '/' + path;
+            parent = parent.utils.route.parent;
         }
         consumers.sort((a, b) => a.model.uuid.localeCompare(b.model.uuid));
         consumers.forEach(item => state = item.updater.call(item.model, this.model, state));
@@ -102,14 +103,14 @@ export class StateAgent<
         updater: DecorUpdater<S, M>
     ) {
         const { model: that, path } = producer;
-        if (this.agent.route.root !== that.agent.route.root) return;
-        const consumers = that.agent.state.router.consumers.get(path) ?? [];
+        if (this.utils.route.root !== that.utils.route.root) return;
+        const consumers = that.utils.state.router.consumers.get(path) ?? [];
         const producers = this.router.producers.get(updater) ?? [];
         consumers.push({ model: this.model, updater });
         producers.push(producer);
-        that.agent.state.router.consumers.set(path, consumers);
+        that.utils.state.router.consumers.set(path, consumers);
         this.router.producers.set(updater, producers);
-        that.agent.state.update(path);
+        that.utils.state.update(path);
     }
     
     public unbind<S extends Record<string, any>, M extends Model>(
@@ -117,19 +118,19 @@ export class StateAgent<
         updater: DecorUpdater<S, M>
     ) {
         const { model: that, path } = producer;
-        const comsumers = that.agent.state.router.consumers.get(path) ?? [];
+        const comsumers = that.utils.state.router.consumers.get(path) ?? [];
         const producers = this.router.producers.get(updater) ?? [];
         let index = comsumers.findIndex(item => item.updater === updater && item.model === this.model);
         if (index !== -1) comsumers.splice(index, 1);
         index = producers.indexOf(producer);
         if (index !== -1) producers.splice(index, 1);
-        that.agent.state.update(path);
+        that.utils.state.update(path);
     }
 
     public load() {
         let constructor: any = this.model.constructor;
         while (constructor) {
-            const hooks = StateAgent.registry.get(constructor) ?? {};
+            const hooks = StateUtil.registry.get(constructor) ?? {};
             Object.keys(hooks).forEach(key => {
                 const accessors = hooks[key] ?? [];
                 [...accessors].forEach(accessor => {
@@ -151,13 +152,13 @@ export class StateAgent<
         this.router.consumers.forEach((consumers, path) => {
             const keys = path.split('/');
             keys.pop();
-            const proxy: any = this.model.proxy;
-            const producer = proxy.child[keys.join('/')].decor;
+            const child: Record<string, AgentUtil> = this.model.proxy.child;
+            const producer = child[keys.join('/')]?.decor;
             if (!producer) return;
             [ ...consumers ].forEach(item => {
                 const { model: that, updater } = item;
-                if (that.agent.route.root !== this.agent.route.root) return;
-                that.agent.state.unbind(producer, updater);
+                if (that.utils.route.root !== this.utils.route.root) return;
+                that.utils.state.unbind(producer, updater);
             });
         });
         this.reset();

@@ -9,7 +9,7 @@ export enum LogLevel {
 }
 
 
-export class DebugService {
+export class DebugUtil {
     private static registry: Map<any, any> = new Map();
 
     public static level: LogLevel = LogLevel.INFO;
@@ -24,9 +24,9 @@ export class DebugService {
             if (!handler) return descriptor;
             const instance = {
                 [key](this: T, ...args: any[]) {
-                    const accessor = DebugService.registry.get(this.constructor);
+                    const accessor = DebugUtil.registry.get(this.constructor);
                     const name = accessor?.(this) ?? this.constructor.name;
-                    if (level < DebugService.level) return handler.call(this, ...args);
+                    if (level < DebugUtil.level) return handler.call(this, ...args);
                     console.group(`%c${name}::${key}`, `color: ${{
                         [LogLevel.DEBUG]: 'gray',
                         [LogLevel.INFO]: '',
@@ -47,7 +47,7 @@ export class DebugService {
 
     public static is<T extends Object>(accessor: (self: T) => string) {
         return function (constructor: new (...props: any[]) => T) {
-            DebugService.registry.set(constructor, accessor);
+            DebugUtil.registry.set(constructor, accessor);
         }
     }
 
