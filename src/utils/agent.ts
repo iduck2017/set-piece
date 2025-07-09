@@ -1,7 +1,7 @@
 import { Model } from "../model";
 import { EventProducer } from "../types/event";
 import { DecorProducer } from "../types/decor";
-import { Event } from "src/types/model";
+import { Event } from "../types/model";
 
 export class AgentUtil<
     M extends Model = Model,

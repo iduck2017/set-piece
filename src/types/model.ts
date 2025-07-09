@@ -1,4 +1,4 @@
-import { Model } from "src/model"
+import { Model } from "../model"
 import { DeepReadonly, Primitive } from "utility-types"
 
 export type Refer<R extends Model.Refer = {}> = { [K in keyof R]: R[K] extends any[] ? Readonly<R[K]> : R[K] | undefined }

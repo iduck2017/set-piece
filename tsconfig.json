@@ -13,7 +13,6 @@
       "strictFunctionTypes": false,
       "stripInternal": true,
       "paths": {},
-      "baseUrl": ".",
       "noUncheckedIndexedAccess": true
     },
     "include": [ "src/**/*" ],
