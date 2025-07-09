@@ -49,7 +49,7 @@ export class StoreService {
         return result;
     }
 
-    @TranxService.use()
+    @TranxService.span()
     public static load(chunk: Chunk): Model | undefined {
         const refer: Record<string, Model> = {};
         const model = StoreService.create(chunk, refer);

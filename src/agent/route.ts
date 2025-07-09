@@ -37,21 +37,21 @@ export class RouteAgent<
         this._isRoot = false;
     }
 
-    @TranxService.use()
+    @TranxService.span()
     public bind(parent: P | undefined, key: string) {
         this._isBind = true;
         this._key = key;
         this._parent = parent;
     }
 
-    @TranxService.use()
+    @TranxService.span()
     public unbind() {
         this._isBind = false;
         this._key = undefined;
         this._parent = undefined;
     }
 
-    @TranxService.use()
+    @TranxService.span()
     public reload() {}
 
     @DebugService.log(LogLevel.DEBUG)

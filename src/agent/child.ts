@@ -43,7 +43,7 @@ export class ChildAgent<
         return value;
     }
    
-    @TranxService.use()
+    @TranxService.span()
     private set(
         origin: Partial<Record<string, Model | Model[]>>, 
         key: string, 
@@ -67,7 +67,7 @@ export class ChildAgent<
         return true;
     }
 
-    @TranxService.use()
+    @TranxService.span()
     private del(origin: Partial<Record<string, Model | Model[]>>, key: string) {
         const prev = origin[key];
         if (prev instanceof Array) prev.forEach(prev => prev.agent.route.unbind())
@@ -110,7 +110,7 @@ export class ChildAgent<
         return origin[index];
     }
 
-    @TranxService.use()
+    @TranxService.span()
     private lset(key: string, origin: Record<string, unknown>, index: string, next: Model) {
         const prev = origin[index];
         if (prev instanceof Model) prev.agent.route.unbind();
@@ -122,7 +122,7 @@ export class ChildAgent<
         return true;
     }
 
-    @TranxService.use()
+    @TranxService.span()
     private ldel(key: string, origin: any, index: string) {
         const prev = origin[index];
         if (prev instanceof Model) prev.agent.route.unbind();
@@ -131,7 +131,7 @@ export class ChildAgent<
     }
 
 
-    @TranxService.use()
+    @TranxService.span()
     private push(key: string, origin: Model[], ...next: Model[]) {
         next = next.map(next => {
             if (next.agent.route.isBind) next = next.copy();
@@ -141,7 +141,7 @@ export class ChildAgent<
         return origin.push(...next);
     }
 
-    @TranxService.use()
+    @TranxService.span()
     private unshift(key: string, origin: Model[], ...next: Model[]) {
         next = next.map(next => {
             if (next.agent.route.isBind) next = next.copy();
@@ -152,31 +152,31 @@ export class ChildAgent<
     }
 
 
-    @TranxService.use()
+    @TranxService.span()
     private pop(key: string, origin: Model[]) {
         const result = origin.pop();
         if (result) result.agent.route.unbind();
         return result;
     }
 
-    @TranxService.use()
+    @TranxService.span()
     private shift(key: string, origin: Model[]) {
         const result = origin.shift();
         if (result) result.agent.route.unbind();
         return result;
     }
 
-    @TranxService.use()
+    @TranxService.span()
     private reverse(origin: Model[]) {
         return origin.reverse();
     }
 
-    @TranxService.use()
+    @TranxService.span()
     private sort(origin: Model[], handler: (a: Model, b: Model) => number) {
         return origin.sort(handler);
     }
 
-    @TranxService.use()
+    @TranxService.span()
     private fill(key: string, origin: Model[], sample: Model, start?: number, end?: number) {
         if (!start) start = 0;
         if (!end) end = origin.length;
@@ -191,7 +191,7 @@ export class ChildAgent<
         return origin;
     }
 
-    @TranxService.use()
+    @TranxService.span()
     private splice(key: string, origin: Model[], start: number, count: number, ...next: Model[]) {
         const prev = origin.slice(start, start + count);
         prev.forEach(prev => prev.agent.route.unbind())

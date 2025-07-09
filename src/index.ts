@@ -8,9 +8,9 @@ export { EventAgent } from "./agent/event";
 export { RouteAgent } from "./agent/route";
 
 export { TranxService } from './service/tranx';
-export { DebugService, LogLevel } from "./service/debug";
+export { DebugService as DebugService, LogLevel } from "./service/debug";
 export { StoreService } from "./service/store";
-export { CheckService } from "./service/check";
+export { CheckService as CheckService } from "./service/check";
 
 export { State, Refer, Child, Event } from "./types";
 export { Callback, Decorator } from "./types";

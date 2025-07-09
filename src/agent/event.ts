@@ -13,7 +13,7 @@ export class EventAgent<
     
     private static registry: Map<Function, Record<string, Array<(self: Model) => EventProducer | undefined>>> = new Map();
 
-    public static use<E, M extends Model, I extends Model>(
+    public static on<E, M extends Model, I extends Model>(
         accessor: (self: I) => EventProducer<E, M> | undefined
     ) {
         return function(
@@ -96,12 +96,10 @@ export class EventAgent<
             producers: new Map()
         }
         this.current = new Proxy({} as any, {
-            get: (origin, key: string) => this.yield.bind(this, key)
+            get: (origin, key: string) => this.emit.bind(this, key)
         })
     }
 
-    @TranxService.use()
-    public yield(key: string, event: E) {}
 
     @DebugService.log(LogLevel.DEBUG)
     public emit<E>(key: string, event: E) {

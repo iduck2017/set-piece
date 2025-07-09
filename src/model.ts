@@ -31,7 +31,7 @@ export namespace Model {
     export type Refer = Record<string, Model | Model[]>
 }
 
-@TranxService.use(true)
+@TranxService.span(true)
 export class Model<
     P extends Model.Parent = Model.Parent,
     E extends Model.Event = {},

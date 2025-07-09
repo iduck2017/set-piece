@@ -13,7 +13,7 @@ export class StateAgent<
 
     private static registry: Map<Function, Record<string, Array<(self: Model) => DecorProducer | undefined>>> = new Map();
 
-    public static use<S extends Record<string, any>, M extends Model, I extends Model>(
+    public static on<S extends Record<string, any>, M extends Model, I extends Model>(
         accessor: (self: I) => DecorProducer<S, M> | undefined
     ) {
         return function(
@@ -65,16 +65,16 @@ export class StateAgent<
         else this.reset();
     } 
 
-    @TranxService.use()
+    @TranxService.span()
     private reset() {}
 
-    @TranxService.use()
+    @TranxService.span()
     private set(origin: any, key: string, next: any) {
         origin[key] = next;
         return true
     }
     
-    @TranxService.use()
+    @TranxService.span()
     private del(origin: any, key: string) {
         delete origin[key];
         return true;
