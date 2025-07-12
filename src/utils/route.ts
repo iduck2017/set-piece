@@ -4,10 +4,7 @@ import { TranxUtil } from "./tranx";
 import { DebugUtil, LogLevel } from "./debug";
 
 @DebugUtil.is(self => `${self.model.name}::route`)
-export class RouteUtil<
-    M extends Model = Model,
-    P extends Model = Model,
-> extends Util<M> {
+export class RouteUtil<M extends Model = Model> extends Util<M> {
     
     public static boot<T extends Model>(root: T): T {
         console.log('boot', root.name)
@@ -26,7 +23,7 @@ export class RouteUtil<
     public get isLoad() { return this._isLoad; }
     public get isRoot() { return this._isRoot; }
 
-    private _parent: P | undefined;
+    private _parent: Model | undefined;
     public get parent() { return this._parent; }
     public get root(): Model { return this.parent?.utils.route.root ?? this.model; }
 
@@ -38,7 +35,7 @@ export class RouteUtil<
     }
 
     @TranxUtil.span()
-    public bind(parent: P | undefined, key: string) {
+    public bind(parent: Model | undefined, key: string) {
         this._isBind = true;
         this._key = key;
         this._parent = parent;

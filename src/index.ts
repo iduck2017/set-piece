@@ -15,4 +15,4 @@ export { CheckUtil } from "./utils/check";
 export { LogLevel } from "./utils/debug"
 export { Optional } from "./types";
 export { Callback, Decorator } from "./types";
-export { State, Refer, Child, Event } from "./types/model";
+export { State, Refer, Child, Event, Props } from "./types/model";

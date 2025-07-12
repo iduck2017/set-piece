@@ -6,17 +6,17 @@ import { AgentUtil } from "./utils/agent";
 import { ReferUtil } from "./utils/refer";
 import { TranxUtil } from "./utils/tranx";
 import { State, Refer, Child } from "./types/model";
+import { Optional } from "./types";
 
 type Agent<
     M extends Model = Model,
-    P extends Model.Parent = Model.Parent,
     E extends Model.Event = Model.Event,
     S extends Model.State = Model.State,
     C extends Model.Child = Model.Child,
     R extends Model.Refer = Model.Refer,
 > = Readonly<{
     event: EventUtil<M, E>
-    route: RouteUtil<M, P>
+    route: RouteUtil<M>
     state: StateUtil<M, S>
     child: ChildUtil<M, C>
     refer: ReferUtil<M, R>
@@ -33,7 +33,6 @@ export namespace Model {
 
 @TranxUtil.span(true)
 export class Model<
-    P extends Model.Parent = Model.Parent,
     E extends Model.Event = {},
     S extends Model.State = {},
     C extends Model.Child = {},
@@ -54,16 +53,16 @@ export class Model<
     public readonly uuid: string
     public get name() { return this.constructor.name; }
 
-    public get state(): Readonly<State<S>> { return this.utils.state.current as any; } 
+    public get state(): Readonly<State<S>> { return this.utils.state.current; } 
     public get refer(): Readonly<Refer<R>> { return this.utils.refer.current; }
     public get child(): Readonly<Child<C>> { return this.utils.child.current; }
-    public get route(): Readonly<Partial<{
-        parent: P,
-        root: Model
+    public get route(): Readonly<Optional<{
+        root: Model,
+        parent: Model,
     }>> { 
         return { 
-            parent: this.utils.route.parent,
             root: this.utils.route.root,
+            parent: this.utils.route.parent,
         }
     }
     
@@ -83,7 +82,7 @@ export class Model<
     }>
 
     /** @internal */
-    public readonly utils: Agent<this, P, E, S, C, R>
+    public readonly utils: Agent<this, E, S, C, R>
     public readonly proxy: AgentUtil<this, E, S, C>
 
     public get props(): {
@@ -110,7 +109,7 @@ export class Model<
         this.proxy = new AgentUtil(this);
         this.utils = {
             event: new EventUtil<this, E>(this),
-            route: new RouteUtil<this, P>(this),
+            route: new RouteUtil<this>(this),
             refer: new ReferUtil<this, R>(this, props.refer),
             state: new StateUtil<this, S>(this, props.state),
             child: new ChildUtil<this, C>(this, props.child),
