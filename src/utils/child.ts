@@ -50,7 +50,7 @@ export class ChildUtil<
         next?: Model | Model[]
     ) {
         const prev = origin[key];
-        if (prev instanceof Array) prev.forEach(prev => prev.utils.route.unbind())
+        if (prev instanceof Array) prev.forEach(item => item.utils.route.unbind())
         if (prev instanceof Model) prev.utils.route.unbind();
         if (next instanceof Array) {
             next = next.map(next => {
@@ -70,7 +70,7 @@ export class ChildUtil<
     @TranxUtil.span()
     private del(origin: Partial<Record<string, Model | Model[]>>, key: string) {
         const prev = origin[key];
-        if (prev instanceof Array) prev.forEach(prev => prev.utils.route.unbind())
+        if (prev instanceof Array) prev.forEach(item => item.utils.route.unbind())
         if (prev instanceof Model) prev.utils.route.unbind();
         delete origin[key];
         return true;
@@ -181,7 +181,7 @@ export class ChildUtil<
         if (!start) start = 0;
         if (!end) end = origin.length;
         const prev = origin.slice(start, end);
-        prev.forEach(prev => prev.utils.route.unbind())
+        prev.forEach(item => item.utils.route.unbind())
         const next = prev.map(() => {
             const next = sample.copy();
             next.utils.route.bind(this.model, key);
@@ -194,11 +194,11 @@ export class ChildUtil<
     @TranxUtil.span()
     private splice(key: string, origin: Model[], start: number, count: number, ...next: Model[]) {
         const prev = origin.slice(start, start + count);
-        prev.forEach(prev => prev.utils.route.unbind())
-        next = next.map(next => {
-            if (next.utils.route.isBind) next = next.copy();
-            next.utils.route.bind(this.model, key);
-            return next;
+        prev.forEach(item => item.utils.route.unbind())
+        next = next.map(item => {
+            if (item.utils.route.isBind) item = item.copy();
+            item.utils.route.bind(this.model, key);
+            return item;
         });
         return origin.splice(start, count, ...next);
     }

@@ -133,8 +133,8 @@ export class StateUtil<
             const hooks = StateUtil.registry.get(constructor) ?? {};
             Object.keys(hooks).forEach(key => {
                 const accessors = hooks[key] ?? [];
-                [...accessors].forEach(accessor => {
-                    const producer = accessor(this.model);
+                [...accessors].forEach(item => {
+                    const producer = item(this.model);
                     if (!producer) return;
                     const model: any = this.model;
                     this.bind(producer, model[key]);
@@ -146,16 +146,16 @@ export class StateUtil<
     }
 
     public unload() {
-        this.router.producers.forEach((producers, handler) => {
-            [...producers].forEach(item => this.unbind(item, handler));
+        this.router.producers.forEach((list, handler) => {
+            [...list].forEach(item => this.unbind(item, handler));
         });
-        this.router.consumers.forEach((consumers, path) => {
+        this.router.consumers.forEach((list, path) => {
             const keys = path.split('/');
             keys.pop();
             const child: Record<string, AgentUtil> = this.model.proxy.child;
             const producer = child[keys.join('/')]?.decor;
             if (!producer) return;
-            [ ...consumers ].forEach(item => {
+            [...list].forEach(item => {
                 const { model: that, updater } = item;
                 if (that.utils.route.root !== this.utils.route.root) return;
                 that.utils.state.unbind(producer, updater);

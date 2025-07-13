@@ -104,9 +104,9 @@ export class ReferUtil<
         next?: Model | Model[]
     ) {
         let prev = origin[key];
-        if (prev instanceof Array) prev.forEach(prev => prev.utils.refer.unbind(this.model, key));
+        if (prev instanceof Array) prev.forEach(item => item.utils.refer.unbind(this.model, key));
         if (prev instanceof Model) prev.utils.refer.unbind(this.model, key);
-        if (next instanceof Array) next.forEach(next => next.utils.refer.bind(this.model, key));
+        if (next instanceof Array) next.forEach(item => item.utils.refer.bind(this.model, key));
         if (next instanceof Model) next.utils.refer.bind(this.model, key);
         origin[key] = next;
         return true;
@@ -115,7 +115,7 @@ export class ReferUtil<
     @TranxUtil.span()
     private del(origin: Partial<Record<string, Model | Model[]>>, key: string) {
         let prev = origin[key];
-        if (prev instanceof Array) prev.forEach(prev => prev.utils.refer.unbind(this.model, key));
+        if (prev instanceof Array) prev.forEach(item => item.utils.refer.unbind(this.model, key));
         if (prev instanceof Model) prev.utils.refer.unbind(this.model, key);
         delete origin[key];
         return true;
@@ -166,7 +166,7 @@ export class ReferUtil<
 
     @TranxUtil.span()
     private unshift(key: string, origin: Model[], ...next: Model[]) {
-        next.forEach(next => next.utils.refer.bind(this.model, key));
+        next.forEach(item => item.utils.refer.bind(this.model, key));
         return origin.unshift(...next);
     }
 
@@ -200,16 +200,16 @@ export class ReferUtil<
         if (end === undefined) end = origin.length;
         const prev = origin.slice(start, end);
         const next: Model[] = new Array(end - start).fill(value);
-        prev.forEach(prev => prev.utils.refer.unbind(this.model, key));
-        next.forEach(next => next.utils.refer.bind(this.model, key));
+        prev.forEach(item => item.utils.refer.unbind(this.model, key));
+        next.forEach(item => item.utils.refer.bind(this.model, key));
         return origin.fill(value, start, end)
     }
 
     @TranxUtil.span()
     private splice(key: string, origin: Model[], start: number, count: number, ...next: Model[]) {
         const prev = origin.slice(start, start + count);
-        prev.forEach(prev => prev.utils.refer.unbind(this.model, key));
-        next.forEach(next => next.utils.refer.bind(this.model, key))
+        prev.forEach(item => item.utils.refer.unbind(this.model, key));
+        next.forEach(item => item.utils.refer.bind(this.model, key))
         const result = origin.splice(start, count, ...next);
         return result;
     }

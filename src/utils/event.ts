@@ -29,60 +29,10 @@ export class EventUtil<
             return descriptor;
         };
     }
-
-    public static prev<E, M extends Model>(
-        accessor: Callback<Callback<unknown, [E]> | undefined, [M]>
-    ) {
-        return function(
-            prototype: M,
-            key: string,
-            descriptor: TypedPropertyDescriptor<Callback<unknown, [E]>>
-        ): TypedPropertyDescriptor<Callback<unknown, [E]>> {
-            const handler = descriptor.value;
-            if (!handler) return descriptor;
-            const instance = {
-                [key](this: M, event: E) {
-                    accessor(this)?.(event);
-                    return handler.call(this, event);
-                }
-            }
-            descriptor.value = instance[key];
-            return descriptor;
-        };
-    }
-
-    public static next<E, M extends Model>(accessor: Callback<Callback<unknown, [E]> | undefined, [M, E]>): Decorator<M, E>;
-    public static next<E, M extends Model>(accessor: Callback<Callback<unknown, [E]> | undefined, [M, E]>, mode: 'async'): Decorator<M, Promise<E>>;
-    public static next<E, M extends Model>(
-        accessor: Callback<Callback<unknown, [E]> | undefined, [M, E]>,
-        mode?: 'async'
-    ) {
-        return function(
-            prototype: M,
-            key: string,
-            descriptor: TypedPropertyDescriptor<Callback<E | Promise<E>>>
-        ): TypedPropertyDescriptor<Callback<E | Promise<E>>> {
-            const handler = descriptor.value;
-            if (!handler) return descriptor;
-            const instance = {
-                [key](this: M, ...args: any[]) {
-                    const result = handler.call(this, ...args);
-                    if (result instanceof Promise) return result.then((result) => {
-                        accessor(this, result)?.(result);
-                        return result;
-                    });
-                    else accessor(this, result)?.(result);
-                    return result;
-                }
-            }
-            descriptor.value = instance[key];
-            return descriptor;
-        };
-    }
     
     public readonly current: Readonly<
-        { [K in keyof E]: (event: E[K]) => void } &
-        { [K in keyof Event<M>]: (event: Event<M>[K]) => void }
+        { [K in keyof E]: (event: E[K]) => boolean } &
+        { [K in keyof Event<M>]: (event: Event<M>[K]) => boolean }
     >;
     
     private readonly router: Readonly<{
@@ -102,7 +52,7 @@ export class EventUtil<
     }
 
     @DebugUtil.log(LogLevel.DEBUG)
-    public emit<E>(key: string, event: E) {
+    public emit<E>(key: string, event: E): boolean {
         let path = key;
         let parent: Model | undefined = this.model;
         const consumers: EventConsumer[] = [];
@@ -113,7 +63,11 @@ export class EventUtil<
             parent = parent.utils.route.parent;
         }
         consumers.sort((a, b) => a.model.uuid.localeCompare(b.model.uuid));
-        consumers.forEach(item => item.handler.call(item.model, this.model, event));
+        let isAbort: boolean | void = false;
+        consumers.forEach(item => {
+            isAbort = isAbort || item.handler.call(item.model, this.model, event);
+        });
+        return isAbort;
     }
 
     public bind<E, M extends Model>(
@@ -149,8 +103,8 @@ export class EventUtil<
             const hooks = EventUtil.registry.get(constructor) ?? {};
             Object.keys(hooks).forEach(key => {
                 const accessors = hooks[key] ?? [];
-                accessors.forEach(accessor => {
-                    const producer = accessor(this.model);
+                accessors.forEach(item => {
+                    const producer = item(this.model);
                     if (!producer) return;
                     const model: any = this.model;
                     this.bind(producer, model[key]);
@@ -161,10 +115,10 @@ export class EventUtil<
     }
 
     public unload() {
-        this.router.producers.forEach((producers, handler) => {
-            [...producers].forEach(producer => this.unbind(producer, handler));
+        this.router.producers.forEach((list, handler) => {
+            [...list].forEach(item => this.unbind(item, handler));
         })
-        this.router.consumers.forEach((consumers, path) => {
+        this.router.consumers.forEach((list, path) => {
             const keys = path.split('/');
             const key = keys.pop();
             if (!key) return;
@@ -172,8 +126,8 @@ export class EventUtil<
             const event: Record<string, EventProducer> | undefined = child[keys.join('/')]?.event
             const producer = event?.[key];
             if (!producer) return;
-            [...consumers].forEach(consumer => {
-                const { model: that, handler } = consumer;
+            [...list].forEach(item => {
+                const { model: that, handler } = item;
                 if (that.utils.route.root !== this.utils.route.root) return;
                 that.utils.event.unbind(producer, handler);
             })

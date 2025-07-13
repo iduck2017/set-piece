@@ -6,7 +6,6 @@ import { AgentUtil } from "./utils/agent";
 import { ReferUtil } from "./utils/refer";
 import { TranxUtil } from "./utils/tranx";
 import { State, Refer, Child } from "./types/model";
-import { Optional } from "./types";
 
 type Agent<
     M extends Model = Model,
@@ -56,7 +55,7 @@ export class Model<
     public get state(): Readonly<State<S>> { return this.utils.state.current; } 
     public get refer(): Readonly<Refer<R>> { return this.utils.refer.current; }
     public get child(): Readonly<Child<C>> { return this.utils.child.current; }
-    public get route(): Readonly<Optional<{
+    public get route(): Readonly<Partial<{
         root: Model,
         parent: Model,
     }>> { 
@@ -74,7 +73,7 @@ export class Model<
         }
     }
 
-    protected readonly event: Readonly<{ [K in keyof E]: (event: E[K]) => void }>;
+    protected readonly event: Readonly<{ [K in keyof E]: (event: E[K]) => boolean }>;
     protected readonly draft: Readonly<{
         child: C;
         state: State<S>

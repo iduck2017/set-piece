@@ -16,16 +16,3 @@ export namespace Event {
     export type OnReferChange<M extends Model> = { prev: M['refer'], next: M['refer'] };
     export type OnRouteChange<M extends Model> = { prev: M['route'], next: M['route'] }
 }
-
-
-export type Props<
-    S extends Model.State,
-    C extends Model.Child,
-    R extends Model.Refer
-> = {
-    uuid: string | undefined;
-    state: S,
-    child: C,
-    refer: R,
-}
-
