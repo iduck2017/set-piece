@@ -29,6 +29,69 @@ export class EventUtil<
             return descriptor;
         };
     }
+
+    private static _isLock = false;
+    public static get isLock() { return EventUtil._isLock; }
+
+    private static tasks: Callback[] = [];
+    
+    public static then<T>() {
+        return function(
+            prototype: unknown,
+            key: string,
+            descriptor: TypedPropertyDescriptor<Callback<T | undefined>>
+        ): TypedPropertyDescriptor<Callback<T | undefined>> {
+            const handler = descriptor.value;
+            if (!handler) return descriptor;
+            const instance = {
+                [key](this: unknown, ...args: any[]) {
+                    if (!EventUtil._isLock) return handler.call(this, ...args);
+                    EventUtil.tasks.push(() => handler.call(this, ...args));
+                }
+            }
+            descriptor.value = instance[key];
+            return descriptor;
+        }
+    }
+
+    public static span() {
+        return function(
+            prototype: unknown,
+            key: string,
+            descriptor: TypedPropertyDescriptor<Callback>
+        ): TypedPropertyDescriptor<Callback> {
+            const handler = descriptor.value;
+            if (!handler) return descriptor;
+            const instance = {
+                [key](this: unknown, ...args: any[]) {
+                    if (EventUtil._isLock) {
+                        return handler.call(this, ...args);
+                    }
+                    EventUtil._isLock = true;
+                    const result = handler.call(this, ...args);
+                    if (result instanceof Promise) {
+                        result.then(() => {
+                            EventUtil._isLock = false;
+                            EventUtil.end();
+                        })
+                    } else {
+                        EventUtil._isLock = false;
+                        EventUtil.end();
+                    }
+                    return result;
+                }
+            }
+            descriptor.value = instance[key];
+            return descriptor;
+        }
+    }
+
+    private static end() {
+        const tasks = [...EventUtil.tasks];
+        EventUtil.tasks = [];
+        tasks.forEach(callback => callback());
+    }
+
     
     public readonly current: Readonly<
         { [K in keyof E]: (event: E[K]) => boolean } &
