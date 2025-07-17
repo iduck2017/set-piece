@@ -6,6 +6,7 @@ import { AgentUtil } from "./utils/agent";
 import { ReferUtil } from "./utils/refer";
 import { TranxUtil } from "./utils/tranx";
 import { State, Refer, Child } from "./types/model";
+import { EventEmitter } from "./types/event";
 
 type Agent<
     M extends Model = Model,
@@ -73,7 +74,7 @@ export class Model<
         }
     }
 
-    protected readonly event: Readonly<{ [K in keyof E]: (event: E[K]) => boolean }>;
+    protected readonly event: Readonly<{ [K in keyof E]: EventEmitter<E[K]> }>;
     protected readonly draft: Readonly<{
         child: C;
         state: State<S>

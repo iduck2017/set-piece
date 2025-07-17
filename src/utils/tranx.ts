@@ -14,6 +14,27 @@ export class TranxUtil {
     private static readonly refer: Map<Model, Model['refer']> = new Map();
     private static readonly child: Map<Model, Model['child']> = new Map();
     private static readonly route: Map<Model, Model['route']> = new Map();
+    private static tasks: Callback[] = [];
+
+    public static then<T>() {
+        return function(
+            prototype: unknown,
+            key: string,
+            descriptor: TypedPropertyDescriptor<Callback<T | undefined>>
+        ): TypedPropertyDescriptor<Callback<T | undefined>> {
+            const handler = descriptor.value;
+            if (!handler) return descriptor;
+            const instance = {
+                [key](this: unknown, ...args: any[]) {
+                    if (!TranxUtil._isLock) return handler.call(this, ...args);
+                    TranxUtil.tasks.push(() => handler.call(this, ...args));
+                }
+            }
+            descriptor.value = instance[key];
+            return descriptor;
+        }
+    }
+
 
     public static span(): (prototype: Object, key: string, descriptor: TypedPropertyDescriptor<Callback>) => TypedPropertyDescriptor<Callback>;
     public static span(isType: true): (constructor: new (...props: any[]) => Model) => any;
@@ -105,14 +126,17 @@ export class TranxUtil {
         const refer = new Map(TranxUtil.refer);
         const child = new Map(TranxUtil.child);
         const route = new Map(TranxUtil.route);
+        const tasks = [...TranxUtil.tasks];
         TranxUtil.state.clear();
         TranxUtil.refer.clear();
         TranxUtil.child.clear();
         TranxUtil.route.clear();
+        TranxUtil.tasks = [];
         state.forEach((info, model) => model.utils.event.current.onStateChange({ prev: info, next: model.state }));
         refer.forEach((info, model) => model.utils.event.current.onReferChange({ prev: info, next: model.refer }));
         child.forEach((info, model) => model.utils.event.current.onChildChange({ prev: info, next: model.child }));
         route.forEach((info, model) => model.utils.event.current.onRouteChange({ prev: info, next: model.route }));
+        tasks.forEach(callback => callback());
     }
 
 }

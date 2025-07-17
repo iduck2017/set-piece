@@ -1,4 +1,4 @@
-import { EventConsumer, EventHandler, EventProducer } from "../types/event";
+import { EventConsumer, EventEmitter, EventHandler, EventProducer } from "../types/event";
 import { Model } from "../model";
 import { Util } from ".";
 import { Callback, Decorator } from "../types";
@@ -92,10 +92,9 @@ export class EventUtil<
         tasks.forEach(callback => callback());
     }
 
-    
     public readonly current: Readonly<
-        { [K in keyof E]: (event: E[K]) => boolean } &
-        { [K in keyof Event<M>]: (event: Event<M>[K]) => boolean }
+        { [K in keyof E]: EventEmitter<E[K]> } &
+        { [K in keyof Event<M>]: EventEmitter<Event<M>[K]> }
     >;
     
     private readonly router: Readonly<{
@@ -115,7 +114,11 @@ export class EventUtil<
     }
 
     @DebugUtil.log(LogLevel.DEBUG)
-    public emit<E>(key: string, event: E): boolean {
+    public emit<E>(key: string, event: E, isYield: boolean = true): boolean {
+        if (isYield && EventUtil.isLock) {
+            EventUtil.tasks.push(() => this.emit(key, event, false));
+            return false;
+        }
         let path = key;
         let parent: Model | undefined = this.model;
         const consumers: EventConsumer[] = [];
