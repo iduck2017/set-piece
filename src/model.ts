@@ -10,11 +10,11 @@ import { Constructor } from "./types";
 
 type Agent<
     M extends Model = Model,
+    P extends Model.Route = Model.Route,
     E extends Model.Event = Model.Event,
     S extends Model.State = Model.State,
     C extends Model.Child = Model.Child,
     R extends Model.Refer = Model.Refer,
-    P extends Model.Route = Model.Route,
 > = Readonly<{
     event: EventUtil<M, E>
     route: RouteUtil<M, P>
@@ -94,7 +94,7 @@ export class Model<
     }>
 
     /** @internal */
-    public readonly utils: Agent<this, E, S, C, R, P>
+    public readonly utils: Agent<this, P, E, S, C, R>
     public readonly proxy: AgentUtil<this, E, S, C>
 
     public get props(): {

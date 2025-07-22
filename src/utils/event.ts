@@ -85,7 +85,7 @@ export class EventUtil<
         handler: EventHandler<E, M>
     ) {
         const { model: that, path } = producer;
-        if (this.utils.route.current.root !== that.utils.route.current.root) return;
+        if (this.utils.route.current.origin !== that.utils.route.current.origin) return;
         const consumers = that.utils.event.router.consumers.get(path) ?? [];
         const producers = this.router.producers.get(handler) ?? [];
         consumers.push({ model: this.model, handler });
@@ -141,7 +141,7 @@ export class EventUtil<
             if (!producer) return;
             [...list].forEach(item => {
                 const { model: that, handler } = item;
-                if (that.utils.route.current.root !== this.utils.route.current.root) return;
+                if (that.utils.route.current.origin !== this.utils.route.current.origin) return;
                 that.utils.event.unbind(producer, handler);
             })
         })

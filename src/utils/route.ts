@@ -6,7 +6,7 @@ import { Constructor } from "../types";
 
 export type Route<P extends Model.Route = Model.Route> = Partial<P & {
     parent: Model;
-    root: Model;
+    origin: Model;
 }>
 
 @DebugUtil.is(self => `${self.model.name}::route`)
@@ -31,15 +31,12 @@ export class RouteUtil<
     public get isLoad() { return this._isLoad; }
     public get isRoot() { return this._isRoot; }
 
-
-    private _root: Model;
+    private _origin: Model;
     private _parent: Model | undefined;
     private _config: { [K in keyof P]?: [number, Constructor<P[K]>] };
+
     public get current(): Route<P> {
-        const result: any = {
-            parent: this._parent,
-            root: this._root,
-        };
+        const result: any = {};
         Object.keys(this._config).forEach((key: keyof P) => {
             const item = this._config[key];
             if (!item) return;
@@ -52,6 +49,8 @@ export class RouteUtil<
             }
             if (parent instanceof type) result[key] = parent;
         });
+        result.parent = this._parent;
+        result.origin = this._origin;
         return result;
     }
 
@@ -61,7 +60,7 @@ export class RouteUtil<
         this._isLoad = false;
         this._isRoot = false;
         this._config = route;
-        this._root = model;
+        this._origin = model;
     }
 
     @TranxUtil.span()
@@ -69,7 +68,7 @@ export class RouteUtil<
         this._isBind = true;
         this._key = key;
         this._parent = parent;
-        this._root = parent?.utils.route._root ?? this.model;
+        this._origin = parent?.utils.route._origin ?? this.model;
     }
 
     @TranxUtil.span()
@@ -77,7 +76,7 @@ export class RouteUtil<
         this._isBind = false;
         this._key = undefined;
         this._parent = undefined;
-        this._root = this.model;
+        this._origin = this.model;
     }
 
     @TranxUtil.span()

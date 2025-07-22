@@ -50,21 +50,25 @@ export class ReferUtil<
     public unload() {
         const draft: Partial<Record<string, Model | Model[]>> = this.draft
         Object.keys(draft).forEach(key => {
-            if (draft[key] instanceof Array) {
-                draft[key] = draft[key].filter(item => {
-                    if (item.utils.route.current.root === this.utils.route.current.root) return true;
+            const item = draft[key]
+            if (item instanceof Array) {
+                draft[key] = item.filter(item => {
+                    if (item.utils.route.current.origin === 
+                        this.utils.route.current.origin) return true;
                     item.utils.refer.unbind(this.model, key);
                     return false;
                 })
             }
-            if (draft[key] instanceof Model) {
-                if (draft[key].utils.route.current.root === this.utils.route.current.root) return;
-                draft[key].utils.refer.unbind(this.model, key);
+            if (item instanceof Model) {
+                if (item.utils.route.current.origin === 
+                    this.utils.route.current.origin) return;
+                item.utils.refer.unbind(this.model, key);
                 delete draft[key]
             }
         })
         this.router.forEach((keys, item) => {
-            if (item.utils.route.current.root === this.utils.route.current.root) return;
+            if (item.utils.route.current.origin === 
+                this.utils.route.current.origin) return;
             [...keys].forEach(key => {
                 const origin: Record<string, Model | Model[]> = item.utils.refer.draft;
                 if (origin[key] instanceof Array) {

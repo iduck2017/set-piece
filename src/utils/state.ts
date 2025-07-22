@@ -117,7 +117,7 @@ export class StateUtil<
         updater: DecorUpdater<S, M>
     ) {
         const { model: that, path } = producer;
-        if (this.utils.route.current.root !== that.utils.route.current.root) return;
+        if (this.utils.route.current.origin !== that.utils.route.current.origin) return;
         const consumers = that.utils.state.router.consumers.get(path) ?? [];
         const producers = this.router.producers.get(updater) ?? [];
         consumers.push({ model: this.model, updater });
@@ -175,8 +175,8 @@ export class StateUtil<
             [...list].forEach(item => {
                 const { model: that, updater } = item;
                 if (
-                    that.utils.route.current.root !== 
-                    this.utils.route.current.root
+                    that.utils.route.current.origin !== 
+                    this.utils.route.current.origin
                 ) return;
                 that.utils.state.unbind(producer, updater);
             });
