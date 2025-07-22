@@ -1,6 +1,6 @@
 {
   "name": "set-piece",
-  "version": "2.3.0",
+  "version": "2.4.0",
   "main": "dist/cjs/index.js",
   "module": "dist/esm/index.js",
   "types": "dist/type/index.d.ts",

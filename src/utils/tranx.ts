@@ -35,11 +35,8 @@ export class TranxUtil {
         }
     }
 
-
     public static span(): (prototype: Object, key: string, descriptor: TypedPropertyDescriptor<Callback>) => TypedPropertyDescriptor<Callback>;
     public static span(isType: true): (constructor: new (...props: any[]) => Model) => any;
-    
-    @EventUtil.span()
     public static span(isType?: boolean) {
         if (isType) {
             return function (constructor: new (...props: any[]) => Model) {
@@ -100,7 +97,6 @@ export class TranxUtil {
         }
     }
 
-
     private static reload() {
         TranxUtil.route.forEach((info, item) => {
             if (!info.parent && !item.utils.route.isRoot) return;
@@ -108,13 +104,12 @@ export class TranxUtil {
         })
         TranxUtil.refer.forEach((info, item) => item.utils.refer.unload());
         TranxUtil.route.forEach((info, item) => {
-            const parent = item.utils.route.parent;
+            const parent = item.utils.route.current.parent;
             if (!parent?.utils.route.isLoad && !item.utils.route.isRoot) return;
             item.utils.route.load();
         })
         TranxUtil.state.forEach((info, item) => item.utils.state.emit());
     }
-
 
     /**
      * 1. avoid middle status machine
@@ -138,5 +133,4 @@ export class TranxUtil {
         route.forEach((info, model) => model.utils.event.current.onRouteChange({ prev: info, next: model.route }));
         tasks.forEach(callback => callback());
     }
-
 }

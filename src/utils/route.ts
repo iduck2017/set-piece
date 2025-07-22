@@ -2,10 +2,18 @@ import { Model } from "../model";
 import { Util } from ".";
 import { TranxUtil } from "./tranx";
 import { DebugUtil, LogLevel } from "./debug";
+import { Constructor } from "../types";
+
+export type Route<P extends Model.Route = Model.Route> = Partial<P & {
+    parent: Model;
+    root: Model;
+}>
 
 @DebugUtil.is(self => `${self.model.name}::route`)
-export class RouteUtil<M extends Model = Model> extends Util<M> {
-    
+export class RouteUtil<
+    M extends Model = Model,
+    P extends Model.Route = Model.Route,
+> extends Util<M> {
     public static boot<T extends Model>(root: T): T {
         console.log('boot', root.name)
         root.utils.route._isRoot = true;
@@ -23,15 +31,37 @@ export class RouteUtil<M extends Model = Model> extends Util<M> {
     public get isLoad() { return this._isLoad; }
     public get isRoot() { return this._isRoot; }
 
-    private _parent: Model | undefined;
-    public get parent() { return this._parent; }
-    public get root(): Model { return this.parent?.utils.route.root ?? this.model; }
 
-    constructor(model: M) {
+    private _root: Model;
+    private _parent: Model | undefined;
+    private _config: { [K in keyof P]?: [number, Constructor<P[K]>] };
+    public get current(): Route<P> {
+        const result: any = {
+            parent: this._parent,
+            root: this._root,
+        };
+        Object.keys(this._config).forEach((key: keyof P) => {
+            const item = this._config[key];
+            if (!item) return;
+            const type = item[1];
+            let depth = item[0];
+            let parent: Model | undefined = this.model;
+            while (depth > 0 && parent) {
+                depth -= 1;
+                parent = parent.utils.route._parent;
+            }
+            if (parent instanceof type) result[key] = parent;
+        });
+        return result;
+    }
+
+    constructor(model: M, route: { [K in keyof P]?: [number, Constructor<P[K]>] }) {
         super(model);
         this._isBind = false;
         this._isLoad = false;
         this._isRoot = false;
+        this._config = route;
+        this._root = model;
     }
 
     @TranxUtil.span()
@@ -39,6 +69,7 @@ export class RouteUtil<M extends Model = Model> extends Util<M> {
         this._isBind = true;
         this._key = key;
         this._parent = parent;
+        this._root = parent?.utils.route._root ?? this.model;
     }
 
     @TranxUtil.span()
@@ -46,6 +77,7 @@ export class RouteUtil<M extends Model = Model> extends Util<M> {
         this._isBind = false;
         this._key = undefined;
         this._parent = undefined;
+        this._root = this.model;
     }
 
     @TranxUtil.span()
@@ -67,4 +99,5 @@ export class RouteUtil<M extends Model = Model> extends Util<M> {
         this.utils.state.unload();
         this.utils.refer.reset();
     }
+
 }

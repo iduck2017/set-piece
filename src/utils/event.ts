@@ -1,10 +1,19 @@
-import { EventConsumer, EventEmitter, EventHandler, EventProducer } from "../types/event";
 import { Model } from "../model";
 import { Util } from ".";
 import { Callback, Decorator } from "../types";
 import { DebugUtil, LogLevel } from "./debug";
-import { Event } from "../types/model";
+import { Event } from "../model";
 import { AgentUtil } from "./agent";
+import { TranxUtil } from "./tranx";
+
+export type EventHandler<E = any, M extends Model = Model> = (model: M, event: E) => E | void
+export type EventEmitter<E = any> = (event: E) => E | void
+export type EventConsumer = { model: Model, handler: EventHandler }
+export type EventProducer<E = any, M extends Model = Model> = {
+    path: string;
+    model: M;
+    event?: E;
+}
 
 @DebugUtil.is(self => `${self.model.name}::event`)
 export class EventUtil<
@@ -30,68 +39,6 @@ export class EventUtil<
         };
     }
 
-    private static _isLock = false;
-    public static get isLock() { return EventUtil._isLock; }
-
-    private static tasks: Callback[] = [];
-    
-    public static then<T>() {
-        return function(
-            prototype: unknown,
-            key: string,
-            descriptor: TypedPropertyDescriptor<Callback<T | undefined>>
-        ): TypedPropertyDescriptor<Callback<T | undefined>> {
-            const handler = descriptor.value;
-            if (!handler) return descriptor;
-            const instance = {
-                [key](this: unknown, ...args: any[]) {
-                    if (!EventUtil._isLock) return handler.call(this, ...args);
-                    EventUtil.tasks.push(() => handler.call(this, ...args));
-                }
-            }
-            descriptor.value = instance[key];
-            return descriptor;
-        }
-    }
-
-    public static span() {
-        return function(
-            prototype: unknown,
-            key: string,
-            descriptor: TypedPropertyDescriptor<Callback>
-        ): TypedPropertyDescriptor<Callback> {
-            const handler = descriptor.value;
-            if (!handler) return descriptor;
-            const instance = {
-                [key](this: unknown, ...args: any[]) {
-                    if (EventUtil._isLock) {
-                        return handler.call(this, ...args);
-                    }
-                    EventUtil._isLock = true;
-                    const result = handler.call(this, ...args);
-                    if (result instanceof Promise) {
-                        result.then(() => {
-                            EventUtil._isLock = false;
-                            EventUtil.end();
-                        })
-                    } else {
-                        EventUtil._isLock = false;
-                        EventUtil.end();
-                    }
-                    return result;
-                }
-            }
-            descriptor.value = instance[key];
-            return descriptor;
-        }
-    }
-
-    private static end() {
-        const tasks = [...EventUtil.tasks];
-        EventUtil.tasks = [];
-        tasks.forEach(callback => callback());
-    }
-
     public readonly current: Readonly<
         { [K in keyof E]: EventEmitter<E[K]> } &
         { [K in keyof Event<M>]: EventEmitter<Event<M>[K]> }
@@ -114,11 +61,8 @@ export class EventUtil<
     }
 
     @DebugUtil.log(LogLevel.DEBUG)
-    public emit<E>(key: string, event: E, isYield: boolean = true): boolean {
-        if (isYield && EventUtil.isLock) {
-            EventUtil.tasks.push(() => this.emit(key, event, false));
-            return false;
-        }
+    @TranxUtil.then<any>()
+    public emit<E>(key: string, event: E): E | void {
         let path = key;
         let parent: Model | undefined = this.model;
         const consumers: EventConsumer[] = [];
@@ -126,14 +70,14 @@ export class EventUtil<
             const router = parent.utils.event.router;
             consumers.push(...router.consumers.get(path) ?? []);
             path = parent.utils.route.key + '/' + path;
-            parent = parent.utils.route.parent;
+            parent = parent.utils.route.current.parent;
         }
         consumers.sort((a, b) => a.model.uuid.localeCompare(b.model.uuid));
-        let isAbort: boolean | void = false;
+        let result: E | undefined = event;
         consumers.forEach(item => {
-            isAbort = isAbort || item.handler.call(item.model, this.model, event);
+            result = item.handler.call(item.model, this.model, result);
         });
-        return isAbort;
+        return result;
     }
 
     public bind<E, M extends Model>(
@@ -141,7 +85,7 @@ export class EventUtil<
         handler: EventHandler<E, M>
     ) {
         const { model: that, path } = producer;
-        if (this.utils.route.root !== that.utils.route.root) return;
+        if (this.utils.route.current.root !== that.utils.route.current.root) return;
         const consumers = that.utils.event.router.consumers.get(path) ?? [];
         const producers = this.router.producers.get(handler) ?? [];
         consumers.push({ model: this.model, handler });
@@ -157,7 +101,10 @@ export class EventUtil<
         const { model: that, path } = producer;
         const consumers = that.utils.event.router.consumers.get(path) ?? [];
         const producers = this.router.producers.get(handler) ?? [];
-        let index = consumers.findIndex(item => item.handler === handler && item.model === this.model);
+        let index = consumers.findIndex(item => (
+            item.handler === handler && 
+            item.model === this.model
+        ));
         if (index !== -1) consumers.splice(index, 1);
         index = producers.indexOf(producer);
         if (index !== -1) producers.splice(index, 1);
@@ -194,7 +141,7 @@ export class EventUtil<
             if (!producer) return;
             [...list].forEach(item => {
                 const { model: that, handler } = item;
-                if (that.utils.route.root !== this.utils.route.root) return;
+                if (that.utils.route.current.root !== this.utils.route.current.root) return;
                 that.utils.event.unbind(producer, handler);
             })
         })

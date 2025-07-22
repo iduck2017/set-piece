@@ -1,7 +1,7 @@
 import { TranxUtil } from "./tranx";
 import { Model } from "../model";
 import { Util } from ".";
-import { Refer } from "../types/model";
+import { Refer } from "../model";
 import { DebugUtil, LogLevel } from "./debug";
 
 @DebugUtil.is(self => `${self.model.name}::refer`)
@@ -52,19 +52,19 @@ export class ReferUtil<
         Object.keys(draft).forEach(key => {
             if (draft[key] instanceof Array) {
                 draft[key] = draft[key].filter(item => {
-                    if (item.utils.route.root === this.utils.route.root) return true;
+                    if (item.utils.route.current.root === this.utils.route.current.root) return true;
                     item.utils.refer.unbind(this.model, key);
                     return false;
                 })
             }
             if (draft[key] instanceof Model) {
-                if (draft[key].utils.route.root === this.utils.route.root) return;
+                if (draft[key].utils.route.current.root === this.utils.route.current.root) return;
                 draft[key].utils.refer.unbind(this.model, key);
                 delete draft[key]
             }
         })
         this.router.forEach((keys, item) => {
-            if (item.utils.route.root === this.utils.route.root) return;
+            if (item.utils.route.current.root === this.utils.route.current.root) return;
             [...keys].forEach(key => {
                 const origin: Record<string, Model | Model[]> = item.utils.refer.draft;
                 if (origin[key] instanceof Array) {

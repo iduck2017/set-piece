@@ -1,12 +1,12 @@
-import { EventUtil  } from "./utils/event";
+import { EventEmitter, EventUtil  } from "./utils/event";
 import { StateUtil } from "./utils/state";
-import { RouteUtil } from "./utils/route";
+import { Route, RouteUtil } from "./utils/route";
 import { ChildUtil } from "./utils/child";
 import { AgentUtil } from "./utils/agent";
 import { ReferUtil } from "./utils/refer";
 import { TranxUtil } from "./utils/tranx";
-import { State, Refer, Child } from "./types/model";
-import { EventEmitter } from "./types/event";
+import { DeepReadonly, Primitive } from "utility-types";
+import { Constructor } from "./types";
 
 type Agent<
     M extends Model = Model,
@@ -14,13 +14,31 @@ type Agent<
     S extends Model.State = Model.State,
     C extends Model.Child = Model.Child,
     R extends Model.Refer = Model.Refer,
+    P extends Model.Route = Model.Route,
 > = Readonly<{
     event: EventUtil<M, E>
-    route: RouteUtil<M>
+    route: RouteUtil<M, P>
     state: StateUtil<M, S>
     child: ChildUtil<M, C>
     refer: ReferUtil<M, R>
 }>
+
+
+export type Refer<R extends Model.Refer = {}> = { [K in keyof R]: R[K] extends any[] ? Readonly<R[K]> : R[K] | undefined }
+export type Child<C extends Model.Child = {}> = { [K in keyof C]: C[K] extends any[] ? Readonly<C[K]> : C[K] }
+export type State<S extends Model.State = {}> = { [K in keyof S]: S[K] extends Primitive ? S[K] : DeepReadonly<S[K]> }
+export type Event<M extends Model> = {
+    onStateChange: Event.OnStateChange<M>
+    onChildChange: Event.OnChildChange<M>
+    onReferChange: Event.OnReferChange<M>
+    onRouteChange: Event.OnRouteChange<M>
+}
+export namespace Event {
+    export type OnStateChange<M extends Model> = { prev: M['state'], next: M['state'] };
+    export type OnChildChange<M extends Model> = { prev: M['child'], next: M['child'] };
+    export type OnReferChange<M extends Model> = { prev: M['refer'], next: M['refer'] };
+    export type OnRouteChange<M extends Model> = { prev: M['route'], next: M['route'] }
+}
 
 
 export namespace Model {
@@ -29,10 +47,12 @@ export namespace Model {
     export type State = Record<string, any>
     export type Child = Record<string, Model | Model[]>
     export type Refer = Record<string, Model | Model[]>
+    export type Route = Record<string, Model>
 }
 
 @TranxUtil.span(true)
 export class Model<
+    P extends Model.Route = {},
     E extends Model.Event = {},
     S extends Model.State = {},
     C extends Model.Child = {},
@@ -56,15 +76,7 @@ export class Model<
     public get state(): Readonly<State<S>> { return this.utils.state.current; } 
     public get refer(): Readonly<Refer<R>> { return this.utils.refer.current; }
     public get child(): Readonly<Child<C>> { return this.utils.child.current; }
-    public get route(): Readonly<Partial<{
-        root: Model,
-        parent: Model,
-    }>> { 
-        return { 
-            root: this.utils.route.root,
-            parent: this.utils.route.parent,
-        }
-    }
+    public get route(): Readonly<Route<P>> { return this.utils.route.current; }
     
     public get status() {
         return {
@@ -82,7 +94,7 @@ export class Model<
     }>
 
     /** @internal */
-    public readonly utils: Agent<this, E, S, C, R>
+    public readonly utils: Agent<this, E, S, C, R, P>
     public readonly proxy: AgentUtil<this, E, S, C>
 
     public get props(): {
@@ -104,12 +116,13 @@ export class Model<
         state: S;
         child: C;
         refer: R;
+        route: { [K in keyof P]: [number, Constructor<P[K]>] };
     }) {
         this.uuid = props.uuid ?? Model.uuid;
         this.proxy = new AgentUtil(this);
         this.utils = {
             event: new EventUtil<this, E>(this),
-            route: new RouteUtil<this>(this),
+            route: new RouteUtil<this, P>(this, props.route),
             refer: new ReferUtil<this, R>(this, props.refer),
             state: new StateUtil<this, S>(this, props.state),
             child: new ChildUtil<this, C>(this, props.child),
@@ -143,6 +156,7 @@ export class Model<
         }
         console.log('debug', dependency);
     }
+
 }
 
 

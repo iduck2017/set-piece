@@ -1,10 +1,24 @@
 import { Model } from "../model";
 import { Util } from ".";
 import { TranxUtil } from "./tranx";
-import { DecorConsumer, DecorProducer, DecorUpdater } from "../types/decor";
-import { State } from "../types/model";
+import { State } from "../model";
 import { DebugUtil, LogLevel } from "./debug";
 import { AgentUtil } from "./agent";
+
+export type DecorUpdater<
+    S extends Record<string, any> = Record<string, any>,
+    M extends Model = Model,
+> = (model: M, state: Readonly<State<S>>) => Readonly<State<S>>
+
+export type DecorConsumer = { model: Model, updater: DecorUpdater }
+export type DecorProducer<
+    S extends Record<string, any> = Record<string, any>,
+    M extends Model = Model,
+> = {
+    path: string;
+    model: M;
+    state?: S
+}
 
 @DebugUtil.is(self => `${self.model.name}::state`)
 export class StateUtil<
@@ -91,7 +105,7 @@ export class StateUtil<
             const router = parent.utils.state.router;
             consumers.push(...router.consumers.get(path) ?? []);
             path = parent.utils.route.key + '/' + path;
-            parent = parent.utils.route.parent;
+            parent = parent.utils.route.current.parent;
         }
         consumers.sort((a, b) => a.model.uuid.localeCompare(b.model.uuid));
         consumers.forEach(item => state = item.updater.call(item.model, this.model, state));
@@ -103,7 +117,7 @@ export class StateUtil<
         updater: DecorUpdater<S, M>
     ) {
         const { model: that, path } = producer;
-        if (this.utils.route.root !== that.utils.route.root) return;
+        if (this.utils.route.current.root !== that.utils.route.current.root) return;
         const consumers = that.utils.state.router.consumers.get(path) ?? [];
         const producers = this.router.producers.get(updater) ?? [];
         consumers.push({ model: this.model, updater });
@@ -120,7 +134,10 @@ export class StateUtil<
         const { model: that, path } = producer;
         const comsumers = that.utils.state.router.consumers.get(path) ?? [];
         const producers = this.router.producers.get(updater) ?? [];
-        let index = comsumers.findIndex(item => item.updater === updater && item.model === this.model);
+        let index = comsumers.findIndex(item => (
+            item.updater === updater && 
+            item.model === this.model
+        ));
         if (index !== -1) comsumers.splice(index, 1);
         index = producers.indexOf(producer);
         if (index !== -1) producers.splice(index, 1);
@@ -157,7 +174,10 @@ export class StateUtil<
             if (!producer) return;
             [...list].forEach(item => {
                 const { model: that, updater } = item;
-                if (that.utils.route.root !== this.utils.route.root) return;
+                if (
+                    that.utils.route.current.root !== 
+                    this.utils.route.current.root
+                ) return;
                 that.utils.state.unbind(producer, updater);
             });
         });

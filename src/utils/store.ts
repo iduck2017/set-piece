@@ -1,5 +1,6 @@
 import { Model } from "../model";
 import { TranxUtil } from "./tranx";
+import { Constructor } from "../types";
 
 type Chunk = {
     uuid?: string,
@@ -112,7 +113,7 @@ export class StoreUtil {
 
     public static is(code: string) {
         return function (
-            constructor: new (...props: any[]) => Model
+            constructor: Constructor<Model>
         ) {
             StoreUtil.registry.set(code, constructor);
             StoreUtil.registry.set(constructor, code);
