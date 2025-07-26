@@ -53,22 +53,19 @@ export class ReferUtil<
             const item = draft[key]
             if (item instanceof Array) {
                 draft[key] = item.filter(item => {
-                    if (item.utils.route.current.origin === 
-                        this.utils.route.current.origin) return true;
+                    if (item.utils.route.origin === this.utils.route.origin) return true;
                     item.utils.refer.unbind(this.model, key);
                     return false;
                 })
             }
             if (item instanceof Model) {
-                if (item.utils.route.current.origin === 
-                    this.utils.route.current.origin) return;
+                if (item.utils.route.origin === this.utils.route.origin) return;
                 item.utils.refer.unbind(this.model, key);
                 delete draft[key]
             }
         })
         this.router.forEach((keys, item) => {
-            if (item.utils.route.current.origin === 
-                this.utils.route.current.origin) return;
+            if (item.utils.route.origin === this.utils.route.origin) return;
             [...keys].forEach(key => {
                 const origin: Record<string, Model | Model[]> = item.utils.refer.draft;
                 if (origin[key] instanceof Array) {

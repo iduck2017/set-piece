@@ -105,7 +105,7 @@ export class StateUtil<
             const router = parent.utils.state.router;
             consumers.push(...router.consumers.get(path) ?? []);
             path = parent.utils.route.key + '/' + path;
-            parent = parent.utils.route.current.parent;
+            parent = parent.utils.route.parent;
         }
         consumers.sort((a, b) => a.model.uuid.localeCompare(b.model.uuid));
         consumers.forEach(item => state = item.updater.call(item.model, this.model, state));
@@ -117,7 +117,7 @@ export class StateUtil<
         updater: DecorUpdater<S, M>
     ) {
         const { model: that, path } = producer;
-        if (this.utils.route.current.origin !== that.utils.route.current.origin) return;
+        if (this.utils.route.origin !== that.utils.route.origin) return;
         const consumers = that.utils.state.router.consumers.get(path) ?? [];
         const producers = this.router.producers.get(updater) ?? [];
         consumers.push({ model: this.model, updater });
@@ -174,10 +174,7 @@ export class StateUtil<
             if (!producer) return;
             [...list].forEach(item => {
                 const { model: that, updater } = item;
-                if (
-                    that.utils.route.current.origin !== 
-                    this.utils.route.current.origin
-                ) return;
+                if (that.utils.route.origin !== this.utils.route.origin) return;
                 that.utils.state.unbind(producer, updater);
             });
         });

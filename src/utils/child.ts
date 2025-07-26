@@ -76,17 +76,10 @@ export class ChildUtil<
         return true;
     }
 
-    public unload() {
+    public reload() {
         Object.keys(this.draft).forEach(key => {
-            if (this.draft[key] instanceof Array) this.draft[key].forEach(item => item.utils.route.unload())
-            if (this.draft[key] instanceof Model) this.draft[key].utils.route.unload();
-        })
-    }
-
-    public load() {
-        Object.keys(this.draft).forEach(key => {
-            if (this.draft[key] instanceof Array) this.draft[key].forEach(item => item.utils.route.load())
-            if (this.draft[key] instanceof Model) this.draft[key].utils.route.load();
+            if (this.draft[key] instanceof Array) this.draft[key].forEach(item => item.utils.route.reload())
+            if (this.draft[key] instanceof Model) this.draft[key].utils.route.reload();
         })
     }
 

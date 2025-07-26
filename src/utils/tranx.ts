@@ -2,7 +2,6 @@ import { Callback } from "../types";
 import { Util } from ".";
 import { Model } from "../model";
 import { DebugUtil, LogLevel } from "./debug";
-import { EventUtil } from "./event";
 
 export class TranxUtil {
     private constructor() {}
@@ -104,7 +103,7 @@ export class TranxUtil {
         })
         TranxUtil.refer.forEach((info, item) => item.utils.refer.unload());
         TranxUtil.route.forEach((info, item) => {
-            const parent = item.utils.route.current.parent;
+            const parent = item.utils.route.parent;
             if (!parent?.utils.route.isLoad && !item.utils.route.isRoot) return;
             item.utils.route.load();
         })
