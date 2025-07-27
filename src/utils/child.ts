@@ -10,7 +10,15 @@ export class ChildUtil<
 
     public readonly draft: C;
 
-    public get current(): Readonly<Child<C>> { return { ...this.draft }; }
+    public get current(): Readonly<Child<C>> { 
+        const result: any = {};
+        Object.keys(this.draft).forEach(key => {
+            const value = this.draft[key];
+            if (value instanceof Array) result[key] = [...value];
+            if (value instanceof Model) result[key] = value;
+        })
+        return result;
+    }
     
     constructor(model: M, props: C) {
         super(model);
@@ -80,6 +88,10 @@ export class ChildUtil<
         Object.keys(this.draft).forEach(key => {
             if (this.draft[key] instanceof Array) this.draft[key].forEach(item => item.utils.route.reload())
             if (this.draft[key] instanceof Model) this.draft[key].utils.route.reload();
+        })
+        Object.keys(this.draft).forEach(key => {
+            if (this.draft[key] instanceof Array) this.draft[key].forEach(item => item.utils.child.reload())
+            if (this.draft[key] instanceof Model) this.draft[key].utils.child.reload();
         })
     }
 

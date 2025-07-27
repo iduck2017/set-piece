@@ -12,16 +12,24 @@ export class ReferUtil<
 
     public readonly draft: { [K in keyof R]: R[K] extends any[] ? R[K] : R[K] | undefined }
 
-    public get current(): Readonly<Refer<R>> { return { ...this.draft }; }
-
+    public get current(): Readonly<Refer<R>> { 
+        const result: any = {};
+        Object.keys(this.draft).forEach(key => {
+            const value = this.draft[key];
+            if (value instanceof Array) result[key] = [...value];
+            if (value instanceof Model) result[key] = value;
+        })
+        return result;
+    }
+    
     private readonly router: Map<Model, string[]>;
     
     constructor(model: M, props: R) {
         super(model);
         this.router = new Map();
         Object.keys(props).forEach(key => {
-            if (props[key] instanceof Array) props[key].forEach(item => item.utils.refer.bind(this.model, key));
-            if (props[key] instanceof Model) props[key].utils.refer.bind(this.model, key);
+            if (props[key] instanceof Array) props[key].forEach(item => item.utils.refer.link(this.model, key));
+            if (props[key] instanceof Model) props[key].utils.refer.link(this.model, key);
         });
         const origin: any = { ...props };
         this.draft = new Proxy(origin, {
@@ -31,14 +39,14 @@ export class ReferUtil<
         });
     }
 
-    private bind(value: Model, key: string) {
+    private link(value: Model, key: string) {
         const router = this.router.get(value) ?? [];
         router.push(key);
         this.router.set(value, router);
         return true;
     }
 
-    private unbind(value: Model, key: string) {
+    private unlink(value: Model, key: string) {
         const router = this.router.get(value) ?? [];
         const index = router.indexOf(key);
         if (index === -1) return;
@@ -46,7 +54,7 @@ export class ReferUtil<
         this.router.set(value, router);
     }
 
-    @DebugUtil.log(LogLevel.DEBUG)
+    @DebugUtil.log(LogLevel.INFO)
     public unload() {
         const draft: Partial<Record<string, Model | Model[]>> = this.draft
         Object.keys(draft).forEach(key => {
@@ -54,13 +62,13 @@ export class ReferUtil<
             if (item instanceof Array) {
                 draft[key] = item.filter(item => {
                     if (item.utils.route.origin === this.utils.route.origin) return true;
-                    item.utils.refer.unbind(this.model, key);
+                    item.utils.refer.unlink(this.model, key);
                     return false;
                 })
             }
             if (item instanceof Model) {
                 if (item.utils.route.origin === this.utils.route.origin) return;
-                item.utils.refer.unbind(this.model, key);
+                item.utils.refer.unlink(this.model, key);
                 delete draft[key]
             }
         })
@@ -96,7 +104,7 @@ export class ReferUtil<
     }
 
     @TranxUtil.span()
-    public reset() {}
+    public reload() {}
 
     @TranxUtil.span()
     private set(
@@ -105,10 +113,10 @@ export class ReferUtil<
         next?: Model | Model[]
     ) {
         let prev = origin[key];
-        if (prev instanceof Array) prev.forEach(item => item.utils.refer.unbind(this.model, key));
-        if (prev instanceof Model) prev.utils.refer.unbind(this.model, key);
-        if (next instanceof Array) next.forEach(item => item.utils.refer.bind(this.model, key));
-        if (next instanceof Model) next.utils.refer.bind(this.model, key);
+        if (prev instanceof Array) prev.forEach(item => item.utils.refer.unlink(this.model, key));
+        if (prev instanceof Model) prev.utils.refer.unlink(this.model, key);
+        if (next instanceof Array) next.forEach(item => item.utils.refer.link(this.model, key));
+        if (next instanceof Model) next.utils.refer.link(this.model, key);
         origin[key] = next;
         return true;
     }
@@ -116,8 +124,8 @@ export class ReferUtil<
     @TranxUtil.span()
     private del(origin: Partial<Record<string, Model | Model[]>>, key: string) {
         let prev = origin[key];
-        if (prev instanceof Array) prev.forEach(item => item.utils.refer.unbind(this.model, key));
-        if (prev instanceof Model) prev.utils.refer.unbind(this.model, key);
+        if (prev instanceof Array) prev.forEach(item => item.utils.refer.unlink(this.model, key));
+        if (prev instanceof Model) prev.utils.refer.unlink(this.model, key);
         delete origin[key];
         return true;
     }
@@ -145,8 +153,8 @@ export class ReferUtil<
     @TranxUtil.span()
     private lset(key: string, origin: any, index: string, next: Model) {
         const prev = origin[index];
-        if (prev instanceof Model) prev.utils.refer.unbind(this.model, key);
-        if (next instanceof Model) next.utils.refer.bind(this.model, key);
+        if (prev instanceof Model) prev.utils.refer.unlink(this.model, key);
+        if (next instanceof Model) next.utils.refer.link(this.model, key);
         origin[index] = next;
         return true;
     }
@@ -154,34 +162,34 @@ export class ReferUtil<
     @TranxUtil.span()
     private ldel(key: string, origin: any, index: string) {
         const prev = origin[index];
-        if (prev instanceof Model) prev.utils.refer.unbind(this.model, key);
+        if (prev instanceof Model) prev.utils.refer.unlink(this.model, key);
         delete origin[index];
         return true;
     }
 
     @TranxUtil.span()
     private push(key: string, origin: Model[], ...next: Model[]) {
-        next.forEach(next => next.utils.refer.bind(this.model, key))
+        next.forEach(next => next.utils.refer.link(this.model, key))
         return origin.push(...next);
     }
 
     @TranxUtil.span()
     private unshift(key: string, origin: Model[], ...next: Model[]) {
-        next.forEach(item => item.utils.refer.bind(this.model, key));
+        next.forEach(item => item.utils.refer.link(this.model, key));
         return origin.unshift(...next);
     }
 
     @TranxUtil.span()
     private pop(key: string, origin: Model[]) {
         const result = origin.pop();
-        if (result) result.utils.refer.unbind(this.model, key);
+        if (result) result.utils.refer.unlink(this.model, key);
         return result;
     }
 
     @TranxUtil.span()
     private shift(key: string, origin: Model[]) {
         const result = origin.shift();
-        if (result) result.utils.refer.unbind(this.model, key);
+        if (result) result.utils.refer.unlink(this.model, key);
         return result;
     }
 
@@ -201,16 +209,17 @@ export class ReferUtil<
         if (end === undefined) end = origin.length;
         const prev = origin.slice(start, end);
         const next: Model[] = new Array(end - start).fill(value);
-        prev.forEach(item => item.utils.refer.unbind(this.model, key));
-        next.forEach(item => item.utils.refer.bind(this.model, key));
+        prev.forEach(item => item.utils.refer.unlink(this.model, key));
+        next.forEach(item => item.utils.refer.link(this.model, key));
         return origin.fill(value, start, end)
     }
 
     @TranxUtil.span()
+    @DebugUtil.log(LogLevel.INFO)
     private splice(key: string, origin: Model[], start: number, count: number, ...next: Model[]) {
         const prev = origin.slice(start, start + count);
-        prev.forEach(item => item.utils.refer.unbind(this.model, key));
-        next.forEach(item => item.utils.refer.bind(this.model, key))
+        prev.forEach(item => item.utils.refer.unlink(this.model, key));
+        next.forEach(item => item.utils.refer.link(this.model, key))
         const result = origin.splice(start, count, ...next);
         return result;
     }

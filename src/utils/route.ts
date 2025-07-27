@@ -22,53 +22,51 @@ export class RouteUtil<M extends Model = Model> extends Util<M> {
     public get isLoad() { return this._isLoad; }
     public get isRoot() { return this._isRoot; }
 
-    private _origin: Model;
     private _parent: Model | undefined;
-    public get origin() { return this._origin; }
-    public get parent() { return this._parent; }
+    public get parent(): Model | undefined { return this._parent; }
+    public get origin(): Model { return this.parent?.utils.route.origin ?? this.model; }
 
     constructor(model: M) {
         super(model);
         this._isBind = false;
         this._isLoad = false;
         this._isRoot = false;
-        this._origin = model;
     }
 
     @TranxUtil.span()
     public bind(parent: Model | undefined, key: string) {
+        this.utils.child.reload();
         this._isBind = true;
         this._key = key;
         this._parent = parent;
-        this._origin = parent?.utils.route._origin ?? this.model;
-        this.utils.child.reload();
     }
 
     @TranxUtil.span()
     public unbind() {
+        this.utils.child.reload();
         this._isBind = false;
         this._key = undefined;
         this._parent = undefined;
-        this._origin = this.model;
-        this.utils.child.reload();
     }
 
     @TranxUtil.span()
-    public reload() {}
+    public reload() {
+        this.utils.child.reload();
+    }
 
-    @DebugUtil.log(LogLevel.DEBUG)
+    @DebugUtil.log(LogLevel.INFO)
     public load() {
         this.utils.event.load();
         this.utils.state.load();
         this._isLoad = true;
     }
 
-    @DebugUtil.log(LogLevel.DEBUG)
+    @DebugUtil.log(LogLevel.INFO)
     public unload() {
         this._isLoad = false;
         this.utils.event.unload();
         this.utils.state.unload();
-        this.utils.refer.reset();
+        this.utils.refer.reload();
     }
 
 }

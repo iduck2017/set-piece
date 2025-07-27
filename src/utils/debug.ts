@@ -30,8 +30,8 @@ export class DebugUtil {
                     console.group(`%c${name}::${key}`, `color: ${{
                         [LogLevel.DEBUG]: 'gray',
                         [LogLevel.INFO]: '',
-                        [LogLevel.WARN]: 'yellow',
-                        [LogLevel.ERROR]: 'orange',
+                        [LogLevel.WARN]: 'orange',
+                        [LogLevel.ERROR]: 'red',
                         [LogLevel.FATAL]: 'red',
                     }[level]}`)
                     const result = handler.call(this, ...args);

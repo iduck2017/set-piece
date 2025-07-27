@@ -44,7 +44,7 @@ export class TranxUtil {
                         if (TranxUtil._isLock) super(...args);
                         else {
                             const isDebug = DebugUtil.level <= LogLevel.DEBUG;
-                            if (isDebug) console.group('%cTransaction::Constructor', 'color: gray')
+                            if (isDebug) console.group(`%cTransaction::Constructor`, 'color: gray')
                             TranxUtil._isLock = true;
                             super(...args);
                             TranxUtil.reload();
@@ -79,7 +79,7 @@ export class TranxUtil {
                     if (TranxUtil._isLock) {
                         return handler.call(this, ...args);
                     } else {
-                        const isDebug = DebugUtil.level <= LogLevel.DEBUG;
+                        const isDebug = DebugUtil.level <= LogLevel.INFO;
                         if (isDebug) console.group(`%cTransaction::${key}`, 'color: gray')
                         TranxUtil._isLock = true;
                         const result = handler.call(this, ...args);
@@ -97,14 +97,10 @@ export class TranxUtil {
     }
 
     private static reload() {
-        TranxUtil.route.forEach((info, item) => {
-            if (!info.parent && !item.utils.route.isRoot) return;
-            item.utils.route.unload();
-        })
+        TranxUtil.route.forEach((info, item) => item.utils.route.unload());
         TranxUtil.refer.forEach((info, item) => item.utils.refer.unload());
         TranxUtil.route.forEach((info, item) => {
-            const parent = item.utils.route.parent;
-            if (!parent?.utils.route.isLoad && !item.utils.route.isRoot) return;
+            if (!item.utils.route.origin.utils.route.isRoot) return;
             item.utils.route.load();
         })
         TranxUtil.state.forEach((info, item) => item.utils.state.emit());
