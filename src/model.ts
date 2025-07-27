@@ -75,12 +75,7 @@ export class Model<
     public get state(): Readonly<State<S>> { return this.utils.state.current; } 
     public get refer(): Readonly<Refer<R>> { return this.utils.refer.current; }
     public get child(): Readonly<Child<C>> { return this.utils.child.current; }
-    public get route(): Readonly<Route> { 
-        return {
-            origin: this.utils.route.origin,
-            parent: this.utils.route.parent,
-        };
-    }
+    public get route(): Readonly<Route> { return this.utils.route.current; }
     
     public get status() {
         return {

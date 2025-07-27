@@ -70,7 +70,7 @@ export class EventUtil<
             const router = parent.utils.event.router;
             consumers.push(...router.consumers.get(path) ?? []);
             path = parent.utils.route.key + '/' + path;
-            parent = parent.utils.route.parent;
+            parent = parent.utils.route.current.parent;
         }
         consumers.sort((a, b) => a.model.uuid.localeCompare(b.model.uuid));
         let result: E | undefined = event;
@@ -85,7 +85,7 @@ export class EventUtil<
         handler: EventHandler<E, M>
     ) {
         const { model: that, path } = producer;
-        if (this.utils.route.origin !== that.utils.route.origin) return;
+        if (!this.utils.route.check(that)) return;
         const consumers = that.utils.event.router.consumers.get(path) ?? [];
         const producers = this.router.producers.get(handler) ?? [];
         consumers.push({ model: this.model, handler });
@@ -141,7 +141,7 @@ export class EventUtil<
             if (!producer) return;
             [...list].forEach(item => {
                 const { model: that, handler } = item;
-                if (that.utils.route.origin !== this.utils.route.origin) return;
+                if (this.utils.route.check(that)) return;
                 that.utils.event.unbind(producer, handler);
             })
         })

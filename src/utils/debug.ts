@@ -8,7 +8,6 @@ export enum LogLevel {
     FATAL,
 }
 
-
 export class DebugUtil {
     private static registry: Map<any, any> = new Map();
 

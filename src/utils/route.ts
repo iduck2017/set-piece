@@ -23,8 +23,12 @@ export class RouteUtil<M extends Model = Model> extends Util<M> {
     public get isRoot() { return this._isRoot; }
 
     private _parent: Model | undefined;
-    public get parent(): Model | undefined { return this._parent; }
-    public get origin(): Model { return this.parent?.utils.route.origin ?? this.model; }
+    public get current(): Route {
+        return {
+            parent: this._parent,
+            origin: this._parent?.utils.route.current.origin ?? this.model
+        }
+    }
 
     constructor(model: M) {
         super(model);
@@ -66,7 +70,11 @@ export class RouteUtil<M extends Model = Model> extends Util<M> {
         this._isLoad = false;
         this.utils.event.unload();
         this.utils.state.unload();
-        this.utils.refer.reload();
+        this.utils.refer.unload();
+    }
+
+    public check(model: Model): boolean {
+        return model.utils.route.current.origin === this.current.origin;
     }
 
 }

@@ -39,19 +39,19 @@ export class ReferUtil<
         });
     }
 
-    private link(value: Model, key: string) {
-        const router = this.router.get(value) ?? [];
+    private link(model: Model, key: string) {
+        const router = this.router.get(model) ?? [];
         router.push(key);
-        this.router.set(value, router);
+        this.router.set(model, router);
         return true;
     }
 
-    private unlink(value: Model, key: string) {
-        const router = this.router.get(value) ?? [];
+    private unlink(model: Model, key: string) {
+        const router = this.router.get(model) ?? [];
         const index = router.indexOf(key);
         if (index === -1) return;
         router.splice(index, 1);
-        this.router.set(value, router);
+        this.router.set(model, router);
     }
 
     @DebugUtil.log(LogLevel.INFO)
@@ -61,19 +61,19 @@ export class ReferUtil<
             const item = draft[key]
             if (item instanceof Array) {
                 draft[key] = item.filter(item => {
-                    if (item.utils.route.origin === this.utils.route.origin) return true;
+                    if (this.utils.route.check(item)) return true;
                     item.utils.refer.unlink(this.model, key);
                     return false;
                 })
             }
             if (item instanceof Model) {
-                if (item.utils.route.origin === this.utils.route.origin) return;
+                if (this.utils.route.check(item)) return;
                 item.utils.refer.unlink(this.model, key);
                 delete draft[key]
             }
         })
         this.router.forEach((keys, item) => {
-            if (item.utils.route.origin === this.utils.route.origin) return;
+            if (this.utils.route.check(item)) return;
             [...keys].forEach(key => {
                 const origin: Record<string, Model | Model[]> = item.utils.refer.draft;
                 if (origin[key] instanceof Array) {
