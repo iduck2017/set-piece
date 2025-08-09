@@ -24,10 +24,18 @@ export class RouteUtil<M extends Model = Model> extends Util<M> {
 
     private _parent: Model | undefined;
     public get current(): Route {
-        return {
+        const route: Route = { 
+            root: this.model,
             parent: this._parent,
-            origin: this._parent?.utils.route.current.origin ?? this.model
+            path: [],
+        };
+        let parent: Model | undefined = this.model;
+        while (parent) {
+            route.root = parent;
+            route.path.push(parent);
+            parent = parent.utils.route._parent;
         }
+        return route;
     }
 
     constructor(model: M) {
@@ -74,7 +82,6 @@ export class RouteUtil<M extends Model = Model> extends Util<M> {
     }
 
     public check(model: Model): boolean {
-        return model.utils.route.current.origin === this.current.origin;
+        return model.utils.route.current.root === this.current.root;
     }
-
 }

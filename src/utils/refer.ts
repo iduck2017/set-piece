@@ -54,7 +54,7 @@ export class ReferUtil<
         this.router.set(model, router);
     }
 
-    @DebugUtil.log(LogLevel.INFO)
+    @DebugUtil.log(LogLevel.DEBUG)
     public unload() {
         const draft: Partial<Record<string, Model | Model[]>> = this.draft
         Object.keys(draft).forEach(key => {

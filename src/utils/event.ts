@@ -7,7 +7,7 @@ import { AgentUtil } from "./agent";
 import { TranxUtil } from "./tranx";
 
 export type EventHandler<E = any, M extends Model = Model> = (model: M, event: E) => E | void
-export type EventEmitter<E = any> = (event: E) => E | void
+export type EventEmitter<E = any> = (event: E) => E
 export type EventConsumer = { model: Model, handler: EventHandler }
 export type EventProducer<E = any, M extends Model = Model> = {
     path: string;
@@ -73,11 +73,12 @@ export class EventUtil<
             parent = parent.utils.route.current.parent;
         }
         consumers.sort((a, b) => a.model.uuid.localeCompare(b.model.uuid));
-        let result: E | undefined = event;
+        let current: E | undefined = event;
         consumers.forEach(item => {
-            result = item.handler.call(item.model, this.model, result);
+            const result = item.handler.call(item.model, this.model, current);
+            if (result) current = result;
         });
-        return result;
+        return current;
     }
 
     public bind<E, M extends Model>(

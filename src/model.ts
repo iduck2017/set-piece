@@ -6,7 +6,6 @@ import { AgentUtil } from "./utils/agent";
 import { ReferUtil } from "./utils/refer";
 import { TranxUtil } from "./utils/tranx";
 import { DeepReadonly, Primitive } from "utility-types";
-import { Constructor } from "./types";
 
 type Agent<
     M extends Model = Model,
@@ -23,7 +22,7 @@ type Agent<
 }>
 
 
-export type Route = { parent?: Model, origin: Model }
+export type Route = { parent?: Model, root: Model, path: Model[] }
 export type Refer<R extends Model.Refer = {}> = { [K in keyof R]: R[K] extends any[] ? Readonly<R[K]> : R[K] | undefined }
 export type Child<C extends Model.Child = {}> = { [K in keyof C]: C[K] extends any[] ? Readonly<C[K]> : C[K] }
 export type State<S extends Model.State = {}> = { [K in keyof S]: S[K] extends Primitive ? S[K] : DeepReadonly<S[K]> }
@@ -77,14 +76,6 @@ export class Model<
     public get child(): Readonly<Child<C>> { return this.utils.child.current; }
     public get route(): Readonly<Route> { return this.utils.route.current; }
     
-    public get status() {
-        return {
-            isLoad: this.utils.route.isLoad,
-            isBind: this.utils.route.isBind,
-            isRoot: this.utils.route.isRoot,
-        }
-    }
-
     protected readonly event: Readonly<{ [K in keyof E]: EventEmitter<E[K]> }>;
     protected readonly draft: Readonly<{
         child: C;
@@ -156,7 +147,6 @@ export class Model<
         }
         console.log('debug', dependency);
     }
-
 }
 
 

@@ -100,8 +100,8 @@ export class TranxUtil {
         TranxUtil.route.forEach((info, item) => item.utils.route.unload());
         TranxUtil.refer.forEach((info, item) => item.utils.refer.unload());
         TranxUtil.route.forEach((info, item) => {
-            const origin = item.utils.route.current.origin;
-            if (!origin.utils.route.isRoot) return;
+            const origin = item.utils.route.current.root;
+            if (!origin?.utils.route.isRoot) return;
             item.utils.route.load();
         })
         TranxUtil.state.forEach((info, item) => item.utils.state.emit());
