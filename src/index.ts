@@ -1,6 +1,6 @@
 export { Model } from "./model";
 
-export { AgentUtil } from './utils/agent';
+export { ProxyUtil } from './utils/agent';
 export { StateUtil } from "./utils/state";
 export { ReferUtil } from "./utils/refer";
 export { ChildUtil } from "./utils/child";

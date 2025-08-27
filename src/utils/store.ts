@@ -115,6 +115,8 @@ export class StoreUtil {
         return function (
             constructor: Constructor<Model>
         ) {
+            if (StoreUtil.registry.has(code)) return;
+            if (StoreUtil.registry.has(constructor)) return;
             StoreUtil.registry.set(code, constructor);
             StoreUtil.registry.set(constructor, code);
         }

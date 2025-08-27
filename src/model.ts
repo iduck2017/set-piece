@@ -2,7 +2,7 @@ import { EventEmitter, EventUtil  } from "./utils/event";
 import { StateUtil } from "./utils/state";
 import { RouteUtil } from "./utils/route";
 import { ChildUtil } from "./utils/child";
-import { AgentUtil } from "./utils/agent";
+import { ProxyUtil } from "./utils/agent";
 import { ReferUtil } from "./utils/refer";
 import { TranxUtil } from "./utils/tranx";
 import { DeepReadonly, Primitive } from "utility-types";
@@ -85,7 +85,7 @@ export class Model<
 
     /** @internal */
     public readonly utils: Agent<this, E, S, C, R>
-    public readonly proxy: AgentUtil<this, E, S, C>
+    public readonly proxy: ProxyUtil<this, E, S, C>
 
     public get props(): {
         uuid?: string
@@ -101,6 +101,7 @@ export class Model<
         }
     }
 
+
     constructor(props: {
         uuid: string | undefined;
         state: S;
@@ -108,7 +109,7 @@ export class Model<
         refer: R;
     }) {
         this.uuid = props.uuid ?? Model.uuid;
-        this.proxy = new AgentUtil(this);
+        this.proxy = new ProxyUtil(this);
         this.utils = {
             route: new RouteUtil(this),
             event: new EventUtil(this),
@@ -129,11 +130,17 @@ export class Model<
         return this.utils.route.reload()
     }
 
-    public copy(): this {
+    public copy(props?: {
+        state?: Partial<S>,
+        child?: Partial<C>,
+        refer?: Partial<R>,
+    }): this {
         const type: any = this.constructor;
         const copy = new type({
-            ...this.props,
-            uuid: undefined
+            uuid: undefined,
+            state: { ...this.props.state, ...props?.state },
+            child: { ...this.props.child, ...props?.child },
+            refer: { ...this.props.refer, ...props?.refer },
         });
         console.warn('copy', this.name);
         return copy;

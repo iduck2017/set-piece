@@ -86,7 +86,6 @@ export class ReferUtil<
         this.router.clear();
     }
 
-
     public debug(): Model[] {
         const dependency: Model[] = [];
         this.router.forEach((item, key) => dependency.push(key));
@@ -223,5 +222,5 @@ export class ReferUtil<
         const result = origin.splice(start, count, ...next);
         return result;
     }
-
+    
 }

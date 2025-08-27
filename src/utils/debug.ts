@@ -11,7 +11,7 @@ export enum LogLevel {
 export class DebugUtil {
     private static registry: Map<any, any> = new Map();
 
-    public static level: LogLevel = LogLevel.INFO;
+    public static level: LogLevel = LogLevel.WARN;
 
     public static log<T extends Object>(level = LogLevel.INFO) {
         return function(
@@ -52,11 +52,7 @@ export class DebugUtil {
 
 
     public static mute<T>(): Decorator<T, any>
-    public static mute<T>(color: string): Decorator<T, any>
-    public static mute<T>(color?: string) {
-        if (color) {
-
-        }
+    public static mute<T>() {
         return function(
             prototype: T,
             key: string,

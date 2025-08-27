@@ -1,9 +1,9 @@
 import { Model } from "../model";
 import { Util } from ".";
-import { Callback, Decorator } from "../types";
+import { Callback, Constructor, Decorator } from "../types";
 import { DebugUtil, LogLevel } from "./debug";
 import { Event } from "../model";
-import { AgentUtil } from "./agent";
+import { ProxyUtil } from "./agent";
 import { TranxUtil } from "./tranx";
 
 export type EventHandler<E = any, M extends Model = Model> = (model: M, event: E) => E | void
@@ -60,11 +60,18 @@ export class EventUtil<
         })
     }
 
+
+    private query(type: Constructor<Model>, path: string, event: string) {
+        
+    }
+
+
     @DebugUtil.log(LogLevel.DEBUG)
     @TranxUtil.then<any>()
     public emit<E>(key: string, event: E): E | void {
         let path = key;
         let parent: Model | undefined = this.model;
+        const type = this.model.constructor;
         const consumers: EventConsumer[] = [];
         while (parent) {
             const router = parent.utils.event.router;
@@ -136,7 +143,7 @@ export class EventUtil<
             const keys = path.split('/');
             const key = keys.pop();
             if (!key) return;
-            const child: Record<string, AgentUtil> = this.model.proxy.child;
+            const child: Record<string, ProxyUtil> = this.model.proxy.child;
             const event: Record<string, EventProducer> | undefined = child[keys.join('/')]?.event
             const producer = event?.[key];
             if (!producer) return;

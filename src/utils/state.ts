@@ -3,7 +3,7 @@ import { Util } from ".";
 import { TranxUtil } from "./tranx";
 import { State } from "../model";
 import { DebugUtil, LogLevel } from "./debug";
-import { AgentUtil } from "./agent";
+import { ProxyUtil } from "./agent";
 
 export type DecorUpdater<
     S extends Record<string, any> = Record<string, any>,
@@ -169,7 +169,7 @@ export class StateUtil<
         this.router.consumers.forEach((list, path) => {
             const keys = path.split('/');
             keys.pop();
-            const child: Record<string, AgentUtil> = this.model.proxy.child;
+            const child: Record<string, ProxyUtil> = this.model.proxy.child;
             const producer = child[keys.join('/')]?.decor;
             if (!producer) return;
             [...list].forEach(item => {

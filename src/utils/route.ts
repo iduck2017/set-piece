@@ -6,7 +6,6 @@ import { DebugUtil, LogLevel } from "./debug";
 @DebugUtil.is(self => `${self.model.name}::route`)
 export class RouteUtil<M extends Model = Model> extends Util<M> {
     public static boot<T extends Model>(root: T): T {
-        console.log('boot', root.name)
         root.utils.route._isRoot = true;
         root.utils.route.bind(undefined, 'root')
         return root;
