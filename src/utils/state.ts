@@ -3,7 +3,7 @@ import { Util } from ".";
 import { TranxUtil } from "./tranx";
 import { State } from "../model";
 import { DebugUtil, LogLevel } from "./debug";
-import { ProxyUtil } from "./agent";
+import { ProxyUtil } from "./proxy";
 
 export type DecorUpdater<
     S extends Record<string, any> = Record<string, any>,

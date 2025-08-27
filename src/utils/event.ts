@@ -1,18 +1,20 @@
 import { Model } from "../model";
 import { Util } from ".";
-import { Callback, Constructor, Decorator } from "../types";
+import { IConstructor } from "../types";
 import { DebugUtil, LogLevel } from "./debug";
 import { Event } from "../model";
-import { ProxyUtil } from "./agent";
+import { ProxyUtil } from "./proxy";
 import { TranxUtil } from "./tranx";
 
 export type EventHandler<E = any, M extends Model = Model> = (model: M, event: E) => E | void
 export type EventEmitter<E = any> = (event: E) => E
 export type EventConsumer = { model: Model, handler: EventHandler }
 export type EventProducer<E = any, M extends Model = Model> = {
-    path: string;
-    model: M;
+    type?: IConstructor<Model>;
+    path?: string;
+    name: string;
     event?: E;
+    model: M;
 }
 
 @DebugUtil.is(self => `${self.model.name}::event`)
@@ -45,7 +47,7 @@ export class EventUtil<
     >;
     
     private readonly router: Readonly<{
-        consumers: Map<string, EventConsumer[]>,
+        consumers: Map<EventProducer, EventConsumer[]>,
         producers: Map<EventHandler, EventProducer[]>
     }>
     
@@ -61,22 +63,24 @@ export class EventUtil<
     }
 
 
-    private query(type: Constructor<Model>, path: string, event: string) {
-        
-    }
-
-
     @DebugUtil.log(LogLevel.DEBUG)
     @TranxUtil.then<any>()
-    public emit<E>(key: string, event: E): E | void {
-        let path = key;
-        let parent: Model | undefined = this.model;
+    public emit<E>(name: string, event: E): E | void {
         const type = this.model.constructor;
+        let path: string | undefined = undefined;
+        let parent: Model | undefined = this.model;
         const consumers: EventConsumer[] = [];
         while (parent) {
             const router = parent.utils.event.router;
-            consumers.push(...router.consumers.get(path) ?? []);
-            path = parent.utils.route.key + '/' + path;
+            router.consumers.forEach((list, producer) => {
+                /** if match */
+                if (producer.name !== name) return;
+                if (producer.type && producer.type !== type) return;
+                if (producer.path !== path) return;
+                consumers.push(...list);
+            })
+            if (path) path = parent.utils.route.key + '/' + path;
+            else path = parent.utils.route.key;
             parent = parent.utils.route.current.parent;
         }
         consumers.sort((a, b) => a.model.uuid.localeCompare(b.model.uuid));
@@ -92,13 +96,13 @@ export class EventUtil<
         producer: EventProducer<E, M>, 
         handler: EventHandler<E, M>
     ) {
-        const { model: that, path } = producer;
+        const { model: that, path, name } = producer;
         if (!this.utils.route.check(that)) return;
-        const consumers = that.utils.event.router.consumers.get(path) ?? [];
+        const consumers = that.utils.event.router.consumers.get(producer) ?? [];
         const producers = this.router.producers.get(handler) ?? [];
         consumers.push({ model: this.model, handler });
         producers.push(producer);
-        that.utils.event.router.consumers.set(path, consumers);
+        that.utils.event.router.consumers.set(producer, consumers);
         this.router.producers.set(handler, producers);
     }
 
@@ -107,7 +111,7 @@ export class EventUtil<
         handler: EventHandler<E, M>
     ) {
         const { model: that, path } = producer;
-        const consumers = that.utils.event.router.consumers.get(path) ?? [];
+        const consumers = that.utils.event.router.consumers.get(producer) ?? [];
         const producers = this.router.producers.get(handler) ?? [];
         let index = consumers.findIndex(item => (
             item.handler === handler && 
@@ -139,14 +143,7 @@ export class EventUtil<
         this.router.producers.forEach((list, handler) => {
             [...list].forEach(item => this.unbind(item, handler));
         })
-        this.router.consumers.forEach((list, path) => {
-            const keys = path.split('/');
-            const key = keys.pop();
-            if (!key) return;
-            const child: Record<string, ProxyUtil> = this.model.proxy.child;
-            const event: Record<string, EventProducer> | undefined = child[keys.join('/')]?.event
-            const producer = event?.[key];
-            if (!producer) return;
+        this.router.consumers.forEach((list, producer) => {
             [...list].forEach(item => {
                 const { model: that, handler } = item;
                 if (this.utils.route.check(that)) return;

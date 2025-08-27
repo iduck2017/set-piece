@@ -2,7 +2,7 @@ import { EventEmitter, EventUtil  } from "./utils/event";
 import { StateUtil } from "./utils/state";
 import { RouteUtil } from "./utils/route";
 import { ChildUtil } from "./utils/child";
-import { ProxyUtil } from "./utils/agent";
+import { ProxyUtil } from "./utils/proxy";
 import { ReferUtil } from "./utils/refer";
 import { TranxUtil } from "./utils/tranx";
 import { DeepReadonly, Primitive } from "utility-types";
