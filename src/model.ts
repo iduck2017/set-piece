@@ -1,4 +1,4 @@
-import { EventEmitter, EventUtil  } from "./utils/event";
+import { EventUtil } from "./utils/event";
 import { StateUtil } from "./utils/state";
 import { RouteUtil } from "./utils/route";
 import { ChildUtil } from "./utils/child";
@@ -6,48 +6,17 @@ import { ProxyUtil } from "./utils/proxy";
 import { ReferUtil } from "./utils/refer";
 import { TranxUtil } from "./utils/tranx";
 import { DeepReadonly, Primitive } from "utility-types";
-
-type Agent<
-    M extends Model = Model,
-    E extends Model.Event = Model.Event,
-    S extends Model.State = Model.State,
-    C extends Model.Child = Model.Child,
-    R extends Model.Refer = Model.Refer,
-> = Readonly<{
-    route: RouteUtil<M>
-    event: EventUtil<M, E>
-    state: StateUtil<M, S>
-    child: ChildUtil<M, C>
-    refer: ReferUtil<M, R>
-}>
-
-
-export type Route = { parent?: Model, root: Model, path: Model[] }
-export type Refer<R extends Model.Refer = {}> = { [K in keyof R]: R[K] extends any[] ? Readonly<R[K]> : R[K] | undefined }
-export type Child<C extends Model.Child = {}> = { [K in keyof C]: C[K] extends any[] ? Readonly<C[K]> : C[K] }
-export type State<S extends Model.State = {}> = { [K in keyof S]: S[K] extends Primitive ? S[K] : DeepReadonly<S[K]> }
-export type Event<M extends Model> = {
-    onStateChange: Event.OnStateChange<M>
-    onChildChange: Event.OnChildChange<M>
-    onReferChange: Event.OnReferChange<M>
-    onRouteChange: Event.OnRouteChange<M>
-}
-export namespace Event {
-    export type OnStateChange<M extends Model> = { prev: M['state'], next: M['state'] };
-    export type OnChildChange<M extends Model> = { prev: M['child'], next: M['child'] };
-    export type OnReferChange<M extends Model> = { prev: M['refer'], next: M['refer'] };
-    export type OnRouteChange<M extends Model> = { prev: M['route'], next: M['route'] }
-}
-
+import { EventEmitter } from "./types/event";
+import { Child, Refer, Route, State, Utils } from "./types/model";
 
 export namespace Model {
-    export type Parent = Model
     export type Event = Record<string, any>
     export type State = Record<string, any>
     export type Child = Record<string, Model | Model[]>
     export type Refer = Record<string, Model | Model[]>
     export type Route = Record<string, Model>
 }
+
 
 @TranxUtil.span(true)
 export class Model<
@@ -84,7 +53,7 @@ export class Model<
     }>
 
     /** @internal */
-    public readonly utils: Agent<this, E, S, C, R>
+    public readonly utils: Utils<this, E, S, C, R>
     public readonly proxy: ProxyUtil<this, E, S, C>
 
     public get props(): {

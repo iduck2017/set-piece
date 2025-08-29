@@ -1,7 +1,7 @@
 import { Callback, Decorator } from "../types";
 
 export enum LogLevel {
-    DEBUG,
+    DEBUG = 1,
     INFO,
     WARN,
     ERROR,

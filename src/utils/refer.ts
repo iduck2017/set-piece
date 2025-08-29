@@ -1,8 +1,8 @@
 import { TranxUtil } from "./tranx";
 import { Model } from "../model";
 import { Util } from ".";
-import { Refer } from "../model";
 import { DebugUtil, LogLevel } from "./debug";
+import { Refer } from "../types/model";
 
 @DebugUtil.is(self => `${self.model.name}::refer`)
 export class ReferUtil<

@@ -1,24 +1,11 @@
 import { Model } from "../model";
 import { Util } from ".";
 import { TranxUtil } from "./tranx";
-import { State } from "../model";
 import { DebugUtil, LogLevel } from "./debug";
 import { ProxyUtil } from "./proxy";
-
-export type DecorUpdater<
-    S extends Record<string, any> = Record<string, any>,
-    M extends Model = Model,
-> = (model: M, state: Readonly<State<S>>) => Readonly<State<S>>
-
-export type DecorConsumer = { model: Model, updater: DecorUpdater }
-export type DecorProducer<
-    S extends Record<string, any> = Record<string, any>,
-    M extends Model = Model,
-> = {
-    path: string;
-    model: M;
-    state?: S
-}
+import { IConstructor } from "../types";
+import { DecorConsumer, DecorProducer, DecorUpdater } from "../types/decor";
+import { State } from "../types/model";
 
 @DebugUtil.is(self => `${self.model.name}::state`)
 export class StateUtil<
@@ -47,7 +34,7 @@ export class StateUtil<
     public readonly draft: State<S>
     
     private readonly router: {
-        consumers: Map<string, DecorConsumer[]>,
+        consumers: Map<DecorProducer, DecorConsumer[]>,
         producers: Map<DecorUpdater, DecorProducer[]>
     }
 
@@ -67,17 +54,29 @@ export class StateUtil<
         })
     }
 
-    public update(path: string) {
+    public update(path?: string, type?: IConstructor<Model>) {
+        if (!path) {
+            if (type) {
+                if (this.model instanceof type) this.reset();
+                Object.keys(this.utils.child.current).forEach(key => {
+                    const child: Record<string, Model | Model[]> = this.utils.child.current;
+                    if (child[key] instanceof Array) {
+                        child[key].forEach(item => {
+                            if (item instanceof type) item.utils.state.update(path, type);
+                        })
+                    }
+                    if (child[key] instanceof type) child[key].utils.state.update(path, type)
+                })
+            } else this.reset();
+            return;
+        }
         const keys = path.split('/');
         const key = keys.shift();
         path = keys.join('/');
         if (!key) return;
-        if (keys.length) {
-            const child: Record<string, Model | Model[]> = this.utils.child.current;
-            if (child[key] instanceof Array) child[key].forEach(item => item.utils.state.update(path))
-            if (child[key] instanceof Model) child[key].utils.state.update(path);
-        } 
-        else this.reset();
+        const child: Record<string, Model | Model[]> = this.utils.child.current;
+        if (child[key] instanceof Array) child[key].forEach(item => item.utils.state.update(path, type))
+        if (child[key] instanceof Model) child[key].utils.state.update(path, type);
     } 
 
     @TranxUtil.span()
@@ -97,14 +96,22 @@ export class StateUtil<
 
     @DebugUtil.log(LogLevel.DEBUG)
     public emit() {
-        let path: string = 'decor';
+        let path: string | undefined;
         let state: any = { ...this.draft };
         let parent: Model | undefined = this.model;
+        const type = this.model.constructor;
         const consumers: DecorConsumer[] = [];
         while (parent) {
             const router = parent.utils.state.router;
-            consumers.push(...router.consumers.get(path) ?? []);
-            path = parent.utils.route.key + '/' + path;
+            router.consumers.forEach((list, producer) => {
+                if (producer.type) {
+                    if (producer.type !== type) return;
+                    if (!(path ?? '').startsWith(producer.path ?? '')) return;
+                } else if (path !== producer.path) return;
+                consumers.push(...list);
+            })
+            if (path) path = parent.utils.route.key + '/' + path;
+            else path = parent.utils.route.key;
             parent = parent.utils.route.current.parent;
         }
         consumers.sort((a, b) => a.model.uuid.localeCompare(b.model.uuid));
@@ -116,23 +123,24 @@ export class StateUtil<
         producer: DecorProducer<S, M>, 
         updater: DecorUpdater<S, M>
     ) {
-        const { model: that, path } = producer;
+        const { model: that, path, type } = producer;
+        console.log('bind', that.name, path)
         if (!this.utils.route.check(that)) return;
-        const consumers = that.utils.state.router.consumers.get(path) ?? [];
+        const consumers = that.utils.state.router.consumers.get(producer) ?? [];
         const producers = this.router.producers.get(updater) ?? [];
         consumers.push({ model: this.model, updater });
         producers.push(producer);
-        that.utils.state.router.consumers.set(path, consumers);
+        that.utils.state.router.consumers.set(producer, consumers);
         this.router.producers.set(updater, producers);
-        that.utils.state.update(path);
+        that.utils.state.update(path, type);
     }
     
     public unbind<S extends Record<string, any>, M extends Model>(
         producer: DecorProducer<S, M>, 
         updater: DecorUpdater<S, M>
     ) {
-        const { model: that, path } = producer;
-        const comsumers = that.utils.state.router.consumers.get(path) ?? [];
+        const { model: that, path, type } = producer;
+        const comsumers = that.utils.state.router.consumers.get(producer) ?? [];
         const producers = this.router.producers.get(updater) ?? [];
         let index = comsumers.findIndex(item => (
             item.updater === updater && 
@@ -141,7 +149,7 @@ export class StateUtil<
         if (index !== -1) comsumers.splice(index, 1);
         index = producers.indexOf(producer);
         if (index !== -1) producers.splice(index, 1);
-        that.utils.state.update(path);
+        that.utils.state.update(path, type);
     }
 
     public load() {
@@ -166,12 +174,7 @@ export class StateUtil<
         this.router.producers.forEach((list, handler) => {
             [...list].forEach(item => this.unbind(item, handler));
         });
-        this.router.consumers.forEach((list, path) => {
-            const keys = path.split('/');
-            keys.pop();
-            const child: Record<string, ProxyUtil> = this.model.proxy.child;
-            const producer = child[keys.join('/')]?.decor;
-            if (!producer) return;
+        this.router.consumers.forEach((list, producer) => {
             [...list].forEach(item => {
                 const { model: that, updater } = item;
                 if (this.utils.route.check(that)) return;

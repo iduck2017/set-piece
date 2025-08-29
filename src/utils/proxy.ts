@@ -1,7 +1,8 @@
-import { Event, Model } from "../model";
+import { Model } from "../model";
 import { IConstructor, Constructor } from "../types";
-import { EventProducer } from "./event";
-import { DecorProducer } from "./state";
+import { DecorProducer } from "../types/decor";
+import { EventProducer } from "../types/event";
+import { Event } from "../types/model";
 
 export class ProxyUtil<
     M extends Model = Model,
@@ -20,8 +21,7 @@ export class ProxyUtil<
         { [K in keyof C]: Required<C>[K] extends Model[] ? Required<C>[K][number]['proxy'] : unknown }
     >
     public readonly event: Readonly<
-        { [K in keyof E]: EventProducer<Required<E>[K], M> } &
-        { [K in keyof Event<M>]: EventProducer<Event<M>[K], M> }
+        { [K in keyof Event<E, M>]: EventProducer<Event<E, M>[K], M> }
     >;
     
     constructor(model: M, path?: string, type?: IConstructor<Model>) {
@@ -31,12 +31,13 @@ export class ProxyUtil<
         this.event = new Proxy({} as any, { get: this.getEvent.bind(this) })
         this.child = new Proxy({} as any, { get: this.getChild.bind(this) })
         this.decor = { 
-            path: path ? `${path}/decor` : 'decor', 
+            path,
+            type,
             model
         }
     }
 
-    public get<T extends Model>(type: IConstructor<T>): {
+    public all<T extends Model>(type: IConstructor<T>): {
         event: T['proxy']['event'],
         decor: T['proxy']['decor']
     } {
@@ -45,7 +46,6 @@ export class ProxyUtil<
 
     private getEvent(origin: Record<string, EventProducer>, key: string) {
         if (!origin[key]) {
-            const path = this.path ? `${this.path}/${key}` : key;
             origin[key] = { 
                 type: this.type,
                 path: this.path, 

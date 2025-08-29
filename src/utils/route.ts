@@ -1,7 +1,8 @@
-import { Model, Route } from "../model";
+import { Model } from "../model";
 import { Util } from ".";
 import { TranxUtil } from "./tranx";
 import { DebugUtil, LogLevel } from "./debug";
+import { Route } from "../types/model";
 
 @DebugUtil.is(self => `${self.model.name}::route`)
 export class RouteUtil<M extends Model = Model> extends Util<M> {
@@ -26,12 +27,12 @@ export class RouteUtil<M extends Model = Model> extends Util<M> {
         const route: Route = { 
             root: this.model,
             parent: this._parent,
-            path: [],
+            order: [],
         };
         let parent: Model | undefined = this.model;
         while (parent) {
             route.root = parent;
-            route.path.push(parent);
+            route.order.push(parent);
             parent = parent.utils.route._parent;
         }
         return route;

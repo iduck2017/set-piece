@@ -1,21 +1,9 @@
 import { Model } from "../model";
 import { Util } from ".";
-import { IConstructor } from "../types";
 import { DebugUtil, LogLevel } from "./debug";
-import { Event } from "../model";
-import { ProxyUtil } from "./proxy";
 import { TranxUtil } from "./tranx";
-
-export type EventHandler<E = any, M extends Model = Model> = (model: M, event: E) => E | void
-export type EventEmitter<E = any> = (event: E) => E
-export type EventConsumer = { model: Model, handler: EventHandler }
-export type EventProducer<E = any, M extends Model = Model> = {
-    type?: IConstructor<Model>;
-    path?: string;
-    name: string;
-    event?: E;
-    model: M;
-}
+import { EventConsumer, EventEmitter, EventHandler, EventProducer } from "../types/event";
+import { Event } from "../types/model";
 
 @DebugUtil.is(self => `${self.model.name}::event`)
 export class EventUtil<
@@ -42,8 +30,7 @@ export class EventUtil<
     }
 
     public readonly current: Readonly<
-        { [K in keyof E]: EventEmitter<E[K]> } &
-        { [K in keyof Event<M>]: EventEmitter<Event<M>[K]> }
+        { [K in keyof Event<E, M>]: EventEmitter<Event<E, M>[K]> }
     >;
     
     private readonly router: Readonly<{
@@ -64,7 +51,6 @@ export class EventUtil<
 
 
     @DebugUtil.log(LogLevel.DEBUG)
-    @TranxUtil.then<any>()
     public emit<E>(name: string, event: E): E | void {
         const type = this.model.constructor;
         let path: string | undefined = undefined;
@@ -73,10 +59,11 @@ export class EventUtil<
         while (parent) {
             const router = parent.utils.event.router;
             router.consumers.forEach((list, producer) => {
-                /** if match */
                 if (producer.name !== name) return;
-                if (producer.type && producer.type !== type) return;
-                if (producer.path !== path) return;
+                if (producer.type) {
+                    if (producer.type !== type) return;
+                    if (!(path ?? '').startsWith(producer.path ?? '')) return;
+                } else if (path !== producer.path) return;
                 consumers.push(...list);
             })
             if (path) path = parent.utils.route.key + '/' + path;
