@@ -2,10 +2,9 @@ import { Model } from "../model";
 import { Util } from ".";
 import { TranxUtil } from "./tranx";
 import { DebugUtil, LogLevel } from "./debug";
-import { ProxyUtil } from "./proxy";
-import { IConstructor } from "../types";
-import { DecorConsumer, DecorProducer, DecorUpdater } from "../types/decor";
-import { Props } from "../types/model";
+import { IType } from "../types";
+import { Decor, DecorConsumer, DecorProducer, DecorUpdater } from "../types/decor";
+import { Get, Props, Set } from "../types/model";
 
 @DebugUtil.is(self => `${self.model.name}::state`)
 export class StateUtil<
@@ -15,7 +14,7 @@ export class StateUtil<
 
     private static registry: Map<Function, Record<string, Array<(self: Model) => DecorProducer | undefined>>> = new Map();
 
-    public static on<S extends Record<string, any>, M extends Model, I extends Model>(
+    public static on<S extends Props.S, M extends Model, I extends Model>(
         accessor: (self: I) => DecorProducer<S, M> | undefined
     ) {
         return function(
@@ -31,17 +30,17 @@ export class StateUtil<
         }
     }
 
-    public readonly draft: Model.State<S>
+    public readonly draft: Set.State<S>
     
     private readonly router: {
         consumers: Map<DecorProducer, DecorConsumer[]>,
         producers: Map<DecorUpdater, DecorProducer[]>
     }
 
-    private _current: S
+    private _current: Get.State<S>
     public get current() { return { ...this._current } }
     
-    constructor(model: M, props: S) {
+    constructor(model: M, props: Set.State<S>) {
         super(model);
         this.router = {
             consumers: new Map(),
@@ -54,7 +53,7 @@ export class StateUtil<
         })
     }
 
-    public update(path?: string, type?: IConstructor<Model>) {
+    public update(path?: string, type?: IType<Model>) {
         if (!path) {
             if (type) {
                 if (this.model instanceof type) this.reset();
@@ -114,12 +113,13 @@ export class StateUtil<
             else path = parent.utils.route.key;
             parent = parent.utils.route.current.parent;
         }
+        const decor = new Decor(this.model, state);
         consumers.sort((a, b) => a.model.uuid.localeCompare(b.model.uuid));
-        consumers.forEach(item => state = item.updater.call(item.model, this.model, state));
-        this._current = state;
+        consumers.forEach(item => item.updater.call(item.model, this.model, decor));
+        this._current = decor.current;
     }
 
-    public bind<S extends Record<string, any>, M extends Model>(
+    public bind<S extends Props.S, M extends Model>(
         producer: DecorProducer<S, M>, 
         updater: DecorUpdater<S, M>
     ) {
@@ -135,7 +135,7 @@ export class StateUtil<
         that.utils.state.update(path, type);
     }
     
-    public unbind<S extends Record<string, any>, M extends Model>(
+    public unbind<S extends Props.S, M extends Model>(
         producer: DecorProducer<S, M>, 
         updater: DecorUpdater<S, M>
     ) {

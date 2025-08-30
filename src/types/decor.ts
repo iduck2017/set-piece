@@ -1,11 +1,11 @@
 import { Model } from "../model";
-import { IConstructor } from ".";
+import { IType } from ".";
 import { Props } from "./model";
 
 export type DecorUpdater<
-    S extends Record<string, any> = Record<string, any>,
-    M extends Model = Model,
-> = (model: M, state: Readonly<Model.State<S>>) => Readonly<Model.State<S>>
+    S extends Props.S = Props.S,
+    M extends Model = Model
+> = (that: M, decor: Decor<S>) => void;
 
 export class DecorConsumer {
     public readonly model: Model;
@@ -24,16 +24,25 @@ export class DecorProducer<
     M extends Model = Model
 > {
     public readonly path?: string;
-    public readonly type?: IConstructor<Model>;
+    public readonly type?: IType<Model>;
     public readonly model: M;
     private readonly state?: S;
     constructor(
         model: M,
         path?: string,
-        type?: IConstructor<Model>
+        type?: IType<Model>
     ) {
         this.model = model;
         this.path = path;
         this.type = type;
+    }
+}
+
+export class Decor<S extends Props.S = Props.S> {
+    public readonly origin: Readonly<S>;
+    public readonly current: S;
+    constructor(model: Model, origin: S) { 
+        this.origin = origin;
+        this.current = origin;
     }
 }

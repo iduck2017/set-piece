@@ -1,4 +1,4 @@
-import { Callback, Decorator } from "../types";
+import { Func, Type } from "../types";
 
 export enum LogLevel {
     DEBUG = 1,
@@ -17,8 +17,8 @@ export class DebugUtil {
         return function(
             prototype: T,
             key: string,
-            descriptor: TypedPropertyDescriptor<Callback>
-        ): TypedPropertyDescriptor<Callback> {
+            descriptor: TypedPropertyDescriptor<Func>
+        ): TypedPropertyDescriptor<Func> {
             const handler = descriptor.value;
             if (!handler) return descriptor;
             const instance = {
@@ -45,19 +45,18 @@ export class DebugUtil {
     }
 
     public static is<T extends Object>(accessor: (self: T) => string) {
-        return function (constructor: new (...props: any[]) => T) {
+        return function (constructor: Type<T>) {
             DebugUtil.registry.set(constructor, accessor);
         }
     }
 
 
-    public static mute<T>(): Decorator<T, any>
     public static mute<T>() {
         return function(
             prototype: T,
             key: string,
-            descriptor: TypedPropertyDescriptor<Callback>
-        ): TypedPropertyDescriptor<Callback> {
+            descriptor: TypedPropertyDescriptor<Func>
+        ): TypedPropertyDescriptor<Func> {
             const handler = descriptor.value;
             if (!handler) return descriptor;
             const instance = {

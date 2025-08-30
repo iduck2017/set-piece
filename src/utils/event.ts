@@ -1,8 +1,8 @@
 import { Model } from "../model";
 import { Util } from ".";
 import { DebugUtil, LogLevel } from "./debug";
-import { EventConsumer, EventEmitter, EventHandler, EventProducer } from "../types/event";
-import { Props } from "../types/model";
+import { Event, EventConsumer, EventEmitter, EventHandler, EventProducer } from "../types/event";
+import { Get, Props } from "../types/model";
 
 @DebugUtil.is(self => `${self.model.name}::event`)
 export class EventUtil<
@@ -12,9 +12,11 @@ export class EventUtil<
     
     private static registry: Map<Function, Record<string, Array<(self: Model) => EventProducer | undefined>>> = new Map();
 
-    public static on<E, M extends Model, I extends Model>(
-        accessor: (self: I) => EventProducer<E, M> | undefined
-    ) {
+    public static on<
+        E extends Event, 
+        M extends Model, 
+        I extends Model
+    >(accessor: (self: I) => EventProducer<E, M> | undefined) {
         return function(
             prototype: I,
             key: string,
@@ -29,7 +31,7 @@ export class EventUtil<
     }
 
     public readonly current: Readonly<
-        { [K in keyof Model.Event<E, M>]: EventEmitter<Model.Event<E, M>[K]> }
+        { [K in keyof Get.Event<E, M>]: EventEmitter<Get.Event<E, M>[K]> }
     >;
     
     private readonly router: Readonly<{
@@ -50,7 +52,7 @@ export class EventUtil<
 
 
     @DebugUtil.log(LogLevel.DEBUG)
-    public emit<E>(name: string, event: E): E | void {
+    public emit<E extends Event>(name: string, event: E): E | void {
         const type = this.model.constructor;
         let path: string | undefined = undefined;
         let parent: Model | undefined = this.model;
@@ -70,15 +72,13 @@ export class EventUtil<
             parent = parent.utils.route.current.parent;
         }
         consumers.sort((a, b) => a.model.uuid.localeCompare(b.model.uuid));
-        let current: E | undefined = event;
         consumers.forEach(item => {
-            const result = item.handler.call(item.model, this.model, current);
-            if (result) current = result;
+            item.handler.call(item.model, this.model, event);
         });
-        return current;
+        return event;
     }
 
-    public bind<E, M extends Model>(
+    public bind<E extends Event, M extends Model>(
         producer: EventProducer<E, M>, 
         handler: EventHandler<E, M>
     ) {
@@ -92,7 +92,7 @@ export class EventUtil<
         this.router.producers.set(handler, producers);
     }
 
-    public unbind<E, M extends Model>(
+    public unbind<E extends Event, M extends Model>(
         producer: EventProducer<E, M>, 
         handler: EventHandler<E, M>
     ) {

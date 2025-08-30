@@ -1,17 +1,17 @@
-import { Callback } from "../types";
+import { Func } from "../types";
 
 export class StoryUtil {
 
     private static _isLock = false;
     public static get isLock() { return StoryUtil._isLock; }
-    private static tasks: Callback[] = [];
+    private static tasks: Func[] = [];
 
     public static then<T>() {
         return function(
             prototype: unknown,
             key: string,
-            descriptor: TypedPropertyDescriptor<Callback<T | undefined>>
-        ): TypedPropertyDescriptor<Callback<T | undefined>> {
+            descriptor: TypedPropertyDescriptor<Func<T | undefined>>
+        ): TypedPropertyDescriptor<Func<T | undefined>> {
             const handler = descriptor.value;
             if (!handler) return descriptor;
             const instance = {

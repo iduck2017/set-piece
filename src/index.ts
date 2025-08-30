@@ -1,5 +1,6 @@
 export { Model } from "./model";
 export { Event } from './types/event';
+export { Decor } from './types/decor';
 
 export { ProxyUtil } from './utils/proxy';
 export { StateUtil } from "./utils/state";
@@ -13,12 +14,21 @@ export { DebugUtil } from "./utils/debug";
 export { StoreUtil } from "./utils/store";
 export { CheckUtil } from "./utils/check";
 
-export { Props } from "./types/model";
 export { LogLevel } from "./utils/debug"
-export { Callback, Decorator, Constructor, IConstructor } from "./types";
+export { Func, Type, IType } from "./types";
+export { Props, Get, Set } from "./types/model";
 export { 
     StateChangeEvent,
     ChildChangeEvent,
     ReferChangeEvent,
     RouteChangeEvent,
 } from "./types/model";
+
+
+/** 
+ * @todo 
+ * decor.stop decor.seal
+ * event.stop
+ * story.then, story.end emit.end
+ * refer
+*/

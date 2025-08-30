@@ -1,4 +1,4 @@
-import { Callback, IConstructor } from "../types";
+import { Func, IType } from "../types";
 import { Util } from ".";
 import { Model } from "../model";
 import { DebugUtil, LogLevel } from "./debug";
@@ -14,14 +14,14 @@ export class TranxUtil {
     private static readonly refer: Map<Model, Model['refer']> = new Map();
     private static readonly child: Map<Model, Model['child']> = new Map();
     private static readonly route: Map<Model, Model['route']> = new Map();
-    private static tasks: Callback[] = [];
+    private static tasks: Func[] = [];
 
     public static then<T>() {
         return function(
             prototype: unknown,
             key: string,
-            descriptor: TypedPropertyDescriptor<Callback<T | undefined>>
-        ): TypedPropertyDescriptor<Callback<T | undefined>> {
+            descriptor: TypedPropertyDescriptor<Func<T | undefined>>
+        ): TypedPropertyDescriptor<Func<T | undefined>> {
             const handler = descriptor.value;
             if (!handler) return descriptor;
             const instance = {
@@ -35,11 +35,11 @@ export class TranxUtil {
         }
     }
 
-    public static span(): (prototype: Object, key: string, descriptor: TypedPropertyDescriptor<Callback>) => TypedPropertyDescriptor<Callback>;
-    public static span(isType: true): (constructor: IConstructor<Model>) => any;
+    public static span(): (prototype: Object, key: string, descriptor: TypedPropertyDescriptor<Func>) => TypedPropertyDescriptor<Func>;
+    public static span(isType: true): (constructor: IType<Model>) => any;
     public static span(isType?: boolean) {
         if (isType) {
-            return function (constructor: IConstructor<Model>) {
+            return function (constructor: IType<Model>) {
                 return class Model extends constructor {
                     constructor(...args: any[]) {
                         if (TranxUtil._isLock) super(...args);
@@ -60,8 +60,8 @@ export class TranxUtil {
         return function(
             prototype: unknown,
             key: string,
-            descriptor: TypedPropertyDescriptor<Callback>
-        ): TypedPropertyDescriptor<Callback> {
+            descriptor: TypedPropertyDescriptor<Func>
+        ): TypedPropertyDescriptor<Func> {
             const handler = descriptor.value;
             if (!handler) return descriptor;
             const instance = {

@@ -1,8 +1,11 @@
 import { Model } from "../model";
-import { IConstructor } from ".";
+import { IType } from ".";
 
-export type EventHandler<E = any, M extends Model = Model> = (model: M, event: E) => E | void
-export type EventEmitter<E = any> = (event: E) => E
+export type EventEmitter<E extends Event = Event> = (event: E) => void
+export type EventHandler<
+    E extends Event = Event, 
+    M extends Model = Model
+> = (that: M, event: E) => void
 
 export class EventConsumer {
     public readonly model: Model;
@@ -17,7 +20,7 @@ export class EventConsumer {
 }
 
 export class EventProducer<E = any, M extends Model = Model> {
-    public readonly type?: IConstructor<Model>;
+    public readonly type?: IType<Model>;
     public readonly path?: string;
     public readonly name: string;
     public readonly model: M;
@@ -26,24 +29,26 @@ export class EventProducer<E = any, M extends Model = Model> {
         model: M,
         name: string,
         path?: string,
-        type?: IConstructor<Model>
+        type?: IType<Model>
     ) {
         this.model = model;
         this.path = path;
         this.type = type;
-        this.name = model.name;
+        this.name = name;
     }
 }
-export class Event<T extends Record<string, any> = {}> {
+
+export class Event<
+    T extends Record<string, any> = {}
+> {
     private _isCancel: boolean;
     public get isCancel() { return this._isCancel; }
-    
-    protected _detail: T;
-    public get detail(): Readonly<T> { return { ...this._detail } }
-    
-    constructor(detail: T) { 
-        this._detail = detail;
+    public cancel() { this._isCancel = true; }
+
+    protected _current: T;
+    public get current(): Readonly<T> { return { ...this._current } }
+    constructor(current: T) { 
+        this._current = current;
         this._isCancel = false;
     }
-    public cancel() { this._isCancel = true; }
 }

@@ -1,6 +1,6 @@
 import { Model } from "../model";
 import { TranxUtil } from "./tranx";
-import { Constructor, Value } from "../types";
+import { Type, Value } from "../types";
 
 type Chunk = {
     uuid?: string,
@@ -113,7 +113,7 @@ export class StoreUtil {
 
     public static is(code: string) {
         return function (
-            constructor: Constructor<Model>
+            constructor: Type<Model>
         ) {
             if (StoreUtil.registry.has(code)) return;
             if (StoreUtil.registry.has(constructor)) return;

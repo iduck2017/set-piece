@@ -2,6 +2,7 @@ import { Model } from "../model";
 import { Util } from ".";
 import { TranxUtil } from "./tranx";
 import { DebugUtil, LogLevel } from "./debug";
+import { Get, Set } from "../types/model";
 
 @DebugUtil.is(self => `${self.model.name}::route`)
 export class RouteUtil<M extends Model = Model> extends Util<M> {
@@ -22,8 +23,8 @@ export class RouteUtil<M extends Model = Model> extends Util<M> {
     public get isRoot() { return this._isRoot; }
 
     private _parent: Model | undefined;
-    public get current(): Model.Route {
-        const route: Model.Route = { 
+    public get current(): Get.Route {
+        const route: Set.Route = { 
             root: this.model,
             parent: this._parent,
             order: [],

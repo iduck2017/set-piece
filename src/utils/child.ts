@@ -1,6 +1,6 @@
 import { Util } from ".";
 import { Model } from "../model";
-import { Props } from "../types/model";
+import { Get, Props } from "../types/model";
 import { TranxUtil } from "./tranx";
 
 export class ChildUtil<
@@ -10,7 +10,7 @@ export class ChildUtil<
 
     public readonly draft: C;
 
-    public get current(): Readonly<Model.Child<C>> { 
+    public get current(): Get.Child<C> { 
         const result: any = {};
         Object.keys(this.draft).forEach(key => {
             const value = this.draft[key];
