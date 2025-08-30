@@ -1,7 +1,8 @@
-import { Callback } from "../types";
+import { Callback, IConstructor } from "../types";
 import { Util } from ".";
 import { Model } from "../model";
 import { DebugUtil, LogLevel } from "./debug";
+import { Event } from "../types/event";
 
 export class TranxUtil {
     private constructor() {}
@@ -35,10 +36,10 @@ export class TranxUtil {
     }
 
     public static span(): (prototype: Object, key: string, descriptor: TypedPropertyDescriptor<Callback>) => TypedPropertyDescriptor<Callback>;
-    public static span(isType: true): (constructor: new (...props: any[]) => Model) => any;
+    public static span(isType: true): (constructor: IConstructor<Model>) => any;
     public static span(isType?: boolean) {
         if (isType) {
-            return function (constructor: new (...props: any[]) => Model) {
+            return function (constructor: IConstructor<Model>) {
                 return class Model extends constructor {
                     constructor(...args: any[]) {
                         if (TranxUtil._isLock) super(...args);
@@ -123,10 +124,10 @@ export class TranxUtil {
         TranxUtil.child.clear();
         TranxUtil.route.clear();
         TranxUtil.tasks = [];
-        state.forEach((info, model) => model.utils.event.current.onStateChange({ prev: info, next: model.state }));
-        refer.forEach((info, model) => model.utils.event.current.onReferChange({ prev: info, next: model.refer }));
-        child.forEach((info, model) => model.utils.event.current.onChildChange({ prev: info, next: model.child }));
-        route.forEach((info, model) => model.utils.event.current.onRouteChange({ prev: info, next: model.route }));
+        state.forEach((info, model) => model.utils.event.current.onStateChange(new Event({ prev: info, next: model.state })));
+        refer.forEach((info, model) => model.utils.event.current.onReferChange(new Event({ prev: info, next: model.refer })));
+        child.forEach((info, model) => model.utils.event.current.onChildChange(new Event({ prev: info, next: model.child })));
+        route.forEach((info, model) => model.utils.event.current.onRouteChange(new Event({ prev: info, next: model.route })));
         tasks.forEach(callback => callback());
     }
 }

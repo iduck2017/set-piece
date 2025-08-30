@@ -1,11 +1,11 @@
 import { Model } from "../model";
 import { TranxUtil } from "./tranx";
-import { Constructor } from "../types";
+import { Constructor, Value } from "../types";
 
 type Chunk = {
     uuid?: string,
     code: string,
-    state: Record<string, any>,
+    state: Record<string, Value>,
     child: Record<string, Chunk | Chunk[]>,
     refer: Record<string, string | string[]>
 }

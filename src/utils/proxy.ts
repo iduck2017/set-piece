@@ -2,13 +2,13 @@ import { Model } from "../model";
 import { IConstructor, Constructor } from "../types";
 import { DecorProducer } from "../types/decor";
 import { EventProducer } from "../types/event";
-import { Event } from "../types/model";
+import { Props } from "../types/model";
 
 export class ProxyUtil<
     M extends Model = Model,
-    E extends Model.Event = {},
-    S extends Model.State = {},
-    C extends Model.Child = {},
+    E extends Props.E = {},
+    S extends Props.S = {},
+    C extends Props.C = {},
 > {
     public readonly type?: IConstructor<Model>;
     public readonly path?: string;
@@ -21,7 +21,7 @@ export class ProxyUtil<
         { [K in keyof C]: Required<C>[K] extends Model[] ? Required<C>[K][number]['proxy'] : unknown }
     >
     public readonly event: Readonly<
-        { [K in keyof Event<E, M>]: EventProducer<Event<E, M>[K], M> }
+        { [K in keyof Model.Event<E, M>]: EventProducer<Model.Event<E, M>[K], M> }
     >;
     
     constructor(model: M, path?: string, type?: IConstructor<Model>) {

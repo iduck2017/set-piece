@@ -1,4 +1,5 @@
 export { Model } from "./model";
+export { Event } from './types/event';
 
 export { ProxyUtil } from './utils/proxy';
 export { StateUtil } from "./utils/state";
@@ -12,15 +13,12 @@ export { DebugUtil } from "./utils/debug";
 export { StoreUtil } from "./utils/store";
 export { CheckUtil } from "./utils/check";
 
+export { Props } from "./types/model";
 export { LogLevel } from "./utils/debug"
-export { State, Child, Event, Refer, Route } from './types/model'
+export { Callback, Decorator, Constructor, IConstructor } from "./types";
 export { 
-    Callback, 
-    Decorator, 
-    Constructor,
-    IConstructor,
-} from "./types";
-
-
-
-// todo: story.then, refer, event(yield), event
+    StateChangeEvent,
+    ChildChangeEvent,
+    ReferChangeEvent,
+    RouteChangeEvent,
+} from "./types/model";

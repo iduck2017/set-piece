@@ -5,12 +5,12 @@ import { DebugUtil, LogLevel } from "./debug";
 import { ProxyUtil } from "./proxy";
 import { IConstructor } from "../types";
 import { DecorConsumer, DecorProducer, DecorUpdater } from "../types/decor";
-import { State } from "../types/model";
+import { Props } from "../types/model";
 
 @DebugUtil.is(self => `${self.model.name}::state`)
 export class StateUtil<
     M extends Model = Model,
-    S extends Model.State = Model.State,
+    S extends Props.S = Props.S,
 > extends Util<M> {
 
     private static registry: Map<Function, Record<string, Array<(self: Model) => DecorProducer | undefined>>> = new Map();
@@ -31,7 +31,7 @@ export class StateUtil<
         }
     }
 
-    public readonly draft: State<S>
+    public readonly draft: Model.State<S>
     
     private readonly router: {
         consumers: Map<DecorProducer, DecorConsumer[]>,

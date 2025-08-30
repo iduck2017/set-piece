@@ -1,14 +1,13 @@
 import { Model } from "../model";
 import { Util } from ".";
 import { DebugUtil, LogLevel } from "./debug";
-import { TranxUtil } from "./tranx";
 import { EventConsumer, EventEmitter, EventHandler, EventProducer } from "../types/event";
-import { Event } from "../types/model";
+import { Props } from "../types/model";
 
 @DebugUtil.is(self => `${self.model.name}::event`)
 export class EventUtil<
     M extends Model = Model,
-    E extends Model.Event = Model.Event,
+    E extends Props.E = Props.E,
 > extends Util<M> {
     
     private static registry: Map<Function, Record<string, Array<(self: Model) => EventProducer | undefined>>> = new Map();
@@ -30,7 +29,7 @@ export class EventUtil<
     }
 
     public readonly current: Readonly<
-        { [K in keyof Event<E, M>]: EventEmitter<Event<E, M>[K]> }
+        { [K in keyof Model.Event<E, M>]: EventEmitter<Model.Event<E, M>[K]> }
     >;
     
     private readonly router: Readonly<{

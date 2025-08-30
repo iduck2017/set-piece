@@ -5,25 +5,31 @@ import { ChildUtil } from "./utils/child";
 import { ProxyUtil } from "./utils/proxy";
 import { ReferUtil } from "./utils/refer";
 import { TranxUtil } from "./utils/tranx";
-import { DeepReadonly, Primitive } from "utility-types";
 import { EventEmitter } from "./types/event";
-import { Child, Refer, Route, State, Utils } from "./types/model";
+import { Utils } from "./utils";
+import { Primitive } from "utility-types";
+import { Props } from "./types/model";
+import { StateChangeEvent, ChildChangeEvent, ReferChangeEvent, RouteChangeEvent } from "./types/model";
 
 export namespace Model {
-    export type Event = Record<string, any>
-    export type State = Record<string, any>
-    export type Child = Record<string, Model | Model[]>
-    export type Refer = Record<string, Model | Model[]>
-    export type Route = Record<string, Model>
+    export type Route = { root: Model, order: Model[], parent?: Model }
+    export type State<S extends Props.S = {}> = { [K in keyof S]: S[K] extends Primitive ? S[K] : Readonly<S[K]> }
+    export type Child<C extends Props.C = {}> = { [K in keyof C]: C[K] extends any[] ? Readonly<C[K]> : C[K] }
+    export type Refer<R extends Props.R = {}> = { [K in keyof R]: R[K] extends any[] ? Readonly<R[K]> : R[K] | undefined }
+    export type Event<E, M extends Model> = E & {
+        onStateChange: StateChangeEvent<M>
+        onChildChange: ChildChangeEvent<M>;
+        onReferChange: ReferChangeEvent<M>;
+        onRouteChange: RouteChangeEvent<M>;
+    }
 }
 
-
 @TranxUtil.span(true)
-export class Model<
-    E extends Model.Event = {},
-    S extends Model.State = {},
-    C extends Model.Child = {},
-    R extends Model.Refer = {},
+export abstract class Model<
+    E extends Props.E = {},
+    S extends Props.S = {},
+    C extends Props.C = {},
+    R extends Props.R = {},
 > {
     private static ticket: number = 36 ** 7;
     private static get uuid() {
@@ -40,15 +46,15 @@ export class Model<
     public readonly uuid: string
     public get name() { return this.constructor.name; }
 
-    public get state(): Readonly<State<S>> { return this.utils.state.current; } 
-    public get refer(): Readonly<Refer<R>> { return this.utils.refer.current; }
-    public get child(): Readonly<Child<C>> { return this.utils.child.current; }
-    public get route(): Readonly<Route> { return this.utils.route.current; }
+    public get state(): Readonly<Model.State<S>> { return this.utils.state.current; } 
+    public get refer(): Readonly<Model.Refer<R>> { return this.utils.refer.current; }
+    public get child(): Readonly<Model.Child<C>> { return this.utils.child.current; }
+    public get route(): Readonly<Model.Route> { return this.utils.route.current; }
     
     protected readonly event: Readonly<{ [K in keyof E]: EventEmitter<E[K]> }>;
     protected readonly draft: Readonly<{
         child: C;
-        state: State<S>
+        state: Model.State<S>
         refer: { [K in keyof R]: R[K] extends any[] ? R[K] : R[K] | undefined }
     }>
 
@@ -58,9 +64,9 @@ export class Model<
 
     public get props(): {
         uuid?: string
-        state?: Partial<S>,
-        child?: Partial<C>,
-        refer?: Partial<R>,
+        state?: Partial<Model.State<S>>,
+        child?: Partial<Model.Child<C>>,
+        refer?: Partial<Model.Refer<R>>,
     } {
         return {
             uuid: this.uuid,

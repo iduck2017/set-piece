@@ -2,17 +2,17 @@ import { TranxUtil } from "./tranx";
 import { Model } from "../model";
 import { Util } from ".";
 import { DebugUtil, LogLevel } from "./debug";
-import { Refer } from "../types/model";
+import { Props } from "../types/model";
 
 @DebugUtil.is(self => `${self.model.name}::refer`)
 export class ReferUtil<
     M extends Model = Model,
-    R extends Model.Refer = Model.Refer,
+    R extends Props.R = Props.R,
 > extends Util<M> {
 
     public readonly draft: { [K in keyof R]: R[K] extends any[] ? R[K] : R[K] | undefined }
 
-    public get current(): Readonly<Refer<R>> { 
+    public get current(): Readonly<Model.Refer<R>> { 
         const result: any = {};
         Object.keys(this.draft).forEach(key => {
             const value = this.draft[key];
