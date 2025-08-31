@@ -1,10 +1,13 @@
 import { Func } from "../types";
 
+
 export class StoryUtil {
 
     private static _isLock = false;
     public static get isLock() { return StoryUtil._isLock; }
     private static tasks: Func[] = [];
+
+    public static span() {}
 
     public static then<T>() {
         return function(

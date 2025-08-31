@@ -2,7 +2,7 @@ import { Model } from "../model";
 import { Util } from ".";
 import { DebugUtil, LogLevel } from "./debug";
 import { Event, EventConsumer, EventEmitter, EventHandler, EventProducer } from "../types/event";
-import { Get, Props } from "../types/model";
+import { Format, Props } from "../types/model";
 
 @DebugUtil.is(self => `${self.model.name}::event`)
 export class EventUtil<
@@ -31,7 +31,7 @@ export class EventUtil<
     }
 
     public readonly current: Readonly<
-        { [K in keyof Get.Event<E, M>]: EventEmitter<Get.Event<E, M>[K]> }
+        { [K in keyof Format.Event<E, M>]: EventEmitter<Format.Event<E, M>[K]> }
     >;
     
     private readonly router: Readonly<{

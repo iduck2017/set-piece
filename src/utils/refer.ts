@@ -2,7 +2,7 @@ import { TranxUtil } from "./tranx";
 import { Model } from "../model";
 import { Util } from ".";
 import { DebugUtil, LogLevel } from "./debug";
-import { Props, Set, Get } from "../types/model";
+import { Props, Format } from "../types/model";
 
 @DebugUtil.is(self => `${self.model.name}::refer`)
 export class ReferUtil<
@@ -10,9 +10,9 @@ export class ReferUtil<
     R extends Props.R = Props.R,
 > extends Util<M> {
 
-    public readonly draft: Set.Refer<R>
+    public readonly draft: Partial<R>
 
-    public get current(): Get.Refer<R> { 
+    public get current(): Format.Refer<R> { 
         const result: any = {};
         Object.keys(this.draft).forEach(key => {
             const value = this.draft[key];

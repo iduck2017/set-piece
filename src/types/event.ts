@@ -1,7 +1,7 @@
 import { Model } from "../model";
 import { IType } from ".";
 
-export type EventEmitter<E extends Event = Event> = (event: E) => void
+export type EventEmitter<E extends Event = Event> = (event: E) => E
 export type EventHandler<
     E extends Event = Event, 
     M extends Model = Model
@@ -45,10 +45,10 @@ export class Event<
     public get isCancel() { return this._isCancel; }
     public cancel() { this._isCancel = true; }
 
-    protected _current: T;
-    public get current(): Readonly<T> { return { ...this._current } }
-    constructor(current: T) { 
-        this._current = current;
+    protected _detail: T;
+    public get detail(): Readonly<T> { return { ...this._detail } }
+    constructor(detail: T) { 
+        this._detail = detail;
         this._isCancel = false;
     }
 }

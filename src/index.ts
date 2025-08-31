@@ -16,7 +16,7 @@ export { CheckUtil } from "./utils/check";
 
 export { LogLevel } from "./utils/debug"
 export { Func, Type, IType } from "./types";
-export { Props, Get, Set } from "./types/model";
+export { Props, Format } from "./types/model";
 export { 
     StateChangeEvent,
     ChildChangeEvent,

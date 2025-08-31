@@ -4,7 +4,7 @@ import { TranxUtil } from "./tranx";
 import { DebugUtil, LogLevel } from "./debug";
 import { IType } from "../types";
 import { Decor, DecorConsumer, DecorProducer, DecorUpdater } from "../types/decor";
-import { Get, Props, Set } from "../types/model";
+import { Props, Format } from "../types/model";
 
 @DebugUtil.is(self => `${self.model.name}::state`)
 export class StateUtil<
@@ -30,17 +30,17 @@ export class StateUtil<
         }
     }
 
-    public readonly draft: Set.State<S>
+    public readonly draft: Format.State<S>
     
     private readonly router: {
         consumers: Map<DecorProducer, DecorConsumer[]>,
         producers: Map<DecorUpdater, DecorProducer[]>
     }
 
-    private _current: Get.State<S>
+    private _current: Format.State<S>
     public get current() { return { ...this._current } }
     
-    constructor(model: M, props: Set.State<S>) {
+    constructor(model: M, props: Format.State<S>) {
         super(model);
         this.router = {
             consumers: new Map(),

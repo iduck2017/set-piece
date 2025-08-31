@@ -7,7 +7,7 @@ import { ReferUtil } from "./utils/refer";
 import { TranxUtil } from "./utils/tranx";
 import { EventEmitter } from "./types/event";
 import { Utils } from "./utils";
-import { Get, Props, Set } from "./types/model";
+import { Format, Props, Route } from "./types/model";
 
 @TranxUtil.span(true)
 export abstract class Model<
@@ -31,16 +31,16 @@ export abstract class Model<
     public readonly uuid: string
     public get name() { return this.constructor.name; }
 
-    public get state(): Get.State<S> { return this.utils.state.current; } 
-    public get refer(): Get.Refer<R> { return this.utils.refer.current; }
-    public get child(): Get.Child<C> { return this.utils.child.current; }
-    public get route(): Get.Route { return this.utils.route.current; }
+    public get state(): Readonly<Format.State<S>> { return this.utils.state.current; } 
+    public get refer(): Readonly<Format.Refer<R>> { return this.utils.refer.current; }
+    public get child(): Readonly<Format.Child<C>> { return this.utils.child.current; }
+    public get route(): Readonly<Route> { return this.utils.route.current; }
     
     protected readonly event: Readonly<{ [K in keyof E]: EventEmitter<E[K]> }>;
     protected readonly draft: Readonly<{
         child: C;
-        state: Set.State<S>
-        refer: Set.Refer<R>
+        state: Format.State<S>
+        refer: Partial<R>
     }>
 
     /** @internal */
@@ -49,7 +49,7 @@ export abstract class Model<
 
     public get props(): {
         uuid?: string
-        state?: Partial<Set.State<S>>,
+        state?: Partial<Format.State<S>>,
         child?: Partial<C>,
         refer?: Partial<R>,
     } {
@@ -61,10 +61,9 @@ export abstract class Model<
         }
     }
 
-
     constructor(props: {
         uuid: string | undefined;
-        state: Set.State<S>;
+        state: Format.State<S>;
         child: C;
         refer: R;
     }) {
