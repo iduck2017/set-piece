@@ -29,6 +29,5 @@ export {
  * @todo 
  * decor.stop decor.seal
  * event.stop
- * story.then, story.end emit.end
  * refer
 */

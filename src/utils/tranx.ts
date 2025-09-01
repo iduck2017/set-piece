@@ -1,7 +1,6 @@
 import { Func, IType } from "../types";
 import { Util } from ".";
 import { Model } from "../model";
-import { DebugUtil, LogLevel } from "./debug";
 import { Event } from "../types/event";
 
 export class TranxUtil {
@@ -14,26 +13,6 @@ export class TranxUtil {
     private static readonly refer: Map<Model, Model['refer']> = new Map();
     private static readonly child: Map<Model, Model['child']> = new Map();
     private static readonly route: Map<Model, Model['route']> = new Map();
-    private static tasks: Func[] = [];
-
-    public static then<T>() {
-        return function(
-            prototype: unknown,
-            key: string,
-            descriptor: TypedPropertyDescriptor<Func<T | undefined>>
-        ): TypedPropertyDescriptor<Func<T | undefined>> {
-            const handler = descriptor.value;
-            if (!handler) return descriptor;
-            const instance = {
-                [key](this: unknown, ...args: any[]) {
-                    if (!TranxUtil._isLock) return handler.call(this, ...args);
-                    TranxUtil.tasks.push(() => handler.call(this, ...args));
-                }
-            }
-            descriptor.value = instance[key];
-            return descriptor;
-        }
-    }
 
     public static span(): (prototype: Object, key: string, descriptor: TypedPropertyDescriptor<Func>) => TypedPropertyDescriptor<Func>;
     public static span(isType: true): (constructor: IType<Model>) => any;
@@ -44,13 +23,10 @@ export class TranxUtil {
                     constructor(...args: any[]) {
                         if (TranxUtil._isLock) super(...args);
                         else {
-                            const isDebug = DebugUtil.level <= LogLevel.DEBUG;
-                            if (isDebug) console.group(`%cTransaction::Constructor`, 'color: gray')
                             TranxUtil._isLock = true;
                             super(...args);
                             TranxUtil.reload();
                             TranxUtil._isLock = false;
-                            if (isDebug) console.groupEnd()
                             TranxUtil.end();
                         }
                     }
@@ -80,13 +56,10 @@ export class TranxUtil {
                     if (TranxUtil._isLock) {
                         return handler.call(this, ...args);
                     } else {
-                        const isDebug = DebugUtil.level <= LogLevel.INFO;
-                        if (isDebug) console.group(`%cTransaction::${key}`, 'color: gray')
                         TranxUtil._isLock = true;
                         const result = handler.call(this, ...args);
                         TranxUtil.reload();
                         TranxUtil._isLock = false;
-                        if (isDebug) console.groupEnd()
                         TranxUtil.end();
                         return result;
                     }
@@ -118,16 +91,13 @@ export class TranxUtil {
         const refer = new Map(TranxUtil.refer);
         const child = new Map(TranxUtil.child);
         const route = new Map(TranxUtil.route);
-        const tasks = [...TranxUtil.tasks];
         TranxUtil.state.clear();
         TranxUtil.refer.clear();
         TranxUtil.child.clear();
         TranxUtil.route.clear();
-        TranxUtil.tasks = [];
         state.forEach((info, model) => model.utils.event.current.onStateChange(new Event({ prev: info, next: model.state })));
         refer.forEach((info, model) => model.utils.event.current.onReferChange(new Event({ prev: info, next: model.refer })));
         child.forEach((info, model) => model.utils.event.current.onChildChange(new Event({ prev: info, next: model.child })));
         route.forEach((info, model) => model.utils.event.current.onRouteChange(new Event({ prev: info, next: model.route })));
-        tasks.forEach(callback => callback());
     }
 }

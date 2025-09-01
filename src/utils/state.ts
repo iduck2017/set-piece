@@ -124,7 +124,6 @@ export class StateUtil<
         updater: DecorUpdater<S, M>
     ) {
         const { model: that, path, type } = producer;
-        console.log('bind', that.name, path)
         if (!this.utils.route.check(that)) return;
         const consumers = that.utils.state.router.consumers.get(producer) ?? [];
         const producers = this.router.producers.get(updater) ?? [];

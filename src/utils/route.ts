@@ -38,6 +38,7 @@ export class RouteUtil<M extends Model = Model> extends Util<M> {
             route.root = parent;
             route.order.push(parent);
             parent = parent.utils.route._parent;
+            // if isRoot break;
         }
         return route;
     }

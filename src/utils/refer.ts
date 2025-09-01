@@ -10,7 +10,7 @@ export class ReferUtil<
     R extends Props.R = Props.R,
 > extends Util<M> {
 
-    public readonly draft: Partial<R>
+    public readonly draft: Format.Refer<R, true>
 
     public get current(): Format.Refer<R> { 
         const result: any = {};

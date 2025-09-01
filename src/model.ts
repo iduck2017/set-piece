@@ -40,7 +40,7 @@ export abstract class Model<
     protected readonly draft: Readonly<{
         child: C;
         state: Format.State<S>
-        refer: Partial<R>
+        refer: Format.Refer<R, true>
     }>
 
     /** @internal */
@@ -90,7 +90,7 @@ export abstract class Model<
     }
 
     public copy(props?: {
-        state?: Partial<S>,
+        state?: Partial<Format.State<S>>,
         child?: Partial<C>,
         refer?: Partial<R>,
     }): this {
