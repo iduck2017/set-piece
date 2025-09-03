@@ -1,6 +1,7 @@
 import { Model } from "../model";
 import { TranxUtil } from "./tranx";
 import { Value } from "../types";
+import { Loader } from "../types/model";
 
 export type Chunk = {
     uuid?: string,
@@ -45,18 +46,20 @@ export class StoreUtil {
         if (!chunk) return;
         const type = StoreUtil.registry.get(chunk.code);
         if (!type) return;
-        const origin: Record<string, Model | Array<Model | undefined> | undefined> = {};
-        const child = chunk.child;
-        Object.keys(child).forEach(key => {
-            const value = child[key];
-            if (value instanceof Array) {
-                origin[key] = value.map(item => StoreUtil.create(item, registry)).filter(Boolean);
-            } else if (value) origin[key] = StoreUtil.create(value, registry);
-        })
-        const result = new type({
-            uuid: chunk.uuid,
-            state: chunk.state,
-            child: origin
+        const result = new type(() => {
+            const origin: Record<string, Model | Array<Model | undefined> | undefined> = {};
+            const child = chunk.child;
+            Object.keys(child).forEach(key => {
+                const value = child[key];
+                if (value instanceof Array) {
+                    origin[key] = value.map(item => StoreUtil.create(item, registry)).filter(Boolean);
+                } else if (value) origin[key] = StoreUtil.create(value, registry);
+            })
+            return {
+                uuid: chunk.uuid,
+                state: chunk.state,
+                child: origin
+            }
         })
         registry[result.uuid] = result;
         return result;
@@ -86,7 +89,7 @@ export class StoreUtil {
     private constructor() {}
 
     public static is<M extends Model>(code: string) {
-        return function (type: new (props: M['props']) => M) {
+        return function (type: new (props: Loader<M>) => M) {
             if (StoreUtil.registry.has(code)) return;
             if (StoreUtil.registry.has(type)) return;
             StoreUtil.registry.set(code, type);

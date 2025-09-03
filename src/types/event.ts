@@ -1,5 +1,5 @@
 import { Model } from "../model";
-import { IType } from ".";
+import { Type } from ".";
 
 export type EventEmitter<E extends Event = Event> = (event: E) => E
 export type EventHandler<
@@ -20,7 +20,7 @@ export class EventConsumer {
 }
 
 export class EventProducer<E = any, M extends Model = Model> {
-    public readonly type?: IType<Model>;
+    public readonly type?: Type<Model>;
     public readonly path?: string;
     public readonly name: string;
     public readonly model: M;
@@ -29,7 +29,7 @@ export class EventProducer<E = any, M extends Model = Model> {
         model: M,
         name: string,
         path?: string,
-        type?: IType<Model>
+        type?: Type<Model>
     ) {
         this.model = model;
         this.path = path;

@@ -9,6 +9,7 @@ import { EventEmitter } from "./types/event";
 import { Utils } from "./utils";
 import { Format, Props, Route } from "./types/model";
 import { DebugUtil } from "./utils/debug";
+import { Func } from "./types";
 
 @TranxUtil.span(true)
 export abstract class Model<
@@ -62,12 +63,13 @@ export abstract class Model<
         }
     }
 
-    constructor(props: {
+    constructor(loader: Func<{
         uuid: string | undefined;
         state: Format.State<S>;
         child: C;
         refer: R;
-    }) {
+    }, []>) {
+        const props = loader();
         this.uuid = props.uuid ?? Model.uuid;
         this.proxy = new ProxyUtil(this);
         this.utils = {
@@ -95,12 +97,12 @@ export abstract class Model<
         refer?: Partial<R>,
     }): this {
         const type: any = this.constructor;
-        const copy = new type({
+        const copy = new type(() => ({
             uuid: undefined,
             state: { ...this.props.state, ...props?.state },
             child: { ...this.props.child, ...props?.child },
             refer: { ...this.props.refer, ...props?.refer },
-        });
+        }));
         return copy;
     }
 
