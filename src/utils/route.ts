@@ -15,11 +15,8 @@ export class RouteUtil<M extends Model = Model> extends Util<M> {
     private _key: string | undefined;
     public get key() { return this._key; }
     
-    private _isBind: boolean;
-    private _isLoad: boolean;
     private _isRoot: boolean;
-    public get isBind() { return this._isBind; }
-    public get isLoad() { return this._isLoad; }
+    public get isBind() { return Boolean(this._parent) || this._isRoot; }
     public get isRoot() { return this._isRoot; }
 
     private _parent: Model | undefined;
@@ -45,42 +42,41 @@ export class RouteUtil<M extends Model = Model> extends Util<M> {
 
     constructor(model: M) {
         super(model);
-        this._isBind = false;
-        this._isLoad = false;
         this._isRoot = false;
     }
 
     @TranxUtil.span()
     public bind(parent: Model | undefined, key: string) {
-        this.utils.child.reload();
-        this._isBind = true;
+        this.reload();
         this._key = key;
         this._parent = parent;
     }
 
     @TranxUtil.span()
     public unbind() {
-        this.utils.child.reload();
-        this._isBind = false;
+        this.reload();
         this._key = undefined;
         this._parent = undefined;
     }
 
     @TranxUtil.span()
     public reload() {
-        this.utils.child.reload();
+        const child = this.utils.child;
+        const draft: Record<string, Model | Model[]> = child.draft;
+        Object.keys(draft).forEach(key => {
+            if (draft[key] instanceof Array) draft[key].forEach(item => item.utils.route.reload())
+            if (draft[key] instanceof Model) draft[key].utils.route.reload();
+        })
     }
 
     @DebugUtil.log(LogLevel.INFO)
     public load() {
         this.utils.event.load();
         this.utils.state.load();
-        this._isLoad = true;
     }
 
     @DebugUtil.log(LogLevel.INFO)
     public unload() {
-        this._isLoad = false;
         this.utils.event.unload();
         this.utils.state.unload();
         this.utils.refer.unload();

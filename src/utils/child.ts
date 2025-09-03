@@ -84,17 +84,6 @@ export class ChildUtil<
         return true;
     }
 
-    public reload() {
-        Object.keys(this.draft).forEach(key => {
-            if (this.draft[key] instanceof Array) this.draft[key].forEach(item => item.utils.route.reload())
-            if (this.draft[key] instanceof Model) this.draft[key].utils.route.reload();
-        })
-        Object.keys(this.draft).forEach(key => {
-            if (this.draft[key] instanceof Array) this.draft[key].forEach(item => item.utils.child.reload())
-            if (this.draft[key] instanceof Model) this.draft[key].utils.child.reload();
-        })
-    }
-
     private proxy(origin: Model[], key: string): Model[] {
         return new Proxy(origin, {
             get: this.lget.bind(this, key),

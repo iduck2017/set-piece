@@ -101,7 +101,6 @@ export abstract class Model<
             child: { ...this.props.child, ...props?.child },
             refer: { ...this.props.refer, ...props?.refer },
         });
-        console.warn('copy', this.name);
         return copy;
     }
 
