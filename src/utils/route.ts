@@ -62,10 +62,10 @@ export class RouteUtil<M extends Model = Model> extends Util<M> {
     @TranxUtil.span()
     public reload() {
         const child = this.utils.child;
-        const draft: Record<string, Model | Model[]> = child.draft;
-        Object.keys(draft).forEach(key => {
-            if (draft[key] instanceof Array) draft[key].forEach(item => item.utils.route.reload())
-            if (draft[key] instanceof Model) draft[key].utils.route.reload();
+        const origin: Record<string, Model | Model[]> = child.origin;
+        Object.keys(origin).forEach(key => {
+            if (origin[key] instanceof Array) origin[key].forEach(item => item.utils.route.reload())
+            if (origin[key] instanceof Model) origin[key].utils.route.reload();
         })
     }
 

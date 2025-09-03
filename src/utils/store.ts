@@ -90,17 +90,17 @@ export class StoreUtil {
         const model = refer[chunk.uuid];
         if (!model) return;
         Object.keys(chunk.child).forEach(key => {
-            const draft: Record<string, Model[] | Model> = model.utils.refer.draft;
+            const origin: Record<string, Model[] | Model> = model.utils.refer.origin;
             if (chunk.refer[key] instanceof Array) {
-                draft[key] = [];
+                origin[key] = [];
                 for (const item of chunk.refer[key]) {
                     const model = refer[item];
-                    if (model) draft[key].push(model);
+                    if (model) origin[key].push(model);
                 }
             } 
             else if (chunk.refer[key]) {
                 const model = refer[chunk.refer[key]];
-                if (model) draft[key] = model;
+                if (model) origin[key] = model;
             }
         });
         Object.keys(chunk.child).forEach(key => {

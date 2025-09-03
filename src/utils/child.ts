@@ -8,12 +8,12 @@ export class ChildUtil<
     C extends Props.C = Props.C,
 > extends Util<M> {
 
-    public readonly draft: C;
+    public readonly origin: C;
 
     public get current(): Format.Child<C> { 
         const result: any = {};
-        Object.keys(this.draft).forEach(key => {
-            const value = this.draft[key];
+        Object.keys(this.origin).forEach(key => {
+            const value = this.origin[key];
             if (value instanceof Array) result[key] = [...value];
             if (value instanceof Model) result[key] = value;
         })
@@ -38,7 +38,7 @@ export class ChildUtil<
                 origin[key] = item;
             }
         });
-        this.draft = new Proxy(origin, {
+        this.origin = new Proxy(origin, {
             get: this.get.bind(this),
             set: this.set.bind(this),
             deleteProperty: this.del.bind(this),

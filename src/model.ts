@@ -78,9 +78,9 @@ export abstract class Model<
         }
         this.event = this.utils.event.current;
         this.draft = {
-            state: this.utils.state.draft,
-            child: this.utils.child.draft,
-            refer: this.utils.refer.draft,
+            state: this.utils.state.origin,
+            child: this.utils.child.origin,
+            refer: this.utils.refer.origin,
         }
         this.utils.refer.reload();
     }

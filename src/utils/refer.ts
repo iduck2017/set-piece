@@ -10,12 +10,12 @@ export class ReferUtil<
     R extends Props.R = Props.R,
 > extends Util<M> {
 
-    public readonly draft: Format.Refer<R, true>
+    public readonly origin: Format.Refer<R, true>
 
     public get current(): Format.Refer<R> { 
         const result: any = {};
-        Object.keys(this.draft).forEach(key => {
-            const value = this.draft[key];
+        Object.keys(this.origin).forEach(key => {
+            const value = this.origin[key];
             if (value instanceof Array) result[key] = [...value];
             if (value instanceof Model) result[key] = value;
         })
@@ -32,7 +32,7 @@ export class ReferUtil<
             if (props[key] instanceof Model) props[key].utils.refer.link(this.model, key);
         });
         const origin: any = { ...props };
-        this.draft = new Proxy(origin, {
+        this.origin = new Proxy(origin, {
             get: this.get.bind(this),
             set: this.set.bind(this),
             deleteProperty: this.del.bind(this)
@@ -56,11 +56,11 @@ export class ReferUtil<
 
     @DebugUtil.log(LogLevel.DEBUG)
     public unload() {
-        const draft: Partial<Record<string, Model | Model[]>> = this.draft
-        Object.keys(draft).forEach(key => {
-            const item = draft[key]
+        const origin: Partial<Record<string, Model | Model[]>> = this.origin
+        Object.keys(origin).forEach(key => {
+            const item = origin[key]
             if (item instanceof Array) {
-                draft[key] = item.filter(item => {
+                origin[key] = item.filter(item => {
                     if (this.utils.route.check(item)) return true;
                     item.utils.refer.unlink(this.model, key);
                     return false;
@@ -69,13 +69,13 @@ export class ReferUtil<
             if (item instanceof Model) {
                 if (this.utils.route.check(item)) return;
                 item.utils.refer.unlink(this.model, key);
-                delete draft[key]
+                delete origin[key]
             }
         })
         this.router.forEach((keys, item) => {
             if (this.utils.route.check(item)) return;
             [...keys].forEach(key => {
-                const origin: Record<string, Model | Model[]> = item.utils.refer.draft;
+                const origin: Record<string, Model | Model[]> = item.utils.refer.origin;
                 if (origin[key] instanceof Array) {
                     const index = origin[key].indexOf(this.model);
                     if (index !== -1) origin[key].splice(index, 1);
@@ -89,7 +89,7 @@ export class ReferUtil<
     public debug(): Model[] {
         const dependency: Model[] = [];
         this.router.forEach((item, key) => dependency.push(key));
-        Object.values(this.draft).forEach(item => {
+        Object.values(this.origin).forEach(item => {
             if (item instanceof Array) dependency.push(...item);
             if (item instanceof Model) dependency.push(item);
         });

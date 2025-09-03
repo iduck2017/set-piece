@@ -78,7 +78,7 @@ export class TranxUtil {
             if (!origin?.utils.route.isRoot) return;
             item.utils.route.load();
         })
-        TranxUtil.state.forEach((info, item) => item.utils.state.emit());
+        TranxUtil.state.forEach((info, item) => item.utils.state.update());
     }
 
     /**

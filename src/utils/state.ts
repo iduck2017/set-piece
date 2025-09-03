@@ -30,7 +30,7 @@ export class StateUtil<
         }
     }
 
-    public readonly draft: Format.State<S>
+    public readonly origin: Format.State<S>
     
     private readonly router: {
         consumers: Map<DecorProducer, DecorConsumer[]>,
@@ -47,26 +47,26 @@ export class StateUtil<
             producers: new Map()
         }
         this._current = { ...props }
-        this.draft = new Proxy({ ...props }, {
+        this.origin = new Proxy({ ...props }, {
             set: this.set.bind(this),
             deleteProperty: this.del.bind(this),
         })
     }
 
-    public update(path?: string, type?: IType<Model>) {
+    public emit(path?: string, type?: IType<Model>) {
         if (!path) {
             if (type) {
-                if (this.model instanceof type) this.reset();
+                if (this.model instanceof type) this.reload();
                 Object.keys(this.utils.child.current).forEach(key => {
                     const child: Record<string, Model | Model[]> = this.utils.child.current;
                     if (child[key] instanceof Array) {
                         child[key].forEach(item => {
-                            if (item instanceof type) item.utils.state.update(path, type);
+                            if (item instanceof type) item.utils.state.emit(path, type);
                         })
                     }
-                    if (child[key] instanceof type) child[key].utils.state.update(path, type)
+                    if (child[key] instanceof type) child[key].utils.state.emit(path, type)
                 })
-            } else this.reset();
+            } else this.reload();
             return;
         }
         const keys = path.split('/');
@@ -74,12 +74,12 @@ export class StateUtil<
         path = keys.join('/');
         if (!key) return;
         const child: Record<string, Model | Model[]> = this.utils.child.current;
-        if (child[key] instanceof Array) child[key].forEach(item => item.utils.state.update(path, type))
-        if (child[key] instanceof Model) child[key].utils.state.update(path, type);
+        if (child[key] instanceof Array) child[key].forEach(item => item.utils.state.emit(path, type))
+        if (child[key] instanceof Model) child[key].utils.state.emit(path, type);
     } 
 
     @TranxUtil.span()
-    private reset() {}
+    private reload() {}
 
     @TranxUtil.span()
     private set(origin: any, key: string, next: any) {
@@ -94,9 +94,9 @@ export class StateUtil<
     }
 
     @DebugUtil.log(LogLevel.DEBUG)
-    public emit() {
+    public update() {
         let path: string | undefined;
-        let state: any = { ...this.draft };
+        let state: any = { ...this.origin };
         let parent: Model | undefined = this.model;
         const type = this.model.constructor;
         const consumers: DecorConsumer[] = [];
@@ -131,7 +131,7 @@ export class StateUtil<
         producers.push(producer);
         that.utils.state.router.consumers.set(producer, consumers);
         this.router.producers.set(updater, producers);
-        that.utils.state.update(path, type);
+        that.utils.state.emit(path, type);
     }
     
     public unbind<S extends Props.S, M extends Model>(
@@ -148,7 +148,7 @@ export class StateUtil<
         if (index !== -1) comsumers.splice(index, 1);
         index = producers.indexOf(producer);
         if (index !== -1) producers.splice(index, 1);
-        that.utils.state.update(path, type);
+        that.utils.state.emit(path, type);
     }
 
     public load() {
@@ -166,7 +166,7 @@ export class StateUtil<
             })
             constructor = constructor.__proto__;
         }
-        this.reset();
+        this.reload();
     }
 
     public unload() {
@@ -180,7 +180,7 @@ export class StateUtil<
                 that.utils.state.unbind(producer, updater);
             });
         });
-        this.reset();
+        this.reload();
     }
 
     public debug(): Model[] {
