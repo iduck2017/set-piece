@@ -86,14 +86,14 @@ export class ReferUtil<
         this.router.clear();
     }
 
-    public debug(): Model[] {
-        const dependency: Model[] = [];
-        this.router.forEach((item, key) => dependency.push(key));
+    public debug() {
+        const dependency: string[] = [];
+        this.router.forEach((list, item) => dependency.push(item.name));
         Object.values(this.origin).forEach(item => {
-            if (item instanceof Array) dependency.push(...item);
-            if (item instanceof Model) dependency.push(item);
+            if (item instanceof Array) dependency.push(...item.map(item => item.name));
+            if (item instanceof Model) dependency.push(item.name);
         });
-        return dependency;
+        console.log('🔍 dependency', dependency);
     }
 
     private get(origin: Partial<R>, key: string) {

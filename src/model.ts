@@ -8,6 +8,7 @@ import { TranxUtil } from "./utils/tranx";
 import { EventEmitter } from "./types/event";
 import { Utils } from "./utils";
 import { Format, Props, Route } from "./types/model";
+import { DebugUtil } from "./utils/debug";
 
 @TranxUtil.span(true)
 export abstract class Model<
@@ -104,13 +105,11 @@ export abstract class Model<
         return copy;
     }
 
+    @DebugUtil.log()
     public debug() {
-        const dependency = {
-            event: this.utils.event.debug().map(item => item.name),
-            state: this.utils.state.debug().map(item => item.name),
-            refer: this.utils.refer.debug().map(item => item.name),
-        }
-        console.log('debug', dependency);
+        this.utils.event.debug()
+        this.utils.state.debug()
+        this.utils.refer.debug()
     }
 }
 

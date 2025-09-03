@@ -138,11 +138,11 @@ export class EventUtil<
         })
     }
 
-    public debug(): Model[] {
-        const dependency: Model[] = [];
-        this.router.producers.forEach(item => dependency.push(...item.map(item => item.model)))
-        this.router.consumers.forEach(item => dependency.push(...item.map(item => item.model)))
-        return dependency;
+    public debug() {
+        const dependency: string[] = [];
+        this.router.producers.forEach(item => dependency.push(...item.map(item => item.model.name)))
+        this.router.consumers.forEach(item => dependency.push(...item.map(item => item.model.name)))
+        console.log('🔍 dependency', dependency);
     }
 
 }
