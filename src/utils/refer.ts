@@ -224,7 +224,6 @@ export class ReferUtil<
     }
 
     @TranxUtil.span()
-    @DebugUtil.log(LogLevel.INFO)
     private splice(key: string, origin: Model[], start: number, count: number, ...next: Model[]) {
         const prev = origin.slice(start, start + count);
         prev.forEach(item => item.utils.refer.unlink(this.model, key));

@@ -2,6 +2,7 @@ import { Method, IType } from "../types";
 import { Util } from ".";
 import { Model } from "../model";
 import { Event } from "../types/event";
+import { DebugUtil, LogLevel } from "./debug";
 
 export class TranxUtil {
     private constructor() {}
@@ -23,14 +24,18 @@ export class TranxUtil {
                     constructor(...args: any[]) {
                         if (TranxUtil._isLock) {
                             super(...args);
+                            console.log('init', this.name)
                             TranxUtil.route.set(this, this.route);
                         }
                         else {
+                            console.group('Transaction');
                             TranxUtil._isLock = true;
                             super(...args);
+                            console.log('init', this.name)
                             TranxUtil.route.set(this, this.route);
                             TranxUtil.reload();
                             TranxUtil._isLock = false;
+                            console.groupEnd();
                             TranxUtil.end();
                         }
                     }
@@ -60,11 +65,13 @@ export class TranxUtil {
                     if (TranxUtil._isLock) {
                         return handler.call(this, ...args);
                     } else {
+                        console.group('Transaction::', key);
                         TranxUtil._isLock = true;
                         const result = handler.call(this, ...args);
                         TranxUtil.reload();
                         TranxUtil._isLock = false;
                         TranxUtil.end();
+                        console.groupEnd();
                         return result;
                     }
                 }
