@@ -3,13 +3,13 @@ import { Util } from ".";
 import { TranxUtil } from "./tranx";
 import { DebugUtil, LogLevel } from "./debug";
 import { Route } from "../types/model";
-import { Type } from "../types";
+import { IType } from "../types";
 
 @DebugUtil.is(self => `${self.model.name}::route`)
 export class RouteUtil<M extends Model = Model> extends Util<M> {
     private static readonly _root: Array<Function> = [];
     public static root() {
-        return function (type: Type<Model>) {
+        return function (type: IType<Model>) {
             RouteUtil._root.push(type);
         }
     }

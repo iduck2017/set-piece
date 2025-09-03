@@ -1,4 +1,4 @@
-import { Method, Type } from "../types";
+import { Method, IType } from "../types";
 import { Util } from ".";
 import { Model } from "../model";
 import { Event } from "../types/event";
@@ -15,10 +15,10 @@ export class TranxUtil {
     private static readonly route: Map<Model, Model['route']> = new Map();
 
     public static span(): (prototype: Object, key: string, descriptor: TypedPropertyDescriptor<Method>) => TypedPropertyDescriptor<Method>;
-    public static span(isType: true): (constructor: Type<Model>) => any;
+    public static span(isType: true): (constructor: IType<Model>) => any;
     public static span(isType?: boolean) {
         if (isType) {
-            return function (type: Type<Model>) {
+            return function (type: IType<Model>) {
                 return class Model extends type {
                     constructor(...args: any[]) {
                         if (TranxUtil._isLock) {

@@ -1,4 +1,4 @@
-import { Method, Type } from "../types";
+import { Method, IType } from "../types";
 
 export enum LogLevel {
     DEBUG = 1,
@@ -52,7 +52,7 @@ export class DebugUtil {
     }
 
     public static is<T extends Object>(accessor: (self: T) => string) {
-        return function (constructor: Type<T>) {
+        return function (constructor: IType<T>) {
             DebugUtil.registry.set(constructor, accessor);
         }
     }

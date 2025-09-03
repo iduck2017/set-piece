@@ -2,6 +2,7 @@ import { Model } from "../model";
 import { TranxUtil } from "./tranx";
 import { Value } from "../types";
 import { Loader } from "../types/model";
+import { Type } from "..";
 
 export type Chunk = {
     uuid?: string,
@@ -86,14 +87,24 @@ export class StoreUtil {
         })
     }
 
-    private constructor() {}
 
     public static is<M extends Model>(code: string) {
-        return function (type: new (props: Loader<M>) => M) {
+        return function (type: Type<M, [Loader<M>]>) {
             if (StoreUtil.registry.has(code)) return;
             if (StoreUtil.registry.has(type)) return;
             StoreUtil.registry.set(code, type);
             StoreUtil.registry.set(type, code);
         }
     }
+
+    public static copy<T extends Model>(model: T): T | undefined {
+        const type = StoreUtil.registry.get(model.constructor);
+        if (!type) return;
+        return new type(() => ({
+            ...model.props,
+            uuid: undefined,
+        }))
+    }
+
+    private constructor() {}
 }

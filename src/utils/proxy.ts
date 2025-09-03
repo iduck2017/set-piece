@@ -1,5 +1,5 @@
 import { Model } from "../model";
-import { Type } from "../types";
+import { IType } from "../types";
 import { DecorProducer } from "../types/decor";
 import { EventProducer } from "../types/event";
 import { Format, Props } from "../types/model";
@@ -10,7 +10,7 @@ export class ProxyUtil<
     S extends Props.S = {},
     C extends Props.C = {},
 > {
-    public readonly type?: Type<Model>;
+    public readonly type?: IType<Model>;
     public readonly path?: string;
 
     public readonly model: M;
@@ -24,7 +24,7 @@ export class ProxyUtil<
         { [K in keyof Format.Event<E, M>]: EventProducer<Format.Event<E, M>[K], M> }
     >;
     
-    constructor(model: M, path?: string, type?: Type<Model>) {
+    constructor(model: M, path?: string, type?: IType<Model>) {
         this.type = type;
         this.path = path;
         this.model = model;
@@ -37,7 +37,7 @@ export class ProxyUtil<
         }
     }
 
-    public all<T extends Model>(type: Type<T>): {
+    public all<T extends Model>(type: IType<T>): {
         event: T['proxy']['event'],
         decor: T['proxy']['decor']
     } {

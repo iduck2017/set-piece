@@ -1,5 +1,5 @@
 import { Model } from "../model";
-import { Type } from ".";
+import { IType } from ".";
 import { Props } from "./model";
 
 export type DecorUpdater<
@@ -24,13 +24,13 @@ export class DecorProducer<
     M extends Model = Model
 > {
     public readonly path?: string;
-    public readonly type?: Type<Model>;
+    public readonly type?: IType<Model>;
     public readonly model: M;
     private readonly state?: S;
     constructor(
         model: M,
         path?: string,
-        type?: Type<Model>
+        type?: IType<Model>
     ) {
         this.model = model;
         this.path = path;

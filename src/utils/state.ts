@@ -2,7 +2,7 @@ import { Model } from "../model";
 import { Util } from ".";
 import { TranxUtil } from "./tranx";
 import { DebugUtil, LogLevel } from "./debug";
-import { Type } from "../types";
+import { IType } from "../types";
 import { Decor, DecorConsumer, DecorProducer, DecorUpdater } from "../types/decor";
 import { Props, Format } from "../types/model";
 
@@ -53,7 +53,7 @@ export class StateUtil<
         })
     }
 
-    public emit(path?: string, type?: Type<Model>) {
+    public emit(path?: string, type?: IType<Model>) {
         if (!path) {
             if (type) {
                 if (this.model instanceof type) this.reload();

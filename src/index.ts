@@ -15,7 +15,7 @@ export { StoreUtil } from "./utils/store";
 export { CheckUtil } from "./utils/check";
 
 export { LogLevel } from "./utils/debug"
-export { Method, Type } from "./types";
+export { Value, IType, Type, Method } from "./types";
 export { Props, Format, Loader } from "./types/model";
 export { 
     StateChangeEvent,
