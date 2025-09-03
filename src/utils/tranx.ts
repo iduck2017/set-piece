@@ -73,11 +73,7 @@ export class TranxUtil {
     private static reload() {
         TranxUtil.route.forEach((info, item) => item.utils.route.unload());
         TranxUtil.refer.forEach((info, item) => item.utils.refer.unload());
-        TranxUtil.route.forEach((info, item) => {
-            const origin = item.utils.route.current.root;
-            if (!origin?.utils.route.isRoot) return;
-            item.utils.route.load();
-        })
+        TranxUtil.route.forEach((info, item) => item.utils.route.load())
         TranxUtil.state.forEach((info, item) => item.utils.state.update());
     }
 
