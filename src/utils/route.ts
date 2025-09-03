@@ -8,7 +8,6 @@ import { Route } from "../types/model";
 export class RouteUtil<M extends Model = Model> extends Util<M> {
     public static boot<T extends Model>(root: T): T {
         root.utils.route._isRoot = true;
-        root.utils.route.bind(undefined, 'root')
         return root;
     }
 
@@ -16,8 +15,9 @@ export class RouteUtil<M extends Model = Model> extends Util<M> {
     public get key() { return this._key; }
     
     private _isRoot: boolean;
-    public get isBind() { return Boolean(this._parent) || this._isRoot; }
-    public get isRoot() { return this._isRoot; }
+    public get isBind() { 
+        return Boolean(this._parent) || this._isRoot; 
+    }
 
     private _parent: Model | undefined;
     public get current(): Route {
@@ -79,7 +79,7 @@ export class RouteUtil<M extends Model = Model> extends Util<M> {
     public unload() {
         this.utils.event.unload();
         this.utils.state.unload();
-        this.utils.refer.unload();
+        this.utils.refer.update();
     }
 
     public check(model: Model): boolean {

@@ -68,7 +68,7 @@ export class ReferUtil<
     }
 
     @DebugUtil.log(LogLevel.DEBUG)
-    public unload() {
+    public update() {
         const origin: Partial<Record<string, Model | Model[]>> = this.origin
         Object.keys(origin).forEach(key => {
             const item = origin[key]
@@ -114,9 +114,6 @@ export class ReferUtil<
         if (value instanceof Array) return this.proxy(value, key);
         return value;
     }
-
-    @TranxUtil.span()
-    public reload() {}
 
     @TranxUtil.span()
     private set(

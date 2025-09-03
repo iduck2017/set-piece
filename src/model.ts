@@ -83,7 +83,6 @@ export abstract class Model<
             child: this.utils.child.origin,
             refer: this.utils.refer.origin,
         }
-        this.utils.refer.reload();
     }
 
     public reload() { 

@@ -21,10 +21,14 @@ export class TranxUtil {
             return function (constructor: IType<Model>) {
                 return class Model extends constructor {
                     constructor(...args: any[]) {
-                        if (TranxUtil._isLock) super(...args);
+                        if (TranxUtil._isLock) {
+                            super(...args);
+                            TranxUtil.route.set(this, this.route);
+                        }
                         else {
                             TranxUtil._isLock = true;
                             super(...args);
+                            TranxUtil.route.set(this, this.route);
                             TranxUtil.reload();
                             TranxUtil._isLock = false;
                             TranxUtil.end();
@@ -72,7 +76,7 @@ export class TranxUtil {
 
     private static reload() {
         TranxUtil.route.forEach((info, item) => item.utils.route.unload());
-        TranxUtil.refer.forEach((info, item) => item.utils.refer.unload());
+        TranxUtil.refer.forEach((info, item) => item.utils.refer.update());
         TranxUtil.route.forEach((info, item) => item.utils.route.load())
         TranxUtil.state.forEach((info, item) => item.utils.state.update());
     }
