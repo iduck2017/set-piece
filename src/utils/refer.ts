@@ -10,7 +10,7 @@ export class ReferUtil<
     R extends Props.R = Props.R,
 > extends Util<M> {
 
-    public readonly origin: Format.Refer<R, true>
+    public origin: Format.Refer<R, true>
 
     public get current(): Format.Refer<R> { 
         const result: any = {};
@@ -27,6 +27,19 @@ export class ReferUtil<
     constructor(model: M, props: R) {
         super(model);
         this.router = new Map();
+        Object.keys(props).forEach(key => {
+            if (props[key] instanceof Array) props[key].forEach(item => item.utils.refer.link(this.model, key));
+            if (props[key] instanceof Model) props[key].utils.refer.link(this.model, key);
+        });
+        const origin: any = { ...props };
+        this.origin = new Proxy(origin, {
+            get: this.get.bind(this),
+            set: this.set.bind(this),
+            deleteProperty: this.del.bind(this)
+        });
+    }
+
+    public init(props: Format.Refer<R>) {
         Object.keys(props).forEach(key => {
             if (props[key] instanceof Array) props[key].forEach(item => item.utils.refer.link(this.model, key));
             if (props[key] instanceof Model) props[key].utils.refer.link(this.model, key);
