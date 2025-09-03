@@ -9,7 +9,7 @@ import { EventEmitter } from "./types/event";
 import { Utils } from "./utils";
 import { Format, Props, Route } from "./types/model";
 import { DebugUtil } from "./utils/debug";
-import { Func } from "./types";
+import { Method } from "./types";
 
 @TranxUtil.span(true)
 export abstract class Model<
@@ -63,7 +63,7 @@ export abstract class Model<
         }
     }
 
-    constructor(loader: Func<{
+    constructor(loader: Method<{
         uuid: string | undefined;
         state: Format.State<S>;
         child: C;

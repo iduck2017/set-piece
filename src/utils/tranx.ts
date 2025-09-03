@@ -1,4 +1,4 @@
-import { Func, Type } from "../types";
+import { Method, Type } from "../types";
 import { Util } from ".";
 import { Model } from "../model";
 import { Event } from "../types/event";
@@ -14,7 +14,7 @@ export class TranxUtil {
     private static readonly child: Map<Model, Model['child']> = new Map();
     private static readonly route: Map<Model, Model['route']> = new Map();
 
-    public static span(): (prototype: Object, key: string, descriptor: TypedPropertyDescriptor<Func>) => TypedPropertyDescriptor<Func>;
+    public static span(): (prototype: Object, key: string, descriptor: TypedPropertyDescriptor<Method>) => TypedPropertyDescriptor<Method>;
     public static span(isType: true): (constructor: Type<Model>) => any;
     public static span(isType?: boolean) {
         if (isType) {
@@ -40,8 +40,8 @@ export class TranxUtil {
         return function(
             prototype: unknown,
             key: string,
-            descriptor: TypedPropertyDescriptor<Func>
-        ): TypedPropertyDescriptor<Func> {
+            descriptor: TypedPropertyDescriptor<Method>
+        ): TypedPropertyDescriptor<Method> {
             const handler = descriptor.value;
             if (!handler) return descriptor;
             const instance = {

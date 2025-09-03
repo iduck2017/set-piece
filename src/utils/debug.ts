@@ -1,4 +1,4 @@
-import { Func, Type } from "../types";
+import { Method, Type } from "../types";
 
 export enum LogLevel {
     DEBUG = 1,
@@ -17,15 +17,22 @@ export class DebugUtil {
         return function(
             prototype: T,
             key: string,
-            descriptor: TypedPropertyDescriptor<Func>
-        ): TypedPropertyDescriptor<Func> {
+            descriptor: TypedPropertyDescriptor<Method>
+        ): TypedPropertyDescriptor<Method> {
             const handler = descriptor.value;
             if (!handler) return descriptor;
             const instance = {
                 [key](this: T, ...args: any[]) {
                     const accessor = DebugUtil.registry.get(this.constructor);
                     const name = accessor?.(this) ?? this.constructor.name;
-                    if (level < DebugUtil.level) return handler.call(this, ...args);
+                    if (level < DebugUtil.level) {
+                        const result = handler.call(this, ...args);
+                        const logger = console.log;
+                        console.log = () => undefined;
+                        if (result instanceof Promise) return result.finally(() => console.log = logger);
+                        console.log = logger;
+                        return result;
+                    }
                     console.group(`%c${name}::${key}`, `color: ${{
                         [LogLevel.DEBUG]: 'gray',
                         [LogLevel.INFO]: '',
@@ -55,14 +62,20 @@ export class DebugUtil {
         return function(
             prototype: T,
             key: string,
-            descriptor: TypedPropertyDescriptor<Func>
-        ): TypedPropertyDescriptor<Func> {
+            descriptor: TypedPropertyDescriptor<Method>
+        ): TypedPropertyDescriptor<Method> {
             const handler = descriptor.value;
             if (!handler) return descriptor;
             const instance = {
                 [key](this: T, ...args: any[]) {
                     const origin = console;
-                    console = new Proxy({} as any, { get: () => () => undefined })
+                    console = new Proxy(console, { 
+                        get: (origin: any, key) => {
+                            const value = origin[key];
+                            if (typeof value === 'function') return () => undefined;
+                            return value;
+                        }
+                    })
                     const result = handler.call(this, ...args);
                     if (result instanceof Promise) result.finally(() => console = origin);
                     else console = origin;

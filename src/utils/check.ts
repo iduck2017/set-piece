@@ -1,17 +1,17 @@
-import { Func } from "../types";
+import { Method } from "../types";
 
 export class CheckUtil {
-    private static readonly validators = new Map<Function, Record<string, Func[]>>();
+    private static readonly validators = new Map<Function, Record<string, Method[]>>();
     
     public static if<T extends Object, R = any, P extends any[] = any[]>(
-        validator: Func<any, [T, ...P]>,
+        validator: Method<any, [T, ...P]>,
         error?: string | Error,
     ) {
         return function (
             prototype: T,
             key: string,
-            descriptor: TypedPropertyDescriptor<Func<R | undefined, P>>
-        ): TypedPropertyDescriptor<Func<R | undefined, P>> {
+            descriptor: TypedPropertyDescriptor<Method<R | undefined, P>>
+        ): TypedPropertyDescriptor<Method<R | undefined, P>> {
             const handler = descriptor.value;
             const instance = {
                 [key](this: T, ...args: P) {
@@ -31,8 +31,8 @@ export class CheckUtil {
         };
     }
 
-    public static precheck<F extends Func>(target: Object, method: F, ...args: Parameters<F>) {
-        let validators: Func[] = [];
+    public static precheck<F extends Method>(target: Object, method: F, ...args: Parameters<F>) {
+        let validators: Method[] = [];
         let constructor = target.constructor;
         while (constructor) {
             validators = validators.concat(CheckUtil.validators.get(constructor)?.[method.name] ?? []);

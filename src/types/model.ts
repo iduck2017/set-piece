@@ -1,5 +1,5 @@
 import { DeepReadonly, Primitive } from "utility-types";
-import { Func, Value } from ".";
+import { Method, Value } from ".";
 import { Model } from "../model"
 import { Event } from "./event";
 
@@ -34,4 +34,4 @@ export namespace Format {
         { [K in keyof R]: R[K] extends any[] ? Readonly<R[K]> : R[K] | undefined } :
         { [K in keyof R]: R[K] extends any[] ? R[K] : R[K] | undefined }
 }
-export type Loader<M extends Model> = Func<M['props'], []>
+export type Loader<M extends Model> = Method<M['props'], []>
