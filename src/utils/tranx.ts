@@ -75,10 +75,14 @@ export class TranxUtil {
     }
 
     private static reload() {
-        TranxUtil.route.forEach((info, item) => item.utils.route.unload());
-        TranxUtil.refer.forEach((info, item) => item.utils.refer.update());
-        TranxUtil.route.forEach((info, item) => item.utils.route.load())
-        TranxUtil.state.forEach((info, item) => item.utils.state.update());
+        const route = TranxUtil.route;
+        const refer = TranxUtil.refer;
+        const state = TranxUtil.state;
+        const child = TranxUtil.child;
+        route.forEach((info, item) => item.utils.route.unload());
+        refer.forEach((info, item) => item.utils.refer.update());
+        route.forEach((info, item) => item.utils.route.load())
+        state.forEach((info, item) => item.utils.state.update());
     }
 
     /**
