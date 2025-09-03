@@ -22,11 +22,11 @@ export class ReferUtil<
         return result;
     }
     
-    private readonly router: Map<Model, string[]>;
+    private readonly consumers: Map<Model, string[]>;
     
     constructor(model: M, props: R) {
         super(model);
-        this.router = new Map();
+        this.consumers = new Map();
         Object.keys(props).forEach(key => {
             if (props[key] instanceof Array) props[key].forEach(item => item.utils.refer.link(this.model, key));
             if (props[key] instanceof Model) props[key].utils.refer.link(this.model, key);
@@ -53,18 +53,18 @@ export class ReferUtil<
     }
 
     private link(model: Model, key: string) {
-        const router = this.router.get(model) ?? [];
-        router.push(key);
-        this.router.set(model, router);
+        const consumers = this.consumers.get(model) ?? [];
+        consumers.push(key);
+        this.consumers.set(model, consumers);
         return true;
     }
 
     private unlink(model: Model, key: string) {
-        const router = this.router.get(model) ?? [];
-        const index = router.indexOf(key);
+        const consumers = this.consumers.get(model) ?? [];
+        const index = consumers.indexOf(key);
         if (index === -1) return;
-        router.splice(index, 1);
-        this.router.set(model, router);
+        consumers.splice(index, 1);
+        this.consumers.set(model, consumers);
     }
 
     @DebugUtil.log(LogLevel.DEBUG)
@@ -85,7 +85,7 @@ export class ReferUtil<
                 delete origin[key]
             }
         })
-        this.router.forEach((keys, item) => {
+        this.consumers.forEach((keys, item) => {
             if (this.utils.route.check(item)) return;
             [...keys].forEach(key => {
                 const origin: Record<string, Model | Model[]> = item.utils.refer.origin;
@@ -96,12 +96,12 @@ export class ReferUtil<
                 if (origin[key] === this.model) delete origin[key];
             });
         });
-        this.router.clear();
+        this.consumers.clear();
     }
 
     public debug() {
         const dependency: string[] = [];
-        this.router.forEach((list, item) => dependency.push(item.name));
+        this.consumers.forEach((list, item) => dependency.push(item.name));
         Object.values(this.origin).forEach(item => {
             if (item instanceof Array) dependency.push(...item.map(item => item.name));
             if (item instanceof Model) dependency.push(item.name);

@@ -86,13 +86,11 @@ export class StoreUtil {
     private constructor() {}
 
     public static is<M extends Model>(code: string) {
-        return function (
-            constructor: new (props: M['props']) => M
-        ) {
+        return function (type: new (props: M['props']) => M) {
             if (StoreUtil.registry.has(code)) return;
-            if (StoreUtil.registry.has(constructor)) return;
-            StoreUtil.registry.set(code, constructor);
-            StoreUtil.registry.set(constructor, code);
+            if (StoreUtil.registry.has(type)) return;
+            StoreUtil.registry.set(code, type);
+            StoreUtil.registry.set(type, code);
         }
     }
 }

@@ -3,20 +3,23 @@ import { Util } from ".";
 import { TranxUtil } from "./tranx";
 import { DebugUtil, LogLevel } from "./debug";
 import { Route } from "../types/model";
+import { IType } from "../types";
 
 @DebugUtil.is(self => `${self.model.name}::route`)
 export class RouteUtil<M extends Model = Model> extends Util<M> {
-    public static boot<T extends Model>(root: T): T {
-        root.utils.route._isRoot = true;
-        return root;
+    private static readonly _root: Array<Function> = [];
+    public static root() {
+        return function (type: IType<Model>) {
+            RouteUtil._root.push(type);
+        }
     }
-
+    
     private _key: string | undefined;
     public get key() { return this._key; }
     
-    private _isRoot: boolean;
     public get isBind() { 
-        return Boolean(this._parent) || this._isRoot; 
+        const type = this.model.constructor;
+        return Boolean(this._parent) || RouteUtil._root.includes(type); 
     }
 
     private _parent: Model | undefined;
@@ -38,11 +41,6 @@ export class RouteUtil<M extends Model = Model> extends Util<M> {
             // if isRoot break;
         }
         return route;
-    }
-
-    constructor(model: M) {
-        super(model);
-        this._isRoot = false;
     }
 
     @TranxUtil.span()

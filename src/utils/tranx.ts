@@ -18,8 +18,8 @@ export class TranxUtil {
     public static span(isType: true): (constructor: IType<Model>) => any;
     public static span(isType?: boolean) {
         if (isType) {
-            return function (constructor: IType<Model>) {
-                return class Model extends constructor {
+            return function (type: IType<Model>) {
+                return class Model extends type {
                     constructor(...args: any[]) {
                         if (TranxUtil._isLock) {
                             super(...args);
