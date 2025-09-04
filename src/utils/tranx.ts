@@ -92,9 +92,11 @@ export class TranxUtil {
         const child = new Map(TranxUtil.child);
         const state = new Map(TranxUtil.state);
         const refer = new Map(TranxUtil.refer);
+        const route = new Map(TranxUtil.route);
         refer.forEach((info, item) => item.utils.refer.update());
         child.forEach((info, item) => item.utils.child.update());
         state.forEach((info, item) => item.utils.state.update());
+        route.forEach((info, item) => item.utils.state.update());
     }
 
     /**

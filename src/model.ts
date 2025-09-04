@@ -88,7 +88,7 @@ export abstract class Model<
     }
 
     public reload() { 
-        return this.utils.route.emit()
+        return this.utils.route.toReload()
     }
 
     public copy(props?: {

@@ -53,20 +53,24 @@ export class StateUtil<
         })
     }
 
-    public emit(path?: string, type?: IType<Model>) {
+
+    @TranxUtil.span()
+    private toUpdate() {}
+
+    public check(path?: string, type?: IType<Model>) {
         if (!path) {
             if (type) {
-                if (this.model instanceof type) this._emit();
+                if (this.model instanceof type) this.toUpdate();
                 Object.keys(this.utils.child.current).forEach(key => {
                     const child: Record<string, Model | Model[]> = this.utils.child.current;
                     if (child[key] instanceof Array) {
                         child[key].forEach(item => {
-                            if (item instanceof type) item.utils.state.emit(path, type);
+                            if (item instanceof type) item.utils.state.check(path, type);
                         })
                     }
-                    if (child[key] instanceof type) child[key].utils.state.emit(path, type)
+                    if (child[key] instanceof type) child[key].utils.state.check(path, type)
                 })
-            } else this._emit();
+            } else this.toUpdate();
             return;
         }
         const keys = path.split('/');
@@ -74,12 +78,9 @@ export class StateUtil<
         path = keys.join('/');
         if (!key) return;
         const child: Record<string, Model | Model[]> = this.utils.child.current;
-        if (child[key] instanceof Array) child[key].forEach(item => item.utils.state.emit(path, type))
-        if (child[key] instanceof Model) child[key].utils.state.emit(path, type);
+        if (child[key] instanceof Array) child[key].forEach(item => item.utils.state.check(path, type))
+        if (child[key] instanceof Model) child[key].utils.state.check(path, type);
     } 
-
-    @TranxUtil.span()
-    private _emit() {}
 
     @TranxUtil.span()
     private set(origin: any, key: string, next: any) {
@@ -131,7 +132,7 @@ export class StateUtil<
         producers.push(producer);
         that.utils.state.router.consumers.set(producer, consumers);
         this.router.producers.set(updater, producers);
-        that.utils.state.emit(path, type);
+        that.utils.state.check(path, type);
     }
     
     public unbind<S extends Props.S, M extends Model>(
@@ -148,7 +149,7 @@ export class StateUtil<
         if (index !== -1) comsumers.splice(index, 1);
         index = producers.indexOf(producer);
         if (index !== -1) producers.splice(index, 1);
-        that.utils.state.emit(path, type);
+        that.utils.state.check(path, type);
     }
 
     public load() {
@@ -166,7 +167,6 @@ export class StateUtil<
             })
             constructor = constructor.__proto__;
         }
-        this._emit();
     }
 
     public unload() {
@@ -180,7 +180,6 @@ export class StateUtil<
                 that.utils.state.unbind(producer, updater);
             });
         });
-        this._emit();
     }
 
     public debug() {
