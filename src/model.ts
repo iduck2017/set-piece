@@ -88,7 +88,7 @@ export abstract class Model<
     }
 
     public reload() { 
-        return this.utils.route.toReload()
+        return this.utils.route.toReload(new Set())
     }
 
     @DebugUtil.log()

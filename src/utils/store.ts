@@ -37,13 +37,13 @@ export class StoreUtil {
 
     @TranxUtil.span()
     public static load(chunk: Chunk): Model | undefined {
-        const refer: Record<string, Model> = {};
-        const model = StoreUtil.create(chunk, refer);
-        StoreUtil.bind(chunk, refer);
+        const context: Record<string, Model> = {};
+        const model = StoreUtil.create(context, chunk);
+        StoreUtil.bind(chunk, context);
         return model;
     }
 
-    private static create(chunk: Chunk | undefined, registry: Record<string, Model>): Model | undefined {
+    private static create(context: Record<string, Model>, chunk: Chunk | undefined): Model | undefined {
         if (!chunk) return;
         const type = StoreUtil.registry.get(chunk.code);
         if (!type) return;
@@ -53,8 +53,8 @@ export class StoreUtil {
             Object.keys(child).forEach(key => {
                 const value = child[key];
                 if (value instanceof Array) {
-                    origin[key] = value.map(item => StoreUtil.create(item, registry)).filter(Boolean);
-                } else if (value) origin[key] = StoreUtil.create(value, registry);
+                    origin[key] = value.map(item => StoreUtil.create(context, item)).filter(Boolean);
+                } else if (value) origin[key] = StoreUtil.create(context, value);
             })
             return {
                 uuid: chunk.uuid,
@@ -62,7 +62,7 @@ export class StoreUtil {
                 child: origin
             }
         })
-        registry[result.uuid] = result;
+        context[result.uuid] = result;
         return result;
     }
     

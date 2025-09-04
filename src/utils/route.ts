@@ -46,31 +46,28 @@ export class RouteUtil<M extends Model = Model> extends Util<M> {
     @TranxUtil.span()
     public bind(parent: Model | undefined, key: string) {
         if (this.isBind) return;
-        this.toReload();
+        this.toReload(new Set());
         this._key = key;
         this._parent = parent;
     }
 
     @TranxUtil.span()
     public unbind() {
-        this.toReload();
+        this.toReload(new Set());
         this._key = undefined;
         this._parent = undefined;
     }
 
     @TranxUtil.span()
-    public toReload() {
+    public toReload(context: Set<RouteUtil>) {
+        if (context.has(this)) return;
+        context.add(this);
         const origin: Props.C = this.utils.child.current;
         Object.keys(origin).forEach(key => {
             const value = origin[key]
-            if (value instanceof Array) {
-                value.filter(item => this.check(item))
-                    .forEach(item => item.utils.route.toReload())
-            }
-            if (value instanceof Model) {
-                if (!this.check(value)) return;
-                value.utils.route.toReload();
-            }
+            // avoid loop
+            if (value instanceof Array) value.forEach(item => item.utils.route.toReload(context))
+            if (value instanceof Model) value.utils.route.toReload(context);
         })
     }
 
