@@ -1,7 +1,6 @@
 import { Util } from ".";
 import { Model } from "../model";
 import { Format, Props } from "../types/model";
-import { DebugUtil, LogLevel } from "./debug";
 import { TranxUtil } from "./tranx";
 
 export class ChildUtil<
@@ -20,14 +19,12 @@ export class ChildUtil<
         Object.keys(props).forEach(key => {
             if (props[key] instanceof Array) {
                 origin[key] = props[key].map(item => {
-                    if (item.utils.route.isBind) item = item.copy();
                     item.utils.route.bind(this.model, key);
                     return item;
                 })
             }
             if (props[key] instanceof Model) {
                 let item = props[key];
-                if (item.utils.route.isBind) item = item.copy();
                 item.utils.route.bind(this.model, key);
                 origin[key] = item;
             }
@@ -69,17 +66,8 @@ export class ChildUtil<
         const prev = origin[key];
         if (prev instanceof Array) prev.forEach(item => item.utils.route.unbind())
         if (prev instanceof Model) prev.utils.route.unbind();
-        if (next instanceof Array) {
-            next = next.map(next => {
-                if (next.utils.route.isBind) next = next.copy();
-                next.utils.route.bind(this.model, key);
-                return next;
-            });
-        } 
-        if (next instanceof Model) {
-            if (next.utils.route.isBind) next = next.copy();
-            next.utils.route.bind(this.model, key);
-        }
+        if (next instanceof Array) next.forEach(item => item.utils.route.bind(this.model, key));
+        if (next instanceof Model) next.utils.route.bind(this.model, key);
         origin[key] = next;
         return true;
     }
@@ -117,10 +105,7 @@ export class ChildUtil<
     private lset(key: string, origin: Record<string, unknown>, index: string, next: Model) {
         const prev = origin[index];
         if (prev instanceof Model) prev.utils.route.unbind();
-        if (next instanceof Model) {
-            if (next.utils.route.isBind) next = next.copy();
-            next.utils.route.bind(this.model, key);
-        }
+        if (next instanceof Model) next.utils.route.bind(this.model, key);
         origin[index] = next;
         return true;
     }
@@ -136,21 +121,13 @@ export class ChildUtil<
 
     @TranxUtil.span()
     private push(key: string, origin: Model[], ...next: Model[]) {
-        next = next.map(next => {
-            if (next.utils.route.isBind) next = next.copy();
-            next.utils.route.bind(this.model, key);
-            return next;
-        });
+        next.forEach(item => item.utils.route.bind(this.model, key));
         return origin.push(...next);
     }
 
     @TranxUtil.span()
     private unshift(key: string, origin: Model[], ...next: Model[]) {
-        next = next.map(next => {
-            if (next.utils.route.isBind) next = next.copy();
-            next.utils.route.bind(this.model, key);
-            return next;
-        });
+        next.forEach(item => item.utils.route.bind(this.model, key));
         return origin.unshift(...next);
     }
 
@@ -185,11 +162,7 @@ export class ChildUtil<
         if (!end) end = origin.length;
         const prev = origin.slice(start, end);
         prev.forEach(item => item.utils.route.unbind())
-        const next = prev.map(() => {
-            const next = sample.copy();
-            next.utils.route.bind(this.model, key);
-            return next;
-        });
+        const next = new Array(end - start).fill(sample);
         origin.splice(start, end - start, ...next);
         return origin;
     }
@@ -198,12 +171,7 @@ export class ChildUtil<
     private splice(key: string, origin: Model[], start: number, count: number, ...next: Model[]) {
         const prev = origin.slice(start, start + count);
         prev.forEach(item => item.utils.route.unbind())
-        next = next.map(item => {
-            if (item.utils.route.isBind) item = item.copy();
-            item.utils.route.bind(this.model, key);
-            return item;
-        });
+        next.forEach(item => item.utils.route.bind(this.model, key));
         return origin.splice(start, count, ...next);
     }
-
 }

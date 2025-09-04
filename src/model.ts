@@ -91,21 +91,6 @@ export abstract class Model<
         return this.utils.route.toReload()
     }
 
-    public copy(props?: {
-        state?: Partial<Format.State<S>>,
-        child?: Partial<C>,
-        refer?: Partial<R>,
-    }): this {
-        const type: any = this.constructor;
-        const copy = new type(() => ({
-            uuid: undefined,
-            state: { ...this.props.state, ...props?.state },
-            child: { ...this.props.child, ...props?.child },
-            refer: { ...this.props.refer, ...props?.refer },
-        }));
-        return copy;
-    }
-
     @DebugUtil.log()
     public debug() {
         this.utils.event.debug()
