@@ -68,16 +68,12 @@ export class RouteUtil<M extends Model = Model> extends Util<M> {
     }
 
     @DebugUtil.log(LogLevel.INFO)
-    public load() {
-        this.utils.event.load();
-        this.utils.state.load();
-    }
-
-    @DebugUtil.log(LogLevel.INFO)
-    public unload() {
+    public update() {
+        this.utils.refer.reload();
         this.utils.event.unload();
         this.utils.state.unload();
-        this.utils.refer.update();
+        this.utils.event.load();
+        this.utils.state.load();
     }
 
     public check(model: Model): boolean {

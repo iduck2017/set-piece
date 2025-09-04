@@ -56,7 +56,7 @@ export class StateUtil<
     public emit(path?: string, type?: IType<Model>) {
         if (!path) {
             if (type) {
-                if (this.model instanceof type) this.reload();
+                if (this.model instanceof type) this._emit();
                 Object.keys(this.utils.child.current).forEach(key => {
                     const child: Record<string, Model | Model[]> = this.utils.child.current;
                     if (child[key] instanceof Array) {
@@ -66,7 +66,7 @@ export class StateUtil<
                     }
                     if (child[key] instanceof type) child[key].utils.state.emit(path, type)
                 })
-            } else this.reload();
+            } else this._emit();
             return;
         }
         const keys = path.split('/');
@@ -79,7 +79,7 @@ export class StateUtil<
     } 
 
     @TranxUtil.span()
-    private reload() {}
+    private _emit() {}
 
     @TranxUtil.span()
     private set(origin: any, key: string, next: any) {
@@ -166,7 +166,7 @@ export class StateUtil<
             })
             constructor = constructor.__proto__;
         }
-        this.reload();
+        this._emit();
     }
 
     public unload() {
@@ -180,7 +180,7 @@ export class StateUtil<
                 that.utils.state.unbind(producer, updater);
             });
         });
-        this.reload();
+        this._emit();
     }
 
     public debug() {

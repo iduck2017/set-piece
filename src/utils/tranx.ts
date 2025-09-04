@@ -84,9 +84,8 @@ export class TranxUtil {
         const refer = TranxUtil.refer;
         const state = TranxUtil.state;
         const child = TranxUtil.child;
-        refer.forEach((info, item) => item.utils.refer.update());
-        route.forEach((info, item) => item.utils.route.unload());
-        route.forEach((info, item) => item.utils.route.load())
+        refer.forEach((info, item) => item.utils.refer.reload());
+        route.forEach((info, item) => item.utils.route.update());
         state.forEach((info, item) => item.utils.state.update());
     }
 

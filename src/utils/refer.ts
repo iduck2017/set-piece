@@ -67,7 +67,7 @@ export class ReferUtil<
     }
 
     @DebugUtil.log(LogLevel.DEBUG)
-    public update() {
+    public reload() {
         const origin: Partial<Props.R> = this.origin
         Object.keys(origin).forEach(key => {
             const value = origin[key]
