@@ -9,17 +9,8 @@ export class ChildUtil<
 > extends Util<M> {
 
     public readonly origin: C;
+    public current: Format.Child<C>;
 
-    public get current(): Format.Child<C> { 
-        const result: any = {};
-        Object.keys(this.origin).forEach(key => {
-            const value = this.origin[key];
-            if (value instanceof Array) result[key] = [...value];
-            if (value instanceof Model) result[key] = value;
-        })
-        return result;
-    }
-    
     constructor(model: M, props: C) {
         super(model);
         const origin: any = {};
@@ -43,6 +34,21 @@ export class ChildUtil<
             set: this.set.bind(this),
             deleteProperty: this.del.bind(this),
         })
+        this.current = this.copy(origin);
+    }
+
+    public update() {
+        this.current = this.copy(this.origin);
+    }
+
+    public copy(origin: C): Format.Child<C> { 
+        const result: any = {};
+        Object.keys(origin).forEach(key => {
+            const value = origin[key];
+            if (value instanceof Array) result[key] = [...value];
+            if (value instanceof Model) result[key] = value;
+        })
+        return result;
     }
 
     private get(origin: Partial<Record<string, Model | Model[]>>, key: string) {

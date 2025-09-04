@@ -32,6 +32,7 @@ export class TranxUtil {
                             super(...args);
                             TranxUtil.route.set(this, this.route);
                             TranxUtil.reload();
+                            TranxUtil.update();
                             TranxUtil._isLock = false;
                             // console.groupEnd();
                             TranxUtil.end();
@@ -67,6 +68,7 @@ export class TranxUtil {
                         TranxUtil._isLock = true;
                         const result = handler.call(this, ...args);
                         TranxUtil.reload();
+                        TranxUtil.update();
                         TranxUtil._isLock = false;
                         TranxUtil.end();
                         // console.groupEnd();
@@ -80,12 +82,18 @@ export class TranxUtil {
     }
 
     private static reload() {
-        const route = TranxUtil.route;
-        const refer = TranxUtil.refer;
-        const state = TranxUtil.state;
-        const child = TranxUtil.child;
+        const route = new Map(TranxUtil.route);
+        const refer = new Map(TranxUtil.refer);
         refer.forEach((info, item) => item.utils.refer.reload());
-        route.forEach((info, item) => item.utils.route.update());
+        route.forEach((info, item) => item.utils.route.reload());
+    }
+
+    private static update() {
+        const child = new Map(TranxUtil.child);
+        const state = new Map(TranxUtil.state);
+        const refer = new Map(TranxUtil.refer);
+        refer.forEach((info, item) => item.utils.refer.update());
+        child.forEach((info, item) => item.utils.child.update());
         state.forEach((info, item) => item.utils.state.update());
     }
 

@@ -11,17 +11,8 @@ export class ReferUtil<
 > extends Util<M> {
 
     public origin: Format.Refer<R, true>
+    public current: Format.Refer<R>
 
-    public get current(): Format.Refer<R> { 
-        const result: any = {};
-        Object.keys(this.origin).forEach(key => {
-            const value = this.origin[key];
-            if (value instanceof Array) result[key] = [...value];
-            if (value instanceof Model) result[key] = value;
-        })
-        return result;
-    }
-    
     private readonly consumers: Model[];
     
     constructor(model: M, props: R) {
@@ -38,6 +29,17 @@ export class ReferUtil<
             set: this.set.bind(this),
             deleteProperty: this.del.bind(this)
         });
+        this.current = this.copy(this.origin);
+    }
+
+    public copy(origin: Format.Refer<R>): Format.Refer<R> { 
+        const result: any = {};
+        Object.keys(origin).forEach(key => {
+            const value = origin[key];
+            if (value instanceof Array) result[key] = [...value];
+            if (value instanceof Model) result[key] = value;
+        })
+        return result;
     }
 
     public init(props: Format.Refer<R>) {
@@ -52,6 +54,11 @@ export class ReferUtil<
             set: this.set.bind(this),
             deleteProperty: this.del.bind(this)
         });
+        this.current = this.copy(this.origin);
+    }
+
+    public update() {
+        this.current = this.copy(this.origin)
     }
 
     private link(model: Model) {

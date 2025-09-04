@@ -45,30 +45,30 @@ export class RouteUtil<M extends Model = Model> extends Util<M> {
 
     @TranxUtil.span()
     public bind(parent: Model | undefined, key: string) {
-        this.reload();
+        this.emit();
         this._key = key;
         this._parent = parent;
     }
 
     @TranxUtil.span()
     public unbind() {
-        this.reload();
+        this.emit();
         this._key = undefined;
         this._parent = undefined;
     }
 
     @TranxUtil.span()
-    public reload() {
+    public emit() {
         const child = this.utils.child;
         const origin: Record<string, Model | Model[]> = child.origin;
         Object.keys(origin).forEach(key => {
-            if (origin[key] instanceof Array) origin[key].forEach(item => item.utils.route.reload())
-            if (origin[key] instanceof Model) origin[key].utils.route.reload();
+            if (origin[key] instanceof Array) origin[key].forEach(item => item.utils.route.emit())
+            if (origin[key] instanceof Model) origin[key].utils.route.emit();
         })
     }
 
     @DebugUtil.log(LogLevel.INFO)
-    public update() {
+    public reload() {
         this.utils.refer.reload();
         this.utils.event.unload();
         this.utils.state.unload();
