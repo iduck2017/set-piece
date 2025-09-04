@@ -1,6 +1,7 @@
 import { Util } from ".";
 import { Model } from "../model";
 import { Format, Props } from "../types/model";
+import { DebugUtil, LogLevel } from "./debug";
 import { TranxUtil } from "./tranx";
 
 export class ChildUtil<
@@ -12,7 +13,6 @@ export class ChildUtil<
 
     private _current: Format.Child<C>;
     public get current() { return this.copy(this._current) }
-
 
     constructor(model: M, props: C) {
         super(model);

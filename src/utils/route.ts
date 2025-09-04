@@ -2,7 +2,7 @@ import { Model } from "../model";
 import { Util } from ".";
 import { TranxUtil } from "./tranx";
 import { DebugUtil, LogLevel } from "./debug";
-import { Route } from "../types/model";
+import { Props, Route } from "../types/model";
 import { IType } from "../types";
 
 @DebugUtil.is(self => `${self.model.name}::route`)
@@ -23,6 +23,7 @@ export class RouteUtil<M extends Model = Model> extends Util<M> {
     }
 
     private _parent: Model | undefined;
+    // cache
     public get current(): Route {
         const route: {
             root: Model,
@@ -38,13 +39,13 @@ export class RouteUtil<M extends Model = Model> extends Util<M> {
             route.root = parent;
             route.order.push(parent);
             parent = parent.utils.route._parent;
-            // if isRoot break;
         }
         return route;
     }
 
     @TranxUtil.span()
     public bind(parent: Model | undefined, key: string) {
+        if (this.isBind) return;
         this.toReload();
         this._key = key;
         this._parent = parent;
@@ -59,11 +60,17 @@ export class RouteUtil<M extends Model = Model> extends Util<M> {
 
     @TranxUtil.span()
     public toReload() {
-        const child = this.utils.child;
-        const origin: Record<string, Model | Model[]> = child.origin;
+        const origin: Props.C = this.utils.child.current;
         Object.keys(origin).forEach(key => {
-            if (origin[key] instanceof Array) origin[key].forEach(item => item.utils.route.toReload())
-            if (origin[key] instanceof Model) origin[key].utils.route.toReload();
+            const value = origin[key]
+            if (value instanceof Array) {
+                value.filter(item => this.check(item))
+                    .forEach(item => item.utils.route.toReload())
+            }
+            if (value instanceof Model) {
+                if (!this.check(value)) return;
+                value.utils.route.toReload();
+            }
         })
     }
 

@@ -63,11 +63,14 @@ export class StateUtil<
             if (!type) this.toUpdate();
             if (!type) return;
             if (this.model instanceof type) this.toUpdate();
-            Object.keys(this.utils.child.current).forEach(key => {
+            Object.keys(child).forEach(key => {
                 const value = child[key];
-                if (value instanceof Array) value
-                    .filter(item => item instanceof type)
-                    .forEach(item => item.utils.state.onBind(path, type))
+                if (value instanceof Array) {
+                    value
+                        .filter(item => this.utils.route.check(item))
+                        .filter(item => item instanceof type)
+                        .forEach(item => item.utils.state.onBind(path, type))
+                }
                 if (value instanceof Model) value.utils.state.onBind(path, type)
             })
         } else {
@@ -93,7 +96,6 @@ export class StateUtil<
         return true;
     }
 
-    @DebugUtil.log(LogLevel.DEBUG)
     public update() {
         let path: string | undefined;
         let state: any = { ...this.origin };

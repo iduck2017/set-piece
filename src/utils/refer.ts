@@ -81,7 +81,10 @@ export class ReferUtil<
         const origin: Partial<Props.R> = this._origin
         Object.keys(origin).forEach(key => {
             const value = origin[key]
-            if (value instanceof Array) origin[key] = value.filter(item => this.utils.route.check(item))
+            if (value instanceof Array) {
+                if (!value.length) return;
+                origin[key] = value.filter(item => this.utils.route.check(item))
+            }
             if (value instanceof Model) {
                 if (this.utils.route.check(value)) return; 
                 delete origin[key]
