@@ -24,18 +24,16 @@ export class TranxUtil {
                     constructor(...args: any[]) {
                         if (TranxUtil._isLock) {
                             super(...args);
-                            console.log('init', this.name)
                             TranxUtil.route.set(this, this.route);
                         }
                         else {
-                            console.group('Transaction');
+                            // console.group('Transaction');
                             TranxUtil._isLock = true;
                             super(...args);
-                            console.log('init', this.name)
                             TranxUtil.route.set(this, this.route);
                             TranxUtil.reload();
                             TranxUtil._isLock = false;
-                            console.groupEnd();
+                            // console.groupEnd();
                             TranxUtil.end();
                         }
                     }
@@ -65,13 +63,13 @@ export class TranxUtil {
                     if (TranxUtil._isLock) {
                         return handler.call(this, ...args);
                     } else {
-                        console.group('Transaction::', key);
+                        // console.group('Transaction::', key);
                         TranxUtil._isLock = true;
                         const result = handler.call(this, ...args);
                         TranxUtil.reload();
                         TranxUtil._isLock = false;
                         TranxUtil.end();
-                        console.groupEnd();
+                        // console.groupEnd();
                         return result;
                     }
                 }
@@ -86,8 +84,8 @@ export class TranxUtil {
         const refer = TranxUtil.refer;
         const state = TranxUtil.state;
         const child = TranxUtil.child;
-        route.forEach((info, item) => item.utils.route.unload());
         refer.forEach((info, item) => item.utils.refer.update());
+        route.forEach((info, item) => item.utils.route.unload());
         route.forEach((info, item) => item.utils.route.load())
         state.forEach((info, item) => item.utils.state.update());
     }
