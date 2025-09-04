@@ -10,8 +10,11 @@ export class ReferUtil<
     R extends Props.R = Props.R,
 > extends Util<M> {
 
-    public origin: Format.Refer<R, true>
-    public current: Format.Refer<R>
+    private _origin: Format.Refer<R, true>
+    public get origin(): Format.Refer<R, true> { return this._origin }
+
+    private _current: Format.Refer<R>
+    public get current() { return this.copy(this._current) }
 
     private readonly consumers: Model[];
     
@@ -24,12 +27,12 @@ export class ReferUtil<
             if (value instanceof Model) this.link(value);
         });
         const origin: any = { ...props };
-        this.origin = new Proxy(origin, {
+        this._origin = new Proxy(origin, {
             get: this.get.bind(this),
             set: this.set.bind(this),
             deleteProperty: this.del.bind(this)
         });
-        this.current = this.copy(this.origin);
+        this._current = this.copy(this._origin);
     }
 
     public copy(origin: Format.Refer<R>): Format.Refer<R> { 
@@ -49,16 +52,16 @@ export class ReferUtil<
             if (value instanceof Model) this.link(value);
         });
         const origin: any = { ...props };
-        this.origin = new Proxy(origin, {
+        this._origin = new Proxy(origin, {
             get: this.get.bind(this),
             set: this.set.bind(this),
             deleteProperty: this.del.bind(this)
         });
-        this.current = this.copy(this.origin);
+        this._current = this.copy(this._origin);
     }
 
     public update() {
-        this.current = this.copy(this.origin)
+        this._current = this.copy(this._origin)
     }
 
     private link(model: Model) {
@@ -75,7 +78,7 @@ export class ReferUtil<
 
     @DebugUtil.log(LogLevel.DEBUG)
     public reload() {
-        const origin: Partial<Props.R> = this.origin
+        const origin: Partial<Props.R> = this._origin
         Object.keys(origin).forEach(key => {
             const value = origin[key]
             if (value instanceof Array) origin[key] = value.filter(item => this.utils.route.check(item))
@@ -86,7 +89,7 @@ export class ReferUtil<
         })
         this.consumers.forEach(item => {
             if (this.utils.route.check(item)) return;
-            const origin: Record<string, Model | Model[]> = item.utils.refer.origin;
+            const origin: Record<string, Model | Model[]> = item.utils.refer._origin;
             Object.keys(origin).forEach(key => {
                 const value = origin[key]
                 if (value instanceof Array) origin[key] = value.filter(item => item !== this.model)
@@ -98,7 +101,7 @@ export class ReferUtil<
     public debug() {
         const dependency: string[] = [];
         this.consumers.forEach(item => dependency.push(item.name));
-        Object.values(this.origin).forEach(item => {
+        Object.values(this._origin).forEach(item => {
             if (item instanceof Array) dependency.push(...item.map(item => item.name));
             if (item instanceof Model) dependency.push(item.name);
         });

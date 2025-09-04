@@ -57,29 +57,28 @@ export class StateUtil<
     @TranxUtil.span()
     private toUpdate() {}
 
-    public check(path?: string, type?: IType<Model>) {
+    public onBind(path?: string, type?: IType<Model>) {
+        const child: Props.C = this.utils.child.current;
         if (!path) {
-            if (type) {
-                if (this.model instanceof type) this.toUpdate();
-                Object.keys(this.utils.child.current).forEach(key => {
-                    const child: Record<string, Model | Model[]> = this.utils.child.current;
-                    if (child[key] instanceof Array) {
-                        child[key].forEach(item => {
-                            if (item instanceof type) item.utils.state.check(path, type);
-                        })
-                    }
-                    if (child[key] instanceof type) child[key].utils.state.check(path, type)
-                })
-            } else this.toUpdate();
-            return;
+            if (!type) this.toUpdate();
+            if (!type) return;
+            if (this.model instanceof type) this.toUpdate();
+            Object.keys(this.utils.child.current).forEach(key => {
+                const value = child[key];
+                if (value instanceof Array) value
+                    .filter(item => item instanceof type)
+                    .forEach(item => item.utils.state.onBind(path, type))
+                if (value instanceof Model) value.utils.state.onBind(path, type)
+            })
+        } else {
+            const keys = path.split('/');
+            const key = keys.shift();
+            path = keys.join('/');
+            if (!key) return;
+            const value = child[key];
+            if (value instanceof Array) value.forEach(item => item.utils.state.onBind(path, type))
+            if (value instanceof Model) value.utils.state.onBind(path, type);
         }
-        const keys = path.split('/');
-        const key = keys.shift();
-        path = keys.join('/');
-        if (!key) return;
-        const child: Record<string, Model | Model[]> = this.utils.child.current;
-        if (child[key] instanceof Array) child[key].forEach(item => item.utils.state.check(path, type))
-        if (child[key] instanceof Model) child[key].utils.state.check(path, type);
     } 
 
     @TranxUtil.span()
@@ -132,7 +131,7 @@ export class StateUtil<
         producers.push(producer);
         that.utils.state.router.consumers.set(producer, consumers);
         this.router.producers.set(updater, producers);
-        that.utils.state.check(path, type);
+        that.utils.state.onBind(path, type);
     }
     
     public unbind<S extends Props.S, M extends Model>(
@@ -149,7 +148,7 @@ export class StateUtil<
         if (index !== -1) comsumers.splice(index, 1);
         index = producers.indexOf(producer);
         if (index !== -1) producers.splice(index, 1);
-        that.utils.state.check(path, type);
+        that.utils.state.onBind(path, type);
     }
 
     public load() {

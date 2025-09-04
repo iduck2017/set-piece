@@ -9,7 +9,10 @@ export class ChildUtil<
 > extends Util<M> {
 
     public readonly origin: C;
-    public current: Format.Child<C>;
+
+    private _current: Format.Child<C>;
+    public get current() { return this.copy(this._current) }
+
 
     constructor(model: M, props: C) {
         super(model);
@@ -34,14 +37,14 @@ export class ChildUtil<
             set: this.set.bind(this),
             deleteProperty: this.del.bind(this),
         })
-        this.current = this.copy(origin);
+        this._current = this.copy(origin);
     }
 
     public update() {
-        this.current = this.copy(this.origin);
+        this._current = this.copy(this.origin);
     }
 
-    public copy(origin: C): Format.Child<C> { 
+    public copy(origin: Format.Child<C>): Format.Child<C> { 
         const result: any = {};
         Object.keys(origin).forEach(key => {
             const value = origin[key];
