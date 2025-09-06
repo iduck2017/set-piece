@@ -1,14 +1,14 @@
 import { Model } from "../model";
 import { TranxUtil } from "./tranx";
 import { Value } from "../types";
-import { Loader } from "../types/model";
+import { Loader, Props } from "../types/model";
 import { Type } from "..";
 
 export type Chunk = {
     uuid?: string,
     code: string,
     state: Record<string, Value>,
-    child: Record<string, Chunk | Array<Chunk | undefined> | undefined>,
+    child: Partial<Record<string, Partial<Chunk[]> | Chunk>>,
     refer: Record<string, string | Array<string>>
 }
 
@@ -26,7 +26,7 @@ export class StoreUtil {
             refer: props.refer ?? {},
             child: {},
         }
-        const child: Record<string, Model | Model[]> = props.child ?? {};
+        const child: Props.C = props.child ?? {};
         Object.keys(child).forEach(key => {
             const value = child[key];
             if (value instanceof Array) result.child[key] = value.map(item => StoreUtil.save(item)).filter(Boolean);
@@ -48,7 +48,7 @@ export class StoreUtil {
         const type = StoreUtil.registry.get(chunk.code);
         if (!type) return;
         const result = new type(() => {
-            const origin: Record<string, Model | Array<Model | undefined> | undefined> = {};
+            const origin: Partial<Record<string, Model | Partial<Model[]>>> = {};
             const child = chunk.child;
             Object.keys(child).forEach(key => {
                 const value = child[key];
@@ -73,7 +73,7 @@ export class StoreUtil {
         if (!model) return;
         const child = chunk.child;
         const refer = chunk.refer;
-        const origin: Record<string, Model | Array<Model | undefined> | undefined> = {};
+        const origin: Partial<Record<string, Model | Partial<Model[]>>> = {};
         Object.keys(refer).forEach(key => {
             const value = refer[key];
             if (value instanceof Array) origin[key] = value.map(item => registry[item]).filter(Boolean);

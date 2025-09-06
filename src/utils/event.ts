@@ -3,6 +3,7 @@ import { Util } from ".";
 import { DebugUtil, LogLevel } from "./debug";
 import { Event, EventConsumer, EventEmitter, EventHandler, EventProducer } from "../types/event";
 import { Format, Props } from "../types/model";
+import { Method } from "../types";
 
 @DebugUtil.is(self => `${self.model.name}::event`)
 export class EventUtil<
@@ -10,7 +11,7 @@ export class EventUtil<
     E extends Props.E = Props.E,
 > extends Util<M> {
     
-    private static registry: Map<Function, Record<string, Array<(self: Model) => EventProducer | undefined>>> = new Map();
+    private static registry: Map<Function, Record<string, Array<Method<EventProducer | undefined, [Model]>>>> = new Map();
 
     public static on<
         E extends Event, 

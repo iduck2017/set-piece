@@ -1,4 +1,4 @@
-import { DeepReadonly, Primitive } from "utility-types";
+import { Primitive } from "utility-types";
 import { Method, Value } from ".";
 import { Model } from "../model"
 import { Event } from "./event";

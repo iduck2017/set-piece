@@ -51,7 +51,7 @@ export class ChildUtil<
         return result;
     }
 
-    private get(origin: Partial<Record<string, Model | Model[]>>, key: string) {
+    private get(origin: Partial<Props.C>, key: string) {
         const value = origin[key];
         if (value instanceof Array) return this.proxy(value, key);
         return value;
@@ -59,7 +59,7 @@ export class ChildUtil<
    
     @TranxUtil.span()
     private set(
-        origin: Partial<Record<string, Model | Model[]>>, 
+        origin: Partial<Props.C>, 
         key: string, 
         next?: Model | Model[]
     ) {
@@ -73,7 +73,7 @@ export class ChildUtil<
     }
 
     @TranxUtil.span()
-    private del(origin: Partial<Record<string, Model | Model[]>>, key: string) {
+    private del(origin: Partial<Props.C>, key: string) {
         const prev = origin[key];
         if (prev instanceof Array) prev.forEach(item => item.utils.route.unbind())
         if (prev instanceof Model) prev.utils.route.unbind();

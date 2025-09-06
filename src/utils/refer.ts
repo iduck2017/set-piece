@@ -92,7 +92,7 @@ export class ReferUtil<
         })
         this.consumers.forEach(item => {
             if (this.utils.route.check(item)) return;
-            const origin: Record<string, Model | Model[]> = item.utils.refer._origin;
+            const origin: Props.C = item.utils.refer._origin;
             Object.keys(origin).forEach(key => {
                 const value = origin[key]
                 if (value instanceof Array) origin[key] = value.filter(item => item !== this.model)
@@ -119,7 +119,7 @@ export class ReferUtil<
 
     @TranxUtil.span()
     private set(
-        origin: Partial<Record<string, Model | Model[]>>, 
+        origin: Partial<Props.C>, 
         key: string, 
         next?: Model | Model[]
     ) {
@@ -133,7 +133,7 @@ export class ReferUtil<
     }
 
     @TranxUtil.span()
-    private del(origin: Partial<Record<string, Model | Model[]>>, key: string) {
+    private del(origin: Partial<Props.C>, key: string) {
         let prev = origin[key];
         if (prev instanceof Array) prev.forEach(item => this.unlink(item));
         if (prev instanceof Model) this.unlink(prev);
