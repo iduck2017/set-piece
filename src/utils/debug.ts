@@ -57,35 +57,5 @@ export class DebugUtil {
         }
     }
 
-
-    public static mute<T>() {
-        return function(
-            prototype: T,
-            key: string,
-            descriptor: TypedPropertyDescriptor<Method>
-        ): TypedPropertyDescriptor<Method> {
-            const handler = descriptor.value;
-            if (!handler) return descriptor;
-            const instance = {
-                [key](this: T, ...args: any[]) {
-                    const origin = console;
-                    console = new Proxy(console, { 
-                        get: (origin: any, key) => {
-                            const value = origin[key];
-                            if (typeof value === 'function') return () => undefined;
-                            return value;
-                        }
-                    })
-                    const result = handler.call(this, ...args);
-                    if (result instanceof Promise) result.finally(() => console = origin);
-                    else console = origin;
-                    return result;
-                }
-            }
-            descriptor.value = instance[key];
-            return descriptor;
-        };
-    }
-
     private constructor() {}
 }

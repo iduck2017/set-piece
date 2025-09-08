@@ -19,15 +19,14 @@ export class TranxUtil {
         return function(
             prototype: unknown,
             key: string,
-            descriptor: TypedPropertyDescriptor<Method<void, []>>
-        ): TypedPropertyDescriptor<Method<void, []>> {
+            descriptor: TypedPropertyDescriptor<Method<void>>
+        ): TypedPropertyDescriptor<Method<void>> {
             const handler = descriptor.value;
             if (!handler) return descriptor;
-            TranxUtil.tasks.push(handler);
             const instance = {
                 [key](this: unknown, ...args: any[]) {
                     if (!TranxUtil._isLock) return handler.call(this, ...args);
-                    else TranxUtil.tasks.push(handler.bind(this));
+                    else TranxUtil.tasks.push(() => handler.call(this, ...args));
                 }
             }
             descriptor.value = instance[key];
