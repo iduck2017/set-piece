@@ -27,8 +27,5 @@ export {
 
 
 /** 
- * @todo 
- * decor.stop decor.seal
- * event.stop
- * refer
+ * @todo decor.check
 */
