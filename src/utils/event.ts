@@ -139,6 +139,11 @@ export class EventUtil<
         })
     }
 
+    public reload() {
+        this.unload();
+        this.load();
+    }
+
     public debug() {
         const dependency: string[] = [];
         this.router.producers.forEach(item => dependency.push(...item.map(item => item.model.name)))

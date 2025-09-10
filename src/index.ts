@@ -26,6 +26,4 @@ export {
 } from "./types/model";
 
 
-/** 
- * @todo decor.check
-*/
+// @todo StateUtil.loop StateUtil.mask

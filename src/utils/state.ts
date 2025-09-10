@@ -55,24 +55,26 @@ export class StateUtil<
 
 
     @TranxUtil.span()
-    private toUpdate() {}
+    private toReload() {
+        // reload instead
+    }
 
-    public onBind(context: Set<StateUtil>, path?: string, type?: IType<Model>) {
+    public check(context: Set<StateUtil>, path?: string, type?: IType<Model>) {
         if (context.has(this)) return;
         context.add(this);
         const child: Props.C = this.utils.child.current;
         // avoid loop
         if (!path) {
-            if (!type) this.toUpdate();
+            if (!type) this.toReload();
             if (!type) return;
-            if (this.model instanceof type) this.toUpdate();
+            if (this.model instanceof type) this.toReload();
             Object.keys(child).forEach(key => {
                 const value = child[key];
                 if (value instanceof Array) {
                     value.filter(item => item instanceof type)
-                        .forEach(item => item.utils.state.onBind(context, path, type))
+                        .forEach(item => item.utils.state.check(context, path, type))
                 }
-                if (value instanceof Model) value.utils.state.onBind(context, path, type)
+                if (value instanceof Model) value.utils.state.check(context, path, type)
             })
         } else {
             const keys = path.split('/');
@@ -80,8 +82,8 @@ export class StateUtil<
             path = keys.join('/');
             if (!key) return;
             const value = child[key];
-            if (value instanceof Array) value.forEach(item => item.utils.state.onBind(context, path, type))
-            if (value instanceof Model) value.utils.state.onBind(context, path, type);
+            if (value instanceof Array) value.forEach(item => item.utils.state.check(context, path, type))
+            if (value instanceof Model) value.utils.state.check(context, path, type);
         }
     } 
 
@@ -134,7 +136,7 @@ export class StateUtil<
         producers.push(producer);
         that.utils.state.router.consumers.set(producer, consumers);
         this.router.producers.set(updater, producers);
-        that.utils.state.onBind(new Set(), path, type);
+        that.utils.state.check(new Set(), path, type);
     }
     
     public unbind<S extends Props.S, M extends Model>(
@@ -151,7 +153,7 @@ export class StateUtil<
         if (index !== -1) comsumers.splice(index, 1);
         index = producers.indexOf(producer);
         if (index !== -1) producers.splice(index, 1);
-        that.utils.state.onBind(new Set(), path, type);
+        that.utils.state.check(new Set(), path, type);
     }
 
     public load() {
@@ -182,6 +184,11 @@ export class StateUtil<
                 that.utils.state.unbind(producer, updater);
             });
         });
+    }
+
+    public reload() {
+        this.unload();
+        this.load();
     }
 
     public debug() {

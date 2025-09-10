@@ -27,11 +27,7 @@ export class DebugUtil {
                     const name = accessor?.(this) ?? this.constructor.name;
                     if (level < DebugUtil.level) {
                         const result = handler.call(this, ...args);
-                        const logger = console.log;
-                        console.log = () => undefined;
-                        if (result instanceof Promise) return result.finally(() => console.log = logger);
-                        console.log = logger;
-                        return result;
+                        return result
                     }
                     console.group(`%c${name}::${key}`, `color: ${{
                         [LogLevel.DEBUG]: 'gray',

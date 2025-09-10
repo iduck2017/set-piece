@@ -51,7 +51,6 @@ export class TranxUtil {
                             super(...args);
                             TranxUtil.route.set(this, this.route);
                             TranxUtil.reload();
-                            TranxUtil.update();
                             TranxUtil._isLock = false;
                             // console.groupEnd();
                             TranxUtil.end();
@@ -87,7 +86,6 @@ export class TranxUtil {
                         TranxUtil._isLock = true;
                         const result = handler.call(this, ...args);
                         TranxUtil.reload();
-                        TranxUtil.update();
                         TranxUtil._isLock = false;
                         TranxUtil.end();
                         // console.groupEnd();
@@ -101,21 +99,26 @@ export class TranxUtil {
     }
 
     private static reload() {
-        const route = new Map(TranxUtil.route);
-        const refer = new Map(TranxUtil.refer);
-        refer.forEach((info, item) => item.utils.refer.reload());
-        route.forEach((info, item) => item.utils.route.reload());
-    }
-
-    private static update() {
-        const child = new Map(TranxUtil.child);
-        const state = new Map(TranxUtil.state);
-        const refer = new Map(TranxUtil.refer);
-        const route = new Map(TranxUtil.route);
-        refer.forEach((info, item) => item.utils.refer.update());
+        // route 
+        // child
+        let child = new Map(TranxUtil.child);
         child.forEach((info, item) => item.utils.child.update());
+        // refer
+        let refer = new Map(TranxUtil.refer);
+        let route = new Map(TranxUtil.route);
+        route.forEach((info, item) => item.utils.refer.reload());
+        refer.forEach((info, item) => item.utils.refer.reload());
+        refer = new Map(TranxUtil.refer);
+        refer.forEach((info, item) => item.utils.refer.update());
+        // event
+        route.forEach((info, item) => item.utils.event.reload());
+        // decor
+        let state = new Map(TranxUtil.state);
+        let loop = 0;
+        route.forEach((info, item) => item.utils.state.reload());
+        state.forEach((info, item) => item.utils.state.reload());
+        state = new Map(TranxUtil.state);
         state.forEach((info, item) => item.utils.state.update());
-        route.forEach((info, item) => item.utils.state.update());
     }
 
     /**

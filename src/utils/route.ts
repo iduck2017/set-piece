@@ -65,19 +65,9 @@ export class RouteUtil<M extends Model = Model> extends Util<M> {
         const origin: Props.C = this.utils.child.current;
         Object.keys(origin).forEach(key => {
             const value = origin[key]
-            // avoid loop
             if (value instanceof Array) value.forEach(item => item.utils.route.toReload(context))
             if (value instanceof Model) value.utils.route.toReload(context);
         })
-    }
-
-    @DebugUtil.log(LogLevel.INFO)
-    public reload() {
-        this.utils.refer.reload();
-        this.utils.event.unload();
-        this.utils.state.unload();
-        this.utils.event.load();
-        this.utils.state.load();
     }
 
     public check(model: Model): boolean {
