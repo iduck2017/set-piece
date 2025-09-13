@@ -11,9 +11,10 @@ export type Utils<
     E extends Props.E = Props.E,
     S extends Props.S = Props.S,
     C extends Props.C = Props.C,
+    P extends Props.P = Props.P,
     R extends Props.R = Props.R,
 > = Readonly<{
-    route: RouteUtil<M>
+    route: RouteUtil<M, P>
     event: EventUtil<M, E>
     state: StateUtil<M, S>
     child: ChildUtil<M, C>

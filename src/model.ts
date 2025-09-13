@@ -7,15 +7,16 @@ import { ReferUtil } from "./utils/refer";
 import { TranxUtil } from "./utils/tranx";
 import { EventEmitter } from "./types/event";
 import { Utils } from "./utils";
-import { Format, Props, Route } from "./types/model";
+import { Format, Props } from "./types/model";
 import { DebugUtil } from "./utils/debug";
-import { Method } from "./types";
+import { IType, Method } from "./types";
 
 @TranxUtil.span(true)
 export abstract class Model<
     E extends Props.E = {},
     S extends Props.S = {},
     C extends Props.C = {},
+    P extends Props.P = {},
     R extends Props.R = {},
 > {
     private static ticket: number = 36 ** 7;
@@ -36,7 +37,7 @@ export abstract class Model<
     public get state(): Readonly<Format.State<S>> { return this.utils.state.current; } 
     public get refer(): Readonly<Format.Refer<R>> { return this.utils.refer.current; }
     public get child(): Readonly<Format.Child<C>> { return this.utils.child.current; }
-    public get route(): Readonly<Route> { return this.utils.route.current; }
+    public get route(): Readonly<Format.Route<P>> { return this.utils.route.current; }
     
     protected readonly event: Readonly<{ [K in keyof E]: EventEmitter<E[K]> }>;
     protected readonly draft: Readonly<{
@@ -46,7 +47,7 @@ export abstract class Model<
     }>
 
     /** @internal */
-    public readonly utils: Utils<this, E, S, C, R>
+    public readonly utils: Utils<this, E, S, C, P, R>
     public readonly proxy: ProxyUtil<this, E, S, C>
 
     public get props(): {
@@ -68,13 +69,14 @@ export abstract class Model<
         state: Format.State<S>;
         child: C;
         refer: R;
+        route: P,
     }, []>) {
         const props = loader();
         this.uuid = props.uuid ?? Model.uuid;
         this.proxy = new ProxyUtil(this);
         this.utils = {
-            route: new RouteUtil(this),
             event: new EventUtil(this),
+            route: new RouteUtil<this, P>(this, props.route),
             refer: new ReferUtil<this, R>(this, props.refer),
             state: new StateUtil<this, S>(this, props.state),
             child: new ChildUtil<this, C>(this, props.child),

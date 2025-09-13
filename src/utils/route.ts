@@ -2,11 +2,14 @@ import { Model } from "../model";
 import { Util } from ".";
 import { TranxUtil } from "./tranx";
 import { DebugUtil, LogLevel } from "./debug";
-import { Props, Route } from "../types/model";
+import { Format, Props } from "../types/model";
 import { IType } from "../types";
 
 @DebugUtil.is(self => `${self.model.name}::route`)
-export class RouteUtil<M extends Model = Model> extends Util<M> {
+export class RouteUtil<
+    M extends Model = Model,
+    P extends Props.P = Props.P
+> extends Util<M> {
     private static readonly _root: Array<Function> = [];
     public static root() {
         return function (type: IType<Model>) {
@@ -22,25 +25,44 @@ export class RouteUtil<M extends Model = Model> extends Util<M> {
         return Boolean(this._parent) || RouteUtil._root.includes(type); 
     }
 
+    private readonly props: Record<string, any>;
+
     private _parent: Model | undefined;
-    // cache
-    public get current(): Route {
-        const route: {
-            root: Model,
-            parent: Model | undefined,
-            order: Model[],
-        } = { 
-            root: this.model,
-            parent: this._parent,
-            order: [],
-        };
+
+    private _current: Format.Route<P>;
+    public get current(): Readonly<Format.Route<P>> { return { ...this._current } }
+
+    constructor(model: M, props: P) {
+        super(model);
+        this.props = {};
+        Object.keys(props).forEach(key => {
+            const value = props[key];
+            if (!value) return;
+            const type = value.constructor;
+            this.props[key] = type;
+        })
+        this._current = this.copy()
+    }
+
+    public update() {
+        const current = this.copy();
+        this._current = current
+    }
+
+    public copy(): Format.Route<P> {
+        const result: any = {};
         let parent: Model | undefined = this.model;
         while (parent) {
-            route.root = parent;
-            route.order.push(parent);
-            parent = parent.utils.route._parent;
+            result.root = parent;
+            Object.keys(this.props).forEach(key => {
+                if (result[key]) return;
+                const type: IType<Model> = this.props[key];
+                if (parent instanceof type) result[key] = parent;
+            })
+            parent = parent.utils?.route._parent;
         }
-        return route;
+        result.parent = this._parent;
+        return result;
     }
 
     @TranxUtil.span()

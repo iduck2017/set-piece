@@ -1,4 +1,5 @@
 import { Primitive } from "utility-types";
+import { Model } from "../model";
 
 export type Value = Primitive | Primitive[] | Record<string, Primitive>
 

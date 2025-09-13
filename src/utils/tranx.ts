@@ -100,12 +100,13 @@ export class TranxUtil {
 
     private static reload() {
         // route 
+        let route = new Map(TranxUtil.route);
+        route.forEach((info, item) => item.utils.route.update());
         // child
         let child = new Map(TranxUtil.child);
         child.forEach((info, item) => item.utils.child.update());
         // refer
         let refer = new Map(TranxUtil.refer);
-        let route = new Map(TranxUtil.route);
         route.forEach((info, item) => item.utils.refer.reload());
         refer.forEach((info, item) => item.utils.refer.reload());
         refer = new Map(TranxUtil.refer);
@@ -118,6 +119,7 @@ export class TranxUtil {
         route.forEach((info, item) => item.utils.state.reload());
         state.forEach((info, item) => item.utils.state.reload());
         state = new Map(TranxUtil.state);
+        route.forEach((info, item) => item.utils.state.update());
         state.forEach((info, item) => item.utils.state.update());
     }
 
