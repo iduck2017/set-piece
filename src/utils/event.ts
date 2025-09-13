@@ -53,7 +53,7 @@ export class EventUtil<
 
 
     @DebugUtil.log(LogLevel.DEBUG)
-    public emit<E extends Event>(name: string, event: E): E | void {
+    public emit<E extends Event>(name: string, event: E): E {
         const type = this.model.constructor;
         let path: string | undefined = undefined;
         let parent: Model | undefined = this.model;

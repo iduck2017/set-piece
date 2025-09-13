@@ -13,7 +13,6 @@ export { TranxUtil } from './utils/tranx';
 export { DebugUtil } from "./utils/debug";
 export { StoreUtil } from "./utils/store";
 export { CheckUtil } from "./utils/check";
-export { StoryUtil } from "./utils/story";
 
 export { LogLevel } from "./utils/debug"
 export { Value, IType, Type, Method } from "./types";
@@ -24,6 +23,5 @@ export {
     ReferChangeEvent,
     RouteChangeEvent,
 } from "./types/model";
-
 
 // @todo StateUtil.loop StateUtil.mask
