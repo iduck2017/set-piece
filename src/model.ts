@@ -16,8 +16,8 @@ export abstract class Model<
     E extends Props.E = {},
     S extends Props.S = {},
     C extends Props.C = {},
-    P extends Props.P = {},
     R extends Props.R = {},
+    P extends Props.P = {},
 > {
     private static ticket: number = 36 ** 7;
     private static get uuid() {
@@ -47,7 +47,7 @@ export abstract class Model<
     }>
 
     /** @internal */
-    public readonly utils: Utils<this, E, S, C, P, R>
+    public readonly utils: Utils<this, E, S, C, R, P>
     public readonly proxy: ProxyUtil<this, E, S, C>
 
     public get props(): {
