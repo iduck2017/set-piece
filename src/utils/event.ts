@@ -53,8 +53,7 @@ export class EventUtil<
 
 
     @DebugUtil.log(LogLevel.DEBUG)
-    public emit<E extends Event>(name: string, event: E): E {
-        const type = this.model.constructor;
+    public emit<E extends Event>(name: string, event: E): void {
         let path: string | undefined = undefined;
         let parent: Model | undefined = this.model;
         const consumers: EventConsumer[] = [];
@@ -63,7 +62,7 @@ export class EventUtil<
             router.consumers.forEach((list, producer) => {
                 if (producer.name !== name) return;
                 if (producer.type) {
-                    if (producer.type !== type) return;
+                    if (!(this.model instanceof producer.type)) return;
                     if (!(path ?? '').startsWith(producer.path ?? '')) return;
                 } else if (path !== producer.path) return;
                 consumers.push(...list);
@@ -76,7 +75,7 @@ export class EventUtil<
         consumers.forEach(item => {
             item.handler.call(item.model, this.model, event);
         });
-        return event;
+        return;
     }
 
     public bind<E extends Event, M extends Model>(

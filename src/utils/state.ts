@@ -103,13 +103,12 @@ export class StateUtil<
         let path: string | undefined;
         let state: any = { ...this.origin };
         let parent: Model | undefined = this.model;
-        const type = this.model.constructor;
         const consumers: DecorConsumer[] = [];
         while (parent) {
             const router = parent.utils.state.router;
             router.consumers.forEach((list, producer) => {
                 if (producer.type) {
-                    if (producer.type !== type) return;
+                    if (!(this.model instanceof producer.type)) return;
                     if (!(path ?? '').startsWith(producer.path ?? '')) return;
                 } else if (path !== producer.path) return;
                 consumers.push(...list);
@@ -121,7 +120,7 @@ export class StateUtil<
         const decor = new Decor(this.model, state);
         consumers.sort((a, b) => a.model.uuid.localeCompare(b.model.uuid));
         consumers.forEach(item => item.updater.call(item.model, this.model, decor));
-        this._current = decor.current;
+        this._current = decor.draft;
     }
 
     public bind<S extends Props.S, M extends Model>(

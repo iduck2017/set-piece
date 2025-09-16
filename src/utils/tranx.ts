@@ -2,6 +2,7 @@ import { Method, IType } from "../types";
 import { Util } from ".";
 import { Model } from "../model";
 import { Event } from "../types/event";
+import { DebugUtil, LogLevel } from "./debug";
 
 export class TranxUtil {
     private constructor() {}

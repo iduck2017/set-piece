@@ -9,7 +9,7 @@ export type ReferChangeEvent<M extends Model> = Event<{ prev: M['refer'], next: 
 export type RouteChangeEvent<M extends Model> = Event<{ prev: M['route'], next: M['route'] }>;
 
 export namespace Props {
-    export type E = Record<string, Event>
+    export type E = Record<string, Event | void>
     export type S = Record<string, Value>
     export type C = Record<string, Model | Model[]>
     export type R = Record<string, Model | Model[]>

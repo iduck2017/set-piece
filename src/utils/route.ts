@@ -27,7 +27,7 @@ export class RouteUtil<
 
     private readonly props: Record<string, any>;
 
-    private _parent: Model | undefined;
+    public _parent: Model | undefined;
 
     private _current: Format.Route<P>;
     public get current(): Readonly<Format.Route<P>> { return { ...this._current } }
@@ -47,6 +47,7 @@ export class RouteUtil<
     public update() {
         const current = this.copy();
         this._current = current
+        if (this.model.name !== 'WispModel') return;
     }
 
     public copy(): Format.Route<P> {

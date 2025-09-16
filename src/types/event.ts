@@ -1,7 +1,7 @@
 import { Model } from "../model";
 import { IType } from ".";
 
-export type EventEmitter<E extends Event = Event> = (event: E) => E
+export type EventEmitter<E extends Event | void = Event | void> = (event: E) => void
 export type EventHandler<
     E extends Event = Event, 
     M extends Model = Model

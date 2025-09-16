@@ -8,6 +8,8 @@ export enum LogLevel {
     FATAL,
 }
 
+
+
 export class DebugUtil {
     private static registry: Map<any, any> = new Map();
 
@@ -50,6 +52,34 @@ export class DebugUtil {
     public static is<T extends Object>(accessor: (self: T) => string) {
         return function (constructor: IType<T>) {
             DebugUtil.registry.set(constructor, accessor);
+        }
+    }
+
+    public static mute() {
+        const origin = {
+            log: console.log,
+            dir: console.dir,
+            info: console.info,
+            warn: console.warn,
+            debug: console.debug,
+            group: console.group,
+            groupEnd: console.groupEnd,
+        }
+        const noop = () => undefined;
+        console.log = noop;
+        console.dir = noop;
+        console.info = noop;
+        console.warn = noop;
+        console.debug = noop;
+        console.group = noop;
+        console.groupEnd = noop;
+        return () => {
+            console.log = origin.log;
+            console.info = origin.info;
+            console.warn = origin.warn;
+            console.debug = origin.debug;
+            console.group = origin.group;
+            console.groupEnd = origin.groupEnd;
         }
     }
 

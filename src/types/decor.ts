@@ -40,9 +40,9 @@ export class DecorProducer<
 
 export class Decor<S extends Props.S = Props.S> {
     public readonly origin: Readonly<S>;
-    public readonly current: S;
+    public readonly draft: S;
     constructor(model: Model, origin: S) { 
         this.origin = origin;
-        this.current = origin;
+        this.draft = origin;
     }
 }
