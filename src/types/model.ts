@@ -1,15 +1,15 @@
 import { Primitive } from "utility-types";
-import { IType, Method, Value } from ".";
+import { Method, Value } from ".";
 import { Model } from "../model"
-import { Event } from "./event";
+import { Event, MutateEvent } from "./event";
 
-export type StateChangeEvent<M extends Model> = Event<{ prev: M['state'], next: M['state'] }>;
-export type ChildChangeEvent<M extends Model> = Event<{ prev: M['child'], next: M['child'] }>;
-export type ReferChangeEvent<M extends Model> = Event<{ prev: M['refer'], next: M['refer'] }>;
-export type RouteChangeEvent<M extends Model> = Event<{ prev: M['route'], next: M['route'] }>;
+export type StateChangeEvent<M extends Model> = MutateEvent<M['state']>;
+export type ChildChangeEvent<M extends Model> = MutateEvent<M['child']>;
+export type ReferChangeEvent<M extends Model> = MutateEvent<M['refer']>;
+export type RouteChangeEvent<M extends Model> = MutateEvent<M['route']>;
 
 export namespace Props {
-    export type E = Record<string, Event | void>
+    export type E = Record<string, Event>
     export type S = Record<string, Value>
     export type C = Record<string, Model | Model[]>
     export type R = Record<string, Model | Model[]>

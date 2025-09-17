@@ -1,5 +1,5 @@
 export { Model } from "./model";
-export { Event } from './types/event';
+export { Event, MutateEvent } from './types/event';
 export { Decor } from './types/decor';
 
 export { ProxyUtil } from './utils/proxy';

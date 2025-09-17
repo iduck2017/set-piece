@@ -1,7 +1,7 @@
 import { Model } from "../model";
 import { IType } from ".";
 
-export type EventEmitter<E extends Event | void = Event | void> = (event: E) => void
+export type EventEmitter<E extends Event = Event> = (event: E) => void
 export type EventHandler<
     E extends Event = Event, 
     M extends Model = Model
@@ -38,17 +38,15 @@ export class EventProducer<E = any, M extends Model = Model> {
     }
 }
 
-export class Event<
-    T extends Record<string, any> = {}
-> {
-    private _isCancel: boolean;
+export class Event {
+    private _isCancel: boolean = false;
     public get isCancel() { return this._isCancel; }
     public cancel() { this._isCancel = true; }
+}
 
-    protected _detail: T;
-    public get detail(): Readonly<T> { return { ...this._detail } }
-    constructor(detail: T) { 
-        this._detail = detail;
-        this._isCancel = false;
-    }
+export class MutateEvent<T> extends Event {
+    constructor(
+        public readonly prev: Readonly<T>,
+        public readonly next: Readonly<T>
+    ) { super(); }
 }

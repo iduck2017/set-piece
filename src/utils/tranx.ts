@@ -1,7 +1,7 @@
 import { Method, IType } from "../types";
 import { Util } from ".";
 import { Model } from "../model";
-import { Event } from "../types/event";
+import { Event, MutateEvent } from "../types/event";
 import { DebugUtil, LogLevel } from "./debug";
 
 export class TranxUtil {
@@ -140,10 +140,10 @@ export class TranxUtil {
         TranxUtil.child.clear();
         TranxUtil.route.clear();
         TranxUtil.tasks = [];
-        state.forEach((info, model) => model.utils.event.current.onStateChange(new Event({ prev: info, next: model.state })));
-        refer.forEach((info, model) => model.utils.event.current.onReferChange(new Event({ prev: info, next: model.refer })));
-        child.forEach((info, model) => model.utils.event.current.onChildChange(new Event({ prev: info, next: model.child })));
-        route.forEach((info, model) => model.utils.event.current.onRouteChange(new Event({ prev: info, next: model.route })));
+        state.forEach((info, model) => model.utils.event.current.onStateChange(new MutateEvent(info, model.state)));
+        refer.forEach((info, model) => model.utils.event.current.onReferChange(new MutateEvent(info, model.refer)));
+        child.forEach((info, model) => model.utils.event.current.onChildChange(new MutateEvent(info, model.child)));
+        route.forEach((info, model) => model.utils.event.current.onRouteChange(new MutateEvent(info, model.route)));
         tasks.forEach(task => task());
     }
 }
