@@ -20,9 +20,7 @@ export class ProxyUtil<
         { [K in keyof C]: Required<C>[K] extends Model ? Required<C>[K]['proxy'] : unknown } & 
         { [K in keyof C]: Required<C>[K] extends Model[] ? Required<C>[K][number]['proxy'] : unknown }
     >
-    public readonly event: Readonly<
-        { [K in keyof Format.Event<E, M>]: EventProducer<Format.Event<E, M>[K], M> }
-    >;
+    public readonly event: Readonly<{ [K in keyof Format.E<E, M>]: EventProducer<Format.E<E, M>[K], M> }>;
     
     constructor(model: M, path?: string, type?: IType<Model>) {
         this.type = type;

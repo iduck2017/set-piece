@@ -10,7 +10,7 @@ export class ChildUtil<
 
     public readonly origin: C;
 
-    private _current: Format.Child<C>;
+    private _current: Format.C<C>;
     public get current() { return this.copy(this._current) }
 
     constructor(model: M, props: C) {
@@ -41,7 +41,7 @@ export class ChildUtil<
         this._current = this.copy(this.origin);
     }
 
-    public copy(origin: Format.Child<C>): Format.Child<C> { 
+    public copy(origin: Format.C<C>): Format.C<C> { 
         const result: any = {};
         Object.keys(origin).forEach(key => {
             const value = origin[key];

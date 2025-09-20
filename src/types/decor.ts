@@ -41,8 +41,9 @@ export class DecorProducer<
 export class Decor<S extends Props.S = Props.S> {
     public readonly origin: Readonly<S>;
     public readonly draft: S;
+
     constructor(model: Model, origin: S) { 
         this.origin = origin;
-        this.draft = origin;
+        this.draft = new Proxy(origin, {});
     }
 }

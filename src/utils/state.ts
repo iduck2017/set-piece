@@ -30,17 +30,17 @@ export class StateUtil<
         }
     }
 
-    public readonly origin: Format.State<S>
+    public readonly origin: Format.S<S>
     
     private readonly router: {
         consumers: Map<DecorProducer, DecorConsumer[]>,
         producers: Map<DecorUpdater, DecorProducer[]>
     }
 
-    private _current: Format.State<S>
+    private _current: Format.S<S>
     public get current() { return { ...this._current } }
     
-    constructor(model: M, props: Format.State<S>) {
+    constructor(model: M, props: Format.S<S>) {
         super(model);
         this.router = {
             consumers: new Map(),

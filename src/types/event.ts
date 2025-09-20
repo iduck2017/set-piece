@@ -38,15 +38,15 @@ export class EventProducer<E = any, M extends Model = Model> {
     }
 }
 
-export class Event {
-    private _isCancel: boolean = false;
-    public get isCancel() { return this._isCancel; }
-    public cancel() { this._isCancel = true; }
-}
+export class Event<T extends Record<string, any> = {}> {
+    private _isAbort: boolean = false;
+    public get isAbort() { return this._isAbort; }
 
-export class MutateEvent<T> extends Event {
-    constructor(
-        public readonly prev: Readonly<T>,
-        public readonly next: Readonly<T>
-    ) { super(); }
+    protected _detail: T;
+    public get detail(): T { return { ...this._detail } }
+    constructor(detail: T) {
+        this._detail = detail;
+    }
+
+    public abort() { this._isAbort = true; }
 }

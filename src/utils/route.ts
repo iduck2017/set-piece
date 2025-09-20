@@ -10,10 +10,10 @@ export class RouteUtil<
     M extends Model = Model,
     P extends Props.P = Props.P
 > extends Util<M> {
-    private static readonly _root: Array<Function> = [];
+    private static readonly _root: Set<Function> = new Set();
     public static root() {
         return function (type: IType<Model>) {
-            RouteUtil._root.push(type);
+            RouteUtil._root.add(type);
         }
     }
     
@@ -22,15 +22,14 @@ export class RouteUtil<
     
     public get isBind() { 
         const type = this.model.constructor;
-        return Boolean(this._parent) || RouteUtil._root.includes(type); 
+        return Boolean(this._parent) || RouteUtil._root.has(type); 
     }
 
     private readonly props: Record<string, any>;
 
     public _parent: Model | undefined;
-
-    private _current: Format.Route<P>;
-    public get current(): Readonly<Format.Route<P>> { return { ...this._current } }
+    private _current: Format.P<P>;
+    public get current(): Readonly<Format.P<P>> { return { ...this._current } }
 
     constructor(model: M, props: P) {
         super(model);
@@ -47,10 +46,9 @@ export class RouteUtil<
     public update() {
         const current = this.copy();
         this._current = current
-        if (this.model.name !== 'WispModel') return;
     }
 
-    public copy(): Format.Route<P> {
+    public copy(): Format.P<P> {
         const result: any = {};
         let parent: Model | undefined = this.model;
         while (parent) {

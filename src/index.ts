@@ -1,5 +1,5 @@
 export { Model } from "./model";
-export { Event, MutateEvent } from './types/event';
+export { Event } from './types/event';
 export { Decor } from './types/decor';
 
 export { ProxyUtil } from './utils/proxy';
@@ -16,12 +16,6 @@ export { CheckUtil } from "./utils/check";
 
 export { LogLevel } from "./utils/debug"
 export { Value, IType, Type, Method } from "./types";
-export { Props, Format, Loader } from "./types/model";
-export { 
-    StateChangeEvent,
-    ChildChangeEvent,
-    ReferChangeEvent,
-    RouteChangeEvent,
-} from "./types/model";
+export { Props, Format, Loader, Memory } from "./types/model";
 
-// @todo StateUtil.loop StateUtil.mask
+// @todo StateUtil.loop StateUtil.mask 

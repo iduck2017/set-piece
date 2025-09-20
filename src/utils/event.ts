@@ -31,9 +31,7 @@ export class EventUtil<
         };
     }
 
-    public readonly current: Readonly<
-        { [K in keyof Format.Event<E, M>]: EventEmitter<Format.Event<E, M>[K]> }
-    >;
+    public readonly current: Readonly<{ [K in keyof Format.E<E, M>]: EventEmitter<Format.E<E, M>[K]> }>;
     
     private readonly router: Readonly<{
         consumers: Map<EventProducer, EventConsumer[]>,

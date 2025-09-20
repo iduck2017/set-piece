@@ -10,10 +10,10 @@ export class ReferUtil<
     R extends Props.R = Props.R,
 > extends Util<M> {
 
-    private _origin: Format.Refer<R, true>
-    public get origin(): Format.Refer<R, true> { return this._origin }
+    private _origin: Format.R<R, true>
+    public get origin(): Format.R<R, true> { return this._origin }
 
-    private _current: Format.Refer<R>
+    private _current: Format.R<R>
     public get current() { return this.copy(this._current) }
 
     private readonly consumers: Model[];
@@ -35,7 +35,7 @@ export class ReferUtil<
         this._current = this.copy(this._origin);
     }
 
-    public copy(origin: Format.Refer<R>): Format.Refer<R> { 
+    public copy(origin: Format.R<R>): Format.R<R> { 
         const result: any = {};
         Object.keys(origin).forEach(key => {
             const value = origin[key];
@@ -45,7 +45,7 @@ export class ReferUtil<
         return result;
     }
 
-    public init(props: Format.Refer<R>) {
+    public init(props: Format.R<R>) {
         Object.keys(props).forEach(key => {
             const value = props[key]
             if (value instanceof Array) value.forEach(item => this.link(item));
