@@ -1,6 +1,6 @@
 import { Util } from ".";
 import { Model } from "../model";
-import { Format, Props } from "../types/model";
+import { Child, Props } from "../types/model";
 import { TranxUtil } from "./tranx";
 
 export class ChildUtil<
@@ -10,7 +10,7 @@ export class ChildUtil<
 
     public readonly origin: C;
 
-    private _current: Format.C<C>;
+    private _current: Child<C>;
     public get current() { return this.copy(this._current) }
 
     constructor(model: M, props: C) {
@@ -41,7 +41,7 @@ export class ChildUtil<
         this._current = this.copy(this.origin);
     }
 
-    public copy(origin: Format.C<C>): Format.C<C> { 
+    public copy(origin: Child<C>): Child<C> { 
         const result: any = {};
         Object.keys(origin).forEach(key => {
             const value = origin[key];

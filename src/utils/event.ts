@@ -1,8 +1,8 @@
 import { Model } from "../model";
 import { Util } from ".";
 import { DebugUtil, LogLevel } from "./debug";
-import { Event, EventConsumer, EventEmitter, EventHandler, EventProducer } from "../types/event";
-import { Format, Props } from "../types/model";
+import { Event, Consumer, Emitter, Handler, Producer } from "../types/event";
+import { Memory, Props } from "../types/model";
 import { Method } from "../types";
 
 @DebugUtil.is(self => `${self.model.name}::event`)
@@ -11,18 +11,18 @@ export class EventUtil<
     E extends Props.E = Props.E,
 > extends Util<M> {
     
-    private static registry: Map<Function, Record<string, Array<Method<EventProducer | undefined, [Model]>>>> = new Map();
+    private static registry: Map<Function, Record<string, Array<Method<Producer | undefined, [Model]>>>> = new Map();
 
     public static on<
         E extends Event, 
         M extends Model, 
         I extends Model
-    >(accessor: (self: I) => EventProducer<E, M> | undefined) {
+    >(accessor: (self: I) => Producer<E, M> | undefined) {
         return function(
             prototype: I,
             key: string,
-            descriptor: TypedPropertyDescriptor<EventHandler<E, M>>
-        ): TypedPropertyDescriptor<EventHandler<E, M>> {
+            descriptor: TypedPropertyDescriptor<Handler<E, M>>
+        ): TypedPropertyDescriptor<Handler<E, M>> {
             const hooks = EventUtil.registry.get(prototype.constructor) ?? {};
             if (!hooks[key]) hooks[key] = [];
             hooks[key].push(accessor);
@@ -31,11 +31,11 @@ export class EventUtil<
         };
     }
 
-    public readonly current: Readonly<{ [K in keyof Format.E<E, M>]: EventEmitter<Format.E<E, M>[K]> }>;
+    public readonly current: Readonly<{ [K in keyof E]: Emitter<E[K]> } & { onChange: Emitter<Event<Memory<M>>> }>;
     
     private readonly router: Readonly<{
-        consumers: Map<EventProducer, EventConsumer[]>,
-        producers: Map<EventHandler, EventProducer[]>
+        consumers: Map<Producer, Consumer[]>,
+        producers: Map<Handler, Producer[]>
     }>
     
     public constructor(model: M) {
@@ -54,7 +54,7 @@ export class EventUtil<
     public emit<E extends Event>(name: string, event: E): void {
         let path: string | undefined = undefined;
         let parent: Model | undefined = this.model;
-        const consumers: EventConsumer[] = [];
+        const consumers: Consumer[] = [];
         while (parent) {
             const router = parent.utils.event.router;
             router.consumers.forEach((list, producer) => {
@@ -77,8 +77,8 @@ export class EventUtil<
     }
 
     public bind<E extends Event, M extends Model>(
-        producer: EventProducer<E, M>, 
-        handler: EventHandler<E, M>
+        producer: Producer<E, M>, 
+        handler: Handler<E, M>
     ) {
         const { model: that, path, name } = producer;
         if (!this.utils.route.check(that)) return;
@@ -91,8 +91,8 @@ export class EventUtil<
     }
 
     public unbind<E extends Event, M extends Model>(
-        producer: EventProducer<E, M>, 
-        handler: EventHandler<E, M>
+        producer: Producer<E, M>, 
+        handler: Handler<E, M>
     ) {
         const { model: that, path } = producer;
         const consumers = that.utils.event.router.consumers.get(producer) ?? [];

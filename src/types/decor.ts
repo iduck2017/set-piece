@@ -1,25 +1,22 @@
 import { Model } from "../model";
 import { IType } from ".";
-import { Props } from "./model";
+import { Props, State } from "./model";
 
-export type DecorUpdater<
-    S extends Props.S = Props.S,
-    M extends Model = Model
-> = (that: M, decor: Decor<S>) => void;
+export type Updater<M extends Model = Model> = (that: M, decor: M['decor']) => void;
 
-export class DecorConsumer {
+export class Modifier {
     public readonly model: Model;
-    public readonly updater: DecorUpdater;
+    public readonly updater: Updater;
     constructor(
         model: Model,
-        updater: DecorUpdater
+        updater: Updater
     ) {
         this.model = model;
         this.updater = updater;
     }
 }
 
-export class DecorProducer<
+export class Computer<
     S extends Props.S = Props.S,
     M extends Model = Model
 > {
@@ -38,12 +35,12 @@ export class DecorProducer<
     }
 }
 
-export class Decor<S extends Props.S = Props.S> {
-    public readonly origin: Readonly<S>;
-    public readonly draft: S;
+export class Decor<S extends Props.S = {}> {
+    protected detail: State<S>;
+    
+    public get result(): State<S> { return { ...this.detail }; }
 
-    constructor(model: Model, origin: S) { 
-        this.origin = origin;
-        this.draft = new Proxy(origin, {});
+    constructor(model: Model<{}, S>) { 
+        this.detail = { ...model.utils.state.origin };
     }
 }

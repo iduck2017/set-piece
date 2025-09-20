@@ -15,7 +15,22 @@ export { StoreUtil } from "./utils/store";
 export { CheckUtil } from "./utils/check";
 
 export { LogLevel } from "./utils/debug"
-export { Value, IType, Type, Method } from "./types";
-export { Props, Format, Loader, Memory } from "./types/model";
+
+export { 
+    Type, 
+    Value, 
+    IType, 
+    Method 
+} from "./types";
+
+export { 
+    Props, 
+    State, 
+    Route, 
+    Child, 
+    Refer, 
+    Loader, 
+    Memory, 
+} from "./types/model";
 
 // @todo StateUtil.loop StateUtil.mask 

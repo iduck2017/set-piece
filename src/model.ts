@@ -5,12 +5,12 @@ import { ChildUtil } from "./utils/child";
 import { ProxyUtil } from "./utils/proxy";
 import { ReferUtil } from "./utils/refer";
 import { TranxUtil } from "./utils/tranx";
-import { EventEmitter } from "./types/event";
+import { Emitter } from "./types/event";
 import { Utils } from "./utils";
-import { Format, Props } from "./types/model";
+import { Child, Props, Refer, Route, State } from "./types/model";
 import { DebugUtil } from "./utils/debug";
-import { IType, Method } from "./types";
-import { Primitive } from "utility-types";
+import { Method } from "./types";
+import { Decor } from "./types/decor";
 
 @TranxUtil.span(true)
 export abstract class Model<
@@ -34,17 +34,18 @@ export abstract class Model<
 
     public readonly uuid: string
     public get name() { return this.constructor.name; }
-
-    public get state(): Readonly<Format.S<S>> { return this.utils.state.current; } 
-    public get refer(): Readonly<Format.R<R>> { return this.utils.refer.current; }
-    public get child(): Readonly<Format.C<C>> { return this.utils.child.current; }
-    public get route(): Readonly<Format.P<P>> { return this.utils.route.current; }
     
-    protected readonly event: Readonly<{ [K in keyof E]: EventEmitter<E[K]> }>;
+    public get state(): Readonly<State<S>> { return this.utils.state.current; } 
+    public get refer(): Readonly<Refer<R, false>> { return this.utils.refer.current; }
+    public get child(): Readonly<Child<C>> { return this.utils.child.current; }
+    public get route(): Readonly<Route<P>> { return this.utils.route.current; }
+    public get decor(): Decor<S> { return new Decor(this); }
+    
+    protected readonly event: Readonly<{ [K in keyof E]: Emitter<E[K]> }>;
     protected readonly draft: Readonly<{
         child: C;
-        state: Format.S<S>
-        refer: Format.R<R, true>
+        state: State<S>
+        refer: Refer<R, true>
     }>
 
     /** @internal */
@@ -53,7 +54,7 @@ export abstract class Model<
 
     public get props(): {
         uuid?: string
-        state?: Partial<Format.S<S>>,
+        state?: Partial<State<S>>,
         child?: Partial<C>,
         refer?: Partial<R>,
     } {
@@ -67,7 +68,7 @@ export abstract class Model<
 
     constructor(loader: Method<{
         uuid: string | undefined;
-        state: Format.S<S>;
+        state: State<S>;
         child: C;
         refer: R;
         route: P,

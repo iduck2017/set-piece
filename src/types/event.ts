@@ -1,25 +1,22 @@
 import { Model } from "../model";
 import { IType } from ".";
 
-export type EventEmitter<E extends Event = Event> = (event: E) => void
-export type EventHandler<
-    E extends Event = Event, 
-    M extends Model = Model
-> = (that: M, event: E) => void
+export type Emitter<E extends Event = Event> = (event: E) => void
+export type Handler<E extends Event = Event, M extends Model = Model> = (that: M, event: E) => void
 
-export class EventConsumer {
+export class Consumer {
     public readonly model: Model;
-    public readonly handler: EventHandler;
+    public readonly handler: Handler;
     constructor(
         model: Model,
-        handler: EventHandler
+        handler: Handler
     ) {
         this.model = model;
         this.handler = handler;
     }
 }
 
-export class EventProducer<E = any, M extends Model = Model> {
+export class Producer<E extends Event = Event, M extends Model = Model> {
     public readonly type?: IType<Model>;
     public readonly path?: string;
     public readonly name: string;

@@ -1,8 +1,8 @@
 import { Model } from "../model";
 import { IType } from "../types";
-import { DecorProducer } from "../types/decor";
-import { EventProducer } from "../types/event";
-import { Format, Props } from "../types/model";
+import { Computer } from "../types/decor";
+import { Event, Producer } from "../types/event";
+import { Memory, Props } from "../types/model";
 
 export class ProxyUtil<
     M extends Model = Model,
@@ -15,12 +15,12 @@ export class ProxyUtil<
 
     public readonly model: M;
 
-    public readonly decor: DecorProducer<S, M>
+    public readonly decor: Computer<S, M>
     public readonly child: Readonly<
         { [K in keyof C]: Required<C>[K] extends Model ? Required<C>[K]['proxy'] : unknown } & 
         { [K in keyof C]: Required<C>[K] extends Model[] ? Required<C>[K][number]['proxy'] : unknown }
     >
-    public readonly event: Readonly<{ [K in keyof Format.E<E, M>]: EventProducer<Format.E<E, M>[K], M> }>;
+    public readonly event: Readonly<{ [K in keyof E]: Producer<E[K], M> } & { onChange: Producer<Event<Memory<M>>, M> }>;
     
     constructor(model: M, path?: string, type?: IType<Model>) {
         this.type = type;
@@ -42,7 +42,7 @@ export class ProxyUtil<
         return new ProxyUtil(this.model, this.path, type);
     }
 
-    private getEvent(origin: Record<string, EventProducer>, key: string) {
+    private getEvent(origin: Record<string, Producer>, key: string) {
         if (!origin[key]) {
             origin[key] = { 
                 type: this.type,

@@ -2,7 +2,7 @@ import { Model } from "../model";
 import { Util } from ".";
 import { TranxUtil } from "./tranx";
 import { DebugUtil, LogLevel } from "./debug";
-import { Format, Props } from "../types/model";
+import { Props, Route } from "../types/model";
 import { IType } from "../types";
 
 @DebugUtil.is(self => `${self.model.name}::route`)
@@ -28,8 +28,8 @@ export class RouteUtil<
     private readonly props: Record<string, any>;
 
     public _parent: Model | undefined;
-    private _current: Format.P<P>;
-    public get current(): Readonly<Format.P<P>> { return { ...this._current } }
+    private _current: Route<P>;
+    public get current(): Readonly<Route<P>> { return { ...this._current } }
 
     constructor(model: M, props: P) {
         super(model);
@@ -48,7 +48,7 @@ export class RouteUtil<
         this._current = current
     }
 
-    public copy(): Format.P<P> {
+    public copy(): Route<P> {
         const result: any = {};
         let parent: Model | undefined = this.model;
         while (parent) {

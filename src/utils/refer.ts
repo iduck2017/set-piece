@@ -2,7 +2,7 @@ import { TranxUtil } from "./tranx";
 import { Model } from "../model";
 import { Util } from ".";
 import { DebugUtil, LogLevel } from "./debug";
-import { Props, Format } from "../types/model";
+import { Props, Refer } from "../types/model";
 
 @DebugUtil.is(self => `${self.model.name}::refer`)
 export class ReferUtil<
@@ -10,10 +10,10 @@ export class ReferUtil<
     R extends Props.R = Props.R,
 > extends Util<M> {
 
-    private _origin: Format.R<R, true>
-    public get origin(): Format.R<R, true> { return this._origin }
+    private _origin: Refer<R, true>
+    public get origin(): Refer<R, true> { return this._origin }
 
-    private _current: Format.R<R>
+    private _current: Refer<R, false>
     public get current() { return this.copy(this._current) }
 
     private readonly consumers: Model[];
@@ -35,7 +35,7 @@ export class ReferUtil<
         this._current = this.copy(this._origin);
     }
 
-    public copy(origin: Format.R<R>): Format.R<R> { 
+    public copy(origin: Refer<R, false>): Refer<R, false> { 
         const result: any = {};
         Object.keys(origin).forEach(key => {
             const value = origin[key];
@@ -45,7 +45,7 @@ export class ReferUtil<
         return result;
     }
 
-    public init(props: Format.R<R>) {
+    public init(props: Refer<R, true>) {
         Object.keys(props).forEach(key => {
             const value = props[key]
             if (value instanceof Array) value.forEach(item => this.link(item));

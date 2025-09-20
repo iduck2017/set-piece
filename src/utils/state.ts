@@ -3,8 +3,8 @@ import { Util } from ".";
 import { TranxUtil } from "./tranx";
 import { DebugUtil, LogLevel } from "./debug";
 import { IType } from "../types";
-import { Decor, DecorConsumer, DecorProducer, DecorUpdater } from "../types/decor";
-import { Props, Format } from "../types/model";
+import { Decor, Modifier, Computer, Updater } from "../types/decor";
+import { Props, State } from "../types/model";
 
 @DebugUtil.is(self => `${self.model.name}::state`)
 export class StateUtil<
@@ -12,16 +12,16 @@ export class StateUtil<
     S extends Props.S = Props.S,
 > extends Util<M> {
 
-    private static registry: Map<Function, Record<string, Array<(self: Model) => DecorProducer | undefined>>> = new Map();
+    private static registry: Map<Function, Record<string, Array<(self: Model) => Computer | undefined>>> = new Map();
 
     public static on<S extends Props.S, M extends Model, I extends Model>(
-        accessor: (self: I) => DecorProducer<S, M> | undefined
+        accessor: (self: I) => Computer<S, M> | undefined
     ) {
         return function(
             prototype: I,
             key: string,
-            descriptor: TypedPropertyDescriptor<DecorUpdater<S, M>>
-        ): TypedPropertyDescriptor<DecorUpdater<S, M>> {
+            descriptor: TypedPropertyDescriptor<Updater<M>>
+        ): TypedPropertyDescriptor<Updater<M>> {
             const hooks = StateUtil.registry.get(prototype.constructor) ?? {};
             if (!hooks[key]) hooks[key] = [];
             hooks[key].push(accessor);
@@ -30,17 +30,17 @@ export class StateUtil<
         }
     }
 
-    public readonly origin: Format.S<S>
+    public readonly origin: State<S>
     
     private readonly router: {
-        consumers: Map<DecorProducer, DecorConsumer[]>,
-        producers: Map<DecorUpdater, DecorProducer[]>
+        consumers: Map<Computer, Modifier[]>,
+        producers: Map<Updater, Computer[]>
     }
 
-    private _current: Format.S<S>
+    private _current: State<S>
     public get current() { return { ...this._current } }
     
-    constructor(model: M, props: Format.S<S>) {
+    constructor(model: M, props: State<S>) {
         super(model);
         this.router = {
             consumers: new Map(),
@@ -101,9 +101,8 @@ export class StateUtil<
 
     public update() {
         let path: string | undefined;
-        let state: any = { ...this.origin };
         let parent: Model | undefined = this.model;
-        const consumers: DecorConsumer[] = [];
+        const consumers: Modifier[] = [];
         while (parent) {
             const router = parent.utils.state.router;
             router.consumers.forEach((list, producer) => {
@@ -117,15 +116,15 @@ export class StateUtil<
             else path = parent.utils.route.key;
             parent = parent.utils.route.current.parent;
         }
-        const decor = new Decor(this.model, state);
+        const decor: Decor<any> = this.model.decor;
         consumers.sort((a, b) => a.model.uuid.localeCompare(b.model.uuid));
         consumers.forEach(item => item.updater.call(item.model, this.model, decor));
-        this._current = decor.draft;
+        this._current = decor.result;
     }
 
     public bind<S extends Props.S, M extends Model>(
-        producer: DecorProducer<S, M>, 
-        updater: DecorUpdater<S, M>
+        producer: Computer<S, M>, 
+        updater: Updater<M>
     ) {
         const { model: that, path, type } = producer;
         if (!this.utils.route.check(that)) return;
@@ -139,8 +138,8 @@ export class StateUtil<
     }
     
     public unbind<S extends Props.S, M extends Model>(
-        producer: DecorProducer<S, M>, 
-        updater: DecorUpdater<S, M>
+        producer: Computer<S, M>, 
+        updater: Updater<M>
     ) {
         const { model: that, path, type } = producer;
         const comsumers = that.utils.state.router.consumers.get(producer) ?? [];
