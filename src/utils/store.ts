@@ -87,7 +87,6 @@ export class StoreUtil {
         })
     }
 
-
     public static is<M extends Model>(code: string) {
         return function (type: Type<M, [Loader<M>]>) {
             if (StoreUtil.registry.has(code)) return;

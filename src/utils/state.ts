@@ -1,8 +1,8 @@
 import { Model } from "../model";
 import { Util } from ".";
 import { TranxUtil } from "./tranx";
-import { DebugUtil, LogLevel } from "./debug";
-import { IType } from "../types";
+import { DebugUtil } from "./debug";
+import { IType, Type } from "../types";
 import { Decor, Modifier, Computer, Updater } from "../types/decor";
 import { Props, State } from "../types/model";
 
@@ -13,6 +13,14 @@ export class StateUtil<
 > extends Util<M> {
 
     private static registry: Map<Function, Record<string, Array<(self: Model) => Computer | undefined>>> = new Map();
+    private static registry2: Map<Function, Type<Decor, [Model]>> = new Map();
+
+    public static use<S extends Props.S>(decor: Type<Decor<S>, [Model]>) {
+        return function (type: Type<Model<{}, S>>) {
+            StateUtil.registry2.set(type, decor)
+        }
+    }
+
 
     public static on<S extends Props.S, M extends Model, I extends Model>(
         accessor: (self: I) => Computer<S, M> | undefined
@@ -20,8 +28,8 @@ export class StateUtil<
         return function(
             prototype: I,
             key: string,
-            descriptor: TypedPropertyDescriptor<Updater<M>>
-        ): TypedPropertyDescriptor<Updater<M>> {
+            descriptor: TypedPropertyDescriptor<Updater<S, M>>
+        ): TypedPropertyDescriptor<Updater<S, M>> {
             const hooks = StateUtil.registry.get(prototype.constructor) ?? {};
             if (!hooks[key]) hooks[key] = [];
             hooks[key].push(accessor);
@@ -30,7 +38,7 @@ export class StateUtil<
         }
     }
 
-    public readonly origin: State<S>
+    public readonly origin: S
     
     private readonly router: {
         consumers: Map<Computer, Modifier[]>,
@@ -116,7 +124,17 @@ export class StateUtil<
             else path = parent.utils.route.key;
             parent = parent.utils.route.current.parent;
         }
-        const decor: Decor<any> = this.model.decor;
+        let type: Type<Decor, [Model]> | undefined;
+        let constructor: any = this.model.constructor;
+        while (constructor && !type) {
+            type = StateUtil.registry2.get(constructor);
+            constructor = constructor.__proto__
+        }
+        if (!type) {
+            this._current = { ...this.origin };
+            return;
+        }
+        let decor: Decor<any> = new type(this.model);
         consumers.sort((a, b) => a.model.uuid.localeCompare(b.model.uuid));
         consumers.forEach(item => item.updater.call(item.model, this.model, decor));
         this._current = decor.result;
@@ -124,7 +142,7 @@ export class StateUtil<
 
     public bind<S extends Props.S, M extends Model>(
         producer: Computer<S, M>, 
-        updater: Updater<M>
+        updater: Updater<S, M>
     ) {
         const { model: that, path, type } = producer;
         if (!this.utils.route.check(that)) return;
@@ -139,7 +157,7 @@ export class StateUtil<
     
     public unbind<S extends Props.S, M extends Model>(
         producer: Computer<S, M>, 
-        updater: Updater<M>
+        updater: Updater<S, M>
     ) {
         const { model: that, path, type } = producer;
         const comsumers = that.utils.state.router.consumers.get(producer) ?? [];

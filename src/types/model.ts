@@ -1,7 +1,8 @@
 import { Primitive } from "utility-types";
-import { Method, Value } from ".";
+import { IType, Method, Type, Value } from ".";
 import { Model } from "../model"
 import { Event } from "./event";
+import { Decor } from "./decor";
 
 export namespace Props {
     export type S = Record<string, Value>

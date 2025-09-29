@@ -9,7 +9,7 @@ import { Emitter } from "./types/event";
 import { Utils } from "./utils";
 import { Child, Props, Refer, Route, State } from "./types/model";
 import { DebugUtil } from "./utils/debug";
-import { Method } from "./types";
+import { Method, Type } from "./types";
 import { Decor } from "./types/decor";
 
 @TranxUtil.span(true)
@@ -39,8 +39,7 @@ export abstract class Model<
     public get refer(): Readonly<Refer<R, false>> { return this.utils.refer.current; }
     public get child(): Readonly<Child<C>> { return this.utils.child.current; }
     public get route(): Readonly<Route<P>> { return this.utils.route.current; }
-    public get decor(): Decor<S> { return new Decor(this); }
-    
+
     protected readonly event: Readonly<{ [K in keyof E]: Emitter<E[K]> }>;
     protected readonly draft: Readonly<{
         child: C;
@@ -70,7 +69,7 @@ export abstract class Model<
         uuid: string | undefined;
         state: State<S>;
         child: C;
-        refer: R;
+        refer: Refer<R, true>;
         route: P,
     }, []>) {
         const props = loader();

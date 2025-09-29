@@ -2,7 +2,7 @@ import { Model } from "../model";
 import { IType } from ".";
 import { Props, State } from "./model";
 
-export type Updater<M extends Model = Model> = (that: M, decor: M['decor']) => void;
+export type Updater<S extends Props.S = {}, M extends Model = Model> = (that: M, decor: Decor<S>) => void;
 
 export class Modifier {
     public readonly model: Model;
@@ -35,9 +35,10 @@ export class Computer<
     }
 }
 
-export class Decor<S extends Props.S = {}> {
+export abstract class Decor<
+    S extends Props.S = {},
+> {
     protected detail: State<S>;
-    
     public get result(): State<S> { return { ...this.detail }; }
 
     constructor(model: Model<{}, S>) { 

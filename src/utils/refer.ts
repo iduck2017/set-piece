@@ -18,7 +18,7 @@ export class ReferUtil<
 
     private readonly consumers: Model[];
     
-    constructor(model: M, props: R) {
+    constructor(model: M, props: Refer<R, false>) {
         super(model);
         this.consumers = [];
         Object.keys(props).forEach(key => {
