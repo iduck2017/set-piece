@@ -9,8 +9,7 @@ import { Emitter } from "./types/event";
 import { Utils } from "./utils";
 import { Child, Props, Refer, Route, State } from "./types/model";
 import { DebugUtil } from "./utils/debug";
-import { Method, Type } from "./types";
-import { Decor } from "./types/decor";
+import { Method } from "./types";
 
 @TranxUtil.span(true)
 export abstract class Model<
@@ -56,6 +55,20 @@ export abstract class Model<
         state?: Partial<State<S>>,
         child?: Partial<C>,
         refer?: Partial<R>,
+    } {
+        return {
+            uuid: this.uuid,
+            state: { ...this.draft.state },
+            child: { ...this.draft.child },
+            refer: { ...this.draft.refer },
+        }
+    }
+
+    public get chunk(): {
+        uuid?: string
+        state: State<S>,
+        child: C,
+        refer: Partial<R>,
     } {
         return {
             uuid: this.uuid,

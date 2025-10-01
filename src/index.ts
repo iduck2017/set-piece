@@ -26,4 +26,4 @@ export { DebugUtil, LogLevel } from "./utils/debug";
 
 
 
-// @todo StateUtil.loop StateUtil.mask 
+// @todo StateUtil.loop TranxUtil.then

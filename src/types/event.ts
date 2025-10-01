@@ -1,8 +1,8 @@
 import { Model } from "../model";
 import { IType } from ".";
 
-export type Emitter<E extends Event = Event> = (event: E) => void
-export type Handler<E extends Event = Event, M extends Model = Model> = (that: M, event: E) => void
+export type Emitter<E extends Event = Event> = (event: E) => any
+export type Handler<E extends Event = Event, M extends Model = Model> = (that: M, event: E) => any
 
 export class Consumer {
     public readonly model: Model;

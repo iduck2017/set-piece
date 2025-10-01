@@ -1,6 +1,6 @@
 import { Model } from "../model";
 import { TranxUtil } from "./tranx";
-import { Value } from "../types";
+import { Method, Value } from "../types";
 import { Loader, Props } from "../types/model";
 import { Type } from "..";
 
@@ -88,7 +88,8 @@ export class StoreUtil {
     }
 
     public static is<M extends Model>(code: string) {
-        return function (type: Type<M, [Loader<M>]>) {
+        // todu
+        return function (type: Type<M, [Method<M['chunk'], []>]>) {
             if (StoreUtil.registry.has(code)) return;
             if (StoreUtil.registry.has(type)) return;
             StoreUtil.registry.set(code, type);
@@ -97,8 +98,8 @@ export class StoreUtil {
     }
 
     public static copy<T extends Model>(model: T): T | undefined {
-        const type = StoreUtil.registry.get(model.constructor);
-        if (!type) return;
+        if (!StoreUtil.registry.has(model.constructor)) return;
+        const type: any = model.constructor
         return new type(() => ({
             ...model.props,
             uuid: undefined,
