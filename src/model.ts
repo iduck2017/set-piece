@@ -52,37 +52,23 @@ export abstract class Model<
 
     public get props(): {
         uuid?: string
-        state?: Partial<State<S>>,
+        state?: Partial<S>,
         child?: Partial<C>,
         refer?: Partial<R>,
     } {
         return {
             uuid: this.uuid,
-            state: { ...this.draft.state },
-            child: { ...this.draft.child },
-            refer: { ...this.draft.refer },
-        }
-    }
-
-    public get chunk(): {
-        uuid?: string
-        state: State<S>,
-        child: C,
-        refer: Partial<R>,
-    } {
-        return {
-            uuid: this.uuid,
-            state: { ...this.draft.state },
-            child: { ...this.draft.child },
-            refer: { ...this.draft.refer },
+            state: { ...this.utils.state.origin },
+            child: { ...this.utils.child.origin },
+            refer: { ...this.utils.refer.origin },
         }
     }
 
     constructor(loader: Method<{
         uuid: string | undefined;
-        state: State<S>;
+        state: S;
         child: C;
-        refer: Refer<R, true>;
+        refer: R;
         route: P,
     }, []>) {
         const props = loader();

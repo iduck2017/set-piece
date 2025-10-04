@@ -16,7 +16,7 @@ export class StateUtil<
     private static registry2: Map<Function, Type<Decor, [Model]>> = new Map();
 
     public static use<S extends Props.S>(decor: Type<Decor<S>, [Model]>) {
-        return function (type: Type<Model<{}, S>>) {
+        return function (type: IType<Model<{}, S>>) {
             StateUtil.registry2.set(type, decor)
         }
     }
@@ -124,16 +124,16 @@ export class StateUtil<
             else path = parent.utils.route.key;
             parent = parent.utils.route.current.parent;
         }
+        
         let type: Type<Decor, [Model]> | undefined;
         let constructor: any = this.model.constructor;
         while (constructor && !type) {
             type = StateUtil.registry2.get(constructor);
             constructor = constructor.__proto__
         }
-        if (!type) {
-            this._current = { ...this.origin };
-            return;
-        }
+        if (!type) this._current = { ...this.origin };
+        if (!type) return;
+        
         let decor: Decor<any> = new type(this.model);
         consumers.sort((a, b) => a.model.uuid.localeCompare(b.model.uuid));
         consumers.forEach(item => item.updater.call(item.model, this.model, decor));

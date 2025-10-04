@@ -8,10 +8,18 @@ export enum LogLevel {
     FATAL,
 }
 
-
-
 export class DebugUtil {
     private static registry: Map<any, any> = new Map();
+
+    private static console = {
+        log: console.log,
+        dir: console.dir,
+        info: console.info,
+        warn: console.warn,
+        debug: console.debug,
+        group: console.group,
+        groupEnd: console.groupEnd,
+    }
 
     public static level: LogLevel = LogLevel.WARN;
 
@@ -55,32 +63,15 @@ export class DebugUtil {
         }
     }
 
-    public static mute() {
-        const origin = {
-            log: console.log,
-            dir: console.dir,
-            info: console.info,
-            warn: console.warn,
-            debug: console.debug,
-            group: console.group,
-            groupEnd: console.groupEnd,
-        }
+    public static mute(isMute: boolean) {
         const noop = () => undefined;
-        console.log = noop;
-        console.dir = noop;
-        console.info = noop;
-        console.warn = noop;
-        console.debug = noop;
-        console.group = noop;
-        console.groupEnd = noop;
-        return () => {
-            console.log = origin.log;
-            console.info = origin.info;
-            console.warn = origin.warn;
-            console.debug = origin.debug;
-            console.group = origin.group;
-            console.groupEnd = origin.groupEnd;
-        }
+        console.log = isMute ? noop : DebugUtil.console.log;
+        console.dir = isMute ? noop : DebugUtil.console.dir ;
+        console.info = isMute ? noop : DebugUtil.console.info;
+        console.warn = isMute ? noop : DebugUtil.console.warn;
+        console.debug = isMute ? noop : DebugUtil.console.debug;
+        console.group = isMute ? noop : DebugUtil.console.group;
+        console.groupEnd = isMute ? noop : DebugUtil.console.groupEnd;
     }
 
     private constructor() {}

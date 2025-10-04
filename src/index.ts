@@ -1,16 +1,8 @@
 export { Model } from "./model";
-export { Event, Producer, Consumer, Handler } from './types/event';
-export { Decor, Modifier, Computer, Updater } from './types/decor';
+export { Event, Handler } from './types/event';
+export { Decor, Updater } from './types/decor';
 export { Type, IType, Value, Method } from "./types";
-export { 
-    Props, 
-    State, 
-    Route, 
-    Child, 
-    Refer, 
-    Loader, 
-    Memory, 
-} from "./types/model";
+export { Props, State, Route, Child, Refer, Loader, Memory } from "./types/model";
 
 export { ProxyUtil } from './utils/proxy';
 export { StateUtil } from "./utils/state";

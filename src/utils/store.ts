@@ -8,7 +8,7 @@ export type Chunk = {
     uuid?: string,
     code: string,
     state: Record<string, Value>,
-    child: Partial<Record<string, Partial<Chunk[]> | Chunk>>,
+    child: Record<string, Partial<Chunk[]> | Chunk | undefined>,
     refer: Record<string, string | Array<string>>
 }
 
@@ -48,7 +48,7 @@ export class StoreUtil {
         const type = StoreUtil.registry.get(chunk.code);
         if (!type) return;
         const result = new type(() => {
-            const origin: Partial<Record<string, Model | Partial<Model[]>>> = {};
+            const origin: Record<string, Partial<Model[]> | Model | undefined> = {};
             const child = chunk.child;
             Object.keys(child).forEach(key => {
                 const value = child[key];
@@ -73,7 +73,7 @@ export class StoreUtil {
         if (!model) return;
         const child = chunk.child;
         const refer = chunk.refer;
-        const origin: Partial<Record<string, Model | Partial<Model[]>>> = {};
+        const origin: Record<string, Partial<Model[]> | Model | undefined> = {};
         Object.keys(refer).forEach(key => {
             const value = refer[key];
             if (value instanceof Array) origin[key] = value.map(item => registry[item]).filter(Boolean);
@@ -89,7 +89,7 @@ export class StoreUtil {
 
     public static is<M extends Model>(code: string) {
         // todu
-        return function (type: Type<M, [Method<M['chunk'], []>]>) {
+        return function (type: Type<M, [Loader<M>]>) {
             if (StoreUtil.registry.has(code)) return;
             if (StoreUtil.registry.has(type)) return;
             StoreUtil.registry.set(code, type);
