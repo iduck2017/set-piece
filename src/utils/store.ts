@@ -97,11 +97,12 @@ export class StoreUtil {
         }
     }
 
-    public static copy<T extends Model>(model: T): T | undefined {
+    public static copy<T extends Model>(model: T, props?: T['props']): T | undefined {
         if (!StoreUtil.registry.has(model.constructor)) return;
         const type: any = model.constructor
         return new type(() => ({
             ...model.props,
+            ...props,
             uuid: undefined,
         }))
     }
