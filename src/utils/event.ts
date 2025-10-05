@@ -3,15 +3,26 @@ import { Util } from ".";
 import { DebugUtil, LogLevel } from "./debug";
 import { Event, Consumer, Emitter, Handler, Producer } from "../types/event";
 import { Memory, Props } from "../types/model";
-import { Method } from "../types";
+import { IType, Method } from "../types";
 
 @DebugUtil.is(self => `${self.model.name}::event`)
 export class EventUtil<
     M extends Model = Model,
     E extends Props.E = Props.E,
 > extends Util<M> {
-    
-    private static registry: Map<Function, Record<string, Array<Method<Producer | undefined, [Model]>>>> = new Map();
+    private static registry: {
+        accessor: Map<Function, Record<string, Array<Method<Producer | undefined, [Model]>>>>,
+        validator: Map<Function, Method<any, [Model]>>
+    } = {
+        accessor: new Map(),
+        validator: new Map()
+    };
+
+    public static if<M extends Model>(validator: (self: M) => any) {
+        return function(type: IType<M>) {
+            EventUtil.registry.validator.set(type, validator);
+        }
+    }
 
     public static on<
         E extends Event, 
@@ -23,10 +34,10 @@ export class EventUtil<
             key: string,
             descriptor: TypedPropertyDescriptor<Handler<E, M>>
         ): TypedPropertyDescriptor<Handler<E, M>> {
-            const hooks = EventUtil.registry.get(prototype.constructor) ?? {};
+            const hooks = EventUtil.registry.accessor.get(prototype.constructor) ?? {};
             if (!hooks[key]) hooks[key] = [];
             hooks[key].push(accessor);
-            EventUtil.registry.set(prototype.constructor, hooks);
+            EventUtil.registry.accessor.set(prototype.constructor, hooks);
             return descriptor;
         };
     }
@@ -109,7 +120,13 @@ export class EventUtil<
     public load() {
         let constructor: any = this.model.constructor;
         while (constructor) {
-            const hooks = EventUtil.registry.get(constructor) ?? {};
+            const validator = EventUtil.registry.validator.get(constructor);
+            if (validator && !validator(this.model)) return
+            constructor = constructor.__proto__;
+        }
+        constructor = this.model.constructor;
+        while (constructor) {
+            const hooks = EventUtil.registry.accessor.get(constructor) ?? {};
             Object.keys(hooks).forEach(key => {
                 const accessors = hooks[key] ?? [];
                 accessors.forEach(item => {

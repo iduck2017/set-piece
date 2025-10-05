@@ -2,7 +2,7 @@ import { Model } from "../model";
 import { Util } from ".";
 import { TranxUtil } from "./tranx";
 import { DebugUtil } from "./debug";
-import { IType, Type } from "../types";
+import { IType, Method, Type } from "../types";
 import { Decor, Modifier, Computer, Updater } from "../types/decor";
 import { Props, State } from "../types/model";
 
@@ -12,15 +12,27 @@ export class StateUtil<
     S extends Props.S = Props.S,
 > extends Util<M> {
 
-    private static registry: Map<Function, Record<string, Array<(self: Model) => Computer | undefined>>> = new Map();
-    private static registry2: Map<Function, Type<Decor, [Model]>> = new Map();
-
-    public static use<S extends Props.S>(decor: Type<Decor<S>, [Model]>) {
-        return function (type: IType<Model<{}, S>>) {
-            StateUtil.registry2.set(type, decor)
-        }
+    private static registry: {
+        accessor: Map<Function, Record<string, Array<(self: Model) => Computer | undefined>>>,
+        validator: Map<Function, Method<any, [Model]>>,
+        generator: Map<Function, Type<Decor, [Model]>>
+    } = {
+        accessor: new Map(),
+        validator: new Map(),
+        generator: new Map()
     }
 
+    public static use<S extends Props.S>(generator: Type<Decor<S>, [Model]>) {
+        return function (type: IType<Model<{}, S>>) {
+            StateUtil.registry.generator.set(type, generator)
+        }
+    }
+    
+    public static if<M extends Model>(validator: (self: M) => any) {
+        return function(type: IType<M>) {
+            StateUtil.registry.validator.set(type, validator);
+        }
+    }
 
     public static on<S extends Props.S, M extends Model, I extends Model>(
         accessor: (self: I) => Computer<S, M> | undefined
@@ -30,10 +42,10 @@ export class StateUtil<
             key: string,
             descriptor: TypedPropertyDescriptor<Updater<S, M>>
         ): TypedPropertyDescriptor<Updater<S, M>> {
-            const hooks = StateUtil.registry.get(prototype.constructor) ?? {};
+            const hooks = StateUtil.registry.accessor.get(prototype.constructor) ?? {};
             if (!hooks[key]) hooks[key] = [];
             hooks[key].push(accessor);
-            StateUtil.registry.set(prototype.constructor, hooks);
+            StateUtil.registry.accessor.set(prototype.constructor, hooks);
             return descriptor;
         }
     }
@@ -128,7 +140,7 @@ export class StateUtil<
         let type: Type<Decor, [Model]> | undefined;
         let constructor: any = this.model.constructor;
         while (constructor && !type) {
-            type = StateUtil.registry2.get(constructor);
+            type = StateUtil.registry.generator.get(constructor);
             constructor = constructor.__proto__
         }
         if (!type) this._current = { ...this.origin };
@@ -175,7 +187,13 @@ export class StateUtil<
     public load() {
         let constructor: any = this.model.constructor;
         while (constructor) {
-            const hooks = StateUtil.registry.get(constructor) ?? {};
+            const validator = StateUtil.registry.validator.get(constructor);
+            if (validator && !validator(this.model)) return
+            constructor = constructor.__proto__;
+        }
+        constructor = this.model.constructor;
+        while (constructor) {
+            const hooks = StateUtil.registry.accessor.get(constructor) ?? {};
             Object.keys(hooks).forEach(key => {
                 const accessors = hooks[key] ?? [];
                 [...accessors].forEach(item => {

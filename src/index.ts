@@ -16,6 +16,4 @@ export { StoreUtil } from "./utils/store";
 export { CheckUtil } from "./utils/check";
 export { DebugUtil, LogLevel } from "./utils/debug";
 
-
-
-// @todo StateUtil.loop TranxUtil.then
+// @todo StateUtil.loop TranxUtil.then EventUtil.if
