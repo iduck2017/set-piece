@@ -2,7 +2,7 @@ import { Method, IType } from "../types";
 import { Util } from ".";
 import { Model } from "../model";
 import { Event } from "../types/event";
-import { Memory } from "../types/model";
+import { Frame } from "../types/model";
 
 export class TranxUtil {
     private constructor() {}
@@ -15,7 +15,7 @@ export class TranxUtil {
     private static readonly refer: Set<Model> = new Set()
     private static readonly child: Set<Model> = new Set()
     private static readonly route: Set<Model> = new Set()
-    public static readonly event: Map<Model, Memory> = new Map()
+    public static readonly event: Map<Model, Frame> = new Map()
 
     public static then() {
         return function(

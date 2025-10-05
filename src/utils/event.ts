@@ -2,7 +2,7 @@ import { Model } from "../model";
 import { Util } from ".";
 import { DebugUtil, LogLevel } from "./debug";
 import { Event, Consumer, Emitter, Handler, Producer } from "../types/event";
-import { Memory, Props } from "../types/model";
+import { Frame, Props } from "../types/model";
 import { IType, Method } from "../types";
 
 @DebugUtil.is(self => `${self.model.name}::event`)
@@ -18,6 +18,7 @@ export class EventUtil<
         validator: new Map()
     };
 
+    // @todo self => memory
     public static if<M extends Model>(validator: (self: M) => any) {
         return function(type: IType<M>) {
             EventUtil.registry.validator.set(type, validator);
@@ -42,7 +43,7 @@ export class EventUtil<
         };
     }
 
-    public readonly current: Readonly<{ [K in keyof E]: Emitter<E[K]> } & { onChange: Emitter<Event<Memory<M>>> }>;
+    public readonly current: Readonly<{ [K in keyof E]: Emitter<E[K]> } & { onChange: Emitter<Event<Frame<M>>> }>;
     
     private readonly router: Readonly<{
         consumers: Map<Producer, Consumer[]>,

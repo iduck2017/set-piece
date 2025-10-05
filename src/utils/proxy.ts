@@ -2,7 +2,7 @@ import { Model } from "../model";
 import { IType } from "../types";
 import { Computer } from "../types/decor";
 import { Event, Producer } from "../types/event";
-import { Memory, Props } from "../types/model";
+import { Frame, Props } from "../types/model";
 
 export class ProxyUtil<
     M extends Model = Model,
@@ -20,7 +20,7 @@ export class ProxyUtil<
         { [K in keyof C]: Required<C>[K] extends Model ? Required<C>[K]['proxy'] : unknown } & 
         { [K in keyof C]: Required<C>[K] extends Model[] ? Required<C>[K][number]['proxy'] : unknown }
     >
-    public readonly event: Readonly<{ [K in keyof E]: Producer<E[K], M> } & { onChange: Producer<Event<Memory<M>>, M> }>;
+    public readonly event: Readonly<{ [K in keyof E]: Producer<E[K], M> } & { onChange: Producer<Event<Frame<M>>, M> }>;
     
     constructor(model: M, path?: string, type?: IType<Model>) {
         this.type = type;
