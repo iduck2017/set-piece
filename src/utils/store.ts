@@ -8,8 +8,8 @@ export type Chunk = {
     uuid?: string,
     code: string,
     state: Record<string, Value>,
-    child: Record<string, Partial<Chunk[]> | Chunk | undefined>,
-    refer: Record<string, string | Array<string>>
+    child: Record<string, Chunk[] | Chunk | undefined>,
+    refer: Record<string, string[] | string>
 }
 
 export class StoreUtil {
@@ -29,8 +29,11 @@ export class StoreUtil {
         const child: Props.C = props.child ?? {};
         Object.keys(child).forEach(key => {
             const value = child[key];
-            if (value instanceof Array) result.child[key] = value.map(item => StoreUtil.save(item)).filter(Boolean);
             if (value instanceof Model) result.child[key] = StoreUtil.save(value);
+            if (value instanceof Array) 
+                result.child[key] = value
+                    .map(item => StoreUtil.save(item))
+                    .filter(item => item !== undefined);
         });
         return result;
     }
@@ -43,18 +46,19 @@ export class StoreUtil {
         return model;
     }
 
-    private static create(context: Record<string, Model>, chunk: Chunk | undefined): Model | undefined {
+    private static create(context: Record<string, Model>, chunk?: Chunk): Model | undefined {
         if (!chunk) return;
         const type = StoreUtil.registry.get(chunk.code);
         if (!type) return;
         const result = new type(() => {
-            const origin: Record<string, Partial<Model[]> | Model | undefined> = {};
+            const origin: Record<string, Model[] | Model | undefined> = {};
             const child = chunk.child;
             Object.keys(child).forEach(key => {
                 const value = child[key];
-                if (value instanceof Array) {
-                    origin[key] = value.map(item => StoreUtil.create(context, item)).filter(Boolean);
-                } else if (value) origin[key] = StoreUtil.create(context, value);
+                if (!value) return;
+                origin[key] = value instanceof Array ? 
+                    value.map(item => StoreUtil.create(context, item)).filter(item => item !== undefined) : 
+                    StoreUtil.create(context, value);
             })
             return {
                 uuid: chunk.uuid,
@@ -73,22 +77,24 @@ export class StoreUtil {
         if (!model) return;
         const child = chunk.child;
         const refer = chunk.refer;
-        const origin: Record<string, Partial<Model[]> | Model | undefined> = {};
+        const origin: Record<string, Model[] | Model | undefined> = {};
         Object.keys(refer).forEach(key => {
             const value = refer[key];
-            if (value instanceof Array) origin[key] = value.map(item => registry[item]).filter(Boolean);
-            else if (value) origin[key] = registry[value];
+            if (!value) return;
+            origin[key] = value instanceof Array ? 
+                value.map(item => registry[item]).filter(item => item !== undefined) : 
+                registry[value];
         })
         model.utils.refer.init(origin);
         Object.keys(child).forEach(key => {
             const value = child[key];
+            if (!value) return;
             if (value instanceof Array) value.forEach(item => StoreUtil.bind(item, registry))
-            else if (value) StoreUtil.bind(value, registry);
+            else StoreUtil.bind(value, registry);
         })
     }
 
     public static is<M extends Model>(code: string) {
-        // todu
         return function (type: Type<M, [Loader<M>]>) {
             if (StoreUtil.registry.has(code)) return;
             if (StoreUtil.registry.has(type)) return;
@@ -100,12 +106,18 @@ export class StoreUtil {
     public static copy<T extends Model>(model: T, props?: T['props']): T | undefined {
         if (!StoreUtil.registry.has(model.constructor)) return;
         const type: any = model.constructor
-        return new type(() => ({
-            ...model.props,
-            ...props,
-            uuid: undefined,
-        }))
+        props = { ...model.props, ...props }
+        props.child = {};
+        delete props.uuid;
+        const child: Record<string, Model[] | Model | undefined> = props.child;
+        Object.keys(child).forEach((key) => {
+            const value = child[key];
+            if (!value) return;
+            child[key] = value instanceof Array ? 
+                value.map(item => StoreUtil.copy(item)).filter(item => item !== undefined) : 
+                StoreUtil.copy(value);
+        })
+        return new type(() => props)
     }
-
     private constructor() {}
 }

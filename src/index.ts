@@ -2,7 +2,8 @@ export { Model } from "./model";
 export { Event, Handler } from './types/event';
 export { Decor, Updater } from './types/decor';
 export { Type, IType, Value, Method } from "./types";
-export { Props, State, Route, Child, Refer, Loader, Frame as Memory } from "./types/model";
+export { Props, Loader, Frame } from "./types/model";
+export { State, Route, Child, Refer } from './types/model'
 
 export { ProxyUtil } from './utils/proxy';
 export { StateUtil } from "./utils/state";
@@ -14,6 +15,7 @@ export { RouteUtil } from "./utils/route";
 export { TranxUtil } from './utils/tranx';
 export { StoreUtil } from "./utils/store";
 export { CheckUtil } from "./utils/check";
+export { FrameUtil } from './utils/frame';
 export { DebugUtil, LogLevel } from "./utils/debug";
 
 // @todo StateUtil.loop TranxUtil.then EventUtil.if
