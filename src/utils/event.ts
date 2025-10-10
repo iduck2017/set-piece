@@ -1,57 +1,86 @@
-import { Model } from "../model";
+import { Frame, Model } from "../model"
 import { Util } from ".";
-import { DebugUtil, LogLevel } from "./debug";
-import { Event, Consumer, Emitter, Handler, Producer } from "../types/event";
-import { Frame, Props } from "../types/model";
-import { IType, Method } from "../types";
+import { IClass, Method } from "../types";
+import { DeepReadonly } from "utility-types";
 
-@DebugUtil.is(self => `${self.model.name}::event`)
-export class EventUtil<
-    M extends Model = Model,
-    E extends Props.E = Props.E,
-> extends Util<M> {
+export type Emitter<E = any> = (event: E) => any
+export type Handler<E = any, M extends Model = any> = (that: M, event: E) => any
+
+export type Consumer = Readonly<{ model: Model, handler: Handler }>
+export type Producer<E = any, M extends Model = Model> = Readonly<{
+    model: M;
+    name: string;
+    path?: string;
+    type?: IClass<Model>;
+    _never?: E;
+}>
+
+export class Event<E extends Record<string, any> = {}> {
+    protected _detail: E;
+    public get detail(): Readonly<E> { return { ...this._detail }}
+
+    constructor(event: E) {
+        this._detail = event;
+    }
+}
+
+export class EventUtil<M extends Model, E extends Model.E> extends Util<M> {
+    
+    // static
     private static registry: {
-        accessor: Map<Function, Record<string, Array<Method<Producer | undefined, [Model]>>>>,
-        validator: Map<Function, Method<any, [Model]>>
+        checker: Map<Function, string[]>
+        handler: Map<Function, Record<string, Array<Method<Handler>>>>,
     } = {
-        accessor: new Map(),
-        validator: new Map()
+        handler: new Map(),
+        checker: new Map()
     };
 
-    // @todo self => memory
-    public static if<M extends Model>(validator: (self: M) => any) {
-        return function(type: IType<M>) {
-            EventUtil.registry.validator.set(type, validator);
-        }
-    }
 
-    public static on<
-        E extends Event, 
-        M extends Model, 
-        I extends Model
-    >(accessor: (self: I) => Producer<E, M> | undefined) {
+    public static on<E, I extends Model, M extends Model>(
+        handler: (self: I) => Handler<E, M>
+    ) {
         return function(
             prototype: I,
             key: string,
-            descriptor: TypedPropertyDescriptor<Handler<E, M>>
-        ): TypedPropertyDescriptor<Handler<E, M>> {
-            const hooks = EventUtil.registry.accessor.get(prototype.constructor) ?? {};
+            descriptor: TypedPropertyDescriptor<() => Producer<E, M> | undefined>
+        ): TypedPropertyDescriptor<() => Producer<E, M> | undefined> {
+            const type = prototype.constructor;
+            const hooks = EventUtil.registry.handler.get(type) ?? {};
             if (!hooks[key]) hooks[key] = [];
-            hooks[key].push(accessor);
-            EventUtil.registry.accessor.set(prototype.constructor, hooks);
+            hooks[key].push(handler);
+            EventUtil.registry.handler.set(type, hooks);
             return descriptor;
         };
     }
 
-    public readonly current: Readonly<{ [K in keyof E]: Emitter<E[K]> } & { onChange: Emitter<Event<Frame<M>>> }>;
-    
+    public static if<I extends Model>() {
+        return function(
+            prototype: I,
+            key: string,
+            descriptor: TypedPropertyDescriptor<() => boolean>
+        ): TypedPropertyDescriptor<() => any> {
+            const type = prototype.constructor;
+            const hooks = EventUtil.registry.checker.get(type) ?? []
+            hooks.push(key);
+            EventUtil.registry.checker.set(type, hooks);
+            return descriptor;
+        };
+    }
+
+
+    // instance
+    public readonly current: Readonly<
+        { [K in keyof E]: Emitter<E[K]> } & 
+        { onChange: Emitter<{ prev: Frame<M> }> }
+    >;
+
     private readonly router: Readonly<{
         consumers: Map<Producer, Consumer[]>,
         producers: Map<Handler, Producer[]>
     }>
-    
+
     public constructor(model: M) {
-        super(model)
+        super(model);
         this.router = {
             consumers: new Map(),
             producers: new Map()
@@ -60,10 +89,8 @@ export class EventUtil<
             get: (origin, key: string) => this.emit.bind(this, key)
         })
     }
-
-
-    @DebugUtil.log(LogLevel.DEBUG)
-    public emit<E extends Event>(name: string, event: E): void {
+    
+    public emit<E>(name: string, event: E): void {
         let path: string | undefined = undefined;
         let parent: Model | undefined = this.model;
         const consumers: Consumer[] = [];
@@ -88,12 +115,13 @@ export class EventUtil<
         return;
     }
 
-    public bind<E extends Event, M extends Model>(
+    
+    public bind<E, M extends Model>(
         producer: Producer<E, M>, 
         handler: Handler<E, M>
     ) {
         const { model: that, path, name } = producer;
-        if (!this.utils.route.check(that)) return;
+        if (!this.utils.route.compare(that)) return;
         const consumers = that.utils.event.router.consumers.get(producer) ?? [];
         const producers = this.router.producers.get(handler) ?? [];
         consumers.push({ model: this.model, handler });
@@ -102,7 +130,7 @@ export class EventUtil<
         this.router.producers.set(handler, producers);
     }
 
-    public unbind<E extends Event, M extends Model>(
+    public unbind<E, M extends Model>(
         producer: Producer<E, M>, 
         handler: Handler<E, M>
     ) {
@@ -118,53 +146,64 @@ export class EventUtil<
         if (index !== -1) producers.splice(index, 1);
     }
 
+
     public load() {
+        // check
         let constructor: any = this.model.constructor;
         while (constructor) {
-            const validator = EventUtil.registry.validator.get(constructor);
-            if (validator && !validator(this.model)) return
+            const keys = EventUtil.registry.checker.get(constructor) ?? [];
+            for (const key of keys) {
+                const validator: any = Reflect.get(this.model, key);
+                if (!validator) continue;
+                if (!validator.call(this.model)) return;
+            }
             constructor = constructor.__proto__;
         }
+        // load
         constructor = this.model.constructor;
         while (constructor) {
-            const hooks = EventUtil.registry.accessor.get(constructor) ?? {};
-            Object.keys(hooks).forEach(key => {
-                const accessors = hooks[key] ?? [];
-                accessors.forEach(item => {
-                    const producer = item(this.model);
-                    if (!producer) return;
-                    const model: any = this.model;
-                    this.bind(producer, model[key]);
-                })
+            const registry = EventUtil.registry.handler.get(constructor) ?? {};
+            Object.keys(registry).forEach(key => {
+
+                // get producer
+                const producerFact: any = Reflect.get(this.model, key);
+                if (!producerFact) return;
+                const producer: Producer = producerFact.bind(this.model)();
+                // cancel
+                if (!producer) return;
+                
+                // get handlers
+                const handlersFact = registry[key]
+                const handlers = handlersFact?.map(item => {
+                    return item.bind(this.model)(this.model);
+                });
+                // bind
+                handlers?.forEach(item => this.bind(producer, item));
             })
             constructor = constructor.__proto__
         }
     }
 
     public unload() {
+        // producers
         this.router.producers.forEach((list, handler) => {
             [...list].forEach(item => this.unbind(item, handler));
         })
+
+        // consumers
         this.router.consumers.forEach((list, producer) => {
             [...list].forEach(item => {
                 const { model: that, handler } = item;
-                if (this.utils.route.check(that)) return;
+                if (this.utils.route.compare(that)) return;
                 that.utils.event.unbind(producer, handler);
             })
         })
     }
 
+    
     public reload() {
         this.unload();
         this.load();
     }
 
-    public debug() {
-        const dependency: string[] = [];
-        this.router.producers.forEach(item => dependency.push(...item.map(item => item.model.name)))
-        this.router.consumers.forEach(item => dependency.push(...item.map(item => item.model.name)))
-        console.log('🔍 dependency', dependency);
-    }
-
 }
-

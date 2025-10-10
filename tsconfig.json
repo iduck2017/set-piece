@@ -10,7 +10,7 @@
       "moduleResolution": "node",
       "strict": true,
       "experimentalDecorators": true,
-      "strictFunctionTypes": false,
+      "strictFunctionTypes": true,
       "stripInternal": true,
       "paths": {},
       "noUncheckedIndexedAccess": true

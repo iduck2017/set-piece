@@ -1,47 +1,51 @@
-import { Model } from "../model";
-import { IType } from "../types";
+import { Frame, Model } from "../model";
+import { IClass } from "../types";
 import { Computer } from "../types/decor";
-import { Event, Producer } from "../types/event";
-import { Frame, Props } from "../types/model";
+import { Producer } from "./event";
 
 export class ProxyUtil<
     M extends Model = Model,
-    E extends Props.E = {},
-    S extends Props.S = {},
-    C extends Props.C = {},
-> {
-    public readonly type?: IType<Model>;
+    E extends Model.E = {}, 
+    S extends Model.S = {},
+    C extends Model.C = {}
+> { 
+    public readonly type?: IClass<Model>;
     public readonly path?: string;
 
-    public readonly model: M;
-
-    public readonly decor: Computer<S, M>
-    public readonly child: Readonly<
-        { [K in keyof C]: Required<C>[K] extends Model ? Required<C>[K]['proxy'] : unknown } & 
-        { [K in keyof C]: Required<C>[K] extends Model[] ? Required<C>[K][number]['proxy'] : unknown }
+    public readonly decor?: Computer<S, M>;
+    public readonly event?: Readonly<
+        { [K in keyof E]: Producer<E[K], M> } &
+        { onChange: Producer<{ prev: Frame<M> }, M> }
     >
-    public readonly event: Readonly<{ [K in keyof E]: Producer<E[K], M> } & { onChange: Producer<Event<Frame<M>>, M> }>;
-    
-    constructor(model: M, path?: string, type?: IType<Model>) {
+    public readonly child: Readonly<
+        { [K in keyof C]: C[K] extends Model ? C[K]['proxy'] : unknown } &
+        { [K in keyof C]: C[K] extends any[] ? C[K][number]['proxy'] : unknown }
+    >
+
+    public readonly model: Model;
+
+    constructor(model: M, path?: string, type?: IClass<Model>) {
         this.type = type;
         this.path = path;
         this.model = model;
         this.event = new Proxy({} as any, { get: this.getEvent.bind(this) })
         this.child = new Proxy({} as any, { get: this.getChild.bind(this) })
         this.decor = { 
-            path,
             type,
+            path,
             model
         }
     }
 
-    public all<T extends Model>(type: IType<T>): {
-        event: T['proxy']['event'],
-        decor: T['proxy']['decor']
+    // @todo
+    public any<T extends Model>(type: IClass<T>): {
+        event?: T['proxy']['event'],
+        decor?: T['proxy']['decor']
     } {
         return new ProxyUtil(this.model, this.path, type);
     }
 
+    
     private getEvent(origin: Record<string, Producer>, key: string) {
         if (!origin[key]) {
             origin[key] = { 
@@ -54,7 +58,10 @@ export class ProxyUtil<
         return origin[key];
     }
 
-    private getChild(origin: Record<string, ProxyUtil>, path: string): ProxyUtil | undefined {
+    private getChild(
+        origin: Record<string, ProxyUtil>, 
+        path: string
+    ): ProxyUtil | undefined {
         const keys = path.split('/');
         const key = keys.shift();
         if (!key) return this;
@@ -71,5 +78,5 @@ export class ProxyUtil<
     }
 }
 
-
-
+// /x/y/Z/a/B/onChange
+// /x/y/z/a/b/onChange

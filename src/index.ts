@@ -1,21 +1,19 @@
-export { Model } from "./model";
-export { Event, Handler } from './types/event';
-export { Decor, Updater } from './types/decor';
-export { Type, IType, Value, Method } from "./types";
-export { Props, Loader, Frame } from "./types/model";
-export { State, Route, Child, Refer } from './types/model'
+export { Model, Frame } from "./model";
+export { Decor, Computer, Modifier, Updater } from "./types/decor";
+export { Event, EventUtil, Producer, Handler } from "./utils/event";
+export { StateUtil, State } from "./utils/state";
+export { ChildUtil, Child } from "./utils/child";
+export { ReferUtil, Refer } from "./utils/refer";
+export { RouteUtil, Route } from "./utils/route";
+export { ProxyUtil } from "./utils/proxy";
+export { TranxUtil } from "./utils/tranx";
+export { TemplUtil, Chunk } from "./utils/templ";
+export { DebugUtil, DebugLevel } from "./utils/debug";
+export { Class, IClass, Method } from "./types";
 
-export { ProxyUtil } from './utils/proxy';
-export { StateUtil } from "./utils/state";
-export { ReferUtil } from "./utils/refer";
-export { ChildUtil } from "./utils/child";
-export { EventUtil } from "./utils/event";
-export { RouteUtil } from "./utils/route";
-
-export { TranxUtil } from './utils/tranx';
-export { StoreUtil } from "./utils/store";
-export { CheckUtil } from "./utils/check";
-export { FrameUtil } from './utils/frame';
-export { DebugUtil, LogLevel } from "./utils/debug";
-
-// @todo StateUtil.loop TranxUtil.then EventUtil.if
+/**
+ * @todo
+ * 
+ * StateUtil.dep
+ * TranxUtil.then
+ */
