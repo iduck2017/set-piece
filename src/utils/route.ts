@@ -23,22 +23,9 @@ export class RouteUtil<M extends Model> extends Util<M> {
     private _key: string | undefined;
     public get key() { return this._key; }
     
-    public _parent: Model | undefined;
+    private _parent: Model | undefined;
 
-    private _current: Route;
-    public get current(): Route {
-        return { ...this._current }
-    }
-
-    constructor(model: M) {
-        super(model);
-        this._current = {
-            root: this.model,
-            list: [this.model],
-        }
-    }
-    
-    public update() {
+    public get origin() {
         const result: Route = {
             parent: this._parent,
             root: this.model,
@@ -50,7 +37,21 @@ export class RouteUtil<M extends Model> extends Util<M> {
             result.list.push(parent);
             parent = parent.utils?.route._parent;
         }
-        this._current = result
+        return result;
+    }
+
+    private _current: Route;
+    public get current(): Route {
+        return { ...this._current }
+    }
+
+    constructor(model: M) {
+        super(model);
+        this._current = this.origin
+    }
+
+    public update() {
+        this._current = this.origin;
     }
 
     @TranxUtil.span()

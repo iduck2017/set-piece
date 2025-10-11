@@ -85,8 +85,8 @@ export class AnimalModel<
 
     valid() {
         const age: number = this.state.age;
-        const cItem: AnimalModel = this.child.item;
-        const rItem: AnimalModel | undefined = this.refer.item;
+        const age2: number = this.child.item.state.age;
+        const age3: number | undefined = this.refer.item?.state.age;
         const cList: Readonly<AnimalModel[]> = this.child.list;
         const rList: Readonly<AnimalModel[]> | undefined = this.refer.list;
 
@@ -196,7 +196,7 @@ export class DogModel extends AnimalModel<
         const cItem: AnimalModel = this.child.item;
         const rItem: AnimalModel | undefined = this.refer.item;
         const cList: Readonly<AnimalModel[]> = this.child.list;
-        const rList: Readonly<AnimalModel[]> | undefined = this.refer.list;
+        const rList: Readonly<AnimalModel[]> = this.refer.list;
         const name: string = this.state.name;
         const cKin: DogModel = this.child.kin;
         const rKin: DogModel | undefined = this.refer.kin;

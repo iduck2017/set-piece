@@ -47,7 +47,7 @@ export class Model<
         return this.utils.refer.current;
     }
 
-    public event: { [K in keyof E]: Emitter<E[K]> }
+    protected event: { [K in keyof E]: Emitter<E[K]> }
 
     /** @internal */
     public readonly utils: Utils<Model, E, S, C, R>
@@ -62,11 +62,11 @@ export class Model<
         return this.utils.route.current;
     }
 
-    public origin: {
+    protected origin: {
         state: State<S>,
         child: C;
         refer: Partial<R>;
-        // @todo route
+        route: Route;
     }
 
     constructor(props: {
@@ -80,7 +80,7 @@ export class Model<
         this.utils = {
             event: new EventUtil<Model, E>(this),
             route: new RouteUtil<Model>(this),
-            refer: new ReferUtil<Model, R>(this, props.refer as any),
+            refer: new ReferUtil<Model, R>(this, props.refer),
             state: new StateUtil<Model, S>(this, props.state),
             child: new ChildUtil<Model, C>(this, props.child),
         }
@@ -89,6 +89,7 @@ export class Model<
             state: this.utils.state.origin,
             child: this.utils.child.origin,
             refer: this.utils.refer.origin as any,
+            route: this.utils.route.origin,
         }
     }
 
