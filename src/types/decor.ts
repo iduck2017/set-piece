@@ -1,47 +1,35 @@
+import { Class, DeepReadonly } from "utility-types";
+import { Primitive } from "utility-types";
 import { Model } from "../model";
-import { IType } from ".";
-import { Props, State } from "./model";
+import { State } from "../utils/state";
+import { IClass } from ".";
 
-export type Updater<S extends Props.S = {}, M extends Model = Model> = (that: M, decor: Decor<S>) => void;
+export type Updater<M extends Model = any> = (that: M, decor: M['decor']) => void
 
-export class Modifier {
-    public readonly model: Model;
-    public readonly updater: Updater;
-    constructor(
-        model: Model,
-        updater: Updater
-    ) {
-        this.model = model;
-        this.updater = updater;
-    }
-}
-
-export class Computer<
-    S extends Props.S = Props.S,
+export type Modifier = { model: Model, updater: Updater }
+export type Computer<
+    S extends Model.S = Model.S,
     M extends Model = Model
-> {
-    public readonly path?: string;
-    public readonly type?: IType<Model>;
-    public readonly model: M;
-    private readonly state?: S;
-    constructor(
-        model: M,
-        path?: string,
-        type?: IType<Model>
-    ) {
-        this.model = model;
-        this.path = path;
-        this.type = type;
-    }
+> = {
+    model: M;
+    path?: string;
+    type?: IClass<Model>;
+    _never?: S;
 }
 
-export abstract class Decor<
-    S extends Props.S = {},
+export class Decor<
+    S extends E,
+    E extends Model.S = {}
 > {
-    protected detail: State<S>;
-    public get result(): State<S> { return { ...this.detail }; }
+    protected readonly _origin: S;
+    public readonly origin: E;
+
+    public get result(): Readonly<State<S>> { 
+        return { ...this._origin }; 
+    }
 
     constructor(model: Model<{}, S>) { 
-        this.detail = { ...model.utils.state.origin };
+        this._origin = { ...model.utils.state.origin };
+        this.origin = this._origin;
     }
 }

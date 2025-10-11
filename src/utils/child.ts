@@ -1,18 +1,20 @@
-import { Util } from ".";
 import { Model } from "../model";
-import { Child, Props } from "../types/model";
+import { Util } from ".";
 import { TranxUtil } from "./tranx";
 
-export class ChildUtil<
-    M extends Model = Model,
-    C extends Props.C = Props.C,
-> extends Util<M> {
+export type Child<C> = {
+    [K in keyof C]: C[K] extends any[] ? Readonly<C[K]> : C[K]
+}
 
+export class ChildUtil<M extends Model, C extends Model.C> extends Util<M> {
+    
     public readonly origin: C;
-
     private _current: Child<C>;
-    public get current() { return this.copy(this._current) }
+    public get current() { 
+        return this.copy(this._current) 
+    }
 
+    
     constructor(model: M, props: C) {
         super(model);
         const origin: any = {};
@@ -37,6 +39,7 @@ export class ChildUtil<
         this._current = this.copy(origin);
     }
 
+    
     public update() {
         this._current = this.copy(this.origin);
     }
@@ -51,7 +54,11 @@ export class ChildUtil<
         return result;
     }
 
-    private get(origin: Partial<Props.C>, key: string) {
+
+
+
+    // proxy operation
+    private get(origin: Partial<Model.C>, key: string) {
         const value = origin[key];
         if (value instanceof Array) return this.proxy(value, key);
         return value;
@@ -59,21 +66,23 @@ export class ChildUtil<
    
     @TranxUtil.span()
     private set(
-        origin: Partial<Props.C>, 
+        origin: Partial<Model.C>, 
         key: string, 
         next?: Model | Model[]
     ) {
         const prev = origin[key];
         if (prev instanceof Array) prev.forEach(item => item.utils.route.unbind())
         if (prev instanceof Model) prev.utils.route.unbind();
-        if (next instanceof Array) next.forEach(item => item.utils.route.bind(this.model, key));
         if (next instanceof Model) next.utils.route.bind(this.model, key);
+        if (next instanceof Array) {
+            next.forEach(item => item.utils.route.bind(this.model, key));
+        }
         origin[key] = next;
         return true;
     }
 
     @TranxUtil.span()
-    private del(origin: Partial<Props.C>, key: string) {
+    private del(origin: Partial<Model.C>, key: string) {
         const prev = origin[key];
         if (prev instanceof Array) prev.forEach(item => item.utils.route.unbind())
         if (prev instanceof Model) prev.utils.route.unbind();
@@ -102,7 +111,12 @@ export class ChildUtil<
     }
 
     @TranxUtil.span()
-    private lset(key: string, origin: Record<string, unknown>, index: string, next: Model) {
+    private lset(
+        key: string, 
+        origin: Record<string, unknown>, 
+        index: string, 
+        next: Model
+    ) {
         const prev = origin[index];
         if (prev instanceof Model) prev.utils.route.unbind();
         if (next instanceof Model) next.utils.route.bind(this.model, key);
@@ -157,7 +171,13 @@ export class ChildUtil<
     }
 
     @TranxUtil.span()
-    private fill(key: string, origin: Model[], sample: Model, start?: number, end?: number) {
+    private fill(
+        key: string, 
+        origin: Model[], 
+        sample: Model, 
+        start?: number, 
+        end?: number
+    ) {
         if (!start) start = 0;
         if (!end) end = origin.length;
         const prev = origin.slice(start, end);
@@ -168,7 +188,13 @@ export class ChildUtil<
     }
 
     @TranxUtil.span()
-    private splice(key: string, origin: Model[], start: number, count: number, ...next: Model[]) {
+    private splice(
+        key: string, 
+        origin: Model[], 
+        start: number, 
+        count: number, 
+        ...next: Model[]
+    ) {
         const prev = origin.slice(start, start + count);
         prev.forEach(item => item.utils.route.unbind())
         next.forEach(item => item.utils.route.bind(this.model, key));

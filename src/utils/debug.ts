@@ -1,7 +1,7 @@
-import { Method, IType } from "../types";
+import { Method, IClass } from "../types";
 
-export enum LogLevel {
-    DEBUG = 1,
+export enum DebugLevel {
+    VERBOSE = 0,
     INFO,
     WARN,
     ERROR,
@@ -9,8 +9,9 @@ export enum LogLevel {
 }
 
 export class DebugUtil {
-    private static registry: Map<any, any> = new Map();
 
+    public static level: DebugLevel = DebugLevel.WARN;
+    private static registry: Map<any, any> = new Map();
     private static console = {
         log: console.log,
         dir: console.dir,
@@ -21,9 +22,7 @@ export class DebugUtil {
         groupEnd: console.groupEnd,
     }
 
-    public static level: LogLevel = LogLevel.WARN;
-
-    public static log<T extends Object>(level = LogLevel.INFO) {
+    public static log<T extends Object>(level = 0) {
         return function(
             prototype: T,
             key: string,
@@ -39,15 +38,11 @@ export class DebugUtil {
                         const result = handler.call(this, ...args);
                         return result
                     }
-                    console.group(`%c${name}::${key}`, `color: ${{
-                        [LogLevel.DEBUG]: 'gray',
-                        [LogLevel.INFO]: '',
-                        [LogLevel.WARN]: 'orange',
-                        [LogLevel.ERROR]: 'red',
-                        [LogLevel.FATAL]: 'red',
-                    }[level]}`)
+                    console.group(`${name}::${key}`)
                     const result = handler.call(this, ...args);
-                    if (result instanceof Promise) return result.finally(() => console.groupEnd());
+                    if (result instanceof Promise) {
+                        return result.finally(() => console.groupEnd());
+                    }
                     else console.groupEnd();
                     return result;
                 }
@@ -58,7 +53,7 @@ export class DebugUtil {
     }
 
     public static is<T extends Object>(accessor: (self: T) => string) {
-        return function (constructor: IType<T>) {
+        return function (constructor: IClass<T>) {
             DebugUtil.registry.set(constructor, accessor);
         }
     }

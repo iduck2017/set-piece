@@ -1,30 +1,30 @@
-import { TranxUtil } from "./tranx";
 import { Model } from "../model";
 import { Util } from ".";
-import { DebugUtil, LogLevel } from "./debug";
-import { Props, Refer } from "../types/model";
+import { TranxUtil } from "./tranx";
 
-@DebugUtil.is(self => `${self.model.name}::refer`)
-export class ReferUtil<
-    M extends Model = Model,
-    R extends Props.R = Props.R,
-> extends Util<M> {
+export type Refer<R> = { 
+    [K in keyof R]: R[K] extends any[] ? Readonly<R[K]> : R[K] | undefined
+}
 
-    private _origin: Refer<R, true>
-    public get origin(): Refer<R, true> { return this._origin }
+export class ReferUtil<M extends Model, R extends Model.R> extends Util<M> {
 
-    private _current: Refer<R, false>
-    public get current() { return this.copy(this._current) }
+    private _origin: Refer<R>
+    public get origin() { return this._origin }
 
-    private readonly consumers: Model[];
+    private _current: Refer<R>
+    public get current() { 
+        return this.copy(this._current) 
+    }
     
-    constructor(model: M, props: Refer<R, false>) {
+    private readonly consumers: Model[];
+
+    constructor(model: M, props: Refer<R>) {
         super(model);
         this.consumers = [];
         Object.keys(props).forEach(key => {
             const value = props[key]
-            if (value instanceof Array) value.forEach(item => this.link(item));
-            if (value instanceof Model) this.link(value);
+            if (value instanceof Array) value.forEach(item => this.bind(item));
+            if (value instanceof Model) this.bind(value);
         });
         const origin: any = { ...props };
         this._origin = new Proxy(origin, {
@@ -35,7 +35,64 @@ export class ReferUtil<
         this._current = this.copy(this._origin);
     }
 
-    public copy(origin: Refer<R, false>): Refer<R, false> { 
+    public init(props: Refer<R>) {
+        Object.keys(props).forEach(key => {
+            const value = props[key]
+            if (value instanceof Array) value.forEach(item => this.bind(item));
+            if (value instanceof Model) this.bind(value);
+        });
+        const origin: any = { ...props };
+        this._origin = new Proxy(origin, {
+            get: this.get.bind(this),
+            set: this.set.bind(this),
+            deleteProperty: this.del.bind(this)
+        });
+        this._current = this.copy(this._origin);
+    }
+
+    
+    public update() {
+        this._current = this.copy(this._origin)
+    }
+
+    private bind(model: Model) {
+        model.utils.refer.consumers.push(this.model);
+        return true;
+    }
+
+    private unbind(model: Model) {
+        const consumers = model.utils.refer.consumers;
+        const index = consumers.indexOf(this.model);
+        if (index === -1) return;
+        consumers.splice(index, 1);
+    }
+
+    public reload() {
+        const origin: Partial<Model.R> = this._origin
+        Object.keys(origin).forEach(key => {
+            const value = origin[key]
+            if (value instanceof Array) {
+                if (!value.length) return;
+                origin[key] = value.filter(item => this.utils.route.compare(item))
+            }
+            if (value instanceof Model) {
+                if (this.utils.route.compare(value)) return; 
+                delete origin[key]
+            }
+        })
+        this.consumers.forEach(item => {
+            if (this.utils.route.compare(item)) return;
+            const origin: Model.R = item.utils.refer._origin;
+            Object.keys(origin).forEach(key => {
+                const value = origin[key]
+                if (value instanceof Array) origin[key] = value.filter(item => item !== this.model)
+                if (value instanceof Model && value === this.model) delete origin[key]
+            })
+        });
+    }
+
+
+    public copy(origin: Refer<R>): Refer<R> { 
         const result: any = {};
         Object.keys(origin).forEach(key => {
             const value = origin[key];
@@ -45,72 +102,9 @@ export class ReferUtil<
         return result;
     }
 
-    public init(props: Refer<R, true>) {
-        Object.keys(props).forEach(key => {
-            const value = props[key]
-            if (value instanceof Array) value.forEach(item => this.link(item));
-            if (value instanceof Model) this.link(value);
-        });
-        const origin: any = { ...props };
-        this._origin = new Proxy(origin, {
-            get: this.get.bind(this),
-            set: this.set.bind(this),
-            deleteProperty: this.del.bind(this)
-        });
-        this._current = this.copy(this._origin);
-    }
 
-    public update() {
-        this._current = this.copy(this._origin)
-    }
 
-    private link(model: Model) {
-        model.utils.refer.consumers.push(this.model);
-        return true;
-    }
-
-    private unlink(model: Model) {
-        const consumers = model.utils.refer.consumers;
-        const index = consumers.indexOf(this.model);
-        if (index === -1) return;
-        consumers.splice(index, 1);
-    }
-
-    @DebugUtil.log(LogLevel.DEBUG)
-    public reload() {
-        const origin: Partial<Props.R> = this._origin
-        Object.keys(origin).forEach(key => {
-            const value = origin[key]
-            if (value instanceof Array) {
-                if (!value.length) return;
-                origin[key] = value.filter(item => this.utils.route.check(item))
-            }
-            if (value instanceof Model) {
-                if (this.utils.route.check(value)) return; 
-                delete origin[key]
-            }
-        })
-        this.consumers.forEach(item => {
-            if (this.utils.route.check(item)) return;
-            const origin: Props.C = item.utils.refer._origin;
-            Object.keys(origin).forEach(key => {
-                const value = origin[key]
-                if (value instanceof Array) origin[key] = value.filter(item => item !== this.model)
-                if (value instanceof Model && value === this.model) delete origin[key]
-            })
-        });
-    }
-
-    public debug() {
-        const dependency: string[] = [];
-        this.consumers.forEach(item => dependency.push(item.name));
-        Object.values(this._origin).forEach(item => {
-            if (item instanceof Array) dependency.push(...item.map(item => item.name));
-            if (item instanceof Model) dependency.push(item.name);
-        });
-        console.log('🔍 dependency', dependency);
-    }
-
+    // proxy operation
     private get(origin: Partial<R>, key: string) {
         const value = origin[key];
         if (value instanceof Array) return this.proxy(value, key);
@@ -119,24 +113,24 @@ export class ReferUtil<
 
     @TranxUtil.span()
     private set(
-        origin: Partial<Props.C>, 
+        origin: Partial<Model.R>, 
         key: string, 
         next?: Model | Model[]
     ) {
         let prev = origin[key];
-        if (prev instanceof Array) prev.forEach(item => this.unlink(item));
-        if (prev instanceof Model) this.unlink(prev);
-        if (next instanceof Array) next.forEach(item => this.link(item));
-        if (next instanceof Model) this.link(next);
+        if (prev instanceof Array) prev.forEach(item => this.unbind(item));
+        if (prev instanceof Model) this.unbind(prev);
+        if (next instanceof Array) next.forEach(item => this.bind(item));
+        if (next instanceof Model) this.bind(next);
         origin[key] = next;
         return true;
     }
 
     @TranxUtil.span()
-    private del(origin: Partial<Props.C>, key: string) {
+    private del(origin: Partial<Model.R>, key: string) {
         let prev = origin[key];
-        if (prev instanceof Array) prev.forEach(item => this.unlink(item));
-        if (prev instanceof Model) this.unlink(prev);
+        if (prev instanceof Array) prev.forEach(item => this.unbind(item));
+        if (prev instanceof Model) this.unbind(prev);
         delete origin[key];
         return true;
     }
@@ -164,8 +158,8 @@ export class ReferUtil<
     @TranxUtil.span()
     private lset(key: string, origin: any, index: string, next: Model) {
         const prev = origin[index];
-        if (prev instanceof Model) this.unlink(prev)
-        if (next instanceof Model) this.link(next)
+        if (prev instanceof Model) this.unbind(prev)
+        if (next instanceof Model) this.bind(next)
         origin[index] = next;
         return true;
     }
@@ -173,34 +167,34 @@ export class ReferUtil<
     @TranxUtil.span()
     private ldel(key: string, origin: any, index: string) {
         const prev = origin[index];
-        if (prev instanceof Model) this.unlink(prev)
+        if (prev instanceof Model) this.unbind(prev)
         delete origin[index];
         return true;
     }
 
     @TranxUtil.span()
     private push(key: string, origin: Model[], ...next: Model[]) {
-        next.forEach(next => this.link(next))
+        next.forEach(next => this.bind(next))
         return origin.push(...next);
     }
 
     @TranxUtil.span()
     private unshift(key: string, origin: Model[], ...next: Model[]) {
-        next.forEach(item => this.link(item));
+        next.forEach(item => this.bind(item));
         return origin.unshift(...next);
     }
 
     @TranxUtil.span()
     private pop(key: string, origin: Model[]) {
         const result = origin.pop();
-        if (result) this.unlink(result);
+        if (result) this.unbind(result);
         return result;
     }
 
     @TranxUtil.span()
     private shift(key: string, origin: Model[]) {
         const result = origin.shift();
-        if (result) this.unlink(result)
+        if (result) this.unbind(result)
         return result;
     }
 
@@ -215,23 +209,35 @@ export class ReferUtil<
     }
 
     @TranxUtil.span()
-    private fill(key: string, origin: Model[], value: Model, start?: number, end?: number) {
+    private fill(
+        key: string, 
+        origin: Model[], 
+        value: Model, 
+        start?: number, 
+        end?: number
+    ) {
         if (start === undefined) start = 0;
         if (end === undefined) end = origin.length;
         const prev = origin.slice(start, end);
         const next: Model[] = new Array(end - start).fill(value);
-        prev.forEach(item => this.unlink(item));
-        next.forEach(item => this.link(item));
+        prev.forEach(item => this.unbind(item));
+        next.forEach(item => this.bind(item));
         return origin.fill(value, start, end)
     }
 
     @TranxUtil.span()
-    private splice(key: string, origin: Model[], start: number, count: number, ...next: Model[]) {
+    private splice(
+        key: string, 
+        origin: Model[], 
+        start: number, 
+        count: number, 
+        ...next: Model[]
+    ) {
         const prev = origin.slice(start, start + count);
-        prev.forEach(item => this.unlink(item));
-        next.forEach(item => this.link(item))
+        prev.forEach(item => this.unbind(item));
+        next.forEach(item => this.bind(item))
         const result = origin.splice(start, count, ...next);
         return result;
     }
-    
 }
+    

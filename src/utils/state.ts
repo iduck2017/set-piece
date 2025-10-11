@@ -1,65 +1,73 @@
 import { Model } from "../model";
+import { Primitive } from "utility-types";
+import { DeepReadonly } from "utility-types";
+import { Computer, Decor, Modifier, Updater } from "../types/decor";
 import { Util } from ".";
+import { IClass, Method } from "../types";
 import { TranxUtil } from "./tranx";
-import { DebugUtil } from "./debug";
-import { IType, Method, Type } from "../types";
-import { Decor, Modifier, Computer, Updater } from "../types/decor";
-import { Props, State } from "../types/model";
 
-@DebugUtil.is(self => `${self.model.name}::state`)
+export type State<S> = { 
+    [K in keyof S]: S[K] extends Primitive ? S[K] : DeepReadonly<S[K]> 
+}
+
 export class StateUtil<
-    M extends Model = Model,
-    S extends Props.S = Props.S,
+    M extends Model = Model, 
+    S extends Model.S = {}
 > extends Util<M> {
-
-    private static registry: {
-        accessor: Map<Function, Record<string, Array<(self: Model) => Computer | undefined>>>,
-        validator: Map<Function, Method<any, [Model]>>,
-        generator: Map<Function, Type<Decor, [Model]>>
-    } = {
-        accessor: new Map(),
-        validator: new Map(),
-        generator: new Map()
-    }
-
-    public static use<S extends Props.S>(generator: Type<Decor<S>, [Model]>) {
-        return function (type: IType<Model<{}, S>>) {
-            StateUtil.registry.generator.set(type, generator)
-        }
-    }
     
-    public static if<M extends Model>(validator: (self: M) => any) {
-        return function(type: IType<M>) {
-            StateUtil.registry.validator.set(type, validator);
-        }
-    }
+    // static
+    private static registry: {
+        checker: Map<Function, string[]>
+        handler: Map<Function, Record<string, Array<Method<Updater>>>>,
+    } = {
+        handler: new Map(),
+        checker: new Map()
+    };
 
-    public static on<S extends Props.S, M extends Model, I extends Model>(
-        accessor: (self: I) => Computer<S, M> | undefined
-    ) {
+    public static on<
+        S extends Model.S,
+        I extends Model, 
+        M extends Model
+    >(updater: (self: I) => Updater<M>) {
         return function(
             prototype: I,
             key: string,
-            descriptor: TypedPropertyDescriptor<Updater<S, M>>
-        ): TypedPropertyDescriptor<Updater<S, M>> {
-            const hooks = StateUtil.registry.accessor.get(prototype.constructor) ?? {};
+            descriptor: TypedPropertyDescriptor<() => Computer<S, M> | undefined>
+        ): TypedPropertyDescriptor<() => Computer<S, M> | undefined> {
+            const type = prototype.constructor;
+            const hooks = StateUtil.registry.handler.get(type) ?? {};
             if (!hooks[key]) hooks[key] = [];
-            hooks[key].push(accessor);
-            StateUtil.registry.accessor.set(prototype.constructor, hooks);
+            hooks[key].push(updater);
+            StateUtil.registry.handler.set(type, hooks);
             return descriptor;
-        }
+        };
     }
 
-    public readonly origin: S
-    
+    public static if<I extends Model>() {
+        return function(
+            prototype: I,
+            key: string,
+            descriptor: TypedPropertyDescriptor<() => boolean>
+        ): TypedPropertyDescriptor<() => any> {
+            const type = prototype.constructor;
+            const hooks = StateUtil.registry.checker.get(type) ?? []
+            hooks.push(key);
+            StateUtil.registry.checker.set(type, hooks);
+            return descriptor;
+        };
+    }
+
+
+    // instance
     private readonly router: {
         consumers: Map<Computer, Modifier[]>,
         producers: Map<Updater, Computer[]>
     }
 
+    public readonly origin: State<S>
     private _current: State<S>
     public get current() { return { ...this._current } }
-    
+
     constructor(model: M, props: State<S>) {
         super(model);
         this.router = {
@@ -73,17 +81,17 @@ export class StateUtil<
         })
     }
 
-
+    
     @TranxUtil.span()
-    private toReload() {
-        // reload instead
-    }
+    private toReload() {}
 
-    public check(context: Set<StateUtil>, path?: string, type?: IType<Model>) {
+    
+    public check(context: Set<StateUtil>, path?: string, type?: IClass<Model>) {
         if (context.has(this)) return;
         context.add(this);
-        const child: Props.C = this.utils.child.current;
-        // avoid loop
+        const child: Model.C = this.utils.child.current;
+
+        // check type @todo
         if (!path) {
             if (!type) this.toReload();
             if (!type) return;
@@ -97,6 +105,7 @@ export class StateUtil<
                 if (value instanceof Model) value.utils.state.check(context, path, type)
             })
         } else {
+            // check path
             const keys = path.split('/');
             const key = keys.shift();
             path = keys.join('/');
@@ -107,17 +116,6 @@ export class StateUtil<
         }
     } 
 
-    @TranxUtil.span()
-    private set(origin: any, key: string, next: any) {
-        origin[key] = next;
-        return true
-    }
-    
-    @TranxUtil.span()
-    private del(origin: any, key: string) {
-        delete origin[key];
-        return true;
-    }
 
     public update() {
         let path: string | undefined;
@@ -136,28 +134,21 @@ export class StateUtil<
             else path = parent.utils.route.key;
             parent = parent.utils.route.current.parent;
         }
-        
-        let type: Type<Decor, [Model]> | undefined;
-        let constructor: any = this.model.constructor;
-        while (constructor && !type) {
-            type = StateUtil.registry.generator.get(constructor);
-            constructor = constructor.__proto__
-        }
-        if (!type) this._current = { ...this.origin };
-        if (!type) return;
-        
-        let decor: Decor<any> = new type(this.model);
+        let decor: any = this.model.decor;
+        if (!decor) this._current = { ...this.origin }
+        if (!decor) return;
         consumers.sort((a, b) => a.model.uuid.localeCompare(b.model.uuid));
         consumers.forEach(item => item.updater.call(item.model, this.model, decor));
         this._current = decor.result;
     }
 
-    public bind<S extends Props.S, M extends Model>(
+
+    public bind<S extends Model.S, M extends Model>(
         producer: Computer<S, M>, 
-        updater: Updater<S, M>
+        updater: Updater<M>
     ) {
         const { model: that, path, type } = producer;
-        if (!this.utils.route.check(that)) return;
+        if (!this.utils.route.compare(that)) return;
         const consumers = that.utils.state.router.consumers.get(producer) ?? [];
         const producers = this.router.producers.get(updater) ?? [];
         consumers.push({ model: this.model, updater });
@@ -167,9 +158,9 @@ export class StateUtil<
         that.utils.state.check(new Set(), path, type);
     }
     
-    public unbind<S extends Props.S, M extends Model>(
+    public unbind<S extends Model.S, M extends Model>(
         producer: Computer<S, M>, 
-        updater: Updater<S, M>
+        updater: Updater<M>
     ) {
         const { model: that, path, type } = producer;
         const comsumers = that.utils.state.router.consumers.get(producer) ?? [];
@@ -184,26 +175,41 @@ export class StateUtil<
         that.utils.state.check(new Set(), path, type);
     }
 
+    
     public load() {
+        // check
         let constructor: any = this.model.constructor;
         while (constructor) {
-            const validator = StateUtil.registry.validator.get(constructor);
-            if (validator && !validator(this.model)) return
+            const keys = StateUtil.registry.checker.get(constructor) ?? [];
+            for (const key of keys) {
+                const validator: any = Reflect.get(this.model, key);
+                if (!validator) continue;
+                if (!validator.call(this.model)) return;
+            }
             constructor = constructor.__proto__;
         }
+
+        // load
         constructor = this.model.constructor;
         while (constructor) {
-            const hooks = StateUtil.registry.accessor.get(constructor) ?? {};
-            Object.keys(hooks).forEach(key => {
-                const accessors = hooks[key] ?? [];
-                [...accessors].forEach(item => {
-                    const producer = item(this.model);
-                    if (!producer) return;
-                    const model: any = this.model;
-                    this.bind(producer, model[key]);
-                })
+            const registry = StateUtil.registry.handler.get(constructor) ?? {};
+            Object.keys(registry).forEach(key => {
+                // get producer
+                const computerFact: any = Reflect.get(this.model, key);
+                if (!computerFact) return;
+                const computer: Computer = computerFact.bind(this.model)();
+                // cancel
+                if (!computer) return;
+                
+                // get handlers
+                const handlersFact = registry[key]
+                const handlers = handlersFact?.map(item => {
+                    return item.bind(this.model)(this.model);
+                });
+                // bind
+                handlers?.forEach(item => this.bind(computer, item));
             })
-            constructor = constructor.__proto__;
+            constructor = constructor.__proto__
         }
     }
 
@@ -214,7 +220,7 @@ export class StateUtil<
         this.router.consumers.forEach((list, producer) => {
             [...list].forEach(item => {
                 const { model: that, updater } = item;
-                if (this.utils.route.check(that)) return;
+                if (this.utils.route.compare(that)) return;
                 that.utils.state.unbind(producer, updater);
             });
         });
@@ -225,11 +231,19 @@ export class StateUtil<
         this.load();
     }
 
-    public debug() {
-        const dependency: string[] = [];
-        this.router.producers.forEach(item => dependency.push(...item.map(item => item.model.name)))
-        this.router.consumers.forEach(item => dependency.push(...item.map(item => item.model.name)))
-        console.log('🔍 dependency', dependency);
-    }
-}
 
+
+    // proxy operation
+    @TranxUtil.span()
+    private set(origin: any, key: string, next: any) {
+        origin[key] = next;
+        return true
+    }
+    
+    @TranxUtil.span()
+    private del(origin: any, key: string) {
+        delete origin[key];
+        return true;
+    }
+
+}

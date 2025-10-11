@@ -1,8 +1,7 @@
-import { Method, IType } from "../types";
 import { Util } from ".";
-import { Model } from "../model";
-import { Event } from "../types/event";
-import { Frame } from "../types/model";
+import { Frame, Model } from "../model";
+import { IClass, Method } from "../types";
+import { Event } from "./event";
 
 export class TranxUtil {
     private constructor() {}
@@ -10,12 +9,12 @@ export class TranxUtil {
     private static _isLock = false;
     public static get isLock() { return TranxUtil._isLock; }
 
-    private static tasks: Method<void, []>[] = [];
+    private static tasks: Array<() => void> = [];
     private static readonly state: Set<Model> = new Set()
     private static readonly refer: Set<Model> = new Set()
     private static readonly child: Set<Model> = new Set()
     private static readonly route: Set<Model> = new Set()
-    public static readonly event: Map<Model, Frame> = new Map()
+    public static readonly event: Map<Model, Frame<Model>> = new Map()
 
     public static then() {
         return function(
@@ -36,11 +35,15 @@ export class TranxUtil {
         }
     }
 
-    public static span(): (prototype: Object, key: string, descriptor: TypedPropertyDescriptor<Method>) => TypedPropertyDescriptor<Method>;
-    public static span(isType: true): (constructor: IType<Model>) => any;
-    public static span(isType?: boolean) {
+    public static span(isType: true): (constructor: IClass<Model>) => void;
+    public static span(): (
+        prototype: Object, 
+        key: string, 
+        descriptor: TypedPropertyDescriptor<Method>
+    ) => TypedPropertyDescriptor<Method>;
+    public static span(isType?: boolean): any {
         if (isType) {
-            return function (type: IType<Model>) {
+            return function (type: IClass<Model>) {
                 return class Model extends type {
                     constructor(...args: any[]) {
                         if (TranxUtil._isLock) {
@@ -143,13 +146,13 @@ export class TranxUtil {
      * 3. controll the process
      */
     private static end() {
-        const memory = new Map(TranxUtil.event);
+        const event = new Map(TranxUtil.event);
         const tasks = TranxUtil.tasks;
         TranxUtil.event.clear();
         TranxUtil.tasks = [];
         tasks.forEach(task => task());
-        memory.forEach((data, model) => {
-            model.utils.event.current.onChange(new Event(data))
+        event.forEach((item, model) => {
+            model.utils.event.current.onChange(new Event(item))
         });
     }
 }
