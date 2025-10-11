@@ -1,7 +1,7 @@
 import { Frame, Model } from "../model";
 import { IClass } from "../types";
 import { Computer } from "../types/decor";
-import { Producer } from "./event";
+import { Event, Producer } from "./event";
 
 export class ProxyUtil<
     M extends Model = Model,
@@ -15,7 +15,7 @@ export class ProxyUtil<
     public readonly decor?: Computer<S, M>;
     public readonly event?: Readonly<
         { [K in keyof E]: Producer<E[K], M> } &
-        { onChange: Producer<{ prev: Frame<M> }, M> }
+        { onChange: Producer<Event<Frame<M>>, M> }
     >
     public readonly child: Readonly<
         { [K in keyof C]: C[K] extends Model ? C[K]['proxy'] : unknown } &

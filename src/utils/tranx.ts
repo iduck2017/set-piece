@@ -1,6 +1,7 @@
 import { Util } from ".";
 import { Frame, Model } from "../model";
 import { IClass, Method } from "../types";
+import { Event } from "./event";
 
 export class TranxUtil {
     private constructor() {}
@@ -150,8 +151,8 @@ export class TranxUtil {
         TranxUtil.event.clear();
         TranxUtil.tasks = [];
         tasks.forEach(task => task());
-        event.forEach((prev, model) => {
-            model.utils.event.current.onChange({ prev })
+        event.forEach((item, model) => {
+            model.utils.event.current.onChange(new Event(item))
         });
     }
 }

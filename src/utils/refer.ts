@@ -3,7 +3,7 @@ import { Util } from ".";
 import { TranxUtil } from "./tranx";
 
 export type Refer<R> = { 
-    [K in keyof R]?: R[K] extends any[] ? Readonly<R[K]> : R[K] 
+    [K in keyof R]: R[K] extends any[] ? Readonly<R[K]> : R[K] | undefined
 }
 
 export class ReferUtil<M extends Model, R extends Model.R> extends Util<M> {

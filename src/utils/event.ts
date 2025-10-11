@@ -71,7 +71,7 @@ export class EventUtil<M extends Model, E extends Model.E> extends Util<M> {
     // instance
     public readonly current: Readonly<
         { [K in keyof E]: Emitter<E[K]> } & 
-        { onChange: Emitter<{ prev: Frame<M> }> }
+        { onChange: Emitter<Event<Frame<M>>> }
     >;
 
     private readonly router: Readonly<{
