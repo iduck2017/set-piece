@@ -17,13 +17,19 @@ export type Computer<
     _never?: S;
 }
 
-export class Decor<S extends Model.S> {
-    protected readonly _detail: S;
+export class Decor<
+    S extends E,
+    E extends Model.S = {}
+> {
+    protected readonly _origin: S;
+    public readonly origin: E;
+
     public get result(): Readonly<State<S>> { 
-        return { ...this._detail }; 
+        return { ...this._origin }; 
     }
 
     constructor(model: Model<{}, S>) { 
-        this._detail = { ...model.utils.state.origin };
+        this._origin = { ...model.utils.state.origin };
+        this.origin = this._origin;
     }
 }

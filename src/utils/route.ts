@@ -53,7 +53,6 @@ export class RouteUtil<M extends Model> extends Util<M> {
         this._current = result
     }
 
-    
     @TranxUtil.span()
     public bind(parent: Model | undefined, key: string) {
         if (this._parent) return;
@@ -69,7 +68,6 @@ export class RouteUtil<M extends Model> extends Util<M> {
         this._key = undefined;
         this._parent = undefined;
     }
-    
 
     @TranxUtil.span()
     public toReload(context: Set<RouteUtil<Model>>) {

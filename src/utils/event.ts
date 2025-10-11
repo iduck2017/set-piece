@@ -67,7 +67,6 @@ export class EventUtil<M extends Model, E extends Model.E> extends Util<M> {
         };
     }
 
-
     // instance
     public readonly current: Readonly<
         { [K in keyof E]: Emitter<E[K]> } & 

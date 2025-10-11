@@ -135,10 +135,8 @@ export class StateUtil<
             parent = parent.utils.route.current.parent;
         }
         let decor: any = this.model.decor;
-        if (!decor) {
-            this._current = { ...this.origin }
-            return;
-        }
+        if (!decor) this._current = { ...this.origin }
+        if (!decor) return;
         consumers.sort((a, b) => a.model.uuid.localeCompare(b.model.uuid));
         consumers.forEach(item => item.updater.call(item.model, this.model, decor));
         this._current = decor.result;
