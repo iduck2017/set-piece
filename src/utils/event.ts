@@ -35,6 +35,25 @@ export class EventUtil<M extends Model, E extends Model.E> extends Util<M> {
         checker: new Map()
     };
 
+    
+    public static bind<E, M extends Model>(
+        producer: Producer<E, M> | undefined, 
+        handler: Handler<E, M>
+    ) {
+        if (!producer) return;
+        const model = producer.model;
+        model.utils.event.bind(producer, handler);
+        return () => EventUtil.unbind(producer, handler)
+    }
+
+    public static unbind<E, M extends Model>(
+        producer: Producer<E, M> | undefined, 
+        handler: Handler<E, M>
+    ) {
+        if (!producer) return;
+        const model = producer.model;
+        model.utils.event.bind(producer, handler);
+    }
 
     public static on<E, I extends Model, M extends Model>(
         handler: (self: I) => Handler<E, M>
