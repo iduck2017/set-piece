@@ -111,6 +111,9 @@ export class Model<
         return this.utils.route.toReload(new Set())
     }
 
-    
+
+    public debug() {
+        console.log(Reflect.get(this.utils.event, 'router'))
+    }
 }
 

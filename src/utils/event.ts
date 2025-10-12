@@ -42,6 +42,7 @@ export class EventUtil<M extends Model, E extends Model.E> extends Util<M> {
     ) {
         if (!producer) return;
         const model = producer.model;
+        // @todo avoid reload
         model.utils.event.bind(producer, handler);
         return () => EventUtil.unbind(producer, handler)
     }
@@ -52,7 +53,7 @@ export class EventUtil<M extends Model, E extends Model.E> extends Util<M> {
     ) {
         if (!producer) return;
         const model = producer.model;
-        model.utils.event.bind(producer, handler);
+        model.utils.event.unbind(producer, handler);
     }
 
     public static on<E, I extends Model, M extends Model>(
@@ -205,9 +206,10 @@ export class EventUtil<M extends Model, E extends Model.E> extends Util<M> {
     public unload() {
         // producers
         this.router.producers.forEach((list, handler) => {
-            [...list].forEach(item => this.unbind(item, handler));
+            [...list].forEach(item => {
+                this.unbind(item, handler)
+            });
         })
-
         // consumers
         this.router.consumers.forEach((list, producer) => {
             [...list].forEach(item => {
