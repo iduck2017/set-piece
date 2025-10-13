@@ -60,8 +60,8 @@ export class StateUtil<
 
     // instance
     private readonly router: {
-        consumers: Map<Computer, Modifier[]>,
-        producers: Map<Updater, Computer[]>
+        modifiers: Map<Computer, Modifier[]>,
+        computers: Map<Updater, Computer[]>
     }
 
     public readonly origin: State<S>
@@ -71,8 +71,8 @@ export class StateUtil<
     constructor(model: M, props: State<S>) {
         super(model);
         this.router = {
-            consumers: new Map(),
-            producers: new Map()
+            modifiers: new Map(),
+            computers: new Map()
         }
         this._current = { ...props }
         this.origin = new Proxy({ ...props }, {
@@ -120,15 +120,15 @@ export class StateUtil<
     public update() {
         let path: string | undefined;
         let parent: Model | undefined = this.model;
-        const consumers: Modifier[] = [];
+        const modifiers: Modifier[] = [];
         while (parent) {
             const router = parent.utils.state.router;
-            router.consumers.forEach((list, producer) => {
-                if (producer.type) {
-                    if (!(this.model instanceof producer.type)) return;
-                    if (!(path ?? '').startsWith(producer.path ?? '')) return;
-                } else if (path !== producer.path) return;
-                consumers.push(...list);
+            router.modifiers.forEach((list, computer) => {
+                if (computer.type) {
+                    if (!(this.model instanceof computer.type)) return;
+                    if (!(path ?? '').startsWith(computer.keys ?? '')) return;
+                } else if (path !== computer.keys) return;
+                modifiers.push(...list);
             })
             if (path) path = parent.utils.route.key + '/' + path;
             else path = parent.utils.route.key;
@@ -137,41 +137,41 @@ export class StateUtil<
         let decor: any = this.model.decor;
         if (!decor) this._current = { ...this.origin }
         if (!decor) return;
-        consumers.sort((a, b) => a.model.uuid.localeCompare(b.model.uuid));
-        consumers.forEach(item => item.updater.call(item.model, this.model, decor));
+        modifiers.sort((a, b) => a.model.uuid.localeCompare(b.model.uuid));
+        modifiers.forEach(item => item.updater.call(item.model, this.model, decor));
         this._current = decor.result;
     }
 
 
     public bind<S extends Model.S, M extends Model>(
-        producer: Computer<S, M>, 
+        computer: Computer<S, M>, 
         updater: Updater<M>
     ) {
-        const { model: that, path, type } = producer;
+        const { model: that, keys: path, type } = computer;
         if (!this.utils.route.compare(that)) return;
-        const consumers = that.utils.state.router.consumers.get(producer) ?? [];
-        const producers = this.router.producers.get(updater) ?? [];
-        consumers.push({ model: this.model, updater });
-        producers.push(producer);
-        that.utils.state.router.consumers.set(producer, consumers);
-        this.router.producers.set(updater, producers);
+        const modifiers = that.utils.state.router.modifiers.get(computer) ?? [];
+        const computers = this.router.computers.get(updater) ?? [];
+        modifiers.push({ model: this.model, updater });
+        computers.push(computer);
+        that.utils.state.router.modifiers.set(computer, modifiers);
+        this.router.computers.set(updater, computers);
         that.utils.state.check(new Set(), path, type);
     }
     
     public unbind<S extends Model.S, M extends Model>(
-        producer: Computer<S, M>, 
+        computer: Computer<S, M>, 
         updater: Updater<M>
     ) {
-        const { model: that, path, type } = producer;
-        const comsumers = that.utils.state.router.consumers.get(producer) ?? [];
-        const producers = this.router.producers.get(updater) ?? [];
-        let index = comsumers.findIndex(item => (
+        const { model: that, keys: path, type } = computer;
+        const modifiers = that.utils.state.router.modifiers.get(computer) ?? [];
+        const computers = this.router.computers.get(updater) ?? [];
+        let index = modifiers.findIndex(item => (
             item.updater === updater && 
             item.model === this.model
         ));
-        if (index !== -1) comsumers.splice(index, 1);
-        index = producers.indexOf(producer);
-        if (index !== -1) producers.splice(index, 1);
+        if (index !== -1) modifiers.splice(index, 1);
+        index = computers.indexOf(computer);
+        if (index !== -1) computers.splice(index, 1);
         that.utils.state.check(new Set(), path, type);
     }
 
@@ -194,7 +194,7 @@ export class StateUtil<
         while (constructor) {
             const registry = StateUtil.registry.handler.get(constructor) ?? {};
             Object.keys(registry).forEach(key => {
-                // get producer
+                // get computer
                 const computerFact: any = Reflect.get(this.model, key);
                 if (!computerFact) return;
                 const computer: Computer = computerFact.bind(this.model)();
@@ -214,14 +214,14 @@ export class StateUtil<
     }
 
     public unload() {
-        this.router.producers.forEach((list, handler) => {
+        this.router.computers.forEach((list, handler) => {
             [...list].forEach(item => this.unbind(item, handler));
         });
-        this.router.consumers.forEach((list, producer) => {
+        this.router.modifiers.forEach((list, computer) => {
             [...list].forEach(item => {
                 const { model: that, updater } = item;
                 if (this.utils.route.compare(that)) return;
-                that.utils.state.unbind(producer, updater);
+                that.utils.state.unbind(computer, updater);
             });
         });
     }

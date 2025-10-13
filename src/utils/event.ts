@@ -10,7 +10,7 @@ export type Consumer = Readonly<{ model: Model, handler: Handler }>
 export type Producer<E = any, M extends Model = Model> = Readonly<{
     model: M;
     name: string;
-    path?: string;
+    keys: string[];
     type?: IClass<Model>;
     _never?: E;
 }>
@@ -124,21 +124,24 @@ export class EventUtil<M extends Model, E extends Model.E> extends Util<M> {
     }
     
     public emit<E>(name: string, event: E): void {
-        let path: string | undefined = undefined;
-        let parent: Model | undefined = this.model;
+        const keys: string[] = [];
         const consumers: Consumer[] = [];
+        let parent: Model | undefined = this.model;
         while (parent) {
             const router = parent.utils.event.router;
             router.consumers.forEach((list, producer) => {
                 if (producer.name !== name) return;
+                const pathA = keys.join('/');
+                const pathB = producer.keys.join('/');
                 if (producer.type) {
                     if (!(this.model instanceof producer.type)) return;
-                    if (!(path ?? '').startsWith(producer.path ?? '')) return;
-                } else if (path !== producer.path) return;
+                    if (!pathA.startsWith(pathB)) return;
+                } 
+                else if (pathA !== pathB) return;
                 consumers.push(...list);
             })
-            if (path) path = parent.utils.route.key + '/' + path;
-            else path = parent.utils.route.key;
+            const key = parent.utils.route.key;
+            if (key) keys.unshift(key);
             parent = parent.utils.route.current.parent;
         }
         consumers.sort((a, b) => a.model.uuid.localeCompare(b.model.uuid));
@@ -153,7 +156,7 @@ export class EventUtil<M extends Model, E extends Model.E> extends Util<M> {
         producer: Producer<E, M>, 
         handler: Handler<E, M>
     ) {
-        const { model: that, path, name } = producer;
+        const { model: that } = producer;
         if (!this.utils.route.compare(that)) return;
         const consumers = that.utils.event.router.consumers.get(producer) ?? [];
         const producers = this.router.producers.get(handler) ?? [];
@@ -167,7 +170,7 @@ export class EventUtil<M extends Model, E extends Model.E> extends Util<M> {
         producer: Producer<E, M>, 
         handler: Handler<E, M>
     ) {
-        const { model: that, path } = producer;
+        const { model: that } = producer;
         const consumers = that.utils.event.router.consumers.get(producer) ?? [];
         const producers = this.router.producers.get(handler) ?? [];
         let index = consumers.findIndex(item => (

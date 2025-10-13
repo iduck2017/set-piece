@@ -76,7 +76,7 @@ export class Model<
         refer: R & { _never?: never }
     }) {
         this.uuid = props.uuid ?? TemplUtil.uuid;
-        this.proxy = new ProxyUtil(this);
+        this.proxy = new ProxyUtil(this, []);
         this.utils = {
             event: new EventUtil<Model, E>(this),
             route: new RouteUtil<Model>(this),

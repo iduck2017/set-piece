@@ -12,7 +12,7 @@ export type Computer<
     M extends Model = Model
 > = {
     model: M;
-    path?: string;
+    keys?: string;
     type?: IClass<Model>;
     _never?: S;
 }

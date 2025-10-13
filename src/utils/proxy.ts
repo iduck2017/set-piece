@@ -10,7 +10,7 @@ export class ProxyUtil<
     C extends Model.C = {}
 > { 
     public readonly type?: IClass<Model>;
-    public readonly path?: string;
+    public readonly keys: string[];
 
     public readonly decor?: Computer<S, M>;
     public readonly event?: Readonly<
@@ -24,33 +24,30 @@ export class ProxyUtil<
 
     public readonly model: Model;
 
-    constructor(model: M, path?: string, type?: IClass<Model>) {
+    constructor(model: M, keys: string[], type?: IClass<Model>) {
         this.type = type;
-        this.path = path;
+        this.keys = keys;
         this.model = model;
         this.event = new Proxy({} as any, { get: this.getEvent.bind(this) })
         this.child = new Proxy({} as any, { get: this.getChild.bind(this) })
         this.decor = { 
             type,
-            path,
+            // @todo use array too
+            keys: keys.join('/') || undefined,
             model
         }
     }
 
     // @todo
-    public any<T extends Model>(type: IClass<T>): {
-        event?: T['proxy']['event'],
-        decor?: T['proxy']['decor']
-    } {
-        return new ProxyUtil(this.model, this.path, type);
+    public any<T extends Model>(type: IClass<T>): T['proxy'] {
+        return new ProxyUtil(this.model, this.keys, type);
     }
-
     
-    private getEvent(origin: Record<string, Producer>, key: string) {
+    private getEvent(origin: Record<string, Producer>, key: string): Producer {
         if (!origin[key]) {
             origin[key] = { 
                 type: this.type,
-                path: this.path, 
+                keys: this.keys, 
                 name: key,
                 model: this.model, 
             };
@@ -58,7 +55,7 @@ export class ProxyUtil<
         return origin[key];
     }
 
-    private getChild(
+     private getChild(
         origin: Record<string, ProxyUtil>, 
         path: string
     ): ProxyUtil | undefined {
@@ -66,8 +63,7 @@ export class ProxyUtil<
         const key = keys.shift();
         if (!key) return this;
         if (!origin[key]) {
-            const path = this.path ? `${this.path}/${key}` : key;
-            origin[key] = new ProxyUtil(this.model, path);
+            origin[key] = new ProxyUtil(this.model, [...this.keys, key]);
         }
         if (keys.length) {
             const child: Record<string, ProxyUtil> = origin[key].child;
@@ -77,6 +73,3 @@ export class ProxyUtil<
         return origin[key]
     }
 }
-
-// /x/y/Z/a/B/onChange
-// /x/y/z/a/b/onChange
