@@ -30,9 +30,11 @@ export class EventUtil<M extends Model, E extends Model.E> extends Util<M> {
     private static registry: {
         checker: Map<Function, string[]>
         handler: Map<Function, Record<string, Array<Method<Handler>>>>,
+        bystander: Map<Model, Array<[Producer, Handler]>> 
     } = {
         handler: new Map(),
-        checker: new Map()
+        checker: new Map(),
+        bystander: new Map(),
     };
 
     
@@ -42,7 +44,11 @@ export class EventUtil<M extends Model, E extends Model.E> extends Util<M> {
     ) {
         if (!producer) return;
         const model = producer.model;
-        // @todo avoid reload
+
+        const bystander = EventUtil.registry.bystander.get(model) ?? [];
+        bystander.push([producer, handler]);
+        EventUtil.registry.bystander.set(model, bystander);
+
         model.utils.event.bind(producer, handler);
         return () => EventUtil.unbind(producer, handler)
     }
@@ -53,6 +59,14 @@ export class EventUtil<M extends Model, E extends Model.E> extends Util<M> {
     ) {
         if (!producer) return;
         const model = producer.model;
+
+        let bystander = EventUtil.registry.bystander.get(model) ?? [];
+        bystander = bystander.filter(item => (
+            item[0] === producer &&
+            item[1] === handler
+        ));
+        EventUtil.registry.bystander.set(model, bystander);
+
         model.utils.event.unbind(producer, handler);
     }
 
@@ -167,6 +181,9 @@ export class EventUtil<M extends Model, E extends Model.E> extends Util<M> {
 
 
     public load() {
+        // bystander
+        const bystander = EventUtil.registry.bystander.get(this.model);
+        if (bystander) bystander.forEach(([producer, handler]) => this.bind(producer, handler))
         // check
         let constructor: any = this.model.constructor;
         while (constructor) {
