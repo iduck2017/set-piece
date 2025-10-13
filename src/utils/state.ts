@@ -86,13 +86,14 @@ export class StateUtil<
     private toReload() {}
 
     
-    public check(context: Set<StateUtil>, path?: string, type?: IClass<Model>) {
+    public check(context: Set<StateUtil>, keys: string[], type?: IClass<Model>) {
+        keys = [...keys];
         if (context.has(this)) return;
         context.add(this);
         const child: Model.C = this.utils.child.current;
 
         // check type @todo
-        if (!path) {
+        if (!keys.length) {
             if (!type) this.toReload();
             if (!type) return;
             if (this.model instanceof type) this.toReload();
@@ -100,38 +101,38 @@ export class StateUtil<
                 const value = child[key];
                 if (value instanceof Array) {
                     value.filter(item => item instanceof type)
-                        .forEach(item => item.utils.state.check(context, path, type))
+                        .forEach(item => item.utils.state.check(context, keys, type))
                 }
-                if (value instanceof Model) value.utils.state.check(context, path, type)
+                if (value instanceof Model) value.utils.state.check(context, keys, type)
             })
         } else {
             // check path
-            const keys = path.split('/');
             const key = keys.shift();
-            path = keys.join('/');
             if (!key) return;
             const value = child[key];
-            if (value instanceof Array) value.forEach(item => item.utils.state.check(context, path, type))
-            if (value instanceof Model) value.utils.state.check(context, path, type);
+            if (value instanceof Array) value.forEach(item => item.utils.state.check(context, keys, type))
+            if (value instanceof Model) value.utils.state.check(context, keys, type);
         }
     } 
 
 
     public update() {
-        let path: string | undefined;
         let parent: Model | undefined = this.model;
         const modifiers: Modifier[] = [];
+        const keys: string[] = [];
         while (parent) {
             const router = parent.utils.state.router;
             router.modifiers.forEach((list, computer) => {
+                const pathB = computer.keys.join('/')
+                const pathA = keys.join('/')
                 if (computer.type) {
                     if (!(this.model instanceof computer.type)) return;
-                    if (!(path ?? '').startsWith(computer.keys ?? '')) return;
-                } else if (path !== computer.keys) return;
+                    if (!pathA.startsWith(pathB)) return;
+                } else if (pathA !== pathB) return;
                 modifiers.push(...list);
             })
-            if (path) path = parent.utils.route.key + '/' + path;
-            else path = parent.utils.route.key;
+            const key = parent.utils.route.key;
+            if (key) keys.unshift(key);
             parent = parent.utils.route.current.parent;
         }
         let decor: any = this.model.decor;
@@ -147,7 +148,7 @@ export class StateUtil<
         computer: Computer<S, M>, 
         updater: Updater<M>
     ) {
-        const { model: that, keys: path, type } = computer;
+        const { model: that, keys, type } = computer;
         if (!this.utils.route.compare(that)) return;
         const modifiers = that.utils.state.router.modifiers.get(computer) ?? [];
         const computers = this.router.computers.get(updater) ?? [];
@@ -155,14 +156,14 @@ export class StateUtil<
         computers.push(computer);
         that.utils.state.router.modifiers.set(computer, modifiers);
         this.router.computers.set(updater, computers);
-        that.utils.state.check(new Set(), path, type);
+        that.utils.state.check(new Set(), keys, type);
     }
     
     public unbind<S extends Model.S, M extends Model>(
         computer: Computer<S, M>, 
         updater: Updater<M>
     ) {
-        const { model: that, keys: path, type } = computer;
+        const { model: that, keys, type } = computer;
         const modifiers = that.utils.state.router.modifiers.get(computer) ?? [];
         const computers = this.router.computers.get(updater) ?? [];
         let index = modifiers.findIndex(item => (
@@ -172,7 +173,7 @@ export class StateUtil<
         if (index !== -1) modifiers.splice(index, 1);
         index = computers.indexOf(computer);
         if (index !== -1) computers.splice(index, 1);
-        that.utils.state.check(new Set(), path, type);
+        that.utils.state.check(new Set(), keys, type);
     }
 
     

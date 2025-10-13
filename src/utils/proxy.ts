@@ -32,8 +32,7 @@ export class ProxyUtil<
         this.child = new Proxy({} as any, { get: this.getChild.bind(this) })
         this.decor = { 
             type,
-            // @todo use array too
-            keys: keys.join('/') || undefined,
+            keys,
             model
         }
     }
