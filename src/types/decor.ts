@@ -12,8 +12,7 @@ export type Computer<
     M extends Model = Model
 > = {
     model: M;
-    keys: string[];
-    type?: IClass<Model>;
+    keys: Array<string | IClass>
     _never?: S;
 }
 

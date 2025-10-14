@@ -44,22 +44,25 @@ export class TranxUtil {
     public static span(isType?: boolean): any {
         if (isType) {
             return function (type: IClass<Model>) {
-                return class Model extends type {
-                    constructor(...args: any[]) {
-                        if (TranxUtil._isLock) {
-                            super(...args);
-                            TranxUtil.add(this, TranxUtil.route)
-                        }
-                        else {
-                            TranxUtil._isLock = true;
-                            super(...args);
-                            TranxUtil.add(this, TranxUtil.route)
-                            TranxUtil.reload();
-                            TranxUtil._isLock = false;
-                            TranxUtil.end();
+                const instance = {
+                    [type.name]: class extends type {
+                        constructor(...args: any[]) {
+                            if (TranxUtil._isLock) {
+                                super(...args);
+                                TranxUtil.add(this, TranxUtil.route)
+                            }
+                            else {
+                                TranxUtil._isLock = true;
+                                super(...args);
+                                TranxUtil.add(this, TranxUtil.route)
+                                TranxUtil.reload();
+                                TranxUtil._isLock = false;
+                                TranxUtil.end();
+                            }
                         }
                     }
-                };
+                }
+                return instance[type.name];
             }
         } 
         return function(

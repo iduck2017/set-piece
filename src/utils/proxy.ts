@@ -1,5 +1,5 @@
 import { Frame, Model } from "../model";
-import { IClass } from "../types";
+import { Class, IClass } from "../types";
 import { Computer } from "../types/decor";
 import { Event, Producer } from "./event";
 
@@ -9,8 +9,7 @@ export class ProxyUtil<
     S extends Model.S = {},
     C extends Model.C = {}
 > { 
-    public readonly type?: IClass<Model>;
-    public readonly keys: string[];
+    public readonly keys: Array<string | IClass>;
 
     public readonly decor?: Computer<S, M>;
     public readonly event?: Readonly<
@@ -24,28 +23,22 @@ export class ProxyUtil<
 
     public readonly model: Model;
 
-    constructor(model: M, keys: string[], type?: IClass<Model>) {
-        this.type = type;
+    constructor(model: M, keys: Array<string | IClass>) {
         this.keys = keys;
         this.model = model;
         this.event = new Proxy({} as any, { get: this.getEvent.bind(this) })
         this.child = new Proxy({} as any, { get: this.getChild.bind(this) })
-        this.decor = { 
-            type,
-            keys,
-            model
-        }
+        this.decor = { keys, model }
     }
 
     // @todo
     public any<T extends Model>(type: IClass<T>): T['proxy'] {
-        return new ProxyUtil(this.model, this.keys, type);
+        return new ProxyUtil(this.model, [...this.keys, type]);
     }
     
     private getEvent(origin: Record<string, Producer>, key: string): Producer {
         if (!origin[key]) {
             origin[key] = { 
-                type: this.type,
                 keys: this.keys, 
                 name: key,
                 model: this.model, 

@@ -1,13 +1,13 @@
 import { Model } from "../model";
 import { Util } from ".";
 import { TranxUtil } from "./tranx";
+import { IClass } from "../types";
 
 export type Route = {
     parent?: Model;
     root: Model;
     list: Model[];
 }
-
 
 export class RouteUtil<M extends Model> extends Util<M> {
     
@@ -86,5 +86,46 @@ export class RouteUtil<M extends Model> extends Util<M> {
 
     public compare(model: Model): boolean {
         return model.utils.route.current.root === this.current.root;
+    }
+
+    public routing(parent: Model): [string, IClass][] {
+        const result: [string, IClass][] = [];
+        let current: Model | undefined = this.model;
+        while (current) {
+            if (current === parent) break;
+            result.unshift([
+                current.utils.route._key, 
+                current.constructor
+            ] as any);  
+            current = current.utils.route._parent;  
+        }
+        // not ancestor
+        if (!current) return []
+        return result;
+    }
+
+    public validate(steps: [string, IClass][], keys: Array<string | IClass>, name?: string): boolean {
+        keys = [...keys];
+        steps = [...steps];
+        if (!keys.length && !steps.length) return true;
+
+        const key = keys.shift();
+        if (!key) return false;
+
+        if (typeof key === 'string') {
+            const step = steps.shift();
+            if (!step) return false
+            if (step[0] !== key) return false;
+            return this.validate(steps, keys, name);
+        } else {
+            let flag: boolean = false;
+            steps.forEach((step, index) => {
+                if (flag === true) return;
+                if (!(step[1].prototype instanceof key) && key !== step[1]) return;
+                if (!this.validate(steps.slice(index + 1), keys, name)) return;
+                flag = true;
+            })
+            return flag;
+        }
     }
 }

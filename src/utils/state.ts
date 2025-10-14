@@ -85,34 +85,39 @@ export class StateUtil<
     @TranxUtil.span()
     private toReload() {}
 
-    
-    public check(context: Set<StateUtil>, keys: string[], type?: IClass<Model>) {
+    private find(keys: Array<string | IClass>, type?: IClass): Model[] {
         keys = [...keys];
-        if (context.has(this)) return;
-        context.add(this);
-        const child: Model.C = this.utils.child.current;
 
-        // check type @todo
-        if (!keys.length) {
-            if (!type) this.toReload();
-            if (!type) return;
-            if (this.model instanceof type) this.toReload();
+        const result: Model[] = [];
+        const child: Model.C = this.utils.child.current;
+        if (type) {
+            // check self
+            if (this.model instanceof type) result.push(...this.find(keys));
+            // check child
             Object.keys(child).forEach(key => {
                 const value = child[key];
                 if (value instanceof Array) {
-                    value.filter(item => item instanceof type)
-                        .forEach(item => item.utils.state.check(context, keys, type))
+                    value.forEach(item => result.push(...item.utils.state.find(keys, type)))
                 }
-                if (value instanceof Model) value.utils.state.check(context, keys, type)
+                if (value instanceof Model) result.push(...value.utils.state.find(keys, type));
             })
-        } else {
-            // check path
-            const key = keys.shift();
-            if (!key) return;
-            const value = child[key];
-            if (value instanceof Array) value.forEach(item => item.utils.state.check(context, keys, type))
-            if (value instanceof Model) value.utils.state.check(context, keys, type);
+            return result;
         }
+      
+        const key = keys.shift();
+        if (!key) return [this.model];
+        if (typeof key === 'string') {
+            // find by key
+            const value = child[key];
+            if (!value) return [];
+            if (value instanceof Array) {
+                value.forEach(item => result.push(...item.utils.state.find(keys)));
+            } else result.push(...value.utils.state.find(keys));
+        } else {
+            // find by type
+            result.push(...this.utils.state.find(keys, key));
+        }
+        return result;
     } 
 
 
@@ -123,12 +128,9 @@ export class StateUtil<
         while (parent) {
             const router = parent.utils.state.router;
             router.modifiers.forEach((list, computer) => {
-                const pathB = computer.keys.join('/')
-                const pathA = keys.join('/')
-                if (computer.type) {
-                    if (!(this.model instanceof computer.type)) return;
-                    if (!pathA.startsWith(pathB)) return;
-                } else if (pathA !== pathB) return;
+                const steps = this.utils.route.routing(computer.model);
+                const isMatch = this.utils.route.validate(steps, computer.keys);
+                if (!isMatch) return;
                 modifiers.push(...list);
             })
             const key = parent.utils.route.key;
@@ -148,7 +150,7 @@ export class StateUtil<
         computer: Computer<S, M>, 
         updater: Updater<M>
     ) {
-        const { model: that, keys, type } = computer;
+        const { model: that, keys } = computer;
         if (!this.utils.route.compare(that)) return;
         const modifiers = that.utils.state.router.modifiers.get(computer) ?? [];
         const computers = this.router.computers.get(updater) ?? [];
@@ -156,14 +158,16 @@ export class StateUtil<
         computers.push(computer);
         that.utils.state.router.modifiers.set(computer, modifiers);
         this.router.computers.set(updater, computers);
-        that.utils.state.check(new Set(), keys, type);
+        
+        const child = that.utils.state.find(keys);
+        child.forEach(item => item.utils.state.toReload());
     }
     
     public unbind<S extends Model.S, M extends Model>(
         computer: Computer<S, M>, 
         updater: Updater<M>
     ) {
-        const { model: that, keys, type } = computer;
+        const { model: that, keys } = computer;
         const modifiers = that.utils.state.router.modifiers.get(computer) ?? [];
         const computers = this.router.computers.get(updater) ?? [];
         let index = modifiers.findIndex(item => (
@@ -173,7 +177,10 @@ export class StateUtil<
         if (index !== -1) modifiers.splice(index, 1);
         index = computers.indexOf(computer);
         if (index !== -1) computers.splice(index, 1);
-        that.utils.state.check(new Set(), keys, type);
+
+        
+        const child = that.utils.state.find(keys);
+        child.forEach(item => item.utils.state.toReload());
     }
 
     

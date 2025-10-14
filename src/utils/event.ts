@@ -10,8 +10,7 @@ export type Consumer = Readonly<{ model: Model, handler: Handler }>
 export type Producer<E = any, M extends Model = Model> = Readonly<{
     model: M;
     name: string;
-    keys: string[];
-    type?: IClass<Model>;
+    keys: Array<string | IClass>;
     _never?: E;
 }>
 
@@ -131,13 +130,10 @@ export class EventUtil<M extends Model, E extends Model.E> extends Util<M> {
             const router = parent.utils.event.router;
             router.consumers.forEach((list, producer) => {
                 if (producer.name !== name) return;
-                const pathA = keys.join('/');
-                const pathB = producer.keys.join('/');
-                if (producer.type) {
-                    if (!(this.model instanceof producer.type)) return;
-                    if (!pathA.startsWith(pathB)) return;
-                } 
-                else if (pathA !== pathB) return;
+                
+                const steps = this.utils.route.routing(producer.model);
+                const isMatch = this.utils.route.validate(steps, producer.keys, name);
+                if (!isMatch) return;
                 consumers.push(...list);
             })
             const key = parent.utils.route.key;
