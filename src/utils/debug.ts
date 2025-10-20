@@ -10,7 +10,13 @@ export enum DebugLevel {
 
 export class DebugUtil {
 
-    public static level: DebugLevel = DebugLevel.WARN;
+    private static indent: number = 0;
+    private static _stack: string[] = [];
+    public static get stack(): Readonly<string[]> {
+        return [...DebugUtil._stack];
+    }
+
+    public static level: DebugLevel = DebugLevel.INFO;
     private static registry: Map<any, any> = new Map();
     private static console = {
         log: console.log,
@@ -22,7 +28,8 @@ export class DebugUtil {
         groupEnd: console.groupEnd,
     }
 
-    public static log<T extends Object>(level = 0) {
+    public static span<T extends Object>(origin?: string, level?: DebugLevel) {
+        level = level ?? DebugLevel.INFO;
         return function(
             prototype: T,
             key: string,
@@ -38,18 +45,43 @@ export class DebugUtil {
                         const result = handler.call(this, ...args);
                         return result
                     }
-                    console.group(`${name}::${key}`)
+                    console.group(origin ?? `${name}::${key}`)
+                    if (origin) DebugUtil.push(origin);
+                    DebugUtil.indent++;
                     const result = handler.call(this, ...args);
                     if (result instanceof Promise) {
-                        return result.finally(() => console.groupEnd());
+                        return result.finally(() => {
+                            console.groupEnd();
+                            DebugUtil.indent--;
+                        });
                     }
-                    else console.groupEnd();
+                    else {
+                        console.groupEnd();
+                        DebugUtil.indent--;
+                    }
                     return result;
                 }
             }
             descriptor.value = instance[key];
             return descriptor;
         };
+    }
+
+    public static log(origin: string, level?: DebugLevel) {
+        level = level ?? DebugLevel.INFO;
+        if (DebugLevel.INFO < DebugUtil.level) return;
+        console.log(origin);
+        DebugUtil.push(origin);
+    }
+
+    private static push(origin: string) {
+        const content = `${' '.repeat(DebugUtil.indent)}${origin}`;
+        DebugUtil._stack.push(content);
+        return content;
+    }
+
+    public static clear() {
+        DebugUtil._stack.length = 0;
     }
 
     public static is<T extends Object>(accessor: (self: T) => string) {
