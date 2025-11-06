@@ -128,13 +128,13 @@ export class EventUtil<M extends Model, E extends Model.E> extends Util<M> {
         let parent: Model | undefined = this.model;
         while (parent) {
             const router = parent.utils.event.router;
-            router.consumers.forEach((list, producer) => {
+            router.consumers.forEach((items, producer) => {
                 if (producer.name !== name) return;
                 
                 const steps = this.utils.route.routing(producer.model);
                 const isMatch = this.utils.route.validate(steps, producer.keys, name);
                 if (!isMatch) return;
-                consumers.push(...list);
+                consumers.push(...items);
             })
             const key = parent.utils.route.key;
             if (key) keys.unshift(key);
@@ -221,14 +221,14 @@ export class EventUtil<M extends Model, E extends Model.E> extends Util<M> {
 
     public unload() {
         // producers
-        this.router.producers.forEach((list, handler) => {
-            [...list].forEach(item => {
+        this.router.producers.forEach((items, handler) => {
+            [...items].forEach(item => {
                 this.unbind(item, handler)
             });
         })
         // consumers
-        this.router.consumers.forEach((list, producer) => {
-            [...list].forEach(item => {
+        this.router.consumers.forEach((items, producer) => {
+            [...items].forEach(item => {
                 const { model: that, handler } = item;
                 if (this.utils.route.compare(that)) return;
                 that.utils.event.unbind(producer, handler);

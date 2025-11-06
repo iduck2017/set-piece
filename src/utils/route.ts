@@ -6,7 +6,7 @@ import { IClass } from "../types";
 export type Route = {
     parent?: Model;
     root: Model;
-    list: Model[];
+    items: Model[];
 }
 
 export class RouteUtil<M extends Model> extends Util<M> {
@@ -29,12 +29,12 @@ export class RouteUtil<M extends Model> extends Util<M> {
         const result: Route = {
             parent: this._parent,
             root: this.model,
-            list: []
+            items: []
         }
         let parent: Model | undefined = this.model;
         while (parent) {
             result.root = parent;
-            result.list.push(parent);
+            result.items.push(parent);
             parent = parent.utils?.route._parent;
         }
         return result;

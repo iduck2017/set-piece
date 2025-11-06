@@ -127,11 +127,11 @@ export class StateUtil<
         const keys: string[] = [];
         while (parent) {
             const router = parent.utils.state.router;
-            router.modifiers.forEach((list, computer) => {
+            router.modifiers.forEach((items, computer) => {
                 const steps = this.utils.route.routing(computer.model);
                 const isMatch = this.utils.route.validate(steps, computer.keys);
                 if (!isMatch) return;
-                modifiers.push(...list);
+                modifiers.push(...items);
             })
             const key = parent.utils.route.key;
             if (key) keys.unshift(key);
@@ -222,11 +222,11 @@ export class StateUtil<
     }
 
     public unload() {
-        this.router.computers.forEach((list, handler) => {
-            [...list].forEach(item => this.unbind(item, handler));
+        this.router.computers.forEach((items, handler) => {
+            [...items].forEach(item => this.unbind(item, handler));
         });
-        this.router.modifiers.forEach((list, computer) => {
-            [...list].forEach(item => {
+        this.router.modifiers.forEach((items, computer) => {
+            [...items].forEach(item => {
                 const { model: that, updater } = item;
                 if (this.utils.route.compare(that)) return;
                 that.utils.state.unbind(computer, updater);

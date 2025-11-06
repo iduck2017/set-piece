@@ -100,7 +100,7 @@ export class AnimalModel<
 
         this.route.parent;
         this.route.root;
-        this.route.list;
+        this.route.items;
     }
 
     // @EventUtil.on((self) => self.onBornB)
