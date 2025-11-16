@@ -9,15 +9,17 @@ export enum DebugLevel {
 }
 
 export class DebugUtil {
+    private static muted: boolean = false;
+
+    public static level: DebugLevel = DebugLevel.INFO;
 
     private static indent: number = 0;
+
     private static _stack: string[] = [];
     public static get stack(): Readonly<string[]> {
         return [...DebugUtil._stack];
     }
 
-    public static level: DebugLevel = DebugLevel.INFO;
-    private static registry: Map<any, any> = new Map();
     private static console = {
         log: console.log,
         dir: console.dir,
@@ -39,16 +41,16 @@ export class DebugUtil {
             if (!handler) return descriptor;
             const instance = {
                 [key](this: T, ...args: any[]) {
-                    const accessor = DebugUtil.registry.get(this.constructor);
-                    const name = accessor?.(this) ?? this.constructor.name;
                     if (level < DebugUtil.level) {
                         const result = handler.call(this, ...args);
                         return result
                     }
+                    const name = this.constructor.name;
                     console.group(origin ?? `${name}::${key}`)
-                    if (origin) DebugUtil.push(origin);
                     DebugUtil.indent++;
+                    
                     const result = handler.call(this, ...args);
+
                     if (result instanceof Promise) {
                         return result.finally(() => {
                             console.groupEnd();
@@ -69,36 +71,39 @@ export class DebugUtil {
 
     public static log(origin: string, level?: DebugLevel) {
         level = level ?? DebugLevel.INFO;
+        if (DebugUtil.muted) return;
         if (DebugLevel.INFO < DebugUtil.level) return;
-        console.log(origin);
-        DebugUtil.push(origin);
-    }
-
-    private static push(origin: string) {
         const content = `${' '.repeat(DebugUtil.indent)}${origin}`;
+        console.log(origin);
         DebugUtil._stack.push(content);
-        return content;
     }
 
     public static clear() {
+        console.clear();
         DebugUtil._stack.length = 0;
     }
 
-    public static is<T extends Object>(accessor: (self: T) => string) {
-        return function (constructor: IClass<T>) {
-            DebugUtil.registry.set(constructor, accessor);
-        }
+    public static mute() {
+        DebugUtil.muted = true;
+        const noop = () => undefined;
+        console.log = noop;
+        console.dir = noop;
+        console.info = noop;
+        console.warn = noop;
+        console.debug = noop;
+        console.group = noop;
+        console.groupEnd = noop;
     }
 
-    public static mute(isMute: boolean) {
-        const noop = () => undefined;
-        console.log = isMute ? noop : DebugUtil.console.log;
-        console.dir = isMute ? noop : DebugUtil.console.dir ;
-        console.info = isMute ? noop : DebugUtil.console.info;
-        console.warn = isMute ? noop : DebugUtil.console.warn;
-        console.debug = isMute ? noop : DebugUtil.console.debug;
-        console.group = isMute ? noop : DebugUtil.console.group;
-        console.groupEnd = isMute ? noop : DebugUtil.console.groupEnd;
+    public static unmute() {
+        DebugUtil.muted = false;
+        console.log = DebugUtil.console.log;
+        console.dir = DebugUtil.console.dir;
+        console.info = DebugUtil.console.info;
+        console.warn = DebugUtil.console.warn;
+        console.debug = DebugUtil.console.debug;
+        console.group = DebugUtil.console.group;
+        console.groupEnd = DebugUtil.console.groupEnd;
     }
 
     private constructor() {}

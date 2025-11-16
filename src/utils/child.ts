@@ -1,20 +1,17 @@
 import { Model } from "../model";
 import { Util } from ".";
 import { TranxUtil } from "./tranx";
-
-export type Child<C> = {
-    [K in keyof C]: C[K] extends any[] ? Readonly<C[K]> : C[K]
-}
+import { Child } from "../types";
 
 export class ChildUtil<M extends Model, C extends Model.C> extends Util<M> {
     
     public readonly origin: C;
+
     private _current: Child<C>;
     public get current() { 
         return this.copy(this._current) 
     }
 
-    
     constructor(model: M, props: C) {
         super(model);
         const origin: any = {};
@@ -31,6 +28,7 @@ export class ChildUtil<M extends Model, C extends Model.C> extends Util<M> {
                 origin[key] = item;
             }
         });
+        
         this.origin = new Proxy(origin, {
             get: this.get.bind(this),
             set: this.set.bind(this),
@@ -53,9 +51,6 @@ export class ChildUtil<M extends Model, C extends Model.C> extends Util<M> {
         })
         return result;
     }
-
-
-
 
     // proxy operation
     private get(origin: Partial<Model.C>, key: string) {

@@ -1,14 +1,9 @@
 import { Model } from "../model";
-import { Primitive } from "utility-types";
-import { DeepReadonly } from "utility-types";
-import { Computer, Decor, Modifier, Updater } from "../types/decor";
+import { Computer, Modifier, Updater } from "../types/decor";
 import { Util } from ".";
-import { IClass, Method } from "../types";
+import { IClass, Method, State } from "../types";
 import { TranxUtil } from "./tranx";
 
-export type State<S> = { 
-    [K in keyof S]: S[K] extends Primitive ? S[K] : DeepReadonly<S[K]> 
-}
 
 export class StateUtil<
     M extends Model = Model, 
@@ -65,6 +60,7 @@ export class StateUtil<
     }
 
     public readonly origin: State<S>
+
     private _current: State<S>
     public get current() { return { ...this._current } }
 
@@ -83,7 +79,7 @@ export class StateUtil<
 
     
     @TranxUtil.span()
-    private toReload() {}
+    private preload() {}
 
     private find(keys: Array<string | IClass>, type?: IClass): Model[] {
         keys = [...keys];
@@ -97,9 +93,13 @@ export class StateUtil<
             Object.keys(child).forEach(key => {
                 const value = child[key];
                 if (value instanceof Array) {
-                    value.forEach(item => result.push(...item.utils.state.find(keys, type)))
+                    value.forEach(item => result.push(
+                        ...item.utils.state.find(keys, type))
+                    )
                 }
-                if (value instanceof Model) result.push(...value.utils.state.find(keys, type));
+                if (value instanceof Model) {
+                    result.push(...value.utils.state.find(keys, type));
+                }
             })
             return result;
         }
@@ -111,8 +111,11 @@ export class StateUtil<
             const value = child[key];
             if (!value) return [];
             if (value instanceof Array) {
-                value.forEach(item => result.push(...item.utils.state.find(keys)));
-            } else result.push(...value.utils.state.find(keys));
+                value.forEach(item => result.push(
+                    ...item.utils.state.find(keys))
+                );
+            } 
+            else result.push(...value.utils.state.find(keys));
         } else {
             // find by type
             result.push(...this.utils.state.find(keys, key));
@@ -128,9 +131,9 @@ export class StateUtil<
         while (parent) {
             const router = parent.utils.state.router;
             router.modifiers.forEach((items, computer) => {
-                const steps = this.utils.route.routing(computer.model);
-                const isMatch = this.utils.route.validate(steps, computer.keys);
-                if (!isMatch) return;
+                const steps = this.utils.route.locate(computer.model);
+                const matched = this.utils.route.validate(steps, computer.keys);
+                if (!matched) return;
                 modifiers.push(...items);
             })
             const key = parent.utils.route.key;
@@ -140,6 +143,7 @@ export class StateUtil<
         let decor: any = this.model.decor;
         if (!decor) this._current = { ...this.origin }
         if (!decor) return;
+
         modifiers.sort((a, b) => a.model.uuid.localeCompare(b.model.uuid));
         modifiers.forEach(item => item.updater.call(item.model, this.model, decor));
         this._current = decor.result;
@@ -152,6 +156,7 @@ export class StateUtil<
     ) {
         const { model: that, keys } = computer;
         if (!this.utils.route.compare(that)) return;
+
         const modifiers = that.utils.state.router.modifiers.get(computer) ?? [];
         const computers = this.router.computers.get(updater) ?? [];
         modifiers.push({ model: this.model, updater });
@@ -160,7 +165,7 @@ export class StateUtil<
         this.router.computers.set(updater, computers);
         
         const child = that.utils.state.find(keys);
-        child.forEach(item => item.utils.state.toReload());
+        child.forEach(item => item.utils.state.preload());
     }
     
     public unbind<S extends Model.S, M extends Model>(
@@ -178,9 +183,8 @@ export class StateUtil<
         index = computers.indexOf(computer);
         if (index !== -1) computers.splice(index, 1);
 
-        
         const child = that.utils.state.find(keys);
-        child.forEach(item => item.utils.state.toReload());
+        child.forEach(item => item.utils.state.preload());
     }
 
     

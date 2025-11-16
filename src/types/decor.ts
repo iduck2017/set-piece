@@ -1,9 +1,7 @@
-import { Class, DeepReadonly } from "utility-types";
-import { Primitive } from "utility-types";
 import { Model } from "../model";
-import { State } from "../utils/state";
-import { IClass } from ".";
+import { IClass, State } from ".";
 
+// Event updater
 export type Updater<M extends Model = any> = (that: M, decor: M['decor']) => void
 
 export type Modifier = { model: Model, updater: Updater }
@@ -21,8 +19,8 @@ export class Decor<
     E extends Model.S = {}
 > {
     protected readonly _origin: S;
-    public readonly origin: E;
-
+    public readonly origin: E
+    
     public get result(): Readonly<State<S>> { 
         return { ...this._origin }; 
     }

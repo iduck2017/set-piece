@@ -1,13 +1,14 @@
 import { Util } from ".";
-import { Frame, Model } from "../model";
+import { Model } from "../model";
+import { Frame } from "../types/model";
 import { IClass, Method } from "../types";
-import { Event } from "./event";
+import { Event } from "../types/event";
 
 export class TranxUtil {
     private constructor() {}
 
-    private static _isLock = false;
-    public static get isLock() { return TranxUtil._isLock; }
+    private static _locked = false;
+    public static get locked() { return TranxUtil._locked; }
 
     private static tasks: Array<() => void> = [];
     private static readonly state: Set<Model> = new Set()
@@ -26,7 +27,7 @@ export class TranxUtil {
             if (!handler) return descriptor;
             const instance = {
                 [key](this: unknown, ...args: any[]) {
-                    if (!TranxUtil._isLock) return handler.call(this, ...args);
+                    if (!TranxUtil._locked) return handler.call(this, ...args);
                     else TranxUtil.tasks.push(() => handler.call(this, ...args));
                 }
             }
@@ -47,16 +48,16 @@ export class TranxUtil {
                 const instance = {
                     [type.name]: class extends type {
                         constructor(...args: any[]) {
-                            if (TranxUtil._isLock) {
+                            if (TranxUtil._locked) {
                                 super(...args);
                                 TranxUtil.add(this, TranxUtil.route)
                             }
                             else {
-                                TranxUtil._isLock = true;
+                                TranxUtil._locked = true;
                                 super(...args);
                                 TranxUtil.add(this, TranxUtil.route)
                                 TranxUtil.reload();
-                                TranxUtil._isLock = false;
+                                TranxUtil._locked = false;
                                 TranxUtil.end();
                             }
                         }
@@ -76,22 +77,22 @@ export class TranxUtil {
                 [key](this: unknown, ...args: any[]) {
                     if (this instanceof Util) {
                         const model: Model = this.model;
-                        const isStateChange = model.utils.state === this;
-                        const isReferChange = model.utils.refer === this;
-                        const isChildChange = model.utils.child === this;
-                        const isRouteChange = model.utils.route === this;
-                        if (isStateChange) TranxUtil.add(model, TranxUtil.state);
-                        if (isReferChange) TranxUtil.add(model, TranxUtil.refer);
-                        if (isChildChange) TranxUtil.add(model, TranxUtil.child);
-                        if (isRouteChange) TranxUtil.add(model, TranxUtil.route);
+                        const stateChanged = model.utils.state === this;
+                        const referChanged = model.utils.refer === this;
+                        const childChanged = model.utils.child === this;
+                        const routeChanged = model.utils.route === this;
+                        if (stateChanged) TranxUtil.add(model, TranxUtil.state);
+                        if (referChanged) TranxUtil.add(model, TranxUtil.refer);
+                        if (childChanged) TranxUtil.add(model, TranxUtil.child);
+                        if (routeChanged) TranxUtil.add(model, TranxUtil.route);
                     }
-                    if (TranxUtil._isLock) {
+                    if (TranxUtil._locked) {
                         return handler.call(this, ...args);
                     } else {
-                        TranxUtil._isLock = true;
+                        TranxUtil._locked = true;
                         const result = handler.call(this, ...args);
                         TranxUtil.reload();
-                        TranxUtil._isLock = false;
+                        TranxUtil._locked = false;
                         TranxUtil.end();
                         return result;
                     }

@@ -1,6 +1,7 @@
 import { Model } from "./model";
 import { Computer } from "./types/decor";
-import { EventUtil, Producer } from "./utils/event";
+import { EventUtil } from "./utils/event";
+import { Producer } from "./types/event";
 import { StateUtil } from "./utils/state";
 import { TemplUtil } from "./utils/templ";
 
@@ -183,7 +184,10 @@ export class DogModel extends AnimalModel<
                 ...props?.child,
             },
             refer: {
-                kin: new DogModel(),
+                kin: new DogModel({
+                    child: {
+                    }
+                }),
                 item: new DogModel(),
                 list: [new DogModel()],
                 ...props?.refer,

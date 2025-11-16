@@ -1,20 +1,16 @@
 import { ProxyUtil } from "./utils/proxy";
-import { Emitter, EventUtil, Handler, Producer } from "./utils/event";
-import { State, StateUtil } from "./utils/state";
+import { EventUtil } from "./utils/event";
+import { StateUtil } from "./utils/state";
 import { Decor } from "./types/decor";
-import { Child, ChildUtil } from "./utils/child";
-import { Refer, ReferUtil } from "./utils/refer";
+import { ChildUtil } from "./utils/child";
+import { ReferUtil } from "./utils/refer";
 import { Utils } from "./utils";
 import { Route, RouteUtil } from "./utils/route";
 import { TemplUtil } from "./utils/templ";
 import { TranxUtil } from "./utils/tranx";
+import { Child, Refer, State } from "./types";
+import { Emitter } from "./types/event";
 
-export type Frame<M extends Model> = {
-    state: M['state']
-    child: M['child']
-    refer: M['refer'],
-    route: M['route']
-}
 
 export namespace Model {
     export type E = Record<string, any>
@@ -108,7 +104,7 @@ export class Model<
     }
 
     public reload() { 
-        return this.utils.route.toReload(new Set())
+        return this.utils.route.preload(new Set())
     }
 
 

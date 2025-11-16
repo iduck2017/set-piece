@@ -58,28 +58,28 @@ export class RouteUtil<M extends Model> extends Util<M> {
     public bind(parent: Model | undefined, key: string) {
         if (this._parent) return;
         if (RouteUtil._root.has(this.model.constructor)) return;
-        this.toReload(new Set());
+        this.preload(new Set());
         this._key = key;
         this._parent = parent;
     }
 
     @TranxUtil.span()
     public unbind() {
-        this.toReload(new Set());
+        this.preload(new Set());
         this._key = undefined;
         this._parent = undefined;
     }
 
     @TranxUtil.span()
-    public toReload(context: Set<RouteUtil<Model>>) {
+    public preload(context: Set<RouteUtil<Model>>) {
         if (context.has(this)) return;
         context.add(this);
         const origin: Model.C = this.utils.child.current;
         Object.keys(origin).forEach(key => {
             const value = origin[key]
-            if (value instanceof Model) value.utils.route.toReload(context);
+            if (value instanceof Model) value.utils.route.preload(context);
             if (value instanceof Array) {
-                value.forEach(item => item.utils.route.toReload(context))
+                value.forEach(item => item.utils.route.preload(context))
             }
         })
     }
@@ -88,7 +88,7 @@ export class RouteUtil<M extends Model> extends Util<M> {
         return model.utils.route.current.root === this.current.root;
     }
 
-    public routing(parent: Model): [string, IClass][] {
+    public locate(parent: Model): [string, IClass][] {
         const result: [string, IClass][] = [];
         let current: Model | undefined = this.model;
         while (current) {
@@ -104,7 +104,11 @@ export class RouteUtil<M extends Model> extends Util<M> {
         return result;
     }
 
-    public validate(steps: [string, IClass][], keys: Array<string | IClass>, name?: string): boolean {
+    public validate(
+        steps: [string, IClass][], 
+        keys: Array<string | IClass>, 
+        name?: string
+    ): boolean {
         keys = [...keys];
         steps = [...steps];
         if (!keys.length && !steps.length) return true;

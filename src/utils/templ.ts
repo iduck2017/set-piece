@@ -7,13 +7,14 @@ export type Chunk = {
     code: string,
     state: Record<string, any>,
     child: Record<string, Chunk[] | Chunk | undefined>,
-    refer: Record<string, string[] | string>
+    refer: Record<string, string[] | string | undefined>
 }
 
 export class TemplUtil {
 
     // uuid
     private static ticket: number = 36 ** 7;
+
     public static get uuid() {
         let time = Date.now();
         const ticket = TemplUtil.ticket += 1;
@@ -27,84 +28,93 @@ export class TemplUtil {
 
     private static readonly registry: Map<any, any> = new Map();
     
-    // public static save(model: Model): Chunk | undefined {
-    //     const props = { ...model.props };
-    //     const code = StoreUtil.registry.get(model.constructor);
-    //     if (!code) return undefined;
-    //     const result: Chunk = {
-    //         code,
-    //         uuid: props.uuid,
-    //         state: props.state ?? {},
-    //         refer: props.refer ?? {},
-    //         child: {},
-    //     }
-    //     const child: Props.C = props.child ?? {};
-    //     Object.keys(child).forEach(key => {
-    //         const value = child[key];
-    //         if (value instanceof Model) result.child[key] = StoreUtil.save(value);
-    //         if (value instanceof Array) 
-    //             result.child[key] = value
-    //                 .map(item => StoreUtil.save(item))
-    //                 .filter(item => item !== undefined);
-    //     });
-    //     return result;
-    // }
+    public static save(model: Model): Chunk | undefined {
+        const props = { ...model.props };
+        const code = TemplUtil.registry.get(model.constructor);
+        if (!code) return undefined;
+        const result: Chunk = {
+            code,
+            uuid: props.uuid,
+            state: props.state ?? {},
+            refer: props.refer ?? {},
+            child: {},
+        }
+        const child: Partial<Model.C> = props.child ?? {};
+        Object.keys(child).forEach(key => {
+            const value = child[key];
+            if (value instanceof Model) result.child[key] = TemplUtil.save(value);
+            if (value instanceof Array) {
+                result.child[key] = value
+                    .map(item => TemplUtil.save(item))
+                    .filter(item => item !== undefined);
+            }
+        });
+        return result;
+    }
 
-    // @TranxUtil.span()
-    // public static load(chunk: Chunk): Model | undefined {
-    //     const context: Record<string, Model> = {};
-    //     const model = StoreUtil.create(context, chunk);
-    //     StoreUtil.bind(chunk, context);
-    //     return model;
-    // }
+    @TranxUtil.span()
+    public static load(chunk: Chunk): Model | undefined {
+        const context: Record<string, Model> = {};
+        const model = TemplUtil.create(context, chunk);
+        TemplUtil.bind(chunk, context);
+        return model;
+    }
 
-    // private static create(context: Record<string, Model>, chunk?: Chunk): Model | undefined {
-    //     if (!chunk) return;
-    //     const type = StoreUtil.registry.get(chunk.code);
-    //     if (!type) return;
-    //     const result = new type(() => {
-    //         const origin: Record<string, Model[] | Model | undefined> = {};
-    //         const child = chunk.child;
-    //         Object.keys(child).forEach(key => {
-    //             const value = child[key];
-    //             if (!value) return;
-    //             origin[key] = value instanceof Array ? 
-    //                 value.map(item => StoreUtil.create(context, item)).filter(item => item !== undefined) : 
-    //                 StoreUtil.create(context, value);
-    //         })
-    //         return {
-    //             uuid: chunk.uuid,
-    //             state: chunk.state,
-    //             child: origin
-    //         }
-    //     })
-    //     context[result.uuid] = result;
-    //     return result;
-    // }
+    private static create(context: Record<string, Model>, chunk?: Chunk): Model | undefined {
+        if (!chunk) return;
+        const type = TemplUtil.registry.get(chunk.code);
+        if (!type) return;
+        const result = new type(() => {
+            const origin: Record<string, Model[] | Model | undefined> = {};
+            const child = chunk.child;
+            Object.keys(child).forEach(key => {
+                const value = child[key];
+                if (!value) return;
+                if (value instanceof Array) {
+                    origin[key] = value
+                        .map(item => TemplUtil.create(context, item))
+                        .filter(item => item !== undefined);
+                }
+                else origin[key] = TemplUtil.create(context, value);
+            })
+            return {
+                uuid: chunk.uuid,
+                state: chunk.state,
+                child: origin
+            }
+        })
+        context[result.uuid] = result;
+        return result;
+    }
     
-    // private static bind(chunk: Chunk | undefined, registry: Record<string, Model>) {
-    //     if (!chunk) return;
-    //     if (!chunk.uuid) return;
-    //     const model = registry[chunk.uuid];
-    //     if (!model) return;
-    //     const child = chunk.child;
-    //     const refer = chunk.refer;
-    //     const origin: Record<string, Model[] | Model | undefined> = {};
-    //     Object.keys(refer).forEach(key => {
-    //         const value = refer[key];
-    //         if (!value) return;
-    //         origin[key] = value instanceof Array ? 
-    //             value.map(item => registry[item]).filter(item => item !== undefined) : 
-    //             registry[value];
-    //     })
-    //     model.utils.refer.init(origin);
-    //     Object.keys(child).forEach(key => {
-    //         const value = child[key];
-    //         if (!value) return;
-    //         if (value instanceof Array) value.forEach(item => StoreUtil.bind(item, registry))
-    //         else StoreUtil.bind(value, registry);
-    //     })
-    // }
+    private static bind(chunk: Chunk | undefined, registry: Record<string, Model>) {
+        if (!chunk) return;
+        if (!chunk.uuid) return;
+        const model = registry[chunk.uuid];
+        if (!model) return;
+        const child = chunk.child;
+        const refer = chunk.refer;
+        const origin: Record<string, Model[] | Model | undefined> = {};
+        Object.keys(refer).forEach(key => {
+            const value = refer[key];
+            if (!value) return;
+            if (value instanceof Array) {
+                origin[key] = value
+                    .map(item => registry[item])
+                    .filter(item => item !== undefined);
+            }
+            else origin[key] = registry[value];
+        })
+        model.utils.refer.init(origin);
+        Object.keys(child).forEach(key => {
+            const value = child[key];
+            if (!value) return;
+            if (value instanceof Array) {
+                value.forEach(item => TemplUtil.bind(item, registry))
+            }
+            else TemplUtil.bind(value, registry);
+        })
+    }
 
     public static is<M extends Model>(code: string) {
         return function (type: Class<M, [M['props']]>) {

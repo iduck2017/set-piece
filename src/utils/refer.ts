@@ -1,10 +1,7 @@
 import { Model } from "../model";
 import { Util } from ".";
 import { TranxUtil } from "./tranx";
-
-export type Refer<R> = { 
-    [K in keyof R]: R[K] extends any[] ? Readonly<R[K]> : R[K] | undefined
-}
+import { Refer } from "../types";
 
 export class ReferUtil<M extends Model, R extends Model.R> extends Util<M> {
 
@@ -35,6 +32,7 @@ export class ReferUtil<M extends Model, R extends Model.R> extends Util<M> {
         this._current = this.copy(this._origin);
     }
 
+
     public init(props: Refer<R>) {
         Object.keys(props).forEach(key => {
             const value = props[key]
@@ -49,7 +47,6 @@ export class ReferUtil<M extends Model, R extends Model.R> extends Util<M> {
         });
         this._current = this.copy(this._origin);
     }
-
     
     public update() {
         this._current = this.copy(this._origin)
@@ -101,7 +98,6 @@ export class ReferUtil<M extends Model, R extends Model.R> extends Util<M> {
         })
         return result;
     }
-
 
 
     // proxy operation
