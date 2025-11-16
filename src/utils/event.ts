@@ -40,13 +40,14 @@ export class EventUtil<M extends Model, E extends Model.E> extends Util<M> {
         if (!producer) return;
         const model = producer.model;
 
-        let watchers = EventUtil.registry.watchers.get(model) ?? [];
+        const registry = EventUtil.registry.watchers;
+        let watchers = registry.get(model) ?? [];
         watchers = watchers.filter(item => (
             item[0] === producer &&
             item[1] === handler
         ));
-        if (!watchers.length) EventUtil.registry.watchers.delete(model);
-        else EventUtil.registry.watchers.set(model, watchers);
+        if (!watchers.length) registry.delete(model);
+        else registry.set(model, watchers);
 
         model.utils.event.unbind(producer, handler);
     }
@@ -60,10 +61,13 @@ export class EventUtil<M extends Model, E extends Model.E> extends Util<M> {
             descriptor: TypedPropertyDescriptor<() => Producer<E, M> | undefined>
         ): TypedPropertyDescriptor<() => Producer<E, M> | undefined> {
             const type = prototype.constructor;
-            const hooks = EventUtil.registry.handlers.get(type) ?? {};
-            if (!hooks[key]) hooks[key] = [];
-            hooks[key].push(handler);
-            EventUtil.registry.handlers.set(type, hooks);
+            
+            const registry = EventUtil.registry.handlers;
+            const config = registry.get(type) ?? {};
+            if (!config[key]) config[key] = [];
+            config[key].push(handler);
+
+            EventUtil.registry.handlers.set(type, config);
             return descriptor;
         };
     }
@@ -75,9 +79,12 @@ export class EventUtil<M extends Model, E extends Model.E> extends Util<M> {
             descriptor: TypedPropertyDescriptor<() => boolean>
         ): TypedPropertyDescriptor<() => any> {
             const type = prototype.constructor;
-            const hooks = EventUtil.registry.checkers.get(type) ?? []
-            hooks.push(key);
-            EventUtil.registry.checkers.set(type, hooks);
+            
+            const registry = EventUtil.registry.checkers;
+            const config = registry.get(type) ?? []
+            config.push(key);
+            EventUtil.registry.checkers.set(type, config);
+            
             return descriptor;
         };
     }
@@ -108,13 +115,14 @@ export class EventUtil<M extends Model, E extends Model.E> extends Util<M> {
         const keys: string[] = [];
         const consumers: Consumer[] = [];
         let parent: Model | undefined = this.model;
+        const route = this.utils.route;
         while (parent) {
             const router = parent.utils.event.router;
             router.consumers.forEach((items, producer) => {
                 if (producer.name !== name) return;
                 
-                const steps = this.utils.route.locate(producer.model);
-                const matched = this.utils.route.validate(steps, producer.keys, name);
+                const steps = route.locate(producer.model);
+                const matched = route.validate(steps, producer.keys, name);
                 if (!matched) return;
                 consumers.push(...items);
             })
@@ -134,13 +142,16 @@ export class EventUtil<M extends Model, E extends Model.E> extends Util<M> {
         producer: Producer<E, M>, 
         handler: Handler<E, M>
     ) {
-        const { model: that } = producer;
-        if (!this.utils.route.compare(that)) return;
-        const consumers = that.utils.event.router.consumers.get(producer) ?? [];
-        const producers = this.router.producers.get(handler) ?? [];
+        const { model } = producer;
+        if (!this.utils.route.compare(model)) return;
+
+        const that = model.utils.event;
+        const consumers = that.router.consumers.get(producer) ?? [];
         consumers.push({ model: this.model, handler });
+        that.router.consumers.set(producer, consumers);
+
+        const producers = this.router.producers.get(handler) ?? [];
         producers.push(producer);
-        that.utils.event.router.consumers.set(producer, consumers);
         this.router.producers.set(handler, producers);
     }
 
@@ -148,26 +159,30 @@ export class EventUtil<M extends Model, E extends Model.E> extends Util<M> {
         producer: Producer<E, M>, 
         handler: Handler<E, M>
     ) {
-        const { model: that } = producer;
-        const consumers = that.utils.event.router.consumers.get(producer) ?? [];
-        const producers = this.router.producers.get(handler) ?? [];
+        const { model } = producer;
+        const that = model.utils.event;
+
+        const consumers = that.router.consumers.get(producer) ?? [];
         let index = consumers.findIndex(item => (
             item.handler === handler && 
             item.model === this.model
         ));
         if (index !== -1) consumers.splice(index, 1);
+
+        const producers = this.router.producers.get(handler) ?? [];
         index = producers.indexOf(producer);
         if (index !== -1) producers.splice(index, 1);
     }
 
 
     public load() {
-        // bystander
+        // watchers
         const watchers = EventUtil.registry.watchers.get(this.model);
         if (watchers) watchers.forEach(([producer, handler]) => {
             this.bind(producer, handler)
         })
-        // check
+
+        // checkers
         let constructor: any = this.model.constructor;
         while (constructor) {
             const keys = EventUtil.registry.checkers.get(constructor) ?? [];
@@ -178,25 +193,32 @@ export class EventUtil<M extends Model, E extends Model.E> extends Util<M> {
             }
             constructor = constructor.__proto__;
         }
-        // load
+
+        // handlers
         constructor = this.model.constructor;
         while (constructor) {
             const registry = EventUtil.registry.handlers.get(constructor) ?? {};
             Object.keys(registry).forEach(key => {
+                const factory: {
+                    producer?: any,
+                    handlers?: Array<Method<Handler>>
+                } = {
+                    producer: Reflect.get(this.model, key),
+                    handlers: registry[key]
+                }
+
                 // get producer
-                const producerFact: any = Reflect.get(this.model, key);
-                if (!producerFact) return;
-                const producer: Producer = producerFact.bind(this.model)();
-                // cancel
+                if (!factory.producer) return;
+                const producer: Producer = factory.producer.bind(this.model)();
                 if (!producer) return;
                 
                 // get handlers
-                const handlersFact = registry[key]
-                const handlers = handlersFact?.map(item => {
+                if (!factory.handlers) return;
+                const handlers = factory.handlers.map(item => {
                     return item.bind(this.model)(this.model);
                 });
-                // bind
-                handlers?.forEach(item => this.bind(producer, item));
+                if (!handlers) return;
+                handlers.forEach(item => this.bind(producer, item));
             })
             constructor = constructor.__proto__
         }
@@ -204,19 +226,21 @@ export class EventUtil<M extends Model, E extends Model.E> extends Util<M> {
 
     public unload() {
         // producers
-        this.router.producers.forEach((items, handler) => {
-            [...items].forEach(item => {
-                this.unbind(item, handler)
-            });
-        })
+        const producers = new Map(this.router.producers);
+        producers.forEach((items, handler) => {
+            items = [...items];
+            items.forEach(item => this.unbind(item, handler));
+        });
         // consumers
-        this.router.consumers.forEach((items, producer) => {
-            [...items].forEach(item => {
-                const { model: that, handler } = item;
-                if (this.utils.route.compare(that)) return;
-                that.utils.event.unbind(producer, handler);
+        const consumers = new Map(this.router.consumers);
+        consumers.forEach((items, producer) => {
+            items = [...items];
+            items.forEach(item => {
+                const { model, handler } = item;
+                if (this.utils.route.compare(model)) return;
+                model.utils.event.unbind(producer, handler);
             })
-        })
+        });
     }
 
     public reload() {

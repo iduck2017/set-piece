@@ -128,8 +128,6 @@ export class TranxUtil {
         refer.forEach(item => item.utils.refer.reload());
         refer = new Set(TranxUtil.refer);
         refer.forEach(item => item.utils.refer.update());
-        // event
-        route.forEach(item => item.utils.event.reload());
         // decor
         let state = new Set(TranxUtil.state);
         route.forEach(item => item.utils.state.reload());
@@ -138,6 +136,8 @@ export class TranxUtil {
         state = new Set(TranxUtil.state);
         route.forEach(item => item.utils.state.update());
         state.forEach(item => item.utils.state.update());
+        // event
+        route.forEach(item => item.utils.event.reload());
         TranxUtil.state.clear();
         TranxUtil.refer.clear();
         TranxUtil.child.clear();

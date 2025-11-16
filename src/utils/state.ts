@@ -12,11 +12,11 @@ export class StateUtil<
     
     // static
     private static registry: {
-        checker: Map<Function, string[]>
-        handler: Map<Function, Record<string, Array<Method<Updater>>>>,
+        checkers: Map<Function, string[]>
+        handlers: Map<Function, Record<string, Array<Method<Updater>>>>,
     } = {
-        handler: new Map(),
-        checker: new Map()
+        handlers: new Map(),
+        checkers: new Map()
     };
 
     public static on<
@@ -30,10 +30,13 @@ export class StateUtil<
             descriptor: TypedPropertyDescriptor<() => Computer<S, M> | undefined>
         ): TypedPropertyDescriptor<() => Computer<S, M> | undefined> {
             const type = prototype.constructor;
-            const hooks = StateUtil.registry.handler.get(type) ?? {};
-            if (!hooks[key]) hooks[key] = [];
-            hooks[key].push(updater);
-            StateUtil.registry.handler.set(type, hooks);
+
+            const registry = StateUtil.registry.handlers;
+            const config = registry.get(type) ?? {};
+            if (!config[key]) config[key] = [];
+            config[key].push(updater);
+
+            registry.set(type, config);
             return descriptor;
         };
     }
@@ -45,9 +48,12 @@ export class StateUtil<
             descriptor: TypedPropertyDescriptor<() => boolean>
         ): TypedPropertyDescriptor<() => any> {
             const type = prototype.constructor;
-            const hooks = StateUtil.registry.checker.get(type) ?? []
-            hooks.push(key);
-            StateUtil.registry.checker.set(type, hooks);
+            
+            const registry = StateUtil.registry.checkers;
+            const config = registry.get(type) ?? []
+            config.push(key);
+            registry.set(type, config);
+            
             return descriptor;
         };
     }
@@ -93,12 +99,14 @@ export class StateUtil<
             Object.keys(child).forEach(key => {
                 const value = child[key];
                 if (value instanceof Array) {
-                    value.forEach(item => result.push(
-                        ...item.utils.state.find(keys, type))
-                    )
+                    value.forEach(item => {
+                        const subResult = item.utils.state.find(keys, type);
+                        result.push(...subResult);
+                    })
                 }
                 if (value instanceof Model) {
-                    result.push(...value.utils.state.find(keys, type));
+                    const subResult = value.utils.state.find(keys, type);
+                    result.push(...subResult);
                 }
             })
             return result;
@@ -106,19 +114,26 @@ export class StateUtil<
       
         const key = keys.shift();
         if (!key) return [this.model];
+
         if (typeof key === 'string') {
             // find by key
             const value = child[key];
             if (!value) return [];
             if (value instanceof Array) {
-                value.forEach(item => result.push(
-                    ...item.utils.state.find(keys))
-                );
+                value.forEach(item => {
+                    const subResult = item.utils.state.find(keys);
+                    result.push(...subResult);
+                });
             } 
-            else result.push(...value.utils.state.find(keys));
-        } else {
+            if (value instanceof Model) {
+                const subResult = value.utils.state.find(keys);
+                result.push(...subResult);
+            }
+        } 
+        else {
             // find by type
-            result.push(...this.utils.state.find(keys, key));
+            const subResult = this.utils.state.find(keys, key);
+            result.push(...subResult);
         }
         return result;
     } 
@@ -128,11 +143,13 @@ export class StateUtil<
         let parent: Model | undefined = this.model;
         const modifiers: Modifier[] = [];
         const keys: string[] = [];
+        const route = this.utils.route;
+
         while (parent) {
             const router = parent.utils.state.router;
             router.modifiers.forEach((items, computer) => {
-                const steps = this.utils.route.locate(computer.model);
-                const matched = this.utils.route.validate(steps, computer.keys);
+                const steps = route.locate(computer.model);
+                const matched = route.validate(steps, computer.keys);
                 if (!matched) return;
                 modifiers.push(...items);
             })
@@ -145,7 +162,9 @@ export class StateUtil<
         if (!decor) return;
 
         modifiers.sort((a, b) => a.model.uuid.localeCompare(b.model.uuid));
-        modifiers.forEach(item => item.updater.call(item.model, this.model, decor));
+        modifiers.forEach(item => {
+            item.updater.call(item.model, this.model, decor)
+        });
         this._current = decor.result;
     }
 
@@ -154,17 +173,21 @@ export class StateUtil<
         computer: Computer<S, M>, 
         updater: Updater<M>
     ) {
-        const { model: that, keys } = computer;
-        if (!this.utils.route.compare(that)) return;
+        const { model, keys } = computer;
+        if (!this.utils.route.compare(model)) return;
 
-        const modifiers = that.utils.state.router.modifiers.get(computer) ?? [];
-        const computers = this.router.computers.get(updater) ?? [];
+        // modifiers
+        const that = model.utils.state;
+        const modifiers = that.router.modifiers.get(computer) ?? [];
         modifiers.push({ model: this.model, updater });
+        that.router.modifiers.set(computer, modifiers);
+
+        // computers
+        const computers = this.router.computers.get(updater) ?? [];
         computers.push(computer);
-        that.utils.state.router.modifiers.set(computer, modifiers);
         this.router.computers.set(updater, computers);
         
-        const child = that.utils.state.find(keys);
+        const child = that.find(keys);
         child.forEach(item => item.utils.state.preload());
     }
     
@@ -172,18 +195,23 @@ export class StateUtil<
         computer: Computer<S, M>, 
         updater: Updater<M>
     ) {
-        const { model: that, keys } = computer;
-        const modifiers = that.utils.state.router.modifiers.get(computer) ?? [];
-        const computers = this.router.computers.get(updater) ?? [];
+        const { model, keys } = computer;
+        const that = model.utils.state;
+
+        // modifiers
+        const modifiers = that.router.modifiers.get(computer) ?? [];
         let index = modifiers.findIndex(item => (
             item.updater === updater && 
             item.model === this.model
         ));
         if (index !== -1) modifiers.splice(index, 1);
+
+        // computers
+        const computers = this.router.computers.get(updater) ?? [];
         index = computers.indexOf(computer);
         if (index !== -1) computers.splice(index, 1);
 
-        const child = that.utils.state.find(keys);
+        const child = that.find(keys);
         child.forEach(item => item.utils.state.preload());
     }
 
@@ -192,7 +220,7 @@ export class StateUtil<
         // check
         let constructor: any = this.model.constructor;
         while (constructor) {
-            const keys = StateUtil.registry.checker.get(constructor) ?? [];
+            const keys = StateUtil.registry.checkers.get(constructor) ?? [];
             for (const key of keys) {
                 const validator: any = Reflect.get(this.model, key);
                 if (!validator) continue;
@@ -204,36 +232,48 @@ export class StateUtil<
         // load
         constructor = this.model.constructor;
         while (constructor) {
-            const registry = StateUtil.registry.handler.get(constructor) ?? {};
+            const registry = StateUtil.registry.handlers.get(constructor) ?? {};
             Object.keys(registry).forEach(key => {
+                const factory: {
+                    computer?: any,
+                    handler?: Array<Method<Updater>>
+                } = {
+                    computer: Reflect.get(this.model, key),
+                    handler: registry[key]
+                }
+
                 // get computer
-                const computerFact: any = Reflect.get(this.model, key);
-                if (!computerFact) return;
-                const computer: Computer = computerFact.bind(this.model)();
-                // cancel
+                if (!factory.computer) return;
+                const computer: Computer = factory.computer.bind(this.model)();
                 if (!computer) return;
-                
-                // get handlers
-                const handlersFact = registry[key]
-                const handlers = handlersFact?.map(item => {
+
+                // bind
+                if (!factory.handler) return;
+                const handlers = factory.handler.map(item => {
                     return item.bind(this.model)(this.model);
                 });
-                // bind
-                handlers?.forEach(item => this.bind(computer, item));
+                if (!handlers) return;
+                handlers.forEach(item => this.bind(computer, item));
+
             })
             constructor = constructor.__proto__
         }
     }
 
     public unload() {
-        this.router.computers.forEach((items, handler) => {
-            [...items].forEach(item => this.unbind(item, handler));
+        const computers = this.router.computers;
+        computers.forEach((items, handler) => {
+            items = [...items];
+            items.forEach(item => this.unbind(item, handler));
         });
-        this.router.modifiers.forEach((items, computer) => {
-            [...items].forEach(item => {
-                const { model: that, updater } = item;
-                if (this.utils.route.compare(that)) return;
-                that.utils.state.unbind(computer, updater);
+
+        const modifiers = this.router.modifiers;
+        modifiers.forEach((items, computer) => {
+            items = [...items];
+            items.forEach(item => {
+                const { model, updater } = item;
+                if (this.utils.route.compare(model)) return;
+                model.utils.state.unbind(computer, updater);
             });
         });
     }
