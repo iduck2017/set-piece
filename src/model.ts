@@ -8,23 +8,23 @@ import { Utils } from "./utils";
 import { Route, RouteUtil } from "./utils/route";
 import { TemplUtil } from "./utils/templ";
 import { TranxUtil } from "./utils/tranx";
-import { Child, Refer, State } from "./types";
+import { Child, Refer, State } from "./types/model";
 import { Emitter } from "./types/event";
 
 
 export namespace Model {
     export type E = Record<string, any>
     export type S = Record<string, any>
-    export type C = Record<string, Model | Model[]>
-    export type R = Record<string, Model | Model[]>
+    export type C = Record<string, Model | Model[] | undefined>
+    export type R = Record<string, Model | Model[] | undefined>
 }
 
 @TranxUtil.span(true)
 export class Model<
-    E extends Record<string, any> = {},
-    S extends Record<string, any> = {},
-    C extends Record<string, Model | Model[]> = {},
-    R extends Record<string, Model | Model[]> = {}
+    E extends Model.E = {},
+    S extends Model.S = {},
+    C extends Model.C = {},
+    R extends Model.R = {}
 > {
     public uuid: string;
     public get name() {

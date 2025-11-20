@@ -1,7 +1,7 @@
 import { Model } from "../model";
 import { Util } from ".";
 import { TranxUtil } from "./tranx";
-import { Refer } from "../types";
+import { Refer } from "../types/model";
 
 export class ReferUtil<M extends Model, R extends Model.R> extends Util<M> {
 

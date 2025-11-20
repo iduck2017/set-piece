@@ -1,8 +1,9 @@
 import { Model } from "../model";
 import { Computer, Modifier, Updater } from "../types/decor";
 import { Util } from ".";
-import { IClass, Method, State } from "../types";
+import { IClass, Method } from "../types";
 import { TranxUtil } from "./tranx";
+import { State } from '../types/model';
 
 
 export class StateUtil<
@@ -139,6 +140,7 @@ export class StateUtil<
     } 
 
 
+    // @TODO dep
     public update() {
         let parent: Model | undefined = this.model;
         const modifiers: Modifier[] = [];

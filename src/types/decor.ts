@@ -1,5 +1,6 @@
 import { Model } from "../model";
-import { IClass, State } from ".";
+import { IClass } from ".";
+import { State } from "./model";
 
 // Event updater
 export type Updater<M extends Model = any> = (that: M, decor: M['decor']) => void
@@ -22,7 +23,7 @@ export class Decor<
     public readonly origin: E
     
     public get result(): Readonly<State<S>> { 
-        return { ...this._origin }; 
+        return { ...this._origin } as any; 
     }
 
     constructor(model: Model<{}, S>) { 

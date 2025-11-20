@@ -1,7 +1,7 @@
 import { Model } from "../model";
 import { Util } from ".";
 import { TranxUtil } from "./tranx";
-import { Child } from "../types";
+import { Child } from "../types/model";
 
 export class ChildUtil<M extends Model, C extends Model.C> extends Util<M> {
     
