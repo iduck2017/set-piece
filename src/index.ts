@@ -16,11 +16,9 @@ export { TemplUtil, Chunk } from "./utils/templ";
 export { DebugUtil, DebugLevel } from "./utils/debug";
 
 export { Class, IClass, Method } from "./types";
-export { Child, Refer, State } from "./types";
+export { Child, Refer, State } from "./types/model";
 
 /**
  * @todo
- * 
  * StateUtil.dep
- * TranxUtil.then
  */
