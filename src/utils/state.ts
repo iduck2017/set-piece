@@ -151,8 +151,8 @@ export class StateUtil<
             const router = parent.utils.state.router;
             router.modifiers.forEach((items, computer) => {
                 const steps = route.locate(computer.model);
-                const matched = route.validate(steps, computer.keys);
-                if (!matched) return;
+                const isMatch = route.validate(steps, computer.keys);
+                if (!isMatch) return;
                 modifiers.push(...items);
             })
             const key = parent.utils.route.key;

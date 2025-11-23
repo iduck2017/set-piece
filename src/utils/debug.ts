@@ -9,7 +9,7 @@ export enum DebugLevel {
 }
 
 export class DebugUtil {
-    private static muted: boolean = false;
+    private static isMute: boolean = false;
 
     public static level: DebugLevel = DebugLevel.INFO;
 
@@ -71,7 +71,7 @@ export class DebugUtil {
 
     public static log(origin: string, level?: DebugLevel) {
         level = level ?? DebugLevel.INFO;
-        if (DebugUtil.muted) return;
+        if (DebugUtil.isMute) return;
         if (DebugLevel.INFO < DebugUtil.level) return;
         const content = `${' '.repeat(DebugUtil.indent)}${origin}`;
         console.log(origin);
@@ -84,7 +84,7 @@ export class DebugUtil {
     }
 
     public static mute() {
-        DebugUtil.muted = true;
+        DebugUtil.isMute = true;
         const noop = () => undefined;
         console.log = noop;
         console.dir = noop;
@@ -96,7 +96,7 @@ export class DebugUtil {
     }
 
     public static unmute() {
-        DebugUtil.muted = false;
+        DebugUtil.isMute = false;
         console.log = DebugUtil.console.log;
         console.dir = DebugUtil.console.dir;
         console.info = DebugUtil.console.info;

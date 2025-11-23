@@ -122,8 +122,8 @@ export class EventUtil<M extends Model, E extends Model.E> extends Util<M> {
                 if (producer.name !== name) return;
                 
                 const steps = route.locate(producer.model);
-                const matched = route.validate(steps, producer.keys, name);
-                if (!matched) return;
+                const isMatch = route.validate(steps, producer.keys, name);
+                if (!isMatch) return;
                 consumers.push(...items);
             })
             const key = parent.utils.route.key;

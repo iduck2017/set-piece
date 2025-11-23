@@ -122,14 +122,14 @@ export class RouteUtil<M extends Model> extends Util<M> {
             if (step[0] !== key) return false;
             return this.validate(steps, keys, name);
         } else {
-            let flag: boolean = false;
+            let isValid: boolean = false;
             steps.forEach((step, index) => {
-                if (flag === true) return;
+                if (isValid === true) return;
                 if (!(step[1].prototype instanceof key) && key !== step[1]) return;
                 if (!this.validate(steps.slice(index + 1), keys, name)) return;
-                flag = true;
+                isValid = true;
             })
-            return flag;
+            return isValid;
         }
     }
 }

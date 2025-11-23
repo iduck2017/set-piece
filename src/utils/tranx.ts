@@ -7,8 +7,8 @@ import { Event } from "../types/event";
 export class TranxUtil {
     private constructor() {}
 
-    private static _locked = false;
-    public static get locked() { return TranxUtil._locked; }
+    private static _isLocked = false;
+    public static get isLocked() { return TranxUtil._isLocked; }
 
     private static tasks: Array<() => void> = [];
     private static readonly state: Set<Model> = new Set()
@@ -27,7 +27,7 @@ export class TranxUtil {
             if (!handler) return descriptor;
             const instance = {
                 [key](this: unknown, ...args: any[]) {
-                    if (!TranxUtil._locked) return handler.call(this, ...args);
+                    if (!TranxUtil._isLocked) return handler.call(this, ...args);
                     else TranxUtil.tasks.push(() => handler.call(this, ...args));
                 }
             }
@@ -48,16 +48,16 @@ export class TranxUtil {
                 const instance = {
                     [type.name]: class extends type {
                         constructor(...args: any[]) {
-                            if (TranxUtil._locked) {
+                            if (TranxUtil._isLocked) {
                                 super(...args);
                                 TranxUtil.add(this, TranxUtil.route)
                             }
                             else {
-                                TranxUtil._locked = true;
+                                TranxUtil._isLocked = true;
                                 super(...args);
                                 TranxUtil.add(this, TranxUtil.route)
                                 TranxUtil.reload();
-                                TranxUtil._locked = false;
+                                TranxUtil._isLocked = false;
                                 TranxUtil.end();
                             }
                         }
@@ -77,22 +77,22 @@ export class TranxUtil {
                 [key](this: unknown, ...args: any[]) {
                     if (this instanceof Util) {
                         const model: Model = this.model;
-                        const stateChanged = model.utils.state === this;
-                        const referChanged = model.utils.refer === this;
-                        const childChanged = model.utils.child === this;
-                        const routeChanged = model.utils.route === this;
-                        if (stateChanged) TranxUtil.add(model, TranxUtil.state);
-                        if (referChanged) TranxUtil.add(model, TranxUtil.refer);
-                        if (childChanged) TranxUtil.add(model, TranxUtil.child);
-                        if (routeChanged) TranxUtil.add(model, TranxUtil.route);
+                        const isStateChange = model.utils.state === this;
+                        const isReferChange = model.utils.refer === this;
+                        const isChildChange = model.utils.child === this;
+                        const isRouteChange = model.utils.route === this;
+                        if (isStateChange) TranxUtil.add(model, TranxUtil.state);
+                        if (isReferChange) TranxUtil.add(model, TranxUtil.refer);
+                        if (isChildChange) TranxUtil.add(model, TranxUtil.child);
+                        if (isRouteChange) TranxUtil.add(model, TranxUtil.route);
                     }
-                    if (TranxUtil._locked) {
+                    if (TranxUtil._isLocked) {
                         return handler.call(this, ...args);
                     } else {
-                        TranxUtil._locked = true;
+                        TranxUtil._isLocked = true;
                         const result = handler.call(this, ...args);
                         TranxUtil.reload();
-                        TranxUtil._locked = false;
+                        TranxUtil._isLocked = false;
                         TranxUtil.end();
                         return result;
                     }
