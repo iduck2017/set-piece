@@ -46,7 +46,7 @@ export class DebugUtil {
                         return result
                     }
                     const name = this.constructor.name;
-                    console.group(origin ?? `${name}::${key}`)
+                    console.group(origin ?? `${name} ${key}`)
                     DebugUtil.indent++;
                     
                     const result = handler.call(this, ...args);
