@@ -2,7 +2,6 @@ import { Model } from "../model"
 import { Frame } from "../types/model"
 import { Util } from ".";
 import { IClass, Method } from "../types";
-import { DeepReadonly } from "utility-types";
 import { Consumer, Emitter, Event, Handler, Producer } from "../types/event";
 
 export class EventUtil<M extends Model, E extends Model.E> extends Util<M> {
@@ -112,6 +111,7 @@ export class EventUtil<M extends Model, E extends Model.E> extends Util<M> {
     }
     
     public emit<E>(name: string, event: E): void {
+
         const keys: string[] = [];
         const consumers: Consumer[] = [];
         let parent: Model | undefined = this.model;
@@ -132,6 +132,16 @@ export class EventUtil<M extends Model, E extends Model.E> extends Util<M> {
         }
         consumers.sort((a, b) => a.model.uuid.localeCompare(b.model.uuid));
         consumers.forEach(item => {
+            let constructor: any = item.model.constructor;
+            while (constructor) {
+                const keys = EventUtil.registry.checkers.get(constructor) ?? [];
+                for (const key of keys) {
+                    const validator: any = Reflect.get(item.model, key);
+                    if (!validator) continue;
+                    if (!validator.call(item.model)) return;
+                }
+                constructor = constructor.__proto__;
+            }
             item.handler.call(item.model, this.model, event);
         });
         return;
@@ -154,6 +164,7 @@ export class EventUtil<M extends Model, E extends Model.E> extends Util<M> {
         producers.push(producer);
         this.router.producers.set(handler, producers);
     }
+    
 
     public unbind<E, M extends Model>(
         producer: Producer<E, M>, 
@@ -183,19 +194,19 @@ export class EventUtil<M extends Model, E extends Model.E> extends Util<M> {
         })
 
         // checkers
-        let constructor: any = this.model.constructor;
-        while (constructor) {
-            const keys = EventUtil.registry.checkers.get(constructor) ?? [];
-            for (const key of keys) {
-                const validator: any = Reflect.get(this.model, key);
-                if (!validator) continue;
-                if (!validator.call(this.model)) return;
-            }
-            constructor = constructor.__proto__;
-        }
+        // let constructor: any = this.model.constructor;
+        // while (constructor) {
+        //     const keys = EventUtil.registry.checkers.get(constructor) ?? [];
+        //     for (const key of keys) {
+        //         const validator: any = Reflect.get(this.model, key);
+        //         if (!validator) continue;
+        //         if (!validator.call(this.model)) return;
+        //     }
+        //     constructor = constructor.__proto__;
+        // }
 
         // handlers
-        constructor = this.model.constructor;
+        let constructor: any = this.model.constructor;
         while (constructor) {
             const registry = EventUtil.registry.handlers.get(constructor) ?? {};
             Object.keys(registry).forEach(key => {

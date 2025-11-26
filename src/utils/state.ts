@@ -165,6 +165,16 @@ export class StateUtil<
 
         modifiers.sort((a, b) => a.model.uuid.localeCompare(b.model.uuid));
         modifiers.forEach(item => {
+            let constructor: any = item.model.constructor;
+            while (constructor) {
+                const keys = StateUtil.registry.checkers.get(constructor) ?? [];
+                for (const key of keys) {
+                    const validator: any = Reflect.get(item.model, key);
+                    if (!validator) continue;
+                    if (!validator.call(item.model)) return;
+                }
+                constructor = constructor.__proto__;
+            }
             item.updater.call(item.model, this.model, decor)
         });
         this._current = decor.result;
@@ -219,20 +229,8 @@ export class StateUtil<
 
     
     public load() {
-        // check
-        let constructor: any = this.model.constructor;
-        while (constructor) {
-            const keys = StateUtil.registry.checkers.get(constructor) ?? [];
-            for (const key of keys) {
-                const validator: any = Reflect.get(this.model, key);
-                if (!validator) continue;
-                if (!validator.call(this.model)) return;
-            }
-            constructor = constructor.__proto__;
-        }
-
         // load
-        constructor = this.model.constructor;
+        let constructor: any = this.model.constructor;
         while (constructor) {
             const registry = StateUtil.registry.handlers.get(constructor) ?? {};
             Object.keys(registry).forEach(key => {
