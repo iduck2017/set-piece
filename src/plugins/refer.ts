@@ -1,9 +1,9 @@
 import { Model } from "../model";
-import { Util } from ".";
-import { TranxUtil } from "./tranx";
+import { Plugin } from ".";
+import { TranxService } from "../utils/tranx";
 import { Refer } from "../types/model";
 
-export class ReferUtil<M extends Model, R extends Model.R> extends Util<M> {
+export class ReferPlugin<M extends Model, R extends Model.R> extends Plugin<M> {
 
     private _origin: Refer<R>
     public get origin() { return this._origin }
@@ -70,7 +70,9 @@ export class ReferUtil<M extends Model, R extends Model.R> extends Util<M> {
             const value = origin[key]
             if (value instanceof Array) {
                 if (!value.length) return;
-                origin[key] = value.filter(item => this.utils.route.compare(item))
+                origin[key] = value.filter(item => (
+                    this.utils.route.compare(item)
+                ))
             }
             if (value instanceof Model) {
                 if (this.utils.route.compare(value)) return; 
@@ -82,8 +84,12 @@ export class ReferUtil<M extends Model, R extends Model.R> extends Util<M> {
             const origin: Model.R = item.utils.refer._origin;
             Object.keys(origin).forEach(key => {
                 const value = origin[key]
-                if (value instanceof Array) origin[key] = value.filter(item => item !== this.model)
-                if (value instanceof Model && value === this.model) delete origin[key]
+                if (value instanceof Model) {
+                    if (value === this.model) delete origin[key]
+                }
+                if (value instanceof Array) {
+                    origin[key] = value.filter(item => item !== this.model)
+                }
             })
         });
     }
@@ -107,7 +113,7 @@ export class ReferUtil<M extends Model, R extends Model.R> extends Util<M> {
         return value;
     }
 
-    @TranxUtil.span()
+    @TranxService.span()
     private set(
         origin: Partial<Model.R>, 
         key: string, 
@@ -122,7 +128,7 @@ export class ReferUtil<M extends Model, R extends Model.R> extends Util<M> {
         return true;
     }
 
-    @TranxUtil.span()
+    @TranxService.span()
     private del(origin: Partial<Model.R>, key: string) {
         let prev = origin[key];
         if (prev instanceof Array) prev.forEach(item => this.unbind(item));
@@ -151,7 +157,7 @@ export class ReferUtil<M extends Model, R extends Model.R> extends Util<M> {
         return origin[index];
     }
 
-    @TranxUtil.span()
+    @TranxService.span()
     private lset(key: string, origin: any, index: string, next: Model) {
         const prev = origin[index];
         if (prev instanceof Model) this.unbind(prev)
@@ -160,7 +166,7 @@ export class ReferUtil<M extends Model, R extends Model.R> extends Util<M> {
         return true;
     }
     
-    @TranxUtil.span()
+    @TranxService.span()
     private ldel(key: string, origin: any, index: string) {
         const prev = origin[index];
         if (prev instanceof Model) this.unbind(prev)
@@ -168,43 +174,43 @@ export class ReferUtil<M extends Model, R extends Model.R> extends Util<M> {
         return true;
     }
 
-    @TranxUtil.span()
+    @TranxService.span()
     private push(key: string, origin: Model[], ...next: Model[]) {
         next.forEach(next => this.bind(next))
         return origin.push(...next);
     }
 
-    @TranxUtil.span()
+    @TranxService.span()
     private unshift(key: string, origin: Model[], ...next: Model[]) {
         next.forEach(item => this.bind(item));
         return origin.unshift(...next);
     }
 
-    @TranxUtil.span()
+    @TranxService.span()
     private pop(key: string, origin: Model[]) {
         const result = origin.pop();
         if (result) this.unbind(result);
         return result;
     }
 
-    @TranxUtil.span()
+    @TranxService.span()
     private shift(key: string, origin: Model[]) {
         const result = origin.shift();
         if (result) this.unbind(result)
         return result;
     }
 
-    @TranxUtil.span()
+    @TranxService.span()
     private reverse(origin: Model[]) {
         return origin.reverse();
     }
 
-    @TranxUtil.span()
+    @TranxService.span()
     private sort(origin: Model[], handler: (a: Model, b: Model) => number) {
         return origin.sort(handler);
     }
 
-    @TranxUtil.span()
+    @TranxService.span()
     private fill(
         key: string, 
         origin: Model[], 
@@ -221,7 +227,7 @@ export class ReferUtil<M extends Model, R extends Model.R> extends Util<M> {
         return origin.fill(value, start, end)
     }
 
-    @TranxUtil.span()
+    @TranxService.span()
     private splice(
         key: string, 
         origin: Model[], 

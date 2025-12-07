@@ -1,15 +1,14 @@
 import { Model } from "../model";
 import { Computer, Modifier, Updater } from "../types/decor";
-import { Util } from ".";
+import { Plugin } from ".";
 import { IClass, Method } from "../types";
-import { TranxUtil } from "./tranx";
+import { TranxService } from "../utils/tranx";
 import { State } from '../types/model';
 
-
-export class StateUtil<
+export class StatePlugin<
     M extends Model = Model, 
     S extends Model.S = {}
-> extends Util<M> {
+> extends Plugin<M> {
     
     // static
     private static registry: {
@@ -32,7 +31,7 @@ export class StateUtil<
         ): TypedPropertyDescriptor<() => Computer<S, M> | undefined> {
             const type = prototype.constructor;
 
-            const registry = StateUtil.registry.handlers;
+            const registry = StatePlugin.registry.handlers;
             const config = registry.get(type) ?? {};
             if (!config[key]) config[key] = [];
             config[key].push(updater);
@@ -50,7 +49,7 @@ export class StateUtil<
         ): TypedPropertyDescriptor<() => any> {
             const type = prototype.constructor;
             
-            const registry = StateUtil.registry.checkers;
+            const registry = StatePlugin.registry.checkers;
             const config = registry.get(type) ?? []
             config.push(key);
             registry.set(type, config);
@@ -85,14 +84,16 @@ export class StateUtil<
     }
 
     
-    @TranxUtil.span()
-    private preload() {}
+    @TranxService.span()
+    private preload() {
+    }
 
     private find(keys: Array<string | IClass>, type?: IClass): Model[] {
         keys = [...keys];
 
         const result: Model[] = [];
         const child: Model.C = this.utils.child.current;
+        // find by type
         if (type) {
             // check self
             if (this.model instanceof type) result.push(...this.find(keys));
@@ -113,9 +114,9 @@ export class StateUtil<
             return result;
         }
       
+        // find by keys
         const key = keys.shift();
         if (!key) return [this.model];
-
         if (typeof key === 'string') {
             // find by key
             const value = child[key];
@@ -167,7 +168,7 @@ export class StateUtil<
         modifiers.forEach(item => {
             let constructor: any = item.model.constructor;
             while (constructor) {
-                const keys = StateUtil.registry.checkers.get(constructor) ?? [];
+                const keys = StatePlugin.registry.checkers.get(constructor) ?? [];
                 for (const key of keys) {
                     const validator: any = Reflect.get(item.model, key);
                     if (!validator) continue;
@@ -177,6 +178,7 @@ export class StateUtil<
             }
             item.updater.call(item.model, this.model, decor)
         });
+    
         this._current = decor.result;
     }
 
@@ -232,7 +234,7 @@ export class StateUtil<
         // load
         let constructor: any = this.model.constructor;
         while (constructor) {
-            const registry = StateUtil.registry.handlers.get(constructor) ?? {};
+            const registry = StatePlugin.registry.handlers.get(constructor) ?? {};
             Object.keys(registry).forEach(key => {
                 const factory: {
                     computer?: any,
@@ -286,13 +288,13 @@ export class StateUtil<
 
 
     // proxy operation
-    @TranxUtil.span()
+    @TranxService.span()
     private set(origin: any, key: string, next: any) {
         origin[key] = next;
         return true
     }
     
-    @TranxUtil.span()
+    @TranxService.span()
     private del(origin: any, key: string) {
         delete origin[key];
         return true;

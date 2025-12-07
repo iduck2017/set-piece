@@ -1,6 +1,6 @@
 import { Model } from "../model";
-import { Util } from ".";
-import { TranxUtil } from "./tranx";
+import { Plugin } from ".";
+import { TranxService } from "../utils/tranx";
 import { IClass } from "../types";
 
 export type Route = {
@@ -9,13 +9,13 @@ export type Route = {
     items: Model[];
 }
 
-export class RouteUtil<M extends Model> extends Util<M> {
+export class RoutePlugin<M extends Model> extends Plugin<M> {
     
     // static
     private static readonly _root: Set<Function> = new Set();
     public static root() {
         return function (type: new (...args: any[]) => Model) {
-            RouteUtil._root.add(type);
+            RoutePlugin._root.add(type);
         }
     }
 
@@ -54,24 +54,24 @@ export class RouteUtil<M extends Model> extends Util<M> {
         this._current = this.origin;
     }
 
-    @TranxUtil.span()
+    @TranxService.span()
     public bind(parent: Model | undefined, key: string) {
         if (this._parent) return;
-        if (RouteUtil._root.has(this.model.constructor)) return;
+        if (RoutePlugin._root.has(this.model.constructor)) return;
         this.preload(new Set());
         this._key = key;
         this._parent = parent;
     }
 
-    @TranxUtil.span()
+    @TranxService.span()
     public unbind() {
         this.preload(new Set());
         this._key = undefined;
         this._parent = undefined;
     }
 
-    @TranxUtil.span()
-    public preload(context: Set<RouteUtil<Model>>) {
+    @TranxService.span()
+    public preload(context: Set<RoutePlugin<Model>>) {
         if (context.has(this)) return;
         context.add(this);
         const origin: Model.C = this.utils.child.current;

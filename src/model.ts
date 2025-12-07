@@ -1,13 +1,13 @@
-import { ProxyUtil } from "./utils/proxy";
-import { EventUtil } from "./utils/event";
-import { StateUtil } from "./utils/state";
+import { ProxyPlugin } from "./plugins/proxy";
+import { EventPlugin } from "./plugins/event";
+import { StatePlugin } from "./plugins/state";
 import { Decor } from "./types/decor";
-import { ChildUtil } from "./utils/child";
-import { ReferUtil } from "./utils/refer";
-import { Utils } from "./utils";
-import { Route, RouteUtil } from "./utils/route";
-import { TemplUtil } from "./utils/templ";
-import { TranxUtil } from "./utils/tranx";
+import { ChildPlugin } from "./plugins/child";
+import { ReferPlugin } from "./plugins/refer";
+import { Plugins } from "./plugins";
+import { Route, RoutePlugin } from "./plugins/route";
+import { ChunkService } from "./utils/chunk";
+import { TranxService } from "./utils/tranx";
 import { Child, Refer, State } from "./types/model";
 import { Emitter } from "./types/event";
 
@@ -19,7 +19,7 @@ export namespace Model {
     export type R = Record<string, Model | Model[] | undefined>
 }
 
-@TranxUtil.span(true)
+@TranxService.span(true)
 export class Model<
     E extends Model.E = {},
     S extends Model.S = {},
@@ -46,8 +46,8 @@ export class Model<
     protected event: { [K in keyof E]: Emitter<E[K]> }
 
     /** @internal */
-    public readonly utils: Utils<Model, E, S, C, R>
-    public proxy: ProxyUtil<this, E, S, C>;
+    public readonly utils: Plugins<Model, E, S, C, R>
+    public proxy: ProxyPlugin<this, E, S, C>;
 
     
     public get decor(): Decor<S> | undefined {
@@ -71,14 +71,14 @@ export class Model<
         child: C & { _never?: never },
         refer: R & { _never?: never }
     }) {
-        this.uuid = props.uuid ?? TemplUtil.uuid;
-        this.proxy = new ProxyUtil(this, []);
+        this.uuid = props.uuid ?? ChunkService.uuid;
+        this.proxy = new ProxyPlugin(this, []);
         this.utils = {
-            event: new EventUtil<Model, E>(this),
-            route: new RouteUtil<Model>(this),
-            refer: new ReferUtil<Model, R>(this, props.refer),
-            state: new StateUtil<Model, S>(this, props.state),
-            child: new ChildUtil<Model, C>(this, props.child),
+            event: new EventPlugin<Model, E>(this),
+            route: new RoutePlugin<Model>(this),
+            refer: new ReferPlugin<Model, R>(this, props.refer),
+            state: new StatePlugin<Model, S>(this, props.state),
+            child: new ChildPlugin<Model, C>(this, props.child),
         }
         this.event = this.utils.event.current as any;
         this.origin = {

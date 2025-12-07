@@ -1,5 +1,5 @@
 import { Model } from "../model";
-import { TranxUtil } from "./tranx";
+import { TranxService } from "./tranx";
 import { Class } from "../types";
 
 export type Chunk = {
@@ -10,16 +10,16 @@ export type Chunk = {
     refer: Record<string, string[] | string | undefined>
 }
 
-export class TemplUtil {
+export class ChunkService {
 
     // uuid
     private static ticket: number = 36 ** 7;
 
     public static get uuid() {
         let time = Date.now();
-        const ticket = TemplUtil.ticket += 1;
-        if (TemplUtil.ticket >= 36 ** 8) {
-            TemplUtil.ticket = 36 ** 7;
+        const ticket = ChunkService.ticket += 1;
+        if (ChunkService.ticket >= 36 ** 8) {
+            ChunkService.ticket = 36 ** 7;
             while (Date.now() === time) {}
             time = Date.now();
         };
@@ -30,7 +30,7 @@ export class TemplUtil {
     
     public static save(model: Model): Chunk | undefined {
         const props = { ...model.props };
-        const code = TemplUtil.registry.get(model.constructor);
+        const code = ChunkService.registry.get(model.constructor);
         if (!code) return undefined;
         const result: Chunk = {
             code,
@@ -42,27 +42,32 @@ export class TemplUtil {
         const child: Partial<Model.C> = props.child ?? {};
         Object.keys(child).forEach(key => {
             const value = child[key];
-            if (value instanceof Model) result.child[key] = TemplUtil.save(value);
+            if (value instanceof Model) {
+                result.child[key] = ChunkService.save(value);
+            }
             if (value instanceof Array) {
                 result.child[key] = value
-                    .map(item => TemplUtil.save(item))
+                    .map(item => ChunkService.save(item))
                     .filter(item => item !== undefined);
             }
         });
         return result;
     }
 
-    @TranxUtil.span()
+    @TranxService.span()
     public static load(chunk: Chunk): Model | undefined {
         const context: Record<string, Model> = {};
-        const model = TemplUtil.create(context, chunk);
-        TemplUtil.bind(chunk, context);
+        const model = ChunkService.create(context, chunk);
+        ChunkService.bind(chunk, context);
         return model;
     }
 
-    private static create(context: Record<string, Model>, chunk?: Chunk): Model | undefined {
+    private static create(
+        context: Record<string, Model>, 
+        chunk?: Chunk
+    ): Model | undefined {
         if (!chunk) return;
-        const type = TemplUtil.registry.get(chunk.code);
+        const type = ChunkService.registry.get(chunk.code);
         if (!type) return;
         const result = new type(() => {
             const origin: Record<string, Model[] | Model | undefined> = {};
@@ -72,10 +77,10 @@ export class TemplUtil {
                 if (!value) return;
                 if (value instanceof Array) {
                     origin[key] = value
-                        .map(item => TemplUtil.create(context, item))
+                        .map(item => ChunkService.create(context, item))
                         .filter(item => item !== undefined);
                 }
-                else origin[key] = TemplUtil.create(context, value);
+                else origin[key] = ChunkService.create(context, value);
             })
             return {
                 uuid: chunk.uuid,
@@ -87,7 +92,10 @@ export class TemplUtil {
         return result;
     }
     
-    private static bind(chunk: Chunk | undefined, registry: Record<string, Model>) {
+    private static bind(
+        chunk: Chunk | undefined, 
+        registry: Record<string, Model>
+    ) {
         if (!chunk) return;
         if (!chunk.uuid) return;
         const model = registry[chunk.uuid];
@@ -110,24 +118,27 @@ export class TemplUtil {
             const value = child[key];
             if (!value) return;
             if (value instanceof Array) {
-                value.forEach(item => TemplUtil.bind(item, registry))
+                value.forEach(item => ChunkService.bind(item, registry))
             }
-            else TemplUtil.bind(value, registry);
+            else ChunkService.bind(value, registry);
         })
     }
 
     public static is<M extends Model>(code: string) {
         return function (type: Class<M, [M['props']]>) {
-            if (TemplUtil.registry.has(code)) return;
-            if (TemplUtil.registry.has(type)) return;
-            TemplUtil.registry.set(code, type);
-            TemplUtil.registry.set(type, code);
+            if (ChunkService.registry.has(code)) return;
+            if (ChunkService.registry.has(type)) return;
+            ChunkService.registry.set(code, type);
+            ChunkService.registry.set(type, code);
         }
     }
 
-    @TranxUtil.span()
-    public static copy<T extends Model>(model: T, props?: T['props']): T | undefined {
-        if (!TemplUtil.registry.has(model.constructor)) return;
+    @TranxService.span()
+    public static copy<T extends Model>(
+        model: T, 
+        props?: T['props']
+    ): T | undefined {
+        if (!ChunkService.registry.has(model.constructor)) return;
         const type: any = model.constructor
         // props
         props = { ...model.props, ...props }
@@ -140,9 +151,9 @@ export class TemplUtil {
             if (!value) return;
             child[key] = 
                 value instanceof Array ? value
-                    .map(item => TemplUtil.copy(item))
+                    .map(item => ChunkService.copy(item))
                     .filter(item => item !== undefined) : 
-                TemplUtil.copy(value);
+                ChunkService.copy(value);
         })
         // copy
         return new type(props)

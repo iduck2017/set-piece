@@ -1,9 +1,9 @@
 import { Model } from "./model";
 import { Computer } from "./types/decor";
-import { EventUtil } from "./utils/event";
+import { EventPlugin } from "./plugins/event";
 import { Producer } from "./types/event";
-import { StateUtil } from "./utils/state";
-import { TemplUtil } from "./utils/templ";
+import { StatePlugin } from "./plugins/state";
+import { ChunkService } from "./utils/chunk";
 
 class EmptyModel extends Model {
     // constructor(props?: EmptyModel['props']) {
@@ -107,15 +107,15 @@ export class AnimalModel<
     // @EventUtil.on((self) => self.onBornB)
     // @EventUtil.on((self) => self.onBornC)
     // @EventUtil.on((self) => self.onBornD)
-    @EventUtil.on((self) => self.onBorn)
+    @EventPlugin.on((self) => self.onBorn)
     listen() {
         if (Math.random() > 0.5) return undefined;
         const self: AnimalModel = this;
         return self.proxy.event?.onBorn;
     }
 
-    @EventUtil.if()
-    @StateUtil.if()
+    @EventPlugin.if()
+    @StatePlugin.if()
     check() {
         return this.origin.state.age > 18;
     }
@@ -126,7 +126,7 @@ export class AnimalModel<
     onBornD(that: EmptyModel, event: { time: string, name: string, count: number }) {}
 
 
-    @StateUtil.on((self) => self.onCompute)
+    @StatePlugin.on((self) => self.onCompute)
     modify() {
         const self: AnimalModel = this;
         return self.proxy.decor;
@@ -162,7 +162,7 @@ export namespace DogModel {
     export type R = { kin: DogModel }
 }
 
-@TemplUtil.is('dog')
+@ChunkService.is('dog')
 export class DogModel extends AnimalModel<
     DogModel.E,
     DogModel.S,
@@ -218,13 +218,13 @@ export class DogModel extends AnimalModel<
     // @EventUtil.on((self) => self.onPlayB)
     // @EventUtil.on((self) => self.onPlayC)
     // @EventUtil.on((self) => self.onPlayD)
-    @EventUtil.on((self) => self.onPlay)
+    @EventPlugin.on((self) => self.onPlay)
     listen() {
         return this.proxy.child.kin.event?.onPlay;
     }
 
-    @EventUtil.if()
-    @StateUtil.if()
+    @EventPlugin.if()
+    @StatePlugin.if()
     check() {
         return this.origin.state.age > 18;
     }
@@ -235,7 +235,7 @@ export class DogModel extends AnimalModel<
     onPlayD(that: EmptyModel, event: { time: string, name: string, count: number }) {}
 
 
-    @StateUtil.on((self) => self.onCompute)
+    @StatePlugin.on((self) => self.onCompute)
     modify() {
         const self: DogModel = this;
         return self.proxy.decor;

@@ -1,55 +1,19 @@
 import { Model } from "../model"
 import { Frame } from "../types/model"
-import { Util } from ".";
+import { Plugin } from ".";
 import { IClass, Method } from "../types";
 import { Consumer, Emitter, Event, Handler, Producer } from "../types/event";
 
-export class EventUtil<M extends Model, E extends Model.E> extends Util<M> {
+export class EventPlugin<M extends Model, E extends Model.E> extends Plugin<M> {
     
     // static
     private static registry: {
         checkers: Map<Function, string[]>
         handlers: Map<Function, Record<string, Array<Method<Handler>>>>,
-        watchers: Map<Model, Array<[Producer, Handler]>> 
     } = {
         handlers: new Map(),
         checkers: new Map(),
-        watchers: new Map(),
     };
-
-    public static bind<E, M extends Model>(
-        producer: Producer<E, M> | undefined, 
-        handler: Handler<E, M>
-    ) {
-        if (!producer) return;
-        const model = producer.model;
-
-        const watchers = EventUtil.registry.watchers.get(model) ?? [];
-        watchers.push([producer, handler]);
-        EventUtil.registry.watchers.set(model, watchers);
-
-        model.utils.event.bind(producer, handler);
-        return () => EventUtil.unbind(producer, handler)
-    }
-
-    public static unbind<E, M extends Model>(
-        producer: Producer<E, M> | undefined, 
-        handler: Handler<E, M>
-    ) {
-        if (!producer) return;
-        const model = producer.model;
-
-        const registry = EventUtil.registry.watchers;
-        let watchers = registry.get(model) ?? [];
-        watchers = watchers.filter(item => (
-            item[0] === producer &&
-            item[1] === handler
-        ));
-        if (!watchers.length) registry.delete(model);
-        else registry.set(model, watchers);
-
-        model.utils.event.unbind(producer, handler);
-    }
 
     public static on<E, I extends Model, M extends Model>(
         handler: (self: I) => Handler<E, M>
@@ -61,12 +25,12 @@ export class EventUtil<M extends Model, E extends Model.E> extends Util<M> {
         ): TypedPropertyDescriptor<() => Producer<E, M> | undefined> {
             const type = prototype.constructor;
             
-            const registry = EventUtil.registry.handlers;
+            const registry = EventPlugin.registry.handlers;
             const config = registry.get(type) ?? {};
             if (!config[key]) config[key] = [];
             config[key].push(handler);
 
-            EventUtil.registry.handlers.set(type, config);
+            EventPlugin.registry.handlers.set(type, config);
             return descriptor;
         };
     }
@@ -79,10 +43,10 @@ export class EventUtil<M extends Model, E extends Model.E> extends Util<M> {
         ): TypedPropertyDescriptor<() => any> {
             const type = prototype.constructor;
             
-            const registry = EventUtil.registry.checkers;
+            const registry = EventPlugin.registry.checkers;
             const config = registry.get(type) ?? []
             config.push(key);
-            EventUtil.registry.checkers.set(type, config);
+            EventPlugin.registry.checkers.set(type, config);
             
             return descriptor;
         };
@@ -134,7 +98,7 @@ export class EventUtil<M extends Model, E extends Model.E> extends Util<M> {
         consumers.forEach(item => {
             let constructor: any = item.model.constructor;
             while (constructor) {
-                const keys = EventUtil.registry.checkers.get(constructor) ?? [];
+                const keys = EventPlugin.registry.checkers.get(constructor) ?? [];
                 for (const key of keys) {
                     const validator: any = Reflect.get(item.model, key);
                     if (!validator) continue;
@@ -187,12 +151,6 @@ export class EventUtil<M extends Model, E extends Model.E> extends Util<M> {
 
 
     public load() {
-        // watchers
-        const watchers = EventUtil.registry.watchers.get(this.model);
-        if (watchers) watchers.forEach(([producer, handler]) => {
-            this.bind(producer, handler)
-        })
-
         // checkers
         // let constructor: any = this.model.constructor;
         // while (constructor) {
@@ -208,7 +166,7 @@ export class EventUtil<M extends Model, E extends Model.E> extends Util<M> {
         // handlers
         let constructor: any = this.model.constructor;
         while (constructor) {
-            const registry = EventUtil.registry.handlers.get(constructor) ?? {};
+            const registry = EventPlugin.registry.handlers.get(constructor) ?? {};
             Object.keys(registry).forEach(key => {
                 const factory: {
                     producer?: any,

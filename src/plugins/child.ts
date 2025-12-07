@@ -1,9 +1,9 @@
 import { Model } from "../model";
-import { Util } from ".";
-import { TranxUtil } from "./tranx";
+import { Plugin } from ".";
+import { TranxService } from "../utils/tranx";
 import { Child } from "../types/model";
 
-export class ChildUtil<M extends Model, C extends Model.C> extends Util<M> {
+export class ChildPlugin<M extends Model, C extends Model.C> extends Plugin<M> {
     
     public readonly origin: C;
 
@@ -28,7 +28,6 @@ export class ChildUtil<M extends Model, C extends Model.C> extends Util<M> {
                 origin[key] = item;
             }
         });
-        
         this.origin = new Proxy(origin, {
             get: this.get.bind(this),
             set: this.set.bind(this),
@@ -59,28 +58,38 @@ export class ChildUtil<M extends Model, C extends Model.C> extends Util<M> {
         return value;
     }
    
-    @TranxUtil.span()
+    @TranxService.span()
     private set(
         origin: Partial<Model.C>, 
         key: string, 
         next?: Model | Model[]
     ) {
         const prev = origin[key];
-        if (prev instanceof Array) prev.forEach(item => item.utils.route.unbind())
         if (prev instanceof Model) prev.utils.route.unbind();
+        if (prev instanceof Array) {
+            prev.forEach(item => {
+                item.utils.route.unbind()
+            })
+        }
         if (next instanceof Model) next.utils.route.bind(this.model, key);
         if (next instanceof Array) {
-            next.forEach(item => item.utils.route.bind(this.model, key));
+            next.forEach(item => {
+                item.utils.route.bind(this.model, key)
+            });
         }
         origin[key] = next;
         return true;
     }
 
-    @TranxUtil.span()
+    @TranxService.span()
     private del(origin: Partial<Model.C>, key: string) {
         const prev = origin[key];
-        if (prev instanceof Array) prev.forEach(item => item.utils.route.unbind())
         if (prev instanceof Model) prev.utils.route.unbind();
+        if (prev instanceof Array) {
+            prev.forEach(item => {
+                item.utils.route.unbind()
+            })
+        }
         delete origin[key];
         return true;
     }
@@ -105,7 +114,7 @@ export class ChildUtil<M extends Model, C extends Model.C> extends Util<M> {
         return origin[index];
     }
 
-    @TranxUtil.span()
+    @TranxService.span()
     private lset(
         key: string, 
         origin: Record<string, unknown>, 
@@ -119,7 +128,7 @@ export class ChildUtil<M extends Model, C extends Model.C> extends Util<M> {
         return true;
     }
 
-    @TranxUtil.span()
+    @TranxService.span()
     private ldel(key: string, origin: any, index: string) {
         const prev = origin[index];
         if (prev instanceof Model) prev.utils.route.unbind();
@@ -128,44 +137,44 @@ export class ChildUtil<M extends Model, C extends Model.C> extends Util<M> {
     }
 
 
-    @TranxUtil.span()
+    @TranxService.span()
     private push(key: string, origin: Model[], ...next: Model[]) {
         next.forEach(item => item.utils.route.bind(this.model, key));
         return origin.push(...next);
     }
 
-    @TranxUtil.span()
+    @TranxService.span()
     private unshift(key: string, origin: Model[], ...next: Model[]) {
         next.forEach(item => item.utils.route.bind(this.model, key));
         return origin.unshift(...next);
     }
 
 
-    @TranxUtil.span()
+    @TranxService.span()
     private pop(key: string, origin: Model[]) {
         const result = origin.pop();
         if (result) result.utils.route.unbind();
         return result;
     }
 
-    @TranxUtil.span()
+    @TranxService.span()
     private shift(key: string, origin: Model[]) {
         const result = origin.shift();
         if (result) result.utils.route.unbind();
         return result;
     }
 
-    @TranxUtil.span()
+    @TranxService.span()
     private reverse(origin: Model[]) {
         return origin.reverse();
     }
 
-    @TranxUtil.span()
+    @TranxService.span()
     private sort(origin: Model[], handler: (a: Model, b: Model) => number) {
         return origin.sort(handler);
     }
 
-    @TranxUtil.span()
+    @TranxService.span()
     private fill(
         key: string, 
         origin: Model[], 
@@ -182,7 +191,7 @@ export class ChildUtil<M extends Model, C extends Model.C> extends Util<M> {
         return origin;
     }
 
-    @TranxUtil.span()
+    @TranxService.span()
     private splice(
         key: string, 
         origin: Model[], 

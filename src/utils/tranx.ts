@@ -1,14 +1,14 @@
-import { Util } from ".";
+import { Plugin } from "../plugins";
 import { Model } from "../model";
 import { Frame } from "../types/model";
 import { IClass, Method } from "../types";
 import { Event } from "../types/event";
 
-export class TranxUtil {
+export class TranxService {
     private constructor() {}
 
     private static _isLocked = false;
-    public static get isLocked() { return TranxUtil._isLocked; }
+    public static get isLocked() { return TranxService._isLocked; }
 
     private static tasks: Array<() => void> = [];
     private static readonly state: Set<Model> = new Set()
@@ -27,8 +27,8 @@ export class TranxUtil {
             if (!handler) return descriptor;
             const instance = {
                 [key](this: unknown, ...args: any[]) {
-                    if (!TranxUtil._isLocked) return handler.call(this, ...args);
-                    else TranxUtil.tasks.push(() => handler.call(this, ...args));
+                    if (!TranxService._isLocked) return handler.call(this, ...args);
+                    else TranxService.tasks.push(() => handler.call(this, ...args));
                 }
             }
             descriptor.value = instance[key];
@@ -48,17 +48,17 @@ export class TranxUtil {
                 const instance = {
                     [type.name]: class extends type {
                         constructor(...args: any[]) {
-                            if (TranxUtil._isLocked) {
+                            if (TranxService._isLocked) {
                                 super(...args);
-                                TranxUtil.add(this, TranxUtil.route)
+                                TranxService.add(this, TranxService.route)
                             }
                             else {
-                                TranxUtil._isLocked = true;
+                                TranxService._isLocked = true;
                                 super(...args);
-                                TranxUtil.add(this, TranxUtil.route)
-                                TranxUtil.reload();
-                                TranxUtil._isLocked = false;
-                                TranxUtil.end();
+                                TranxService.add(this, TranxService.route)
+                                TranxService.reload();
+                                TranxService._isLocked = false;
+                                TranxService.end();
                             }
                         }
                     }
@@ -75,25 +75,25 @@ export class TranxUtil {
             if (!handler) return descriptor;
             const instance = {
                 [key](this: unknown, ...args: any[]) {
-                    if (this instanceof Util) {
+                    if (this instanceof Plugin) {
                         const model: Model = this.model;
                         const isStateChange = model.utils.state === this;
                         const isReferChange = model.utils.refer === this;
                         const isChildChange = model.utils.child === this;
                         const isRouteChange = model.utils.route === this;
-                        if (isStateChange) TranxUtil.add(model, TranxUtil.state);
-                        if (isReferChange) TranxUtil.add(model, TranxUtil.refer);
-                        if (isChildChange) TranxUtil.add(model, TranxUtil.child);
-                        if (isRouteChange) TranxUtil.add(model, TranxUtil.route);
+                        if (isStateChange) TranxService.add(model, TranxService.state);
+                        if (isReferChange) TranxService.add(model, TranxService.refer);
+                        if (isChildChange) TranxService.add(model, TranxService.child);
+                        if (isRouteChange) TranxService.add(model, TranxService.route);
                     }
-                    if (TranxUtil._isLocked) {
+                    if (TranxService._isLocked) {
                         return handler.call(this, ...args);
                     } else {
-                        TranxUtil._isLocked = true;
+                        TranxService._isLocked = true;
                         const result = handler.call(this, ...args);
-                        TranxUtil.reload();
-                        TranxUtil._isLocked = false;
-                        TranxUtil.end();
+                        TranxService.reload();
+                        TranxService._isLocked = false;
+                        TranxService.end();
                         return result;
                     }
                 }
@@ -104,8 +104,8 @@ export class TranxUtil {
     }
 
     private static add(model: Model, group: Set<Model>) {
-        if (!TranxUtil.event.has(model)) {
-            TranxUtil.event.set(model, {
+        if (!TranxService.event.has(model)) {
+            TranxService.event.set(model, {
                 state: model.state,
                 refer: model.refer,
                 route: model.route,
@@ -117,31 +117,31 @@ export class TranxUtil {
 
     private static reload() {
         // route 
-        let route = new Set(TranxUtil.route);
+        let route = new Set(TranxService.route);
         route.forEach(item => item.utils.route.update());
         // child
-        let child = new Set(TranxUtil.child);
+        let child = new Set(TranxService.child);
         child.forEach(item => item.utils.child.update());
         // refer
-        let refer = new Set(TranxUtil.refer);
+        let refer = new Set(TranxService.refer);
         route.forEach(item => item.utils.refer.reload());
         refer.forEach(item => item.utils.refer.reload());
-        refer = new Set(TranxUtil.refer);
+        refer = new Set(TranxService.refer);
         refer.forEach(item => item.utils.refer.update());
         // decor
-        let state = new Set(TranxUtil.state);
+        let state = new Set(TranxService.state);
         route.forEach(item => item.utils.state.reload());
         state.forEach(item => item.utils.state.reload());
         let loop = 0;
-        state = new Set(TranxUtil.state);
+        state = new Set(TranxService.state);
         route.forEach(item => item.utils.state.update());
         state.forEach(item => item.utils.state.update());
         // event
         route.forEach(item => item.utils.event.reload());
-        TranxUtil.state.clear();
-        TranxUtil.refer.clear();
-        TranxUtil.child.clear();
-        TranxUtil.route.clear();
+        TranxService.state.clear();
+        TranxService.refer.clear();
+        TranxService.child.clear();
+        TranxService.route.clear();
     }
 
     /**
@@ -150,10 +150,10 @@ export class TranxUtil {
      * 3. controll the process
      */
     private static end() {
-        const event = new Map(TranxUtil.event);
-        const tasks = TranxUtil.tasks;
-        TranxUtil.event.clear();
-        TranxUtil.tasks = [];
+        const event = new Map(TranxService.event);
+        const tasks = TranxService.tasks;
+        TranxService.event.clear();
+        TranxService.tasks = [];
         tasks.forEach(task => task());
         event.forEach((item, model) => {
             model.utils.event.current.onChange(new Event(item))

@@ -1,4 +1,4 @@
-import { Method, IClass } from "../types";
+import { Method } from "../types";
 
 export enum DebugLevel {
     VERBOSE = 0,
@@ -8,7 +8,7 @@ export enum DebugLevel {
     FATAL,
 }
 
-export class DebugUtil {
+export class DebugService {
     private static isMute: boolean = false;
 
     public static level: DebugLevel = DebugLevel.INFO;
@@ -17,7 +17,7 @@ export class DebugUtil {
 
     private static _stack: string[] = [];
     public static get stack(): Readonly<string[]> {
-        return [...DebugUtil._stack];
+        return [...DebugService._stack];
     }
 
     private static console = {
@@ -41,25 +41,24 @@ export class DebugUtil {
             if (!handler) return descriptor;
             const instance = {
                 [key](this: T, ...args: any[]) {
-                    if (level < DebugUtil.level) {
+                    if (level < DebugService.level) {
                         const result = handler.call(this, ...args);
                         return result
                     }
                     const name = this.constructor.name;
                     console.group(origin ?? `${name} ${key}`)
-                    DebugUtil.indent++;
+                    DebugService.indent++;
                     
                     const result = handler.call(this, ...args);
-
                     if (result instanceof Promise) {
                         return result.finally(() => {
                             console.groupEnd();
-                            DebugUtil.indent--;
+                            DebugService.indent--;
                         });
                     }
                     else {
                         console.groupEnd();
-                        DebugUtil.indent--;
+                        DebugService.indent--;
                     }
                     return result;
                 }
@@ -71,20 +70,20 @@ export class DebugUtil {
 
     public static log(origin: string, level?: DebugLevel) {
         level = level ?? DebugLevel.INFO;
-        if (DebugUtil.isMute) return;
-        if (DebugLevel.INFO < DebugUtil.level) return;
-        const content = `${' '.repeat(DebugUtil.indent)}${origin}`;
+        if (DebugService.isMute) return;
+        if (DebugLevel.INFO < DebugService.level) return;
+        const content = `${' '.repeat(DebugService.indent)}${origin}`;
         console.log(origin);
-        DebugUtil._stack.push(content);
+        DebugService._stack.push(content);
     }
 
     public static clear() {
         console.clear();
-        DebugUtil._stack.length = 0;
+        DebugService._stack.length = 0;
     }
 
     public static mute() {
-        DebugUtil.isMute = true;
+        DebugService.isMute = true;
         const noop = () => undefined;
         console.log = noop;
         console.dir = noop;
@@ -96,14 +95,14 @@ export class DebugUtil {
     }
 
     public static unmute() {
-        DebugUtil.isMute = false;
-        console.log = DebugUtil.console.log;
-        console.dir = DebugUtil.console.dir;
-        console.info = DebugUtil.console.info;
-        console.warn = DebugUtil.console.warn;
-        console.debug = DebugUtil.console.debug;
-        console.group = DebugUtil.console.group;
-        console.groupEnd = DebugUtil.console.groupEnd;
+        DebugService.isMute = false;
+        console.log = DebugService.console.log;
+        console.dir = DebugService.console.dir;
+        console.info = DebugService.console.info;
+        console.warn = DebugService.console.warn;
+        console.debug = DebugService.console.debug;
+        console.group = DebugService.console.group;
+        console.groupEnd = DebugService.console.groupEnd;
     }
 
     private constructor() {}
