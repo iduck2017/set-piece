@@ -1,6 +1,6 @@
 import { Model } from "../model";
 import { Plugin } from ".";
-import { TranxService } from "../utils/tranx";
+import { TranxService } from "../services/tranx";
 import { Refer } from "../types/model";
 
 export class ReferPlugin<M extends Model, R extends Model.R> extends Plugin<M> {

@@ -2,7 +2,7 @@ import { Model } from "../model";
 import { Computer, Modifier, Updater } from "../types/decor";
 import { Plugin } from ".";
 import { IClass, Method } from "../types";
-import { TranxService } from "../utils/tranx";
+import { TranxService } from "../services/tranx";
 import { State } from '../types/model';
 
 export class StatePlugin<

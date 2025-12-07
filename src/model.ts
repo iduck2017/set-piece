@@ -6,8 +6,8 @@ import { ChildPlugin } from "./plugins/child";
 import { ReferPlugin } from "./plugins/refer";
 import { Plugins } from "./plugins";
 import { Route, RoutePlugin } from "./plugins/route";
-import { ChunkService } from "./utils/chunk";
-import { TranxService } from "./utils/tranx";
+import { ChunkService } from "./services/chunk";
+import { TranxService } from "./services/tranx";
 import { Child, Refer, State } from "./types/model";
 import { Emitter } from "./types/event";
 

@@ -3,7 +3,7 @@ import { Computer } from "./types/decor";
 import { EventPlugin } from "./plugins/event";
 import { Producer } from "./types/event";
 import { StatePlugin } from "./plugins/state";
-import { ChunkService } from "./utils/chunk";
+import { ChunkService } from "./services/chunk";
 
 class EmptyModel extends Model {
     // constructor(props?: EmptyModel['props']) {

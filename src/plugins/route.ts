@@ -1,6 +1,6 @@
 import { Model } from "../model";
 import { Plugin } from ".";
-import { TranxService } from "../utils/tranx";
+import { TranxService } from "../services/tranx";
 import { IClass } from "../types";
 
 export type Route = {

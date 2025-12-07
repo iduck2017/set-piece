@@ -11,9 +11,9 @@ export { ReferPlugin } from "./plugins/refer";
 export { RoutePlugin, Route } from "./plugins/route";
 
 export { ProxyPlugin } from "./plugins/proxy";
-export { TranxService } from "./utils/tranx";
-export { ChunkService, Chunk } from "./utils/chunk";
-export { DebugService, DebugLevel } from "./utils/debug";
+export { TranxService } from "./services/tranx";
+export { ChunkService, Chunk } from "./services/chunk";
+export { DebugService, DebugLevel } from "./services/debug";
 
 export { Class, IClass, Method, Value } from "./types";
 export { Child, Refer, State } from "./types/model";

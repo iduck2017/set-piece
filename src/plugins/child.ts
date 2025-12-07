@@ -1,6 +1,6 @@
 import { Model } from "../model";
 import { Plugin } from ".";
-import { TranxService } from "../utils/tranx";
+import { TranxService } from "../services/tranx";
 import { Child } from "../types/model";
 
 export class ChildPlugin<M extends Model, C extends Model.C> extends Plugin<M> {
