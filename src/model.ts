@@ -1,115 +1,109 @@
-import { ProxyPlugin } from "./plugins/proxy";
-import { EventPlugin } from "./plugins/event";
-import { StatePlugin } from "./plugins/state";
-import { Decor } from "./types/decor";
-import { ChildPlugin } from "./plugins/child";
-import { ReferPlugin } from "./plugins/refer";
-import { Plugins } from "./plugins";
-import { Route, RoutePlugin } from "./plugins/route";
-import { ChunkService } from "./services/chunk";
-import { TranxService } from "./services/tranx";
-import { Child, Refer, State } from "./types/model";
-import { Emitter } from "./types/event";
+import { listChild } from "./child/as-custom-child";
+import { findRoot, findRouteMap } from "./route/as-route";
+import { emitEventAsync, emitEventSync, Event } from "./event/event";
+import { addListeners, removeListeners, transferListeners } from "./event/listener";
+import { runReloadHooks } from "./lifecycle/on-reload";
+import { runMountHooks } from "./lifecycle/on-mount";
+import { runUnmountHooks } from "./lifecycle/on-unmount";
+import { appendThread } from "./transaction/as-thread";
+import { useEffect } from "./lifecycle/use-effect";
 
+export class Model {
 
-export namespace Model {
-    export type E = Record<string, any>
-    export type S = Record<string, any>
-    export type C = Record<string, Model | Model[] | undefined>
-    export type R = Record<string, Model | Model[] | undefined>
-}
-
-@TranxService.span(true)
-export class Model<
-    E extends Model.E = {},
-    S extends Model.S = {},
-    C extends Model.C = {},
-    R extends Model.R = {}
-> {
-    public uuid: string;
-    public get name() {
-        return this.constructor.name;
-    }
-    
-    public get state(): Readonly<State<S>> {
-        return this.utils.state.current;
+    private _parent: Model | undefined;
+    public get parent() {
+        return this._parent;
     }
 
-    public get child(): Readonly<Child<C>> {
-        return this.utils.child.current;
-    }
-    
-    public get refer(): Readonly<Refer<R>> {
-        return this.utils.refer.current;
+    @useEffect(transferListeners)
+    private _root: Model = this;
+    public get root() {
+        return this._root;
     }
 
-    protected event: { [K in keyof E]: Emitter<E[K]> }
-
-    /** @internal */
-    public readonly utils: Plugins<Model, E, S, C, R>
-    public proxy: ProxyPlugin<this, E, S, C>;
-
-    
-    public get decor(): Decor<S> | undefined {
-        return undefined;
-    }
-
-    public get route(): Route {
-        return this.utils.route.current;
-    }
-
-    protected origin: {
-        state: State<S>,
-        child: C;
-        refer: Partial<R>;
-        route: Route;
-    }
-
-    constructor(props: {
-        uuid: string | undefined
-        state: S & { _never?: never },
-        child: C & { _never?: never },
-        refer: R & { _never?: never }
-    }) {
-        this.uuid = props.uuid ?? ChunkService.uuid;
-        this.proxy = new ProxyPlugin(this, []);
-        this.utils = {
-            event: new EventPlugin<Model, E>(this),
-            route: new RoutePlugin<Model>(this),
-            refer: new ReferPlugin<Model, R>(this, props.refer),
-            state: new StatePlugin<Model, S>(this, props.state),
-            child: new ChildPlugin<Model, C>(this, props.child),
-        }
-        this.event = this.utils.event.current as any;
-        this.origin = {
-            state: this.utils.state.origin,
-            child: this.utils.child.origin,
-            refer: this.utils.refer.origin as any,
-            route: this.utils.route.origin,
-        }
-    }
-
-    public get props(): {
-        uuid?: string;
-        state?: Partial<S & { _never?: never }>
-        child?: Partial<C & { _never?: never }>
-        refer?: Partial<R & { _never?: never }>
-    } {
+    public get _internal() {
         return {
-            uuid: this.uuid,
-            state: this.state,
-            child: this.child as any,
-            refer: this.refer as any,
+            bindParent: this.bindParent.bind(this),
+            unbindParent: this.unbindParent.bind(this),
+            reload: this.reload.bind(this),
+            emit: this.emit.bind(this),
         }
     }
 
-    public reload() { 
-        return this.utils.route.preload(new Set())
+    constructor() {
+        this.load();
     }
 
-
-    public debug() {
-        console.log(Reflect.get(this.utils.event, 'router'))
+    private bindParent(parent: Model) {
+        if (this._parent) {
+            console.error('Parent already exists');
+            return;
+        }
+        this._parent = parent;
+        this.updateRoute();
+        this.mount();
     }
+
+    private unbindParent() {
+        if (!this._parent) {
+            console.error('Parent not exists');
+            return;
+        }
+        this.unmount();
+        this._parent = undefined;
+        this.updateRoute();
+    }
+
+    private updateRoute() {
+        const routeMap = findRouteMap(this);
+        routeMap.forEach((value, key) => {
+            Reflect.set(this, key, value);
+        })
+        const root = findRoot(this);
+        this._root = root;
+        
+        const children = listChild(this)
+        children.forEach(child => child.updateRoute())
+    }
+
+    protected emit(event: Event, options?: {
+        isYield?: boolean;
+        isAsync?: boolean;
+    }) {
+        const isYield = options?.isYield ?? false;
+        const isAsync = options?.isAsync ?? false;
+        if (isYield) {
+            appendThread(() => {
+                emitEventSync(this, event);
+            });
+            return;
+        }
+        if (isAsync) {
+            return emitEventAsync(this, event);
+        }
+        emitEventSync(this, event);
+    }
+
+    private load() {
+        addListeners(this);
+    }
+
+    private unload() {
+        removeListeners(this);
+    }
+
+    private mount() {
+        runMountHooks(this);
+    }
+
+    private unmount() {
+        runUnmountHooks(this);
+    }
+
+    protected reload() {
+        this.unload();
+        this.load();
+        runReloadHooks(this);
+    }
+
 }
-

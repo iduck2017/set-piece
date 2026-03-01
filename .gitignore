@@ -26,4 +26,4 @@ dist
 .vscode
 .jest
 
-/tmp
+/backup

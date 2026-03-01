@@ -1,20 +1,22 @@
 {
-    "compilerOptions": {
-      "target": "ESNext",
-      "noImplicitAny": true,
-      "declaration": true,
-      "declarationDir": "./dist/type",
-      "lib": ["ES2018", "DOM"],
-      "allowJs": true,
-      "allowSyntheticDefaultImports": true,
-      "moduleResolution": "node",
-      "strict": true,
-      "experimentalDecorators": true,
-      "strictFunctionTypes": true,
-      "stripInternal": true,
-      "paths": {},
-      "noUncheckedIndexedAccess": true
-    },
-    "include": [ "src/**/*" ],
-    "exclude": [ "tmp/**/*" ]
+  "compilerOptions": {
+    "noImplicitAny": true,
+    "module": "ESNext",
+    "outDir": "./dist/esm",
+    "lib": ["ES2018", "DOM"],
+    "target": "ESNext",
+    "jsx": "react",
+    "declaration": true,
+    "declarationDir": "./dist/type",
+    "allowJs": true,
+    "allowSyntheticDefaultImports": true,
+    "moduleResolution": "node",
+    "strict": true,
+    "experimentalDecorators": true,
+    "useDefineForClassFields": false,
+    "strictFunctionTypes": true,
+    "noUncheckedIndexedAccess": true
+  },
+  "include": ["src/**/*", "test/**/*"],
+  "exclude": ["dist/**/*"]
 }
