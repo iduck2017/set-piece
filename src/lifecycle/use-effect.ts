@@ -23,7 +23,8 @@ export function useEffect<
                 if (prev !== next) {
                     handler(this, prev);
                 }
-            }
+            },
+            configurable: true,
         })
     }
 }

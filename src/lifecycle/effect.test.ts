@@ -32,7 +32,7 @@ export class FooModel extends Model {
 describe('effect', () => {
     const foo = new FooModel();
 
-    it('set-valus', () => {
+    it('set-values', () => {
         expect(foo.sum).toBe(0);
         foo.setValues([1, 2, 3]);
         expect(foo.sum).toBe(6);

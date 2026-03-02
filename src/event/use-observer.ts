@@ -37,7 +37,8 @@ export function useObserver<
                         this._internal.emit(event);
                     });
                 }
-            }
+            },
+            configurable: true,
         });
     }
 }

@@ -26,7 +26,6 @@ export function asChild<
                 return getter.call(this);
             },
             set(this: Model, value) {
-                console.log('Set child', key, value);
                 const prev: unknown = Reflect.get(this, key);
                 setter.call(this, value);
                 const next: unknown = Reflect.get(this, key);

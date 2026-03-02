@@ -1,7 +1,8 @@
 import { Model } from "../model";
-import { Constructor, TypedPropertyDecorator } from "../types";
+import { AbstractConstructor, Constructor, TypedPropertyDecorator } from "../types";
 
-type RouteSelectorMap = Map<string, () => Constructor<Model>>;
+type RouteSelectorMap = Map<string, () => AbstractConstructor<Model>>;
+type RouteConstructorMap = Map<string, AbstractConstructor<Model>>;
 type RouteSelectorRegistry = Map<Function, RouteSelectorMap>;
 
 const routeRegistry: RouteSelectorRegistry = new Map();
@@ -9,9 +10,12 @@ const routeRegistry: RouteSelectorRegistry = new Map();
 export function asRoute<
     M extends Model & Record<string, any>,
     K extends string
->(selector: () => Constructor<Model>): M[K] extends Model | undefined ? 
-    TypedPropertyDecorator<M, K> :
-    TypedPropertyDecorator<never, never> {
+>(selector: () => AbstractConstructor<Model>): 
+    M[K] extends Model | undefined ? 
+        undefined extends M[K] ?
+            TypedPropertyDecorator<M, K> :
+            TypedPropertyDecorator<never, never> :
+        TypedPropertyDecorator<never, never> {
     return function(
         prototype: M,
         key: K,
@@ -25,7 +29,7 @@ export function asRoute<
 
 export function getRouteTypeMap(model: Model) {
     let constructor = model.constructor;
-    const result: Map<string, Constructor<Model>> = new Map();
+    const result: RouteConstructorMap = new Map();
     while (constructor) {
         const selectorMap: RouteSelectorMap = routeRegistry.get(constructor) ?? new Map();
         selectorMap.forEach((selector, key) => {
@@ -38,7 +42,7 @@ export function getRouteTypeMap(model: Model) {
 export function findRouteMap(model: Model) {
     const typeMap = getRouteTypeMap(model);
     const routeMap: Map<string, Model | undefined> = new Map();
-    typeMap.forEach((type: Constructor<unknown>, key) => {
+    typeMap.forEach((type: AbstractConstructor<unknown>, key) => {
         let ancestor: Model | undefined = model;
         while (ancestor) {
             if (ancestor instanceof type) {

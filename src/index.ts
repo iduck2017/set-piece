@@ -15,6 +15,8 @@ export { onUnmount } from './lifecycle/on-unmount';
 export { useEffect } from './lifecycle/use-effect';
 
 export { asRoute } from './route/as-route';
+
+export { useMemory } from './state/use-memory';
 export { asState } from './state/as-state';
 
 export { useStorageRow } from './storage/use-storage-row';
@@ -29,3 +31,6 @@ export { useSelfValidator } from './utils/use-self-validator';
 export { useValidator } from './utils/use-validator';
 export { useConsoleLogger } from './utils/use-console-logger';
 
+export { Model } from './model';
+
+export { Method, TypedPropertyDecorator, Constructor } from './types';

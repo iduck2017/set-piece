@@ -8,7 +8,7 @@ export function useRange<
 >(
     minimum: number | undefined,
     maximum: number | undefined,
-): M[K] extends number ? 
+): M[K] extends number | undefined ? 
     TypedPropertyDecorator<M, K> : 
     TypedPropertyDecorator<never, never> {
     return function(
@@ -21,10 +21,13 @@ export function useRange<
                 return getter.call(this);
             },
             set(value) {
-                if (maximum !== undefined && value > maximum) value = maximum;
-                if (minimum !== undefined && value < minimum) value = minimum;
+                if (typeof value === 'number') {
+                    if (maximum !== undefined && value > maximum) value = maximum;
+                    if (minimum !== undefined && value < minimum) value = minimum;
+                } 
                 setter.call(this, value);
-            }
+            },
+            configurable: true,
         })
     }
 }

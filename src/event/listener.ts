@@ -40,7 +40,7 @@ export function removeListeners(model: Model) {
 export function transferListeners(model: Model, prevRoot?: Model) {
     if (!prevRoot) return;
     const nextRoot = model.root;
-    console.log("Transfer listeners from", prevRoot.constructor.name, "to", nextRoot.constructor.name);
+    // console.log("Transfer listeners from", prevRoot.constructor.name, "to", nextRoot.constructor.name);
     const prevHandlerRegistry = listenerRegistry.get(prevRoot);
     if (!prevHandlerRegistry) return;
     const nextHandlerRegistry: HandlerKeysRegistry = 

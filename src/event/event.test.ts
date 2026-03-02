@@ -57,12 +57,12 @@ describe('event', () => {
     const pong = new PongModel();
     const root = new RootModel();
 
-    it('initial-status', () => {
+    it('check-initial-status', () => {
         expect(ping.heartbeat).toBe(1);
         expect(pong.heartbeat).toBe(0);
     })
 
-    it('not-bind', () => {
+    it('ineffective-event', () => {
         ping.run();
         expect(pong.heartbeat).toBe(0);
         pong.run();

@@ -24,10 +24,10 @@ export class BoxModel extends Model {
         return this._pineapple;
     }
 
-    public putPineapple(pineapple: PineappleModel) {
+    public setPineapple(pineapple: PineappleModel) {
         this._pineapple = pineapple;
     }
-    public takePineapple() {
+    public removePineapple() {
         this._pineapple = undefined;
     }
 }
@@ -65,7 +65,7 @@ describe('route', () => {
     });
 
     it('put-pineapple', () => {
-        box.putPineapple(pineapple);
+        box.setPineapple(pineapple);
         expect(box.root).toBe(box);
         expect(pineapple.root).toBe(box);
         

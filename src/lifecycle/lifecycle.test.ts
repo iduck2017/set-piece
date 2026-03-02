@@ -58,7 +58,7 @@ describe('lifecycle', () => {
     const foo = new FooModel();
     const bar = new BarModel();
 
-    it('construct', () => {
+    it('check-initial-status', () => {
         expect(counter.reload).toBe(1);
         expect(counter.mount).toBe(0);
         expect(counter.unmount).toBe(0);

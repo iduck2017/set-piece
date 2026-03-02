@@ -2,9 +2,8 @@
   "name": "set-piece",
   "version": "3.0.0",
   "private": true,
-  "main": "dist/cjs/index.js",
-  "module": "dist/esm/index.js",
-  "types": "dist/type/index.d.ts",
+  "module": "dist/index.js",
+  "types": "dist/index.d.ts",
   "files": ["dist"],
   "keywords": [
     "typescript",

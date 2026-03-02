@@ -7,6 +7,7 @@ import { runMountHooks } from "./lifecycle/on-mount";
 import { runUnmountHooks } from "./lifecycle/on-unmount";
 import { appendThread } from "./transaction/as-thread";
 import { useEffect } from "./lifecycle/use-effect";
+import { clearMemories } from "./state/use-memory";
 
 export class Model {
 
@@ -101,9 +102,9 @@ export class Model {
     }
 
     protected reload() {
+        clearMemories(this);
         this.unload();
         this.load();
         runReloadHooks(this);
     }
-
 }

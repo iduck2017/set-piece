@@ -1,4 +1,5 @@
 import { Model } from "../model";
+import { Method } from "../types";
 import { threads } from "./as-thread";
 
 let isPending = false;
@@ -10,21 +11,21 @@ export function asTransaction() {
     return function(
         prototype: Model,
         key: string,
-        descriptor: TypedPropertyDescriptor<() => void>,
-    ): TypedPropertyDescriptor<() => void> {    
+        descriptor: TypedPropertyDescriptor<Method<any>>,
+    ) {    
         const method = descriptor.value;
         if (!method) return descriptor;
-        descriptor.value = function() {
+        descriptor.value = function(...args: any[]) {
             if (isPending) {
-                return method.call(this);
+                return method.call(this, ...args);
             }
             isPending = true;
-            method.call(this);
+            method.call(this, ...args);
             isPending = false;
             const prevThreads = threads;
             threads.length = 0;
-            prevThreads.forEach(callback => {
-                callback();
+            prevThreads.forEach(thread => {
+                thread();
             });
         }
         return descriptor;
