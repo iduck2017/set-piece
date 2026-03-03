@@ -27,12 +27,12 @@ export class Model {
             bindParent: this.bindParent.bind(this),
             unbindParent: this.unbindParent.bind(this),
             reload: this.reload.bind(this),
-            emit: this.emit.bind(this),
+            emitEvent: this.emitEvent.bind(this),
         }
     }
 
     constructor() {
-        this.load();
+        addListeners(this);
     }
 
     private bindParent(parent: Model) {
@@ -42,7 +42,7 @@ export class Model {
         }
         this._parent = parent;
         this.updateRoute();
-        this.mount();
+        runMountHooks(this);
     }
 
     private unbindParent() {
@@ -50,7 +50,7 @@ export class Model {
             console.error('Parent not exists');
             return;
         }
-        this.unmount();
+        runUnmountHooks(this);
         this._parent = undefined;
         this.updateRoute();
     }
@@ -67,7 +67,7 @@ export class Model {
         children.forEach(child => child.updateRoute())
     }
 
-    protected emit(event: Event, options?: {
+    protected emitEvent(event: Event, options?: {
         isYield?: boolean;
         isAsync?: boolean;
     }) {
@@ -85,26 +85,10 @@ export class Model {
         emitEventSync(this, event);
     }
 
-    private load() {
-        addListeners(this);
-    }
-
-    private unload() {
-        removeListeners(this);
-    }
-
-    private mount() {
-        runMountHooks(this);
-    }
-
-    private unmount() {
-        runUnmountHooks(this);
-    }
-
     protected reload() {
         clearMemories(this);
-        this.unload();
-        this.load();
+        removeListeners(this);
+        addListeners(this);
         runReloadHooks(this);
     }
 }

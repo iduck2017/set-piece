@@ -19,7 +19,7 @@ export function usePreEmitter<
         descriptor.value = function(this: Model, options: P, event: E | undefined) {
             const type = selector();
             event = new type({ options });
-            this.emit(event);
+            this.emitEvent(event);
             if (event.isAborted) return;
             return method.call(this, options, event);
         }

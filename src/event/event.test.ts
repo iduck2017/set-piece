@@ -28,7 +28,7 @@ class PingModel extends Model {
         return this._heartbeat;
     }
     public run() {
-        this.emit(new PingEvent());
+        this.emitEvent(new PingEvent());
     }
 
     @onEmit(() => PongEvent)
@@ -43,7 +43,7 @@ class PongModel extends Model {
         return this._heartbeat;
     }
     public run() {
-        this.emit(new PongEvent());
+        this.emitEvent(new PongEvent());
     }
 
     @onEmit(() => PingEvent)

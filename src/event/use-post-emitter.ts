@@ -20,7 +20,7 @@ export function usePostEmitter<
             const type = selector();
             const result = method.call(this, options);
             const event = new type({ options, result });
-            this.emit(event, { isYield: true });
+            this.emitEvent(event, { isYield: true });
             return result;
         }
     }

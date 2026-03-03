@@ -34,7 +34,7 @@ export function useObserver<
                     const types = getEventTypes(this, key);
                     types.forEach((eventType) => {
                         const event = new eventType({ prev, next });
-                        this._internal.emit(event);
+                        this._internal.emitEvent(event);
                     });
                 }
             },

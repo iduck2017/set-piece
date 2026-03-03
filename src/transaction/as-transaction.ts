@@ -1,6 +1,6 @@
 import { Model } from "../model";
 import { Method } from "../types";
-import { threads } from "./as-thread";
+import { runThreads, threads } from "./as-thread";
 
 let isPending = false;
 export function checkTransactionStatus() {
@@ -22,12 +22,22 @@ export function asTransaction() {
             isPending = true;
             method.call(this, ...args);
             isPending = false;
-            const prevThreads = threads;
-            threads.length = 0;
-            prevThreads.forEach(thread => {
-                thread();
-            });
+            runThreads();
         }
         return descriptor;
     }   
 }
+
+
+export function runTransaction(
+    method: () => void
+) {
+    if (isPending) {
+        return method();
+    }
+    isPending = true;
+    method();
+    isPending = false;
+    runThreads();
+}
+

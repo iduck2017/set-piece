@@ -26,3 +26,11 @@ export function asThread() {
 export function appendThread(thread: () => void) {
     threads.push(thread);
 }
+
+export function runThreads() {
+    const prevThreads = threads;
+    threads.length = 0;
+    prevThreads.forEach(thread => {
+        thread();
+    });
+}

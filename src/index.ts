@@ -23,7 +23,7 @@ export { useStorageRow } from './storage/use-storage-row';
 export { useStorage } from './storage/use-storage';
 
 export { asThread, appendThread } from './transaction/as-thread';
-export { asTransaction } from './transaction/as-transaction';
+export { asTransaction, runTransaction } from './transaction/as-transaction';
 
 export { getDescriptor } from './utils/get-descriptor';
 export { useRange } from './utils/use-range';
