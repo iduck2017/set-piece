@@ -2,42 +2,43 @@ import { Model } from "../model";
 import { findRoute } from "../route/as-route";
 import { registerDomain } from "../route/domain";
 import { AbstractConstructor, Constructor } from "../types";
-import { Event } from "./event";
+import { Decor } from "./decor";
 
-type EventSelector<E extends Event = Event> = () => [Constructor<E>, Constructor<Model>];
+type DecorSelector<D extends Decor = Decor> = () => [Constructor<D, [origin: any]>, Constructor<Model>];
 
 /** model constructor -> method name -> event selectors */
-type EventSelectorsMap = Map<string, Array<EventSelector>>;
+type DecorSelectorsMap = Map<string, Array<DecorSelector>>;
 
-type EventSelectorsRegistry = Map<Function, EventSelectorsMap>;
+type DecorSelectorsRegistry = Map<Function, DecorSelectorsMap>;
 
-export const eventRegistry: EventSelectorsRegistry = new Map();
+export const decorRegistry: DecorSelectorsRegistry = new Map();
 
 
-export function onEmit<
+export function onCalc<
     I extends Model & Record<string, any>,
-    E extends Event
->(selector: EventSelector<E>) {
+    D extends Decor
+>(selector: DecorSelector<D>) {
     return function (
         prototype: I,
         key: string,
-        descriptor: TypedPropertyDescriptor<(target: Model, event: E) => void>
+        descriptor: TypedPropertyDescriptor<(target: Model, decor: D) => void>
     ) {
         registerDomain(prototype, () => selector()[1]);
         const constructor = prototype.constructor;
-        const selectorsMap: EventSelectorsMap = eventRegistry.get(constructor) ?? new Map();
+        const selectorsMap: DecorSelectorsMap = decorRegistry.get(constructor) ?? new Map();
         const selectors = selectorsMap.get(key) ?? [];
         selectors.push(selector);
         selectorsMap.set(key, selectors);
-        eventRegistry.set(constructor, selectorsMap);
+        decorRegistry.set(constructor, selectorsMap);
     }
 }
 
-export function getEventSelectorsMap(model: Model): EventSelectorsMap {
+
+export function getDecorSelectorsMap(model: Model): DecorSelectorsMap {
     let constructor = model.constructor;
-    const result: EventSelectorsMap = new Map();
+    const result: DecorSelectorsMap = new Map();
     while (constructor) {
-        const selectorMap: EventSelectorsMap = eventRegistry.get(constructor) ?? new Map();
+        const selectorMap: DecorSelectorsMap = decorRegistry.get(constructor) ?? new Map();
         selectorMap.forEach((selectors, key) => {
             selectors.forEach(selector => {
                 const selectors = result.get(key) ?? [];

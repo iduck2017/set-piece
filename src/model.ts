@@ -1,13 +1,16 @@
 import { listChild } from "./child/as-custom-child";
-import { findRoot, findRouteMap } from "./route/as-route";
+import { findRoot, getRouteMap } from "./route/as-route";
 import { emitEventAsync, emitEventSync, Event } from "./event/event";
-import { addListeners, removeListeners, transferListeners } from "./event/listener";
+import { addEventListeners, removeEventListeners } from "./event/listener";
 import { runReloadHooks } from "./lifecycle/on-reload";
 import { runMountHooks } from "./lifecycle/on-mount";
 import { runUnmountHooks } from "./lifecycle/on-unmount";
+import { runLoadHooks } from "./lifecycle/on-load";
+import { runUnloadHooks } from "./lifecycle/on-unload";
 import { appendThread } from "./transaction/as-thread";
-import { useEffect } from "./lifecycle/use-effect";
 import { clearMemories } from "./state/use-memory";
+import { compareDomainMap, updateDomainMap } from "./route/domain";
+import { addDecorListeners, removeDecorListeners } from "./state/listener";
 
 export class Model {
 
@@ -16,7 +19,6 @@ export class Model {
         return this._parent;
     }
 
-    @useEffect(transferListeners)
     private _root: Model = this;
     public get root() {
         return this._root;
@@ -24,18 +26,21 @@ export class Model {
 
     public get _internal() {
         return {
-            bindParent: this.bindParent.bind(this),
-            unbindParent: this.unbindParent.bind(this),
+            mount: this.mount.bind(this),
+            unmount: this.unmount.bind(this),
             reload: this.reload.bind(this),
-            emitEvent: this.emitEvent.bind(this),
+            unload: this.unload.bind(this),
+            load: this.load.bind(this),
+
+            emit: this.emit.bind(this),
         }
     }
 
     constructor() {
-        addListeners(this);
+        this.load()
     }
 
-    private bindParent(parent: Model) {
+    private mount(parent: Model) {
         if (this._parent) {
             console.error('Parent already exists');
             return;
@@ -45,18 +50,23 @@ export class Model {
         runMountHooks(this);
     }
 
-    private unbindParent() {
+    private unmount() {
         if (!this._parent) {
             console.error('Parent not exists');
             return;
         }
+        this.unload()
         runUnmountHooks(this);
         this._parent = undefined;
         this.updateRoute();
     }
 
     private updateRoute() {
-        const routeMap = findRouteMap(this);
+        const isDomainChanged = compareDomainMap(this);
+        if (isDomainChanged) {
+            this.reload()
+        }
+        const routeMap = getRouteMap(this);
         routeMap.forEach((value, key) => {
             Reflect.set(this, key, value);
         })
@@ -67,7 +77,7 @@ export class Model {
         children.forEach(child => child.updateRoute())
     }
 
-    protected emitEvent(event: Event, options?: {
+    protected emit(event: Event, options?: {
         isYield?: boolean;
         isAsync?: boolean;
     }) {
@@ -85,10 +95,24 @@ export class Model {
         emitEventSync(this, event);
     }
 
-    protected reload() {
+    private unload() {
+        runUnloadHooks(this);
+        removeEventListeners(this);
+        removeDecorListeners(this);
         clearMemories(this);
-        removeListeners(this);
-        addListeners(this);
+    }
+
+    protected reload() {
+        this.unload();
+        this.load();
         runReloadHooks(this);
     }
+
+    private load() {
+        addEventListeners(this);
+        addDecorListeners(this)
+        updateDomainMap(this);
+        runLoadHooks(this);
+    }
+
 }

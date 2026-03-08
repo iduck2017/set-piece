@@ -1,12 +1,16 @@
 import { asChild } from "../child/as-child";
 import { asCustomChild } from "../child/as-custom-child";
 import { Model } from "../model";
+import { domainMapHistory, domainRegistry } from "../route/domain";
 import { Event } from "./event";
-import { listenerRegistry } from "./listener";
-import { onEmit } from "./on-emit";
+import { eventListenerRegistry } from "./listener";
+import { eventRegistry, onEmit } from "./on-emit";
 
-class PingEvent extends Event {}
-class PongEvent extends Event {}
+class PingEvent extends Event {
+}
+class PongEvent extends Event {
+    private bar: number = 2
+}
 
 class RootModel extends Model {
     @asChild()
@@ -28,10 +32,10 @@ class PingModel extends Model {
         return this._heartbeat;
     }
     public run() {
-        this.emitEvent(new PingEvent());
+        this.emit(new PingEvent());
     }
 
-    @onEmit(() => PongEvent)
+    @onEmit(() => [PongEvent, RootModel])
     private handlePong(target: Model, event: PongEvent) {
         this._heartbeat *= 2;
     }
@@ -43,10 +47,10 @@ class PongModel extends Model {
         return this._heartbeat;
     }
     public run() {
-        this.emitEvent(new PongEvent());
+        this.emit(new PongEvent());
     }
 
-    @onEmit(() => PingEvent)
+    @onEmit(() => [PingEvent, RootModel])
     private handlePing(target: Model, event: PingEvent) {
         this._heartbeat += 1;
     }
@@ -56,6 +60,10 @@ describe('event', () => {
     const ping = new PingModel();
     const pong = new PongModel();
     const root = new RootModel();
+    console.log('EventRegistry', eventRegistry)
+    console.log('Prev ListenerRegistry root', eventListenerRegistry.get(root))
+    console.log('Prev ListenerRegistry ping', eventListenerRegistry.get(ping))
+    console.log('Prev ListenerRegistry pong', eventListenerRegistry.get(pong))
 
     it('check-initial-status', () => {
         expect(ping.heartbeat).toBe(1);
@@ -71,9 +79,9 @@ describe('event', () => {
 
     it('bind-ping-pong', () => {
         root.bindPingPong(ping, pong);
-        console.log(listenerRegistry.get(root));
-        console.log(listenerRegistry.get(ping));
-        console.log(listenerRegistry.get(pong));
+        console.log('Next ListenerRegistry root', eventListenerRegistry.get(root));
+        console.log('Next ListenerRegistry ping', eventListenerRegistry.get(ping));
+        console.log('Next ListenerRegistry pong', eventListenerRegistry.get(pong));
         ping.run();
         expect(pong.heartbeat).toBe(1);
         pong.run();

@@ -7,17 +7,19 @@ type RouteSelectorRegistry = Map<Function, RouteSelectorMap>;
 
 const routeRegistry: RouteSelectorRegistry = new Map();
 
+
 export function asRoute<
+    I extends Model & Record<string, any>,
     M extends Model & Record<string, any>,
     K extends string
->(selector: () => AbstractConstructor<Model>): 
-    M[K] extends Model | undefined ? 
+>(selector: () => AbstractConstructor<M>): 
+    I[K] extends M | undefined ? 
         undefined extends M[K] ?
-            TypedPropertyDecorator<M, K> :
+            TypedPropertyDecorator<I, K> :
             TypedPropertyDecorator<never, never> :
         TypedPropertyDecorator<never, never> {
     return function(
-        prototype: M,
+        prototype: I,
         key: K,
     ) {
         const constructor = prototype.constructor;
@@ -27,7 +29,7 @@ export function asRoute<
     }
 }
 
-export function getRouteTypeMap(model: Model) {
+function getRouteTypeMap(model: Model) {
     let constructor = model.constructor;
     const result: RouteConstructorMap = new Map();
     while (constructor) {
@@ -39,22 +41,27 @@ export function getRouteTypeMap(model: Model) {
     }
     return result;
 }
-export function findRouteMap(model: Model) {
+
+
+export function findRoute(model: Model, type: AbstractConstructor<Model>) {
+    let ancestor: Model | undefined = model;
+    while (ancestor) {
+        const _ancester = ancestor;
+        if (_ancester instanceof type) return ancestor;
+        ancestor = ancestor.parent;
+    }
+}
+
+export function getRouteMap(model: Model) {
     const typeMap = getRouteTypeMap(model);
     const routeMap: Map<string, Model | undefined> = new Map();
-    typeMap.forEach((type: AbstractConstructor<unknown>, key) => {
-        let ancestor: Model | undefined = model;
-        while (ancestor) {
-            if (ancestor instanceof type) {
-                routeMap.set(key, ancestor);
-                break;
-            }
-            ancestor = ancestor.parent;
-        }
+    typeMap.forEach((type, key) => {
+        const ancestor = findRoute(model, type);
         routeMap.set(key, ancestor);
     })
     return routeMap;
 }
+
 
 
 export function findRoot(model: Model) {

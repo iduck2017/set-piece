@@ -29,8 +29,8 @@ export function asChild<
                 const prev: unknown = Reflect.get(this, key);
                 setter.call(this, value);
                 const next: unknown = Reflect.get(this, key);
-                if (prev instanceof Model) prev._internal.unbindParent();
-                if (next instanceof Model) next._internal.bindParent(this);
+                if (prev instanceof Model) prev._internal.unmount();
+                if (next instanceof Model) next._internal.mount(this);
             },
             enumerable: true,
             configurable: true,

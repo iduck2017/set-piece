@@ -36,12 +36,12 @@ export function asChildList<
                 const next: unknown = Reflect.get(this, key);
                 if (prev instanceof Array) {
                     prev.forEach(item => {
-                        if (item instanceof Model) item._internal.unbindParent();
+                        if (item instanceof Model) item._internal.unmount();
                     });
                 }
                 if (next instanceof Array) {
                     next.forEach(item => {
-                        if (item instanceof Model) item._internal.bindParent(this);
+                        if (item instanceof Model) item._internal.mount(this);
                     });
                 }
             },
@@ -54,30 +54,30 @@ export function asChildList<
 export function delegateChildList(value: unknown, parent: Model) {
     function pop(origin: Model[]) {
         const result = origin.pop();
-        if (result) result._internal.unbindParent();
+        if (result) result._internal.unmount();
         return result;
     }
 
     function push(origin: Model[], ...next: Model[]) {
-        next.forEach(item => item._internal.bindParent(parent));
+        next.forEach(item => item._internal.mount(parent));
         return origin.push(...next);
     }
 
     function shift(origin: Model[]) {
         const result = origin.shift();
-        if (result) result._internal.unbindParent();
+        if (result) result._internal.unmount();
         return result;
     }
 
     function unshift(origin: Model[], ...next: Model[]) {
-        next.forEach(item => item._internal.bindParent(parent));
+        next.forEach(item => item._internal.mount(parent));
         return origin.unshift(...next);
     }
 
     function splice(origin: Model[], start: number, count: number, ...next: Model[]) {
         const prev = origin.slice(start, start + count);
-        prev.forEach(item => item._internal.unbindParent());
-        next.forEach(item => item._internal.bindParent(parent));
+        prev.forEach(item => item._internal.unmount());
+        next.forEach(item => item._internal.mount(parent));
         return origin.splice(start, count, ...next);
     }
 
@@ -99,14 +99,14 @@ export function delegateChildList(value: unknown, parent: Model) {
             },
             set: (origin, index, next) => {
                 const prev = Reflect.get(origin, index);
-                if (prev instanceof Model) prev._internal.unbindParent();
-                if (next instanceof Model) next._internal.bindParent(parent);
+                if (prev instanceof Model) prev._internal.unmount();
+                if (next instanceof Model) next._internal.mount(parent);
                 Reflect.set(origin, index, next);
                 return true;
             },
             deleteProperty: (origin, index) => {
                 const prev = Reflect.get(origin, index);
-                if (prev instanceof Model) prev._internal.unbindParent();
+                if (prev instanceof Model) prev._internal.unmount();
                 Reflect.deleteProperty(origin, index);
                 return true;
             }
