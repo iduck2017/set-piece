@@ -1,9 +1,9 @@
-import { asChildList } from "../child/as-child-list";
+import { useChildList } from "../child/use-child-list";
 import { Model } from "../model";
-import { asState } from "./as-state";
+import { useState } from "./use-state";
 import { Decor } from "./decor";
-import { decorListenerRegistry } from "./listener";
-import { onCalc } from "./on-calc";
+import { modifierContext } from "./modifier";
+import { useModifier } from "./use-modifier";
 import { useDecor } from "./use-decor";
 
 class AttackDecor extends Decor<number> {
@@ -21,7 +21,7 @@ function onCalcMonsterAttack() {
         key: string,
         descriptor: TypedPropertyDescriptor<(target: Model, decor: AttackDecor) => void>
     ) {
-        onCalc(() => [AttackDecor, MonsterModel])(prototype, key, descriptor);
+        useModifier(() => [AttackDecor, MonsterModel, Model])(prototype, key, descriptor);
         const method = descriptor.value;
         if (!method) return;
         descriptor.value = function(this: MonsterModel, target: Model, decor: AttackDecor) {
@@ -39,7 +39,7 @@ function onCalcMonsterAllyAttack() {
         key: string,
         descriptor: TypedPropertyDescriptor<(target: Model, decor: AttackDecor) => void>
     ) {
-        onCalc(() => [AttackDecor, MonsterLairModel])(prototype, key, descriptor);
+        useModifier(() => [AttackDecor, MonsterLairModel, Model])(prototype, key, descriptor);
         const method = descriptor.value;
         if (!method) return;  
         descriptor.value = function(this: MonsterModel, target: Model, decor: AttackDecor) {
@@ -53,11 +53,15 @@ function onCalcMonsterAllyAttack() {
 }
 
 class MonsterModel extends Model {
-    @asState()
+    @useState()
     @useDecor<MonsterModel, '_attack'>(() => AttackDecor)
     private _attack = 100;
     public get attack() {
         return this._attack;
+    }
+
+    public setAttack(attack: number) {
+        this._attack = attack;
     }
     
     @onCalcMonsterAttack()
@@ -75,7 +79,7 @@ class MonsterModel extends Model {
 
 
 class MonsterLairModel extends Model {
-    @asChildList()
+    @useChildList()
     private _monsters: MonsterModel[] = [];
     public get monsters() {
         return this._monsters;
@@ -97,7 +101,7 @@ describe('decor', () => {
     const lair = new MonsterLairModel();
     const monsterA = new MonsterModel();
     const monsterB = new MonsterModel();
-    console.log('Prev ListenerRegistry', decorListenerRegistry.get(monsterA))
+    console.log('Prev ListenerRegistry', modifierContext.get(monsterA))
 
     it('check-attack', () => {
         expect(monsterA.attack).toBe(110);
@@ -110,5 +114,16 @@ describe('decor', () => {
         lair.addMonster(monsterB);
         expect(monsterA.attack).toBe(115);
         expect(monsterB.attack).toBe(115);
+    })
+
+    it('remove-monster', () => {
+        lair.removeMonster(monsterA);
+        expect(monsterA.attack).toBe(110);
+        expect(monsterB.attack).toBe(110);
+    })
+
+    it('set-attack', () => {
+        monsterA.setAttack(0);
+        expect(monsterA.attack).toBe(10);
     })
 });

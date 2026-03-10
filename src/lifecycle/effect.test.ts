@@ -1,5 +1,5 @@
 import { Model } from "../model";
-import { useEffect } from "./use-effect";
+import { useEffect } from "../utils/use-effect";
 
 export class FooModel extends Model {
 

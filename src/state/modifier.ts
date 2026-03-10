@@ -1,55 +1,53 @@
 import { Model } from "../model";
 import { findRoute } from "../route/use-route";
 import { getDomainMap } from "../route/domain";
+import { AbstractConstructor, Constructor } from "../types";
 import { runValidators, validatorRegistry } from "../utils/use-self-validator";
-import { Event } from ".";
-import { getEventSelectorsMap } from "./use-listener";
-
-/** event constructor -> model instance -> method names */
-export type HandlerKeysMap = Map<Model, string[]>;
-export type HandlerRegistry = Map<Function, HandlerKeysMap>;
+import { getDecorSelectorsMap } from "./use-modifier";
+import { Decor } from "./decor";
+import { HandlerKeysMap, HandlerRegistry } from "../event/listener";
 
 /** domain -> handler keys */
-export const listenerContext: WeakMap<Model, HandlerRegistry> = new WeakMap();
+export const modifierContext: WeakMap<Model, HandlerRegistry> = new WeakMap();
 
-export function addListeners(model: Model) {
-    const selectorsMap = getEventSelectorsMap(model);
+export function addDecorListeners(model: Model) {
+    const selectorsMap = getDecorSelectorsMap(model);
     selectorsMap.forEach((selectors, key) => {
         const flag = runValidators(model, key);
         if (!flag) return;
         selectors.forEach(selector => {
-            const [eventType, domainType] = selector();
+            const [decorType, domainType] = selector();
             const domain = findRoute(model, domainType);
             if (!domain) return;
 
-            const handlerRegistry = listenerContext.get(domain) ?? new Map();
-            const handlerKeysMap: HandlerKeysMap = handlerRegistry.get(eventType) ?? new Map();
+            const handlerRegistry: HandlerRegistry = modifierContext.get(domain) ?? new Map();
+            const handlerKeysMap: HandlerKeysMap = handlerRegistry.get(decorType) ?? new Map();
             const handlerKeys = handlerKeysMap.get(model) ?? [];
             handlerKeys.push(key);
             handlerKeysMap.set(model, handlerKeys);
-            handlerRegistry.set(eventType, handlerKeysMap);
-            listenerContext.set(domain, handlerRegistry);
+            handlerRegistry.set(decorType, handlerKeysMap);
+            modifierContext.set(domain, handlerRegistry);
         })
     })
 }
 
-export function removeListeners(model: Model) {
+export function removeDecorListeners(model: Model) {
     const domainMap = getDomainMap(model);
     domainMap.forEach((domain, key) => {
         if (!domain) return;
-        const handlerRegistry: HandlerRegistry = listenerContext.get(domain) ?? new Map();
+        const handlerRegistry: HandlerRegistry = modifierContext.get(domain) ?? new Map();
         handlerRegistry.forEach((handlerKeysMap) => {
             handlerKeysMap.delete(model);
         })
     })
 }
 
-export function getHandlers(model: Model, event: Event) {
+export function getDecorHandlers(model: Model, decor: Decor) {
     let ancestor: Model | undefined = model;
-    const result: Array<(target: Model, event: Event) => void> = [];
+    const result: Array<(target: Model, decor: Decor) => void> = [];
     while (ancestor) {
-        const handlerRegistry = listenerContext.get(ancestor);
-        const handlerKeysMap = handlerRegistry?.get(event.constructor);
+        const handlerRegistry = modifierContext.get(ancestor);
+        const handlerKeysMap = handlerRegistry?.get(decor.constructor);
         handlerKeysMap?.forEach((keys, model) => {
             keys.forEach(key => {
                 const method = Reflect.get(model, key);
@@ -60,5 +58,7 @@ export function getHandlers(model: Model, event: Event) {
         })
         ancestor = ancestor.parent;
     }
+    // console.log('Get handlers', result)
     return result;
 }
+

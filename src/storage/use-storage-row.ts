@@ -1,6 +1,6 @@
 import { Model } from "../model";
 
-export const storageRegistry = new Map<Function, Map<string, {
+export const storageRowRegistry = new Map<Function, Map<string, {
     parser: (value: any) => any,
     generator: (value: any) => any,
 }>>();
@@ -17,8 +17,8 @@ export function useStorageRow<
         prototype: I,
         key: K,
     ) {
-        const strategyMap = storageRegistry.get(prototype.constructor) ?? new Map();
+        const strategyMap = storageRowRegistry.get(prototype.constructor) ?? new Map();
         strategyMap.set(key, { parser, generator });
-        storageRegistry.set(prototype.constructor, strategyMap);
+        storageRowRegistry.set(prototype.constructor, strategyMap);
     }
 }

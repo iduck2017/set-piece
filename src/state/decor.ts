@@ -1,38 +1,25 @@
 import { Model } from "../model";
-import { decorListenerRegistry } from "./listener";
+import { modifierContext, getDecorHandlers } from "./modifier";
 
 export abstract class Decor<T = any> {
     constructor(origin: T) {
         this._origin = origin;
     }
-
     private _origin: T;
     protected get origin() {
         return this._origin;
     }
-
     public abstract result: T;
 }
 
-export function getDecorHandlers(model: Model, decor: Decor) {
-    let ancestor: Model | undefined = model;
-    const result: Array<(target: Model, decor: Decor) => void> = [];
-    while (ancestor) {
-        const handlerRegistry = decorListenerRegistry.get(ancestor);
-        const handlerKeysMap = handlerRegistry?.get(decor.constructor);
-        handlerKeysMap?.forEach((keys, model) => {
-            keys.forEach(key => {
-                const method = Reflect.get(model, key);
-                if (method instanceof Function) {
-                    result.push(method.bind(model));
-                }
-            });
-        })
-        ancestor = ancestor.parent;
+export abstract class CustomDecor<T> extends Decor<T> {
+    constructor(origin: T) {
+        super(origin);
+        this.result = origin;
     }
-    // console.log('Get handlers', result)
-    return result;
+    public result: T;
 }
+
 
 export function emitDecor(target: Model, decor: Decor) {
     const handlers = getDecorHandlers(target, decor);
@@ -40,3 +27,5 @@ export function emitDecor(target: Model, decor: Decor) {
         handler(target, decor);
     });
 }
+
+export type DecorHandler<T extends Model, D extends Decor> = (target: T, decor: D) => void;

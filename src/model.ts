@@ -1,18 +1,30 @@
-import { listChild } from "./child/as-custom-child";
-import { findRoot, getRouteMap } from "./route/as-route";
-import { emitEventAsync, emitEventSync, Event } from "./event/event";
-import { addEventListeners, removeEventListeners } from "./event/listener";
-import { runReloadHooks } from "./lifecycle/on-reload";
-import { runMountHooks } from "./lifecycle/on-mount";
-import { runUnmountHooks } from "./lifecycle/on-unmount";
-import { runLoadHooks } from "./lifecycle/on-load";
-import { runUnloadHooks } from "./lifecycle/on-unload";
-import { appendThread } from "./transaction/as-thread";
-import { clearMemories } from "./state/use-memory";
+import { listChild } from "./child/use-custom-child";
+import { findRoot, getRouteMap } from "./route/use-route";
+import { emitEventAsync, emitEventSync, Event } from "./event";
+import { addListeners, removeListeners } from "./event/listener";
+import { runReloadHooks } from "./lifecycle/use-reload-hook";
+import { runMountHooks } from "./lifecycle/use-mount-hook";
+import { runUnmountHooks } from "./lifecycle/use-unmount-hook";
+import { runLoadHooks } from "./lifecycle/use-load-hook";
+import { runUnloadHooks } from "./lifecycle/use-unload-hook";
+import { appendCoroutine } from "./transaction/use-coroutine";
+import { clearMemos } from "./state/use-memo";
 import { compareDomainMap, updateDomainMap } from "./route/domain";
-import { addDecorListeners, removeDecorListeners } from "./state/listener";
+import { addDecorListeners, removeDecorListeners } from "./state/modifier";
+
+let uuid = 0;
 
 export class Model {
+    constructor() {
+        uuid += 1;
+        this._uuid = uuid.toString();
+        this.load()
+    }
+
+    private _uuid: string;
+    public get uuid() {
+        return this._uuid;
+    }
 
     private _parent: Model | undefined;
     public get parent() {
@@ -36,9 +48,6 @@ export class Model {
         }
     }
 
-    constructor() {
-        this.load()
-    }
 
     private mount(parent: Model) {
         if (this._parent) {
@@ -84,7 +93,7 @@ export class Model {
         const isYield = options?.isYield ?? false;
         const isAsync = options?.isAsync ?? false;
         if (isYield) {
-            appendThread(() => {
+            appendCoroutine(() => {
                 emitEventSync(this, event);
             });
             return;
@@ -97,9 +106,9 @@ export class Model {
 
     private unload() {
         runUnloadHooks(this);
-        removeEventListeners(this);
+        removeListeners(this);
         removeDecorListeners(this);
-        clearMemories(this);
+        clearMemos(this);
     }
 
     protected reload() {
@@ -109,7 +118,7 @@ export class Model {
     }
 
     private load() {
-        addEventListeners(this);
+        addListeners(this);
         addDecorListeners(this)
         updateDomainMap(this);
         runLoadHooks(this);

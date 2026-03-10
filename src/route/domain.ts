@@ -1,14 +1,12 @@
 import { Model } from "../model";
 import { AbstractConstructor } from "../types";
-import { findRoute } from "./as-route";
+import { findRoute } from "./use-route";
 
 type DomainMap = Map<AbstractConstructor<Model>, Model>;
+type DomainRegistry = Map<Function, Array<() => AbstractConstructor<Model>>>;
 
-type DomainSelectorsMap = Map<Function, Array<() => AbstractConstructor<Model>>>;
-
-export const domainRegistry: DomainSelectorsMap = new Map();
-
-export const domainMapHistory: WeakMap<Model, DomainMap> = new WeakMap();
+export const domainRegistry: DomainRegistry = new Map();
+export const domainContext: WeakMap<Model, DomainMap> = new WeakMap();
 
 export function registerDomain(prototype: Model, selector: () => AbstractConstructor<Model>) {
     const constructor = prototype.constructor;
@@ -36,11 +34,11 @@ export function getDomainMap(model: Model) {
 
 export function updateDomainMap(model: Model) {
     const domainMap = getDomainMap(model);
-    domainMapHistory.set(model, domainMap);
+    domainContext.set(model, domainMap);
 }
 
 export function compareDomainMap(model: Model) {
-    const prevDomainMap = domainMapHistory.get(model) ?? new Map();
+    const prevDomainMap = domainContext.get(model) ?? new Map();
     const nextDomainMap = getDomainMap(model);
     
     const prevDomainKeys = Array.from(prevDomainMap.keys());
@@ -51,7 +49,7 @@ export function compareDomainMap(model: Model) {
         const prevDomain = prevDomainMap.get(key);
         const nextDomain = nextDomainMap.get(key);
         if (prevDomain !== nextDomain) {
-            console.log('Domain changed', model.constructor.name)
+            // console.log('Domain changed', model.constructor.name)
             return true
         }
     }

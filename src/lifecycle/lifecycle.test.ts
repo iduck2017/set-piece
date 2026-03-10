@@ -1,10 +1,10 @@
 import { Model } from "../model";
-import { onReload } from "./on-reload";
-import { onMount } from "./on-mount";
-import { onUnmount } from "./on-unmount";
-import { asDependency } from "./as-dependency";
-import { asCustomChild } from "../child/as-custom-child";
-import { asChild } from "../child/as-child";
+import { useReloadHook } from "./use-reload-hook";
+import { useMountHook } from "./use-mount-hook";
+import { useUnmountHook } from "./use-unmount-hook";
+import { useDep } from "./use-dep";
+import { useCustomChild } from "../child/use-custom-child";
+import { useChild } from "../child/use-child";
 
 const counter = {
     reload: 0,
@@ -13,7 +13,7 @@ const counter = {
 }
 
 export class BarModel extends Model {
-    @asChild()
+    @useChild()
     private _foo?: FooModel;
 
     public setChild() {
@@ -27,7 +27,7 @@ export class BarModel extends Model {
 
 export class FooModel extends Model {
 
-    @asDependency()
+    @useDep()
     private _isEnabled: boolean = true;
     public get isEnabled() {
         return this._isEnabled;
@@ -37,18 +37,18 @@ export class FooModel extends Model {
         this._isEnabled = false;
     }
 
-    @onReload()
+    @useReloadHook()
     private handleReload() {
         console.log('handleReload', this);
         counter.reload++;
     }
 
-    @onMount()
+    @useMountHook()
     private handleMount() {
         counter.mount++;
     }
 
-    @onUnmount()
+    @useUnmountHook()
     private onUnmount() {
         counter.unmount++;
     }

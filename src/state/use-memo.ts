@@ -1,0 +1,53 @@
+import { Model } from "../model";
+import { delegatorContext, getDescriptor } from "../utils/get-descriptor";
+
+const meomoRegistry = new WeakMap<Function, string[]>();
+
+export function useMemo() {
+    return function(
+        prototype: Model,
+        key: string,
+        descriptor: PropertyDescriptor
+    ) {
+        const memoryKeys = meomoRegistry.get(prototype.constructor) ?? [];
+        memoryKeys.push(key);
+        meomoRegistry.set(prototype.constructor, memoryKeys);
+
+        const getter = descriptor.get;
+        if (!getter) return;
+        descriptor.get = function(this: Model) {
+            const delegator = delegatorContext.get(this) ?? new Map();
+            if (delegator.has(key)) {
+                return delegator.get(key);
+            }
+            // console.log('Memory miss', key);
+            const value = getter.call(this);
+            delegator.set(key, value);
+            return value;
+        }
+
+    }
+}
+
+function getMemoKeys(model: Model) {
+    let constructor = model.constructor;
+    const result: string[] = [];
+    while (constructor) {
+        const keys = meomoRegistry.get(constructor) ?? [];
+        keys.forEach(key => {
+            result.push(key);
+        });
+        constructor = Object.getPrototypeOf(constructor);
+    }
+    return result;
+}
+
+export function clearMemos(model: Model) {
+    const delegator = delegatorContext.get(model);
+    if (!delegator) return;
+    const memoryKeys = getMemoKeys(model);
+    memoryKeys.forEach(key => {
+        // console.log('Memory clear', key)
+        delegator.delete(key);
+    });
+}

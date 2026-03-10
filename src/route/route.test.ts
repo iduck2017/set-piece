@@ -1,10 +1,10 @@
-import { asChild } from "../child/as-child";
-import { asCustomChild } from "../child/as-custom-child";
+import { useChild } from "../child/use-child";
+import { useCustomChild } from "../child/use-custom-child";
 import { Model } from "../model";
-import { asRoute } from "./as-route";
+import { useRoute } from "./use-route";
 
 export class PineappleModel extends Model {
-    @asRoute(() => TruckModel)
+    @useRoute(() => TruckModel)
     private _truck?: TruckModel;
     public get truck() {
         return this._truck;
@@ -12,13 +12,13 @@ export class PineappleModel extends Model {
 }
 
 export class BoxModel extends Model {
-    @asRoute(() => TruckModel)
+    @useRoute(() => TruckModel)
     private _truck?: TruckModel;
     public get truck() {
         return this._truck;
     }
 
-    @asChild()
+    @useChild()
     private _pineapple?: PineappleModel;
     public get pineapple() {
         return this._pineapple;
@@ -33,7 +33,7 @@ export class BoxModel extends Model {
 }
 
 export class TruckModel extends Model {
-    @asChild()
+    @useChild()
     private _box?: BoxModel;
     public get box() {
         return this._box;
