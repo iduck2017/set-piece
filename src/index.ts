@@ -5,7 +5,7 @@ export { useChildList } from "./child/use-child-list";
 export { useListener } from './event/use-listener';
 export { usePrevEvent, PrevEvent } from './event/use-prev-event';
 export { usePostEvent, PostEvent } from './event/use-post-event';
-export { useChangeEvent } from './event/use-change-event';
+export { useObserver as useChangeEvent } from './event/use-observer';
 
 export { useDep } from './lifecycle/use-dep';
 export { useReloadHook } from './lifecycle/use-reload-hook';

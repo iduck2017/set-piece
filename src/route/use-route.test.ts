@@ -47,7 +47,7 @@ export class TruckModel extends Model {
 }
 
 
-describe('route', () => {
+describe('use-route', () => {
     const truck = new TruckModel();
     const box = new BoxModel();
     const pineapple = new PineappleModel();

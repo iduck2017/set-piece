@@ -1,4 +1,6 @@
+import { getChangeEventTypes } from "../event/use-observer";
 import { Model } from "../model";
+import { appendCoroutine } from "../transaction/use-coroutine";
 import { delegatorContext, getDescriptor } from "../utils/get-descriptor";
 
 const meomoRegistry = new WeakMap<Function, string[]>();
@@ -25,7 +27,6 @@ export function useMemo() {
             delegator.set(key, value);
             return value;
         }
-
     }
 }
 
@@ -42,12 +43,32 @@ function getMemoKeys(model: Model) {
     return result;
 }
 
-export function clearMemos(model: Model) {
+export function resetMemo(model: Model) {
     const delegator = delegatorContext.get(model);
     if (!delegator) return;
-    const memoryKeys = getMemoKeys(model);
-    memoryKeys.forEach(key => {
-        // console.log('Memory clear', key)
+    const memoMap: Map<string, any> = new Map();
+    /** Clean memory */
+    const memoKeys = getMemoKeys(model);
+    memoKeys.forEach(key => {
+        const prev = Reflect.get(model, key);
+        memoMap.set(key, prev);
         delegator.delete(key);
     });
+    /** Force reload memory */
+    memoKeys.forEach(key => {
+        const prev = memoMap.get(key);
+        appendCoroutine(() => {
+            const next = Reflect.get(model, key);
+            if (prev !== next) {
+                const types = getChangeEventTypes(model, key);
+                console.log('Diff memory', key, prev, next, types);
+                types.forEach(type => {
+                    const event = new type({ prev, next });
+                    model._internal.emit(event, {
+                        isYield: true
+                    });
+                });
+            }
+        })
+    })
 }

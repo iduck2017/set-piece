@@ -1,4 +1,5 @@
 import { Model } from "../model";
+import { appendCoroutine } from "../transaction/use-coroutine";
 import { getDescriptor } from "./get-descriptor";
 
 export function useEffect<

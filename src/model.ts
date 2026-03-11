@@ -1,16 +1,17 @@
 import { listChild } from "./child/use-custom-child";
 import { findRoot, getRouteMap } from "./route/use-route";
 import { emitEventAsync, emitEventSync, Event } from "./event";
-import { addListeners, removeListeners } from "./event/listener";
+import { addListeners, listenerContext, removeListeners } from "./event/listener";
 import { runReloadHooks } from "./lifecycle/use-reload-hook";
 import { runMountHooks } from "./lifecycle/use-mount-hook";
 import { runUnmountHooks } from "./lifecycle/use-unmount-hook";
 import { runLoadHooks } from "./lifecycle/use-load-hook";
 import { runUnloadHooks } from "./lifecycle/use-unload-hook";
 import { appendCoroutine } from "./transaction/use-coroutine";
-import { clearMemos } from "./state/use-memo";
+import { resetMemo } from "./state/use-memo";
 import { compareDomainMap, updateDomainMap } from "./route/domain";
 import { addDecorListeners, removeDecorListeners } from "./state/modifier";
+import { runTrx, useTrx } from "./transaction/use-trx";
 
 let uuid = 0;
 
@@ -64,7 +65,6 @@ export class Model {
             console.error('Parent not exists');
             return;
         }
-        this.unload()
         runUnmountHooks(this);
         this._parent = undefined;
         this.updateRoute();
@@ -108,13 +108,15 @@ export class Model {
         runUnloadHooks(this);
         removeListeners(this);
         removeDecorListeners(this);
-        clearMemos(this);
+        resetMemo(this);
     }
 
+    @useTrx()
     protected reload() {
         this.unload();
         this.load();
         runReloadHooks(this);
+        // console.log('Finish reload', listenerContext.get(this))
     }
 
     private load() {
