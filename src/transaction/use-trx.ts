@@ -1,4 +1,6 @@
+import { runObservers } from "../event/observer";
 import { Model } from "../model";
+import { checkWeakRefs } from "../refer/weak-ref";
 import { Method } from "../types";
 import { runCoroutines, coroutineContext } from "./use-coroutine";
 
@@ -22,6 +24,8 @@ export function useTrx() {
             isPending = true;
             method.call(this, ...args);
             isPending = false;
+            checkWeakRefs();
+            runObservers();
             runCoroutines();
         }
         return descriptor;
@@ -29,15 +33,13 @@ export function useTrx() {
 }
 
 
-export function runTrx(
-    method: () => void
-) {
-    if (isPending) {
-        return method();
-    }
+export function runTrx(method: () => void) {
+    if (isPending) return method();
     isPending = true;
     method();
-    isPending = false;
+    isPending = false;   
+    checkWeakRefs(); 
+    runObservers();
     runCoroutines();
 }
 

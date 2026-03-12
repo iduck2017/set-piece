@@ -27,6 +27,7 @@ class MonsterModel extends Model {
     @useDep()
     public damage: number;
     public receiveDamage() {
+        console.log('Receive damage', this.damage);
         this.damage += 10;
     }
 

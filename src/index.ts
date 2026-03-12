@@ -5,9 +5,10 @@ export { useChildList } from "./child/use-child-list";
 export { useListener } from './event/use-listener';
 export { usePrevEvent, PrevEvent } from './event/use-prev-event';
 export { usePostEvent, PostEvent } from './event/use-post-event';
-export { useObserver as useChangeEvent } from './event/use-observer';
+export { useObserver, ChangeEvent } from './event/use-observer';
 
 export { useDep } from './lifecycle/use-dep';
+export { useUnloadHook } from './lifecycle/use-unload-hook';
 export { useReloadHook } from './lifecycle/use-reload-hook';
 export { useMountHook } from './lifecycle/use-mount-hook';
 export { useUnmountHook } from './lifecycle/use-unmount-hook';
@@ -22,7 +23,7 @@ export { useModifier } from './state/use-modifier';
 export { useStorageRow } from './storage/use-storage-row';
 export { useStorage } from './storage/use-storage';
 
-export { useCoroutine, appendCoroutine } from './transaction/use-coroutine';
+export { useCoroutine, runCoroutine } from './transaction/use-coroutine';
 export { useTrx, runTrx } from './transaction/use-trx';
 
 export { useEffect } from './utils/use-effect';

@@ -2,9 +2,11 @@ import { Model } from "../model";
 import { TypedPropertyDecorator } from "../types";
 import { getDescriptor } from "../utils/get-descriptor";
 import { useRef } from "./use-ref";
+import { addWeakRef } from "./weak-ref";
 
-type WeakRefMap = Map<string, Model[]>;
+export type WeakRefMap = Map<string, Model[]>;
 
+/** target -> source */
 export const weakRefContext = new WeakMap<Model, WeakRefMap>();
 
 export function connectWeakRef(source: Model, key: string, targets: Model[]) {
@@ -27,17 +29,6 @@ export function unconnectWeakRef(source: Model, key: string, targets: Model[]) {
         refsMap.set(key, refs);
         weakRefContext.set(target, refsMap);
     });
-}
-
-export function unbindWeakRef(target: Model) {
-    const refsMap: WeakRefMap = weakRefContext.get(target) ?? new Map();
-    refsMap.forEach((refs, key) => {
-        refs.forEach(ref => {
-            if (ref.root !== target.root) {
-                Reflect.set(ref, key, undefined);
-            }
-        });
-    })
 }
 
 
@@ -71,7 +62,10 @@ export function useWeakRef<
                 setter.call(this, value);
                 const next: unknown = Reflect.get(this, key);
                 if (prev instanceof Model) unconnectWeakRef(this, key, [prev]);
-                if (next instanceof Model) connectWeakRef(this, key, [next]);
+                if (next instanceof Model) {
+                    connectWeakRef(this, key, [next]);
+                    addWeakRef(next);
+                }
             },
             enumerable: true,
             configurable: true,

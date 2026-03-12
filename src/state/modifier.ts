@@ -10,7 +10,7 @@ import { HandlerKeysMap, HandlerRegistry } from "../event/listener";
 /** domain -> handler keys */
 export const modifierContext: WeakMap<Model, HandlerRegistry> = new WeakMap();
 
-export function addDecorListeners(model: Model) {
+export function addModifiers(model: Model) {
     const selectorsMap = getDecorSelectorsMap(model);
     selectorsMap.forEach((selectors, key) => {
         const flag = runValidators(model, key);
@@ -31,7 +31,7 @@ export function addDecorListeners(model: Model) {
     })
 }
 
-export function removeDecorListeners(model: Model) {
+export function removeModifiers(model: Model) {
     const domainMap = getDomainMap(model);
     domainMap.forEach((domain, key) => {
         if (!domain) return;
@@ -42,7 +42,7 @@ export function removeDecorListeners(model: Model) {
     })
 }
 
-export function getDecorHandlers(model: Model, decor: Decor) {
+export function getHandlers(model: Model, decor: Decor) {
     let ancestor: Model | undefined = model;
     const result: Array<(target: Model, decor: Decor) => void> = [];
     while (ancestor) {

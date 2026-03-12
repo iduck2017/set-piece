@@ -6,7 +6,7 @@ import { Event } from ".";
 
 type EventSelector<E extends Event = Event, T extends Model = Model> = () => [
     eventType: Constructor<E>, 
-    domainType: Constructor<Model>, 
+    domainType: AbstractConstructor<Model>, 
     targetType: AbstractConstructor<T>
 ];
 

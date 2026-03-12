@@ -5,13 +5,13 @@ import { addListeners, listenerContext, removeListeners } from "./event/listener
 import { runReloadHooks } from "./lifecycle/use-reload-hook";
 import { runMountHooks } from "./lifecycle/use-mount-hook";
 import { runUnmountHooks } from "./lifecycle/use-unmount-hook";
-import { runLoadHooks } from "./lifecycle/use-load-hook";
 import { runUnloadHooks } from "./lifecycle/use-unload-hook";
-import { appendCoroutine } from "./transaction/use-coroutine";
+import { runCoroutine } from "./transaction/use-coroutine";
 import { resetMemo } from "./state/use-memo";
 import { compareDomainMap, updateDomainMap } from "./route/domain";
-import { addDecorListeners, removeDecorListeners } from "./state/modifier";
+import { addModifiers, removeModifiers } from "./state/modifier";
 import { runTrx, useTrx } from "./transaction/use-trx";
+import { addWeakRef } from "./refer/weak-ref";
 
 let uuid = 0;
 
@@ -19,7 +19,7 @@ export class Model {
     constructor() {
         uuid += 1;
         this._uuid = uuid.toString();
-        this.load()
+        this.reload()
     }
 
     private _uuid: string;
@@ -37,37 +37,48 @@ export class Model {
         return this._root;
     }
 
+    public get name() {
+        return this.constructor.name;
+    }
+
     public get _internal() {
         return {
             mount: this.mount.bind(this),
             unmount: this.unmount.bind(this),
             reload: this.reload.bind(this),
-            unload: this.unload.bind(this),
-            load: this.load.bind(this),
-
             emit: this.emit.bind(this),
         }
     }
 
 
+    @useTrx()
+    private _mount(parent: Model) {
+        this._parent = parent;
+        this.updateRoute();
+    }
     private mount(parent: Model) {
         if (this._parent) {
             console.error('Parent already exists');
             return;
         }
-        this._parent = parent;
-        this.updateRoute();
+        this._mount(parent);
         runMountHooks(this);
     }
 
+    @useTrx()
+    private _unmount() {
+        addWeakRef(this); 
+        this._parent = undefined;
+        this.updateRoute();
+    }
     private unmount() {
         if (!this._parent) {
             console.error('Parent not exists');
             return;
         }
+        console.log('Unmount', this.name);
         runUnmountHooks(this);
-        this._parent = undefined;
-        this.updateRoute();
+        this._unmount()
     }
 
     private updateRoute() {
@@ -93,7 +104,7 @@ export class Model {
         const isYield = options?.isYield ?? false;
         const isAsync = options?.isAsync ?? false;
         if (isYield) {
-            appendCoroutine(() => {
+            runCoroutine(() => {
                 emitEventSync(this, event);
             });
             return;
@@ -104,26 +115,32 @@ export class Model {
         emitEventSync(this, event);
     }
 
-    private unload() {
-        runUnloadHooks(this);
-        removeListeners(this);
-        removeDecorListeners(this);
+    private reloadState() {
         resetMemo(this);
     }
 
-    @useTrx()
-    protected reload() {
-        this.unload();
-        this.load();
-        runReloadHooks(this);
-        // console.log('Finish reload', listenerContext.get(this))
+    private reloadEvent() {
+        removeListeners(this);
+        addListeners(this);
     }
 
-    private load() {
-        addListeners(this);
-        addDecorListeners(this)
+    private reloadDecor() {
+        removeModifiers(this);
+        addModifiers(this);
+    }
+
+    
+    @useTrx()
+    private _reload() {
+        this.reloadState();
+        this.reloadDecor();
+        this.reloadEvent();
         updateDomainMap(this);
-        runLoadHooks(this);
+    }
+    protected reload() {
+        runUnloadHooks(this);
+        this._reload()
+        runReloadHooks(this);
     }
 
 }

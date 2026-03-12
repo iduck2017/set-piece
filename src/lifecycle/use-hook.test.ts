@@ -59,14 +59,14 @@ describe('lifecycle', () => {
     const bar = new BarModel();
 
     it('check-initial-status', () => {
-        expect(counter.reload).toBe(1);
+        expect(counter.reload).toBe(2);
         expect(counter.mount).toBe(0);
         expect(counter.unmount).toBe(0);
     });
 
     it('disable-foo', () => {
         foo.disable();
-        expect(counter.reload).toBe(2);
+        expect(counter.reload).toBe(3);
         expect(counter.mount).toBe(0);
         expect(counter.unmount).toBe(0);
     });

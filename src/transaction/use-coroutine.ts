@@ -23,7 +23,7 @@ export function useCoroutine() {
     }
 }
 
-export function appendCoroutine(thread: () => void) {
+export function runCoroutine(thread: () => void) {
     const isPending = checkTransactionStatus();
     if (isPending) {
         coroutineContext.push(thread);

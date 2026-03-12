@@ -1,5 +1,5 @@
 import { Model } from "../model";
-import { modifierContext, getDecorHandlers } from "./modifier";
+import { modifierContext, getHandlers } from "./modifier";
 
 export abstract class Decor<T = any> {
     constructor(origin: T) {
@@ -22,7 +22,7 @@ export abstract class CustomDecor<T> extends Decor<T> {
 
 
 export function emitDecor(target: Model, decor: Decor) {
-    const handlers = getDecorHandlers(target, decor);
+    const handlers = getHandlers(target, decor);
     handlers.forEach(handler => {
         handler(target, decor);
     });
