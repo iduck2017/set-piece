@@ -1,13 +1,9 @@
 import { Model } from "../model";
-import { useCustomChild } from "./use-custom-child";
 import { useChild } from "./use-child";
-import { useChildList } from "./use-child-list";
-import { listChild } from "./use-custom-child";
+import { childRegistry } from "./child-registry";
 
 class AppleModel extends Model {}
-
 class PineappleModel extends Model {}
-
 class BoxModel extends Model {
     @useChild()
     private _pineapple?: PineappleModel = new PineappleModel();
@@ -17,11 +13,11 @@ class BoxModel extends Model {
     public setPineapple(pineapple: PineappleModel) {
         this._pineapple = pineapple;
     }
-    public removePineapple() {
+    public delPineapple() {
         this._pineapple = undefined;
     }
 
-    @useChildList()
+    @useChild()
     private _apples: AppleModel[] = [];
     public get apples() {
         return [...this._apples];
@@ -29,10 +25,10 @@ class BoxModel extends Model {
     public addApple(apple: AppleModel) {
         this._apples.push(apple);
     }
-    public removeApple(apple: AppleModel) {
+    public delApple(apple: AppleModel) {
         this._apples = this._apples.filter(item => item !== apple);
     }
-    public replaceApple(index: number, apple: AppleModel) {
+    public setApple(index: number, apple: AppleModel) {
         if (index >= this._apples.length) {
             console.warn('Index out of bounds');
             return;
@@ -57,7 +53,7 @@ describe('child', () => {
     });
 
     it('list-child', () => {
-        const children = listChild(box);
+        const children = box.descendants
         expect(children).toContain(pineappleA);
         expect(children.length).toBe(1)
     });
@@ -70,7 +66,7 @@ describe('child', () => {
     });
 
     it('remove-pineapple', () => {
-        box.removePineapple();
+        box.delPineapple();
         expect(pineappleB?.parent).toBeUndefined();
         expect(box.pineapple).toBeUndefined()
     });
@@ -84,7 +80,7 @@ describe('child', () => {
 
     it('replace-apple', () => {
         expect(greenApple.parent).toBeUndefined();
-        box.replaceApple(0, greenApple);
+        box.setApple(0, greenApple);
         expect(greenApple.parent).toBe(box);
         expect(redApple.parent).toBeUndefined();
         expect(box.apples).toContain(greenApple);
@@ -92,7 +88,7 @@ describe('child', () => {
     })
 
     it('remove-apple', () => {
-        box.removeApple(greenApple);
+        box.delApple(greenApple);
         expect(greenApple.parent).toBeUndefined();
         expect(box.apples.length).toBe(0);
     })

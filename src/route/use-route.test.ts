@@ -1,5 +1,4 @@
 import { useChild } from "../child/use-child";
-import { useCustomChild } from "../child/use-custom-child";
 import { Model } from "../model";
 import { useRoute } from "./use-route";
 

@@ -1,6 +1,6 @@
 import { Model } from "../model";
 import { TypedPropertyDecorator } from "../types";
-import { getDescriptor } from "./get-descriptor";
+import { fieldDelegator } from "./field-delegator";
 
 export function useRange<
     M extends Model & Record<string, any>,
@@ -15,7 +15,7 @@ export function useRange<
         prototype: M,
         key: K,
     ) {
-        const { getter, setter } = getDescriptor(prototype, key);   
+        const [getter, setter] = fieldDelegator.access(prototype, key);   
         Object.defineProperty(prototype, key, {
             get() {
                 return getter.call(this);

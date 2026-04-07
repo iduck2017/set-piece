@@ -1,21 +1,36 @@
-import { Model } from "../model";
-import { getHandlers, listenerContext } from "./listener";
-import { listenerRegistry } from "./use-listener";
-
-export abstract class Event {}
-
-export function emitEventSync(target: Model, event: Event) {
-    const handlers = getHandlers(target, event);
-    handlers.forEach(handler => {
-        handler(target, event);
-    });
+export class Event {
+    protected readonly _brand = Symbol('event')
 }
 
-export async function emitEventAsync(target: Model, event: Event) {
-    const handlers = getHandlers(target, event);
-    for (const handler of handlers) {
-        await handler(target, event);
+export abstract class PostEvent<P, R> extends Event {
+    constructor(props: {
+        options: P;
+        result: R;
+    }) {
+        super();
+        this.options = props.options;
+        this.result = props.result;
+    }
+
+    public readonly options: P;
+    public readonly result: R;
+}
+
+export abstract class PrevEvent<P> extends Event {
+    constructor(props: {
+        options: P;
+    }) {
+        super();
+        this.options = props.options;
+    }
+
+    public readonly options: P;
+
+    private _isAborted: boolean = false;
+    public get isAborted() {
+        return this._isAborted;
+    }
+    public abort() {
+        this._isAborted = true;
     }
 }
-
-export type EventHandler<T extends Model, E extends Event> = (target: T, event: E) => void;
