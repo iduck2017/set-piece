@@ -38,5 +38,5 @@ class WeakRefSourceManager {
         });
     }
 }
-export const weakRefSourceManager = new WeakRefSourceManager();
+export const weakRefManager = new WeakRefSourceManager();
 

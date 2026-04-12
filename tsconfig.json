@@ -14,7 +14,8 @@
     "experimentalDecorators": true,
     "useDefineForClassFields": false,
     "strictFunctionTypes": true,
-    "noUncheckedIndexedAccess": true
+    "noUncheckedIndexedAccess": true,
+    "types": ["jest", "node"]
   },
   "include": ["src/**/*", "test/**/*"],
   "exclude": ["dist/**/*"]

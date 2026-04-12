@@ -1,8 +1,8 @@
 import { useDep } from "../dep/use-dep";
 import { Model } from "../model";
 import { TypedPropertyDecorator } from "../types";
-import { fieldDelegator } from "../utils/field-delegator";
-import { useCustomChild } from "./use-custom-child";
+import { tagDelegator } from "../tag/tag-delegator";
+import { childRegistry } from "./child-registry";
 
 export type ChildDict = Record<string, Model | undefined>
 export function useChildDict<
@@ -14,17 +14,18 @@ export function useChildDict<
         TypedPropertyDecorator<never, never> {
     return function(prototype: M, key: K) {
         useDep()(prototype, key);
-        useCustomChild((model, key) => {
+        childRegistry.register(prototype, key, (model, key) => {
             return Object.values(model[key]).filter(item => item instanceof Model)
-        })(prototype, key);
+        });
 
-        const [getter, setter] = fieldDelegator.access(prototype, key);
+        const descriptor = Object.getOwnPropertyDescriptor(prototype, key);
         Object.defineProperty(prototype, key, {
             get(this: Model) {
-                return getter.call(this);
+                if (descriptor?.get) return descriptor.get.call(this);
+                else return tagDelegator.get(this, key);
             },
             set(this: Model, value: ChildDict | undefined) {
-                const prev: ChildDict = getter.call(this) ?? {};
+                const prev: ChildDict | undefined = Reflect.get(this, key)
                 const next = value ? new Proxy(value, {
                     set: (target, prop, next) => {
                         const prev = Reflect.get(target, prop);
@@ -40,8 +41,11 @@ export function useChildDict<
                         return true;
                     }
                 }) : undefined;
-                setter.call(this, next);
-                Object.values(prev)
+
+                if (descriptor?.set) descriptor.set.call(this, next);
+                else tagDelegator.set(this, key, next);
+
+                Object.values(prev ?? {})
                     .filter(item => item instanceof Model)
                     .forEach(item => item._internal.unmount());
                 Object.values(next ?? {})

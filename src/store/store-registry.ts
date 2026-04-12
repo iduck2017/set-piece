@@ -17,3 +17,4 @@ class StoreRegistry {
     }
 }
 export const storeRegistry = new StoreRegistry();
+

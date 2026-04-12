@@ -2,13 +2,13 @@ import { PostEvent, PrevEvent } from ".";
 import { Model } from "../model";
 import { Constructor, Method } from "../types";
 
-export type StoryConfig<P, R> = () => [
-    prevEvent: Constructor<PrevEvent<P>>,
-    postEvent: Constructor<PostEvent<P, R>>
+export type EventProducerLoader<P, R> = () => [
+    prevEvent: Constructor<PrevEvent<P>> | undefined,
+    postEvent: Constructor<PostEvent<P, R>> | undefined
 ]
 
-export function useStory<P, R>(
-    configurator: StoryConfig<P, R>
+export function useEventProducer<P, R>(
+    loader: EventProducerLoader<P, R>
 ) {
     return function(
         prototype: Model,
@@ -22,13 +22,13 @@ export function useStory<P, R>(
             options: P, 
             event: PrevEvent<P> | undefined
         ) {
-            const [prevEventType, postEventType] = configurator();
-            const prevEvent = new prevEventType({ options });
-            const postEvent = new postEventType({ options })
-            this.emit(prevEvent);
-            if (prevEvent.isAborted) return;
+            const [prevEventType, postEventType] = loader();
+            const prevEvent = prevEventType ? new prevEventType({ options }) : undefined;
+            const postEvent = postEventType ? new postEventType({ options }) : undefined;
+            if (prevEvent) this.emit(prevEvent);
+            if (prevEvent?.isAborted) return;
             const result = method.call(this, options, prevEvent);
-            this.emit(postEvent, { isYield: true });
+            if (postEvent) this.emit(postEvent, { isYield: true });
             return result
         }
     }

@@ -1,32 +1,33 @@
 import { Model } from "../model";
 import { AbstractConstructor } from "../types";
-import { getTypes } from "../utils/get-types";
 
-export type RefUnbinder = (refSource: Model | undefined, key: string, refTarget: Model | undefined) => void;
-export type RefUnbinderMap = Map<string, RefUnbinder>;
+export type WeakRefUnloader = (refSource: Model | undefined, key: string, refTarget: Model | undefined) => void;
+export type WeakRefUnloaderMap = Map<string, WeakRefUnloader>;
 class WeakRefRegistry {
-    private _context: Map<AbstractConstructor<Model>, RefUnbinderMap> = new Map();
+    private _config: Map<AbstractConstructor<Model>, WeakRefUnloaderMap> = new Map();
 
     public register(
         prototype: Model,
         key: string,
-        unbinder: RefUnbinder,
+        unbinder: WeakRefUnloader,
     ) {
         const type: any = prototype.constructor;
-        const subConfig: RefUnbinderMap = this._context.get(type) ?? new Map();
+        const subConfig: WeakRefUnloaderMap = this._config.get(type) ?? new Map();
         subConfig.set(key, unbinder);
-        this._context.set(type, subConfig);
+        this._config.set(type, subConfig);
     }
 
-    public query(model: Model): RefUnbinderMap {
-        const result: RefUnbinderMap = new Map();
-        getTypes(model).forEach(type => {
-            const subConfig: RefUnbinderMap = this._context.get(type) ?? new Map();
+    public query(model: Model): WeakRefUnloaderMap {
+        const result: WeakRefUnloaderMap = new Map();
+        let constructor: any = model.constructor;
+        while (constructor) {
+            const subConfig: WeakRefUnloaderMap = this._config.get(constructor) ?? new Map();
             subConfig.forEach((unbinder, key) => {
                 if (result.has(key)) return;
                 result.set(key, unbinder);
             });
-        });
+            constructor = Object.getPrototypeOf(constructor);
+        };
         return result;
     }
 }

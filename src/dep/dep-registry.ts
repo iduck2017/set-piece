@@ -5,10 +5,10 @@ class DepRegistry {
     private _config: Map<AbstractConstructor<Model>, string[]> = new Map();
 
     public register(prototype: Model, key: string) {
-        const type: any = prototype.constructor;
-        const keys = this._config.get(type) ?? [];
+        const constructor: any = prototype.constructor;
+        const keys = this._config.get(constructor) ?? [];
         keys.push(key);
-        this._config.set(type, keys);
+        this._config.set(constructor, keys);
     }
 }
 

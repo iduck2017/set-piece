@@ -1,49 +1,49 @@
 import { Event } from ".";
 import { Model } from "../model";
 import { Constructor } from "../types";
-import { Field } from "../utils/field-registry";
+import { Tag } from "../tag/tag-registry";
 
-export type EventConsumerFieldsMapByType = Map<Constructor<Event>, Array<Field>>
+type EventConsumerTagsMap = Map<Constructor<Event>, Array<Tag>>
 class EventConsumerManager {
-    private _context: WeakMap<Model, EventConsumerFieldsMapByType> = new WeakMap();
+    private _context: WeakMap<Model, EventConsumerTagsMap> = new WeakMap();
 
-    public bind(
-        eventProducer: Model,
+    public add(
+        eventProducerModel: Model,
         eventType: Constructor<Event>,
-        eventConsumerField: Field,
+        eventConsumerTag: Tag,
     ) {
-        const subContext: EventConsumerFieldsMapByType = this._context.get(eventProducer) ?? new Map();
-        const eventConsumerFields = subContext.get(eventType) ?? [];
-        eventConsumerFields.push(eventConsumerField);
-        subContext.set(eventType, eventConsumerFields);
-        this._context.set(eventProducer, subContext);
+        const subContext: EventConsumerTagsMap = this._context.get(eventProducerModel) ?? new Map();
+        const eventConsumerTags = subContext.get(eventType) ?? [];
+        eventConsumerTags.push(eventConsumerTag);
+        subContext.set(eventType, eventConsumerTags);
+        this._context.set(eventProducerModel, subContext);
     }
 
-    public unbind(
-        eventProducer: Model,
+    public remove(
+        eventProducerModel: Model,
         eventType: Constructor<Event>,
-        eventConsumerField: Field,
+        eventConsumerTag: Tag,
     ) {
-        const subContext: EventConsumerFieldsMapByType = this._context.get(eventProducer) ?? new Map();
-        const eventConsumerFields = subContext.get(eventType) ?? [];
-        const index = eventConsumerFields.indexOf(eventConsumerField);
+        const subContext: EventConsumerTagsMap = this._context.get(eventProducerModel) ?? new Map();
+        const eventConsumerTags = subContext.get(eventType) ?? [];
+        const index = eventConsumerTags.indexOf(eventConsumerTag);
         if (index === -1) return;
-        eventConsumerFields.splice(index, 1);
-        subContext.set(eventType, eventConsumerFields);
-        this._context.set(eventProducer, subContext);
+        eventConsumerTags.splice(index, 1);
+        subContext.set(eventType, eventConsumerTags);
+        this._context.set(eventProducerModel, subContext);
     }
 
-    public query(eventProducer: Model): EventConsumerFieldsMapByType
-    public query(eventProducer: Model, event: Event): Array<Field>
+    public query(eventProducerModel: Model): EventConsumerTagsMap
+    public query(eventProducerModel: Model, event: Event): Array<Tag>
     public query(
-        eventProducer: Model,
+        eventProducerModel: Model,
         event?: Event
     ) {
-        if (!event) return this._context.get(eventProducer) ?? new Map();
+        if (!event) return this._context.get(eventProducerModel) ?? new Map();
         const eventType: any = event.constructor;
-        const subContext: EventConsumerFieldsMapByType = this._context.get(eventProducer) ?? new Map();
-        const eventConsumerFields = subContext.get(eventType) ?? [];
-        return eventConsumerFields;
+        const subContext: EventConsumerTagsMap = this._context.get(eventProducerModel) ?? new Map();
+        const eventConsumerTags = subContext.get(eventType) ?? [];
+        return eventConsumerTags;
     }
 }
 

@@ -1,49 +1,49 @@
 import { Decor } from ".";
 import { Model } from "../model";
 import { Constructor } from "../types";
-import { Field } from "../utils/field-registry";
+import { Tag } from "../tag/tag-registry";
 
-export type DecorConsumerFieldsMapByType = Map<Constructor<Decor>, Array<Field>>
+type DecorConsumerTagsMap = Map<Constructor<Decor>, Array<Tag>>
 class DecorConsumerManager {
-    private _context: WeakMap<Model, DecorConsumerFieldsMapByType>= new WeakMap();
+    private _context: WeakMap<Model, DecorConsumerTagsMap>= new WeakMap();
 
-    public bind(
-        decorProducer: Model,
+    public add(
+        decorProducerModel: Model,
         decorType: Constructor<Decor>,
-        decorConsumerField: Field,
+        decorConsumerTag: Tag,
     ) {
-        const subContext: DecorConsumerFieldsMapByType = this._context.get(decorProducer) ?? new Map();
-        const decorConsumerFields = subContext.get(decorType) ?? [];
-        decorConsumerFields.push(decorConsumerField);
-        subContext.set(decorType, decorConsumerFields);
-        this._context.set(decorProducer, subContext);
+        const subContext: DecorConsumerTagsMap = this._context.get(decorProducerModel) ?? new Map();
+        const decorConsumerTags = subContext.get(decorType) ?? [];
+        decorConsumerTags.push(decorConsumerTag);
+        subContext.set(decorType, decorConsumerTags);
+        this._context.set(decorProducerModel, subContext);
     }
 
-    public unbind(
-        decorProducer: Model,
+    public remove(
+        decorProducerModel: Model,
         decorType: Constructor<Decor>,
-        decorConsumerField: Field,
+        decorConsumerTag: Tag,
     ) {
-        const subContext: DecorConsumerFieldsMapByType = this._context.get(decorProducer) ?? new Map();
-        const decorConsumerFields = subContext.get(decorType) ?? [];
-        const index = decorConsumerFields.indexOf(decorConsumerField);
+        const subContext: DecorConsumerTagsMap = this._context.get(decorProducerModel) ?? new Map();
+        const decorConsumerTags = subContext.get(decorType) ?? [];
+        const index = decorConsumerTags.indexOf(decorConsumerTag);
         if (index === -1) return;
-        decorConsumerFields.splice(index, 1);
-        subContext.set(decorType, decorConsumerFields);
-        this._context.set(decorProducer, subContext);
+        decorConsumerTags.splice(index, 1);
+        subContext.set(decorType, decorConsumerTags);
+        this._context.set(decorProducerModel, subContext);
     }
 
-    public query(decorProducer: Model): Map<Constructor<Decor>, Array<Field>>
-    public query(decorProducer: Model, decor: Decor): Array<Field>
+    public query(decorProducerModel: Model): Map<Constructor<Decor>, Array<Tag>>
+    public query(decorProducerModel: Model, decor: Decor): Array<Tag>
     public query(
-        decorProducer: Model,
+        decorProducerModel: Model,
         decor?: Decor,
     ) {
-        if (!decor) return this._context.get(decorProducer) ?? new Map();
+        if (!decor) return this._context.get(decorProducerModel) ?? new Map();
         const decorType: any = decor.constructor;
-        const subContext: DecorConsumerFieldsMapByType = this._context.get(decorProducer) ?? new Map();
-        const decorConsumerFields = subContext.get(decorType) ?? [];
-        return decorConsumerFields;
+        const subContext: DecorConsumerTagsMap = this._context.get(decorProducerModel) ?? new Map();
+        const decorConsumerTags = subContext.get(decorType) ?? [];
+        return decorConsumerTags;
     }
 }
 export const decorConsumerManager = new DecorConsumerManager();

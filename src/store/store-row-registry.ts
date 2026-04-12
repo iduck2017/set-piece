@@ -6,7 +6,12 @@ export type StoreRowConfigMap = Map<string, StoreRowConfig>;
 class StoreRowRegistry {
     private _context: Map<Function, StoreRowConfigMap> = new Map();
 
-    public register(prototype: Model, key: string, parser: (value: any) => any, generator: (value: any) => any) {
+    public register(
+        prototype: Model, 
+        key: string, 
+        parser: (value: any) => any, 
+        generator: (value: any) => any
+    ) {
         const configMap: StoreRowConfigMap = this._context.get(prototype.constructor) ?? new Map();
         configMap.set(key, [parser, generator]);
         this._context.set(prototype.constructor, configMap);

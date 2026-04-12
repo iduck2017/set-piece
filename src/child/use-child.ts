@@ -1,9 +1,9 @@
 import { useDep } from "../dep/use-dep";
 import { Model } from "../model";
 import { TypedPropertyDecorator } from "../types";
-import { fieldDelegator } from "../utils/field-delegator";
+import { tagDelegator } from "../tag/tag-delegator";
 import { ChildDelegator } from "./child-delegator";
-import { useCustomChild } from "./use-custom-child";
+import { childRegistry } from "./child-registry";
 
 export type ChildList = Array<Model | undefined>
 export function useChild<
@@ -19,8 +19,7 @@ export function useChild<
         prototype: M,
         key: K,
     ) {
-        useDep()(prototype, key)
-        useCustomChild((model, key) => {
+        childRegistry.register(prototype, key, (model, key) => {
             const result: Model[] = [];
             const value = model[key]
             if (value instanceof Array) {
@@ -29,30 +28,34 @@ export function useChild<
             }
             if (value instanceof Model) result.push(model[key]);
             return result;
-        })(prototype, key);
+        })
 
-        const [getter, setter] = fieldDelegator.access(prototype, key);
+        const descriptor = Object.getOwnPropertyDescriptor(prototype, key);
         Object.defineProperty(prototype, key, {
             get(this: Model) {
-                return getter.call(this);
+                if (descriptor?.get) return descriptor.get.call(this);
+                else return tagDelegator.get(this, key);
             },
             set(this: Model, value) {
-                const prev: unknown = getter.call(this);
+                const prev: unknown = Reflect.get(this, key)
                 const next: unknown = new ChildDelegator(value, this).value;
-                setter.call(this, next);
+                if (descriptor?.set) descriptor.set.call(this, next);
+                else tagDelegator.set(this, key, next);
                 if (prev instanceof Array) {
                     prev.filter(item => item instanceof Model)
                         .forEach(item => item._internal.unmount());
                 }
-                else if (prev instanceof Model) prev._internal.unmount();
+                if (prev instanceof Model) prev._internal.unmount();
                 if (next instanceof Array) {
                     next.filter(item => item instanceof Model)
                         .forEach(item => item._internal.mount(this));
                 }
-                else if (next instanceof Model) next._internal.mount(this);
+                if (next instanceof Model) next._internal.mount(this);
             },
             enumerable: true,
             configurable: true,
         });
+        useDep()(prototype, key)
+
     }
 }

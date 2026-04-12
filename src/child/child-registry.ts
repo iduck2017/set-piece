@@ -1,6 +1,5 @@
 import { Model } from "../model";
 import { AbstractConstructor } from "../types";
-import { getTypes } from "../utils/get-types";
 
 export type ChildIteratorMap = Map<string, ChildIterator>
 export type ChildIterator = (model: Model & Record<string, any>, key: string) => Model[];
@@ -20,15 +19,16 @@ class ChildRegistry {
     
     public query(model: Model): ChildIteratorMap {
         const result: ChildIteratorMap = new Map();
-        getTypes(model).forEach(constructor => {
+        let constructor: any = model.constructor;
+        while (constructor) {
             const subConfig: ChildIteratorMap = this._config.get(constructor) ?? new Map();
             subConfig.forEach((iterator, key) => {
                 if (result.has(key)) return;
                 result.set(key, iterator);
             });
-        });
+            constructor = Object.getPrototypeOf(constructor);
+        }
         return result;
     }
 }
-
 export const childRegistry = new ChildRegistry();

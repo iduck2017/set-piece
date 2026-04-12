@@ -1,13 +1,12 @@
 import { Model } from "../model";
 import { TypedPropertyDecorator } from "../types";
-import { fieldRegistry } from "../utils/field-registry";
-import { fieldDelegator } from "../utils/field-delegator";
-import { weakRefFieldResolver } from "./weak-ref-field-resolver";
-import { weakRefSourceManager } from "./weak-ref-source-manager";
-import { useCustomWeakRef } from "./use-custom-weak-ref";
+import { weakRefResolver } from "./weak-ref-resolver";
+import { weakRefManager } from "./weak-ref-manager";
 import { useDep } from "../dep/use-dep";
+import { weakRefRegistry } from "./weak-ref-registry";
+import { tagDelegator } from "../tag/tag-delegator";
+import { RefList } from "./use-ref";
 
-export type WeakRefList = Array<Model | undefined>
 export function useWeakRef<
     M extends Model & Record<string, any>,
     K extends string
@@ -15,7 +14,7 @@ export function useWeakRef<
     undefined extends M[K] ?
         M[K] extends Model | undefined ?
             TypedPropertyDecorator<M, K> :
-            M[K] extends WeakRefList | undefined ?
+            M[K] extends RefList | undefined ?
                 TypedPropertyDecorator<M, K> :
                 TypedPropertyDecorator<never, never> :
         TypedPropertyDecorator<never, never> {
@@ -24,7 +23,7 @@ export function useWeakRef<
         key: K,
     ) {
         useDep()(prototype, key)
-        useCustomWeakRef<M, K>((refSource, key, refTarget) => {
+        weakRefRegistry.register(prototype, key, (refSource, key, refTarget) => {
             if (!refSource || !refTarget) return;
             if (refSource.root === refTarget.root) return;
             const value = Reflect.get(refSource, key);
@@ -32,42 +31,51 @@ export function useWeakRef<
                 const refTargets = value;
                 const index = value.indexOf(refTarget);
                 if (index === -1) return;
+                console.log('WeakRef unbind', key)
                 refTargets.splice(index, 1);
             } 
-            else Reflect.set(refSource, key, undefined);
-        })(prototype, key);
+            else {
+                console.log('WeakRef unbind', key)
+                Reflect.set(refSource, key, undefined);
+            }
+        })
 
-        const [getter, setter] = fieldDelegator.access(prototype, key);
+        const descriptor = Object.getOwnPropertyDescriptor(prototype, key);
         Object.defineProperty(prototype, key, {
             get(this: Model) {
-                return getter.call(this);
+                if (descriptor?.get) return descriptor.get.call(this);
+                return tagDelegator.get(this, key);
             },
             set(this: Model, value) {
-                const prev: unknown = getter.call(this);
-                setter.call(this, value);
-                const next: unknown = getter.call(this);
+                const prev: unknown = Reflect.get(this, key);
+                if (descriptor?.set) descriptor.set.call(this, value);
+                else tagDelegator.set(this, key, value);
+                const next: unknown = Reflect.get(this, key);
                 if (prev instanceof Array) {
                     prev.filter(item => item instanceof Model)
                         .forEach(item => {
-                            weakRefSourceManager.unbind(this, key, [item])
+                            weakRefManager.unbind(this, key, [item])
                         });
                 }
-                if (prev instanceof Model) weakRefSourceManager.unbind(this, key, [prev]);
+                if (prev instanceof Model) weakRefManager.unbind(this, key, [prev]);
                 if (next instanceof Array) {
                     next.filter(item => item instanceof Model)
                         .forEach(item => {
-                            weakRefSourceManager.bind(this, key, [item]);
-                            weakRefFieldResolver.register(fieldRegistry.query(this, key));
+                            weakRefManager.bind(this, key, [item]);
+                            const weakRefTag = tagDelegator.get(this, key);
+                            weakRefResolver.register(weakRefTag);
                         });
                 }
                 if (next instanceof Model) {
-                    weakRefSourceManager.bind(this, key, [next]);
-                    weakRefFieldResolver.register(fieldRegistry.query(this, key));
+                    weakRefManager.bind(this, key, [next]);
+                    const weakRefTag = tagDelegator.get(this, key);
+                    weakRefResolver.register(weakRefTag);
                 }
             },
             enumerable: true,
             configurable: true,
         });
+        
     }
 }
 

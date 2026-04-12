@@ -1,23 +1,23 @@
-import { Field } from "../utils/field-registry";
+import { Tag } from "../tag/tag-registry";
 
 class MemoDelegator {
-    private _context: WeakMap<Field, any> = new WeakMap();
+    private _context: WeakMap<Tag, unknown> = new WeakMap();
 
-    public query(memoField: Field): any {
-        return this._context.get(memoField);
+    public query(tag: Tag): unknown {
+        return this._context.get(tag);
     }
 
-    public update(memoField: Field, value: any) {
-        this._context.set(memoField, value);
+    public update(tag: Tag, value: unknown) {
+        this._context.set(tag, value);
     }
 
-    public clear(memoField: Field) {
-        this._context.delete(memoField);
+    public clear(tag: Tag) {
+        this._context.delete(tag);
     }
-    public check(memoField: Field) {
-        return this._context.has(memoField);
+
+    public check(tag: Tag) {
+        return this._context.has(tag);
     }
 }
-
 
 export const memoDelegator = new MemoDelegator()

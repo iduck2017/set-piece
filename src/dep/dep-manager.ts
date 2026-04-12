@@ -1,25 +1,28 @@
 
-import { Field } from "../utils/field-registry";
+import { Tag } from "../tag/tag-registry";
 
 class DepManager {
-    private _context: WeakMap<Field, Field[]> = new WeakMap();
+    private _context: WeakMap<Tag, Tag[]> = new WeakMap();
 
-    public query(depConsumer: Field) {
-        return this._context.get(depConsumer) ?? [];
+    public query(depConsumerTag: Tag) {
+        return this._context.get(depConsumerTag) ?? [];
     }
 
-    public bind(depConsumer: Field, dep: Field) {
-        const deps = this._context.get(depConsumer) ?? [];
-        deps.push(dep);
-        this._context.set(depConsumer, deps);
+    public add(depConsumerTag: Tag, tag: Tag) {
+        const tags = this._context.get(depConsumerTag) ?? [];
+        if (tags.includes(tag)) return;
+        tags.push(tag);
+        this._context.set(depConsumerTag, tags);
     }
 
-    public unbind(depConsumer: Field, dep: Field) {
-        const deps = this._context.get(depConsumer) ?? [];
-        const index = deps.indexOf(dep);
+    public remove(depConsumerTag: Tag, tag?: Tag) {
+        const tags = this._context.get(depConsumerTag) ?? [];
+        if (!tag) return this._context.delete(depConsumerTag);
+        const index = tags.indexOf(tag);
         if (index === -1) return;
-        deps.splice(index, 1);
-        this._context.set(depConsumer, deps);
+        tags.splice(index, 1);
+        this._context.set(depConsumerTag, tags);
     }
 }
+
 export const depManager = new DepManager();

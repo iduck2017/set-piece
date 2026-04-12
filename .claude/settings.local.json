@@ -1,0 +1,19 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm install:*)",
+      "Bash(yarn --version)",
+      "Bash(yarn add:*)",
+      "Bash(node esbuild.config.js)",
+      "Bash(node -e \"const {generateBinPath} = require\\('./node_modules/esbuild/lib/main.js'\\); console.log\\(process.platform, process.arch\\)\")",
+      "Bash(node -e \"console.log\\(require\\('./node_modules/@esbuild/win32-x64/package.json'\\).version\\)\")",
+      "Bash(node -e \"console.log\\(require\\('./node_modules/esbuild/package.json'\\).version\\)\")",
+      "Bash(node -e \"console.log\\(JSON.stringify\\(require\\('./node_modules/@esbuild/win32-x64/package.json'\\), null, 2\\)\\)\")",
+      "Bash(yarn cache:*)",
+      "Bash(./node_modules/@esbuild/win32-x64/esbuild.exe --version)",
+      "Bash(cmd.exe /c \"node_modules\\\\@esbuild\\\\win32-x64\\\\esbuild.exe --version\")",
+      "Bash(cmd.exe /c \"node_modules\\\\@esbuild\\\\win32-x64\\\\esbuild.exe --version 2>&1\")",
+      "Bash(node -e \"const {spawnSync} = require\\('child_process'\\); const r = spawnSync\\('node_modules\\\\\\\\\\\\\\\\@esbuild\\\\\\\\\\\\\\\\win32-x64\\\\\\\\\\\\\\\\esbuild.exe', ['--version']\\); console.log\\('status:', r.status, 'signal:', r.signal, 'error:', r.error, 'stdout:', r.stdout?.toString\\(\\), 'stderr:', r.stderr?.toString\\(\\)\\)\")"
+    ]
+  }
+}

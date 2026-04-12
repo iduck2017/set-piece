@@ -1,19 +1,23 @@
-import { Model } from "../model";
+import { LogLevel, logService } from "./log-service";
 
-export function useConsoleLog() {
+export function useConsoleLog(level?: LogLevel) {
     return function(
-        model: Model,
+        prototype: object,
         key: string,
-        descriptor: TypedPropertyDescriptor<any>,
+        descriptor: TypedPropertyDescriptor<(...args: any[]) => unknown>,
     ) {
         const method = descriptor.value;
         if (!method) return descriptor;
         descriptor.value = function(...args: any[]) {
-            console.group(`${model.constructor.name} ${key}`);
+            const _prevLevel = logService.level;
+            const _nextLevel = level ?? LogLevel.INFO
+            logService.level = Math.max(_prevLevel, _nextLevel);
             const result = method.apply(this, args);
-            console.groupEnd();
+            logService.level = _prevLevel;
             return result;
         }
         return descriptor;
     }
 }
+
+

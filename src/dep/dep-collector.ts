@@ -1,28 +1,27 @@
-import { Field } from "../utils/field-registry";
+import { Tag } from "../tag/tag-registry";
 
 class DepCollector {
-    private _context: Map<Field, Field[]> = new Map();
+    private _context: Map<Tag, Tag[]> = new Map();
 
-    public collect(dep: Field) {
-        this._context.forEach((producers) => {
-            if (producers.includes(dep)) return;
-            producers.push(dep);
+    public collect(tag: Tag) {
+        this._context.forEach((tags) => {
+            if (tags.includes(tag)) return;
+            tags.push(tag);
         })
     }
 
-    public init(depConsumer: Field) {
-        const producers = this._context.get(depConsumer) ?? [];
-        this._context.set(depConsumer, producers);
+    public init(depConsumerTag: Tag) {
+        const tags = this._context.get(depConsumerTag) ?? [];
+        this._context.set(depConsumerTag, tags);
     }
 
-    public query(depConsumer: Field) {
-        return this._context.get(depConsumer) ?? [];
+    public clear(depConsumerTag: Tag) {
+        this._context.delete(depConsumerTag);
     }
 
-    public clear(depConsumer: Field) {
-        this._context.delete(depConsumer);
+    public query(depConsumerTag: Tag) {
+        return this._context.get(depConsumerTag) ?? [];
     }
 }
-
 
 export const depCollector = new DepCollector();

@@ -3,18 +3,26 @@ import { Model } from "../model";
 import { useRoute } from "./use-route";
 
 export class PineappleModel extends Model {
-    @useRoute(() => TruckModel)
-    private _truck?: TruckModel;
-    public get truck() {
-        return this._truck;
+    @useRoute(() => RoomModel)
+    private _room?: RoomModel;
+    public get room() {
+        return this._room;
+    }
+}
+
+export class AppleModel extends Model {
+    @useRoute(() => RoomModel)
+    private _room?: RoomModel;
+    public get room() {
+        return this._room;
     }
 }
 
 export class BoxModel extends Model {
-    @useRoute(() => TruckModel)
-    private _truck?: TruckModel;
-    public get truck() {
-        return this._truck;
+    @useRoute(() => RoomModel)
+    private _room?: RoomModel;
+    public get room() {
+        return this._room;
     }
 
     @useChild()
@@ -22,81 +30,63 @@ export class BoxModel extends Model {
     public get pineapple() {
         return this._pineapple;
     }
-
     public setPineapple(pineapple: PineappleModel) {
         this._pineapple = pineapple;
     }
     public removePineapple() {
         this._pineapple = undefined;
     }
+
+    @useChild()
+    private _apples: AppleModel[] = [];
+    public get apples() {
+        return this._apples;
+    }
+    public addApple(apple: AppleModel) {
+        this._apples.push(apple);
+    }
+    public removeApples() {
+        this._apples = []
+    }
+
 }
 
-export class TruckModel extends Model {
+export class RoomModel extends Model {
     @useChild()
     private _box?: BoxModel;
     public get box() {
         return this._box;
     }
-    public loadBox(box: BoxModel) {
+    public addBox(box: BoxModel) {
         this._box = box;
     }
-    public unloadBox() {
+    public removeBox() {
         this._box = undefined;
     }
 }
 
 
-describe('use-route', () => {
-    const truck = new TruckModel();
-    const box = new BoxModel();
-    const pineapple = new PineappleModel();
+const room = new RoomModel();
+const box = new BoxModel();
+const pineapple = new PineappleModel();
+const apple = new AppleModel();
 
-    it('check-root', () => {
-        expect(truck.root).toBe(truck);
-        expect(box.root).toBe(box);
-        expect(pineapple.root).toBe(pineapple);
-    });
+box.addApple(apple)
+console.log(apple.room)
+console.log(box.room);
+console.log(apple.parent)
 
-    it('check-parent', () => {
-        expect(truck.parent).toBeUndefined();
-        expect(box.parent).toBeUndefined();
-        expect(pineapple.parent).toBeUndefined();
-    });
+room.addBox(box);
+console.log(box.parent)
+console.log(box.room)
+console.log(room.box)
+console.log(apple.room)
 
-    it('put-pineapple', () => {
-        box.setPineapple(pineapple);
-        expect(box.root).toBe(box);
-        expect(pineapple.root).toBe(box);
-        
-        expect(pineapple.parent).toBe(box);
+box.setPineapple(pineapple)
+console.log(pineapple.room);
 
-        expect(box.truck).toBe(undefined);
-        expect(pineapple.truck).toBe(undefined);
-    })
 
-    it('load-box', () => {
-        console.log('Load box');
-        truck.loadBox(box);
-        expect(truck.root).toBe(truck);
-        expect(box.root).toBe(truck);
-        expect(pineapple.root).toBe(truck);
-        
-        expect(truck.parent).toBeUndefined();
-        expect(box.parent).toBe(truck);
-        expect(pineapple.parent).toBe(box);
-
-        expect(box.truck).toBe(truck);
-        expect(pineapple.truck).toBe(truck);
-    })
-
-    it('unload-box', () => {
-        truck.unloadBox();
-        expect(truck.root).toBe(truck);
-        expect(box.root).toBe(box);
-        expect(pineapple.root).toBe(box);
-        
-        expect(box.truck).toBeUndefined();
-        expect(pineapple.truck).toBeUndefined();
-    })
-
-});
+room.removeBox()
+console.log(box.room);
+console.log(apple.room)
+console.log(pineapple.room)

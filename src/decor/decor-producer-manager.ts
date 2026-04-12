@@ -1,31 +1,31 @@
 import { Decor } from ".";
 import { Model } from "../model";
 import { Constructor } from "../types";
-import { Field } from "../utils/field-registry";
+import { Tag } from "../tag/tag-registry";
 
-export type DecorTypesMapByProducer = Map<Model, Array<Constructor<Decor>>>
+export type DecorConstructorsMap = Map<Model, Constructor<Decor>[]>
 class DecorProducerManager {
-    private _context: WeakMap<Field, DecorTypesMapByProducer> = new WeakMap();
+    private _context: WeakMap<Tag, DecorConstructorsMap> = new WeakMap();
 
-    public bind(
-        decorConsumerField: Field,
-        decorProducer: Model,
+    public add(
+        decorConsumerTag: Tag,
+        decorProducerModel: Model,
         decorType: Constructor<Decor>,
     ) {
-        const subContext: DecorTypesMapByProducer = this._context.get(decorConsumerField) ?? new Map();
-        const decorTypes = subContext.get(decorProducer) ?? [];
+        const subContext: DecorConstructorsMap = this._context.get(decorConsumerTag) ?? new Map();
+        const decorTypes = subContext.get(decorProducerModel) ?? [];
         if (decorTypes.includes(decorType)) return;
         decorTypes.push(decorType);
-        subContext.set(decorProducer, decorTypes);
-        this._context.set(decorConsumerField, subContext);
+        subContext.set(decorProducerModel, decorTypes);
+        this._context.set(decorConsumerTag, subContext);
     }
 
-    public unbind(decorConsumerField: Field) {
-        this._context.delete(decorConsumerField);
+    public remove(decorConsumerTag: Tag) {
+        this._context.delete(decorConsumerTag);
     }
 
-    public query(decorConsumerField: Field): DecorTypesMapByProducer {
-        return this._context.get(decorConsumerField) ?? new Map();
+    public query(decorConsumerTag: Tag): DecorConstructorsMap {
+        return this._context.get(decorConsumerTag) ?? new Map();
     }
 }
 

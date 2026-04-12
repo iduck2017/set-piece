@@ -1,28 +1,28 @@
 import { Model } from "../model";
 import { AbstractConstructor } from "../types";
-import { getTypes } from "../utils/get-types";
 
 class MemoRegistry {
-    private _context: Map<AbstractConstructor<Model>, string[]> = new Map();
+    private _config: Map<AbstractConstructor<Model>, string[]> = new Map();
 
     public register(prototype: Model, key: string) {
         const type: any = prototype.constructor;
-        const keys = this._context.get(type) ?? [];
+        const keys = this._config.get(type) ?? [];
         keys.push(key);
-        this._context.set(type, keys);
+        this._config.set(type, keys);
     }
 
     public query(prototype: Model): string[] {
-        const types = getTypes(prototype);
-        const keys: string[] = [];
-        types.forEach(type => {
-            const subKeys = this._context.get(type) ?? [];
-            subKeys.forEach(key => {
-                if (keys.includes(key)) return;
-                keys.push(key);
+        let constructor: any = prototype.constructor;
+        const result: string[] = [];
+        while (constructor) {
+            const keys = this._config.get(constructor) ?? [];
+            keys.forEach(key => {
+                if (result.includes(key)) return;
+                result.push(key);
             })
-        })
-        return keys;
+            constructor = Object.getPrototypeOf(constructor);
+        }
+        return result;
     }
 }
 

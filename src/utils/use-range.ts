@@ -1,6 +1,6 @@
 import { Model } from "../model";
 import { TypedPropertyDecorator } from "../types";
-import { fieldDelegator } from "./field-delegator";
+import { tagDelegator } from "../tag/tag-delegator";
 
 export function useRange<
     M extends Model & Record<string, any>,
@@ -15,17 +15,19 @@ export function useRange<
         prototype: M,
         key: K,
     ) {
-        const [getter, setter] = fieldDelegator.access(prototype, key);   
+        const descriptor = Object.getOwnPropertyDescriptor(prototype, key);
         Object.defineProperty(prototype, key, {
             get() {
-                return getter.call(this);
+                if (descriptor?.get) return descriptor.get.call(this);
+                return tagDelegator.get(this, key);
             },
             set(value) {
                 if (typeof value === 'number') {
                     if (maximum !== undefined && value > maximum) value = maximum;
                     if (minimum !== undefined && value < minimum) value = minimum;
                 } 
-                setter.call(this, value);
+                if (descriptor?.set) descriptor.set.call(this, value);
+                tagDelegator.set(this, key, value);
             },
             configurable: true,
         })

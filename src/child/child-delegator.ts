@@ -1,55 +1,62 @@
 import { Model } from "../model";
+import { useMacroTask } from "../task/use-macro-task";
+
+function useLock<P extends any[], R = any>() {
+    return function(
+        prototype: unknown,
+        key: unknown,
+        descriptor: TypedPropertyDescriptor<(...args: P) => R>
+    ) {
+        const method = descriptor.value;
+        if (!method) return;
+        descriptor.value = function(this: ChildDelegator, ...args: P) {
+            this.isLocked = true;
+            const result = method.apply(this, args);
+            this.isLocked = false;
+            return result;
+        }
+        useMacroTask()(prototype, key, descriptor)
+    }
+}
 
 export class ChildDelegator {
     public readonly value: unknown;
+    
     private _isLocked = false;
-
-    private static useLock<P extends any[], R = any>() {
-        return function(
-            _prototype: unknown,
-            _key: unknown,
-            descriptor: TypedPropertyDescriptor<(...args: P) => R>
-        ) {
-            const method = descriptor.value;
-            if (!method) return;
-            descriptor.value = function(this: ChildDelegator, ...args: P) {
-                this._isLocked = true;
-                const result = method.apply(this, args);
-                this._isLocked = false;
-                return result;
-            }
-        }
+    public set isLocked(value: boolean) {
+        this._isLocked = value;
     }
 
-    @ChildDelegator.useLock()
+    @useLock()
     private pop(origin: Model[]) {
         const result = origin.pop();
         if (result) result._internal.unmount();
         return result;
     }
 
-    @ChildDelegator.useLock()
+    @useLock()
     private push(origin: Model[], ...next: Model[]) {
+        console.warn('Child push', next)
         const result = origin.push(...next);
         next.forEach(item => item._internal.mount(this.parent));
         return result;
     }
 
-    @ChildDelegator.useLock()
+    @useLock()
     private shift(origin: Model[]) {
         const result = origin.shift();
         if (result) result._internal.unmount();
         return result;
     }
 
-    @ChildDelegator.useLock()
+    @useLock()
     private unshift(origin: Model[], ...next: Model[]) {
         const result = origin.unshift(...next);
         next.forEach(item => item._internal.mount(this.parent));
         return result;
     }
 
-    @ChildDelegator.useLock()
+    @useLock()
     private splice(
         origin: Model[], 
         start: number, 
@@ -71,14 +78,13 @@ export class ChildDelegator {
         if (value instanceof Array) {
             this.value = new Proxy(value, {
                 get: (origin, index) => {
-                    const value = Reflect.get(origin, index);
-                    if (value === origin.pop) return this.pop.bind(this, origin);
-                    if (value === origin.push) return this.push.bind(this, origin);
-                    if (value === origin.fill) return this.fill.bind(this, origin);
-                    if (value === origin.shift) return this.shift.bind(this, origin);
-                    if (value === origin.unshift) return this.unshift.bind(this, origin);
-                    if (value === origin.splice) return this.splice.bind(this, origin);
-                    return value
+                    if (index === 'pop') return this.pop.bind(this, origin);
+                    if (index === 'push') return this.push.bind(this, origin);
+                    if (index === 'fill') return this.fill.bind(this, origin);
+                    if (index === 'shift') return this.shift.bind(this, origin);
+                    if (index === 'unshift') return this.unshift.bind(this, origin);
+                    if (index === 'splice') return this.splice.bind(this, origin);
+                    return Reflect.get(origin, index)
                 },
                 set: (origin, index, next) => {
                     const prev = Reflect.get(origin, index);

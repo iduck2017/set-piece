@@ -1,78 +1,61 @@
-import { effectRegistry } from "./effect/effect-registry";
-import { trxManager } from "./trx/trx-manager";
-import { Event } from "./event";
-import { eventEmitter } from "./event/event-emiiter";
-import { eventResolver } from "./event/event-resolver";
-import { eventRegistry } from "./event/event-registry";
-import { memoRegistry } from "./memo/memo-registry";
-import { routeRegistry } from "./route/route-registry";
-import { fieldRegistry } from "./utils/field-registry";
 import { childRegistry } from "./child/child-registry";
+import { decorConsumerRegistry } from "./decor/decor-consumer-registry";
+import { decorProducerResolver } from "./decor/decor-producer-resolver";
+import { decorService } from "./decor/decor-service";
+import { effectRegistry } from "./effect/effect-registry";
+import { Event } from "./event";
+import { eventConsumerRegistry } from "./event/event-consumer-registry";
+import { eventService } from "./event/event-service";
 import { mountHookRegistry } from "./hooks/use-mount-hook";
 import { unmountHookRegistry } from "./hooks/use-unmount-hook";
-import { decorConsumerRegistry } from "./decor/decor-consumer-registry";
-import { decorConsumerResolver } from "./decor/decor-consumer-resolver";
-import { decorProducerRegistry } from "./decor/decor-producer-registry";
-import { stateManager } from "./state/state-manager";
-import { weakRefModelResolver } from "./ref/weak-ref-model-resolver";
-import { decorProducerResolver } from "./decor/decor-producer-resolver";
+import { useConsoleLog } from "./log/use-console-log";
+import { memoRegistry } from "./memo/memo-registry";
+import { weakRefResolver } from "./ref/weak-ref-resolver";
+import { routeRegistry } from "./route/route-registry";
+import { macroTaskManager } from "./task/macro-task-manager";
+import { useMicroTask } from "./task/use-micro-task";
+import { tagRegistry } from "./tag/tag-registry";
 
 export class Model {
     protected readonly _brand = Symbol('model')
-
-    private _isInited: boolean = false;
-    public get isInited() {
-        return this._isInited;
-    }
 
     public get name() {
         return this.constructor.name;
     }
 
+    @useConsoleLog()
+    @useMicroTask()
     public init() {
-        console.log('Init model', this.name);
-
         const memoKeys = memoRegistry.query(this);
-        memoKeys.forEach(key => {
-            Reflect.get(this, key);
-        })
+        memoKeys.forEach(key => Reflect.get(this, key))
 
         const effectKeys = effectRegistry.query(this);
         effectKeys.forEach(key => {
-           const method: any = Reflect.get(this, key);
-           method.call(this)
+            const effect = Reflect.get(this, key);
+            if (!(effect instanceof Function)) return;
+            effect.call(this);
         })
 
-        const eventLoaderMap = eventRegistry.query(this);
-        eventLoaderMap.forEach((_loaders, key) => {
-            const eventConsumerField = fieldRegistry.query(this, key);
-            eventResolver.bind(eventConsumerField);
+        const eventLoaderMap = eventConsumerRegistry.query(this);
+        eventLoaderMap.forEach((loaders, key) => {
+            const eventConsumerTag = tagRegistry.query(this, key);
+            eventService.bind(eventConsumerTag);
         })
-
-        const decorEmitterMap = decorProducerRegistry.query(this);
-        decorEmitterMap.forEach((loader, key) => {
-            const decorType = loader();
-            stateManager.register(this, decorType, key);
-        });
 
         const decorLoaderMap = decorConsumerRegistry.query(this);
-        decorLoaderMap.forEach((_loaders, key) => {
-            const decorConsumerField = fieldRegistry.query(this, key);
-            decorConsumerResolver.bind(decorConsumerField);
+        decorLoaderMap.forEach((loaders, key) => {
+            const decorConsumerTag = tagRegistry.query(this, key);
+            decorService.bind(decorConsumerTag);
         })
-        decorProducerResolver.resolve();
     }
 
     protected emit(event: Event, options?: {
         isYield?: boolean;
         isAsync?: boolean;
     }) {
-        if (options?.isYield) {
-            trxManager.then(() => eventEmitter.emitSync(this, event));
-            return;
-        }
-        if (options?.isAsync) return eventEmitter.emitAsync(this, event);
-        eventEmitter.emitSync(this, event);
+        if (options?.isYield) return macroTaskManager.then(() => eventService.emitSync(this, event));
+        if (options?.isAsync) return eventService.emitAsync(this, event);
+        eventService.emitSync(this, event);
     }
 
     public get _internal() {
@@ -85,8 +68,18 @@ export class Model {
 
     public get descendants(): Model[] {
         const result: Model[] = [];
-        childRegistry.query(this).forEach((iterator, key) => {
-            result.push(...iterator(this as Model & Record<string, any>, key));
+        this.children.forEach(child => {
+            result.push(child);
+            result.push(...child.descendants);
+        });
+        return result;
+    }
+
+    public get children(): Model[] {
+        const result: Model[] = [];
+        const iterators = childRegistry.query(this);
+        iterators.forEach((iterator, key) => {
+            result.push(...iterator(this, key));
         });
         return result;
     }
@@ -113,12 +106,12 @@ export class Model {
         unmountHookRegistry.run(this);
         this._parent = undefined;
         this.updateRoute();
-        weakRefModelResolver.register(this);
+        weakRefResolver.register(this);
     }
 
     private updateRoute() {
-        const typeMap = routeRegistry.query(this);
-        typeMap.forEach((type: Function, key: string) => {
+        const routeTypeMap = routeRegistry.query(this);
+        routeTypeMap.forEach((type: Function, key: string) => {
             let ancestor: Model | undefined = this;
             while (ancestor) {
                 if (ancestor instanceof type) break;
@@ -129,7 +122,7 @@ export class Model {
         let root: Model = this;
         while (root.parent) root = root.parent;
         this._root = root;
-        this.descendants.forEach((child: Model) => child.updateRoute());
+        this.children.forEach((child: Model) => child.updateRoute());
     }
 
 }

@@ -1,21 +1,54 @@
 import { Decor } from ".";
 import { Model } from "../model";
 import { Constructor } from "../types";
-import { stateManager } from "../state/state-manager";
-import { stateResolver } from "../state/state-resolver";
+import { Tag, tagRegistry } from "../tag/tag-registry";
+import { decorProducerRegistry } from "./decor-producer-registry";
+import { decorProducerDelegator } from "./decor-producer-delegator";
+import { depService } from "../dep/dep-service";
+import { useMicroTask } from "../task/use-micro-task";
 
 class DecorProducerResolver {
-    public register(decorProducer: Model, decorType: Constructor<Decor>) {
-        if (!decorType) return;
-        const decorProducerFields = stateManager.query(decorProducer, decorType);
-        decorProducerFields.forEach(decorProducerField => {
-            stateResolver.register(decorProducerField);
-        });
+    private _context: Set<Tag> = new Set();
+    
+    public check() {
+        return Boolean(this._context.size)
     }
 
-    public resolve() {
-        stateResolver.resolve();
+    public register(decorProducerTag: Tag): void
+    public register(decorProducerModel: Model, decorType: Constructor<Decor>): void;
+
+    @useMicroTask()
+    public register(arg: Tag | Model, decorType?: Constructor<Decor>) {
+        if (arg instanceof Model) {
+            if (!decorType) return;
+            const decorProducerModel = arg;
+            const subConfig = decorProducerRegistry.query(decorProducerModel)
+            subConfig.forEach((decorProducerLoader, key) => {
+                if (decorProducerLoader() === decorType) {
+                    const decorProducerTag = tagRegistry.query(decorProducerModel, key);
+                    this.register(decorProducerTag)
+                }
+            })
+        } else this._context.add(arg);
+    }
+
+    public resolve(): boolean {
+        const depProducerTags = [...this._context];
+        this._context.clear();
+        
+        if (!depProducerTags) return false;
+        depProducerTags.forEach(decorProducerTag => {
+            const decorProducerModel = decorProducerTag.target;
+            const decorProducerKey = decorProducerTag.key;
+            const prev = Reflect.get(decorProducerModel, decorProducerKey);
+            decorProducerDelegator.clear(decorProducerTag);
+            const next = Reflect.get(decorProducerModel, decorProducerKey);
+            if (prev !== next) {
+                console.log('Decor changed:', decorProducerTag.name, prev, next);
+                depService.register(decorProducerTag);
+            }
+        });
+        return true;
     }
 }
-
 export const decorProducerResolver = new DecorProducerResolver();

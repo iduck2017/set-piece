@@ -1,47 +1,43 @@
-import { trxManager } from "../trx/trx-manager";
-import { effectManager } from "./effect-manager";
-import { Field } from "../utils/field-registry";
 import { depManager } from "../dep/dep-manager";
+import { Tag } from "../tag/tag-registry";
+import { useConsoleLog } from "../log/use-console-log";
+import { effectManager } from "../dep/dep-consumer-manager";
+import { useMacroTask } from "../task/use-macro-task";
 
 class EffectResolver {
-    private _context: Field[] = [];
+    private _context: Set<Tag> = new Set();
 
-    public register(dep: Field) {
-        trxManager.run(() => {
-            if (this._context.includes(dep)) return;
-            this._context.push(dep);
-        })
+    @useMacroTask()
+    public register(depTag: Tag) {
+        this._context.add(depTag);
     }
 
     public resolve() {
-        const deps = this._context;
-        this._context = [];
+        const depTags = [...this._context];
+        this._context.clear();
+        const depConsumerTags = effectManager.query(depTags);
+        this.unbind(depConsumerTags);
+        this.emit(depConsumerTags);
+    }
 
-        // Get memos
-        const effectFields: Field[] = [];
-        for (const dep of deps) {
-            const subEffectFields = effectManager.query(dep);
-            subEffectFields.forEach(effectField => {
-                if (effectFields.includes(effectField)) return;
-                effectFields.push(effectField);
-                if (deps.includes(effectField)) return;
-                deps.push(effectField);
+    private unbind(depConsumerTags: Tag[]) {
+        depConsumerTags.forEach(depConsumerTag => {
+            const depTags = depManager.query(depConsumerTag)
+            depManager.remove(depConsumerTag);
+            depTags.forEach((depTag: Tag) => {
+                effectManager.remove(depTag, depConsumerTag);
             })
-        }
-
-        // Clear relations
-        effectFields.forEach(effectField => {
-            const deps = depManager.query(effectField);
-            effectManager.unbind(effectField);
-            deps.forEach(dep => depManager.unbind(effectField, dep))
         })
+    }
 
-        // Re-run effects
-        effectFields.forEach(effectField => {
-            const [model, key] = effectField;
-            console.log('Re-run effect', model.name, key);
+    @useConsoleLog()
+    private emit(depConsumerTags: Tag[]) {
+        depConsumerTags.forEach(depConsumerTag => {
+            const model = depConsumerTag.target;
+            const key = depConsumerTag.key;
             const effect = Reflect.get(model, key);
-            if (effect instanceof Function) effect.call(model);
+            if (!(effect instanceof Function)) return;
+            effect.call(model);
         })
     }
 }

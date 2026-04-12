@@ -1,11 +1,11 @@
 import { depManager } from "../dep/dep-manager";
 import { Model } from "../model";
-import { memoManager } from "./memo-manager";
-import { memoRegistry } from "./memo-registry";
-import { Field, fieldRegistry } from "../utils/field-registry";
+import { memoManager } from "../dep/dep-consumer-manager";
 import { depCollector } from "../dep/dep-collector";
 import { memoDelegator } from "./memo-delegator";
 import { useDep } from "../dep/use-dep";
+import { memoRegistry } from "./memo-registry";
+import { tagRegistry } from "../tag/tag-registry";
     
 export function useMemo() {
     return function(
@@ -13,28 +13,21 @@ export function useMemo() {
         key: string,
         descriptor: PropertyDescriptor
     ) {
-        useDep()(prototype, key)
-
         memoRegistry.register(prototype, key);
         const getter = descriptor.get;
         if (!getter) return;
         descriptor.get = function(this: Model) {
-            const memoField = fieldRegistry.query(this, key);
-            if (memoDelegator.check(memoField)) {
-                return memoDelegator.query(memoField);
+            const consumerTag = tagRegistry.query(this, key);
+            if (memoDelegator.check(consumerTag)) {
+                return memoDelegator.query(consumerTag);
             }
-            // console.log('Miss memo', this.name, key);
-            depCollector.init(memoField);
+            depCollector.init(consumerTag);
             const value = getter.call(this);
-            const deps = depCollector.query(memoField);
-            deps.forEach(dep => {
-                memoManager.bind(dep, memoField);
-                depManager.bind(memoField, dep);
-            })
-            memoDelegator.update(memoField, value);
-            depCollector.clear(memoField);
+            memoManager.collect(consumerTag);
+            memoDelegator.update(consumerTag, value);
             return value;
         }
+        useDep()(prototype, key, descriptor)
     }
 }
 

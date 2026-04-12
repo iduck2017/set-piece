@@ -1,61 +1,78 @@
-import { useDep } from "../dep/use-dep";
-import { Model } from "../model";
 import { depManager } from "../dep/dep-manager";
+import { useDep } from "../dep/use-dep";
+import { useEffect } from "../effect/use-effect";
+import { useConsoleLog } from "../log/use-console-log";
+import { Model } from "../model";
+import { tagRegistry } from "../tag/tag-registry";
 import { useMemo } from "./use-memo";
-import { fieldRegistry } from "../utils/field-registry";
 
-export class FooModel extends Model {
-    constructor(level: number) {
+class BoxModel extends Model {
+    protected _brand = Symbol('box-model');
+
+    private _code?: string
+    public get name() {
+        if (!this._code) return super.name;
+        return `Box${this._code}`;
+    }
+
+    constructor(code: string) {
         super();
-        this.level = level;
-        this.init()
+        this._code = code;
+        this.init();
     }
 
     @useDep()
-    public kelvin: number = 3
+    private _children: BoxModel[] = [];
+    public get children() {
+        return [...this._children]
+    }
+
+    @useConsoleLog()
+    public addChild(box: BoxModel) {
+        this._children.push(box);
+    }
 
     @useDep()
-    public child?: FooModel;
-
-
-    public level: number;
-
-    @useDep()
-    @useMemo()
-    get descendant(): FooModel {
-        return this.child?.descendant ?? this;
-        // let descendant: FooModel | undefined = this;
-        // while (descendant?.child) {
-        //     descendant = descendant.child;
-        // }
-        // console.log('Get descendant', descendant);
-        // return descendant;
+    private _size = 10;
+    public resize(size: number) {
+        this._size = size;
     }
 
     @useMemo()
-    get celsius() {
-        return this.kelvin - 273
+    public get totalSize() {
+        let result = this._size;
+        this._children.forEach(child => {
+            result += child.totalSize;
+        })
+        return result;
+    }
+
+
+    @useEffect()
+    private checkDeps() {
+        this.totalSize;
+        this.children;
     }
 }
 
+const boxA = new BoxModel('A');
+const boxB = new BoxModel('B');
+const boxC = new BoxModel('C');
+const boxD = new BoxModel('D');
+console.log(boxA.totalSize);
 
-describe('demo', () => {
+boxA.addChild(boxB);
+console.log(boxA.children.length);
+console.log(boxA.totalSize);
 
-    it('check descendants', () => {
-        const foo = new FooModel(1);
-        const fooL2 = new FooModel(2);
-        const fooL3 = new FooModel(3);
-        expect(foo.descendant).toBe(foo)
-        foo.child = fooL2;
-        expect(foo.descendant).toBe(fooL2);
-        expect(fooL2.descendant).toBe(fooL2);
-        const memoField = fieldRegistry.query(foo, 'descendant');
-        const memoFieldL2 = fieldRegistry.query(fooL2, 'descendant');
-        const memoFieldL3 = fieldRegistry.query(fooL3, 'descendant');
-        console.log(depManager.query(memoField));
-        fooL2.child = fooL3;
-        expect(foo.descendant).toBe(fooL3);
-        expect(fooL3.descendant).toBe(fooL3);
-        expect(fooL2.descendant).toBe(fooL3);
-    })
-})
+boxB.addChild(boxC);
+console.log(boxC.totalSize)
+console.log(boxB.totalSize);
+console.log(boxA.totalSize);
+// console.log(depManager.query(tagRegistry.query(boxA, 'totalSize')))
+// console.log(memoDepManager.query(tagRegistry.query(boxB, 'totalSize')))
+
+boxB.addChild(boxD);
+console.log(boxD.totalSize)
+console.log(boxB.totalSize);
+console.log(boxA.totalSize);

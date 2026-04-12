@@ -1,16 +1,14 @@
 import { Decor } from ".";
 import { useChild } from "../child/use-child";
-import { depManager } from "../dep/dep-manager";
 import { useDep } from "../dep/use-dep";
+import { useEffect } from "../effect/use-effect";
+import { useConsoleLog } from "../log/use-console-log";
 import { useMemo } from "../memo/use-memo";
 import { Model } from "../model";
 import { useRoute } from "../route/use-route";
-import { fieldRegistry } from "../utils/field-registry";
-import { decorManager } from "./decor-manager";
-import { decorProducerManager } from "./decor-producer-manager";
-import { decorConsumerManager } from "./decor-consumer-manager";
-import { useDecor } from "./use-decor";
-import { useState } from "../state/use-state";
+import { useDecorConsumer } from "./use-decor-consumer";
+import { useDecorProducer } from "./use-decor-producer";
+import { useState } from "./use-state";
 
 class AttackDecor extends Decor<number> {
     public result: number;
@@ -21,40 +19,42 @@ class AttackDecor extends Decor<number> {
     }
 }
 
-function onCalcMonsterAttack() {
+function useMonsterAttackDecorConsumer() {
     return function(
         prototype: MonsterModel,
         key: string,
-        descriptor: TypedPropertyDescriptor<(decor: AttackDecor) => void>
+        descriptor: TypedPropertyDescriptor<(decor: AttackDecor, target: MonsterModel) => void>
     ) {
-        return useDecor((i: MonsterModel) => [i, AttackDecor])(prototype, key, descriptor);
+        return useDecorConsumer((i: MonsterModel) => [i, AttackDecor])(prototype, key, descriptor);
     }
 }
 
-function onCalcMonsterAllyAttack() {
+function useMonsterAllyAttackDecorConsumer() {
     return function(
         prototype: MonsterModel,
         key: string,
-        descriptor: TypedPropertyDescriptor<(decor: AttackDecor) => void>
+        descriptor: TypedPropertyDescriptor<(decor: AttackDecor, target: MonsterModel) => void>
     ) {
-        useDecor((i: MonsterModel) => [
-            i.lair?.monsters,
-            AttackDecor
-        ])(prototype, key, descriptor);
-
+        useDecorConsumer((i: MonsterModel) => [i.lair?.monsters, AttackDecor])(prototype, key, descriptor);
         const method = descriptor.value;
         if (!method) return;  
-        descriptor.value = function(this: MonsterModel, decor: AttackDecor) {
-            method.call(this, decor);
+        descriptor.value = function(this: MonsterModel, decor: AttackDecor, target: MonsterModel) {
+            if (this === target) return;
+            method.call(this, decor, target);
         }
         return descriptor;
     }
 }
 
 class MonsterModel extends Model {
-    constructor() {
+    constructor(name: string) {
         super()
+        this._name = name;
         this.init()
+    }
+    private _name?: string;
+    public get name() {
+        return this._name ?? super.name;
     }
 
     @useState(() => AttackDecor)
@@ -64,36 +64,50 @@ class MonsterModel extends Model {
     }
 
     @useRoute(() => MonsterLairModel)
-    public lair?: MonsterLairModel;
-
+    public readonly lair?: MonsterLairModel;
 
     @useDep()
     public buff = 10
+
+    @useDep()
+    public aura = 5
 
     public setAttack(attack: number) {
         this._attack = attack;
     }
     
-    @onCalcMonsterAttack()
-    private handleAttack(decor: AttackDecor) {
+    @useMonsterAttackDecorConsumer()
+    private handleAttack(decor: AttackDecor, target: MonsterModel) {
         decor.result += this.buff;
-        console.log('handleAttack', decor.result);
     }
 
-    @onCalcMonsterAllyAttack()
-    private handleAllyAttack(decor: AttackDecor) {
-        decor.result += 5;
+    @useMonsterAllyAttackDecorConsumer()
+    private handleAllyAttack(decor: AttackDecor, target: MonsterModel) {
+        decor.result += this.aura;
+    }
+
+
+    private _prevAttack?: number;
+
+    @useEffect()
+    private checkAttack() {
+        console.log('Attack changed', this._prevAttack, this._attack);
+        this._prevAttack = this._attack
     }
 }
 
 
 class MonsterLairModel extends Model {
+    constructor() {
+        super()
+        this.init()
+    }
+
     @useChild()
     private _monsters: MonsterModel[] = [];
-
     @useMemo()
     public get monsters() {
-        return this._monsters;
+        return [...this._monsters];
     }
 
     public addMonster(monster: MonsterModel) {
@@ -107,34 +121,21 @@ class MonsterLairModel extends Model {
     }
 }
 
+const monsterA = new MonsterModel('Alan');
+const monsterB = new MonsterModel('Bob');
+const monsterC = new MonsterModel('Coco');
 
-describe('decor', () => {
-    const lair = new MonsterLairModel();
-    const monsterA = new MonsterModel();
-    const monsterB = new MonsterModel();
-    const handleAttackField = fieldRegistry.query(monsterA, 'handleAllyAttack')
-    // console.log(decorModifierManager.query(monsterA));
-    // console.log(decorEmitterManager.query(handleAttackField))
+console.log(monsterA.attack)
+monsterA.buff = 20;
+console.log(monsterA.attack)
 
-    it('check-attack', () => {
-        expect(monsterA.attack).toBe(110);
-        expect(monsterB.attack).toBe(110);
-        console.log('dep', depManager.query(handleAttackField))
-    });
+const lair = new MonsterLairModel();
+lair.addMonster(monsterA);
+console.log(monsterA.attack)
+console.log(monsterB.attack)
+console.log(monsterC.attack)
 
-    it('add-monster', () => {
-        lair.addMonster(monsterA);
-        expect(monsterA.attack).toBe(115);
-    })
-
-    it('remove-monster', () => {
-        lair.removeMonster(monsterA);
-        expect(monsterA.attack).toBe(110);
-        expect(monsterB.attack).toBe(110);
-    })
-
-    it('set-attack', () => {
-        monsterA.setAttack(0);
-        expect(monsterA.attack).toBe(10);
-    })
-});
+lair.addMonster(monsterB);
+console.log(monsterA.attack)
+console.log(monsterB.attack)
+console.log(monsterC.attack)

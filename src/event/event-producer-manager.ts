@@ -1,31 +1,31 @@
 import { Event } from ".";
 import { Model } from "../model";
 import { Constructor } from "../types";
-import { Field } from "../utils/field-registry";
+import { Tag } from "../tag/tag-registry";
 
-export type EventTypesMapByProducer = Map<Model, Constructor<Event>[]>
+export type EventConstructorsMap = Map<Model, Constructor<Event>[]>
 class EventProducerManager {
-    private _context: WeakMap<Field, EventTypesMapByProducer> = new WeakMap();
+    private _context: WeakMap<Tag, EventConstructorsMap> = new WeakMap();
 
-    public bind(
-        eventConsumerField: Field,
-        eventProducer: Model,
+    public add(
+        eventConsumerTag: Tag,
+        eventProducerModel: Model,
         eventType: Constructor<Event>,
     ) {
-        const subContext: EventTypesMapByProducer = this._context.get(eventConsumerField) ?? new Map();
-        const eventTypes = subContext.get(eventProducer) ?? [];
+        const subContext: EventConstructorsMap = this._context.get(eventConsumerTag) ?? new Map();
+        const eventTypes = subContext.get(eventProducerModel) ?? [];
         if (eventTypes.includes(eventType)) return;
         eventTypes.push(eventType);
-        subContext.set(eventProducer, eventTypes);
-        this._context.set(eventConsumerField, subContext);
+        subContext.set(eventProducerModel, eventTypes);
+        this._context.set(eventConsumerTag, subContext);
     }
 
-    public unbind(eventConsumerField: Field) {
-        this._context.delete(eventConsumerField);
+    public remove(eventConsumerTag: Tag) {
+        this._context.delete(eventConsumerTag);
     }
 
-    public query(eventConsumerField: Field): EventTypesMapByProducer {
-        return this._context.get(eventConsumerField) ?? new Map();
+    public query(eventConsumerTag: Tag): EventConstructorsMap {
+        return this._context.get(eventConsumerTag) ?? new Map();
     }
 }
 

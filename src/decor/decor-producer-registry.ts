@@ -1,33 +1,34 @@
+import { Decor } from ".";
 import { Model } from "../model";
 import { AbstractConstructor, Constructor } from "../types";
-import { getTypes } from "../utils/get-types";
-import { Decor } from ".";
-import { DecorConfig } from "../state/use-state";
 
-export type DecorProducerConfigMap = Map<string, DecorConfig>
+export type DecorProducerLoader<T = any> = () => Constructor<Decor<T>, [origin: T]>
+export type DecorProducerLoaderMap = Map<string, DecorProducerLoader>
 class DecorProducerRegistry {
-    private _config: Map<
-        AbstractConstructor<Model>,  // DecorProducerModelType
-        DecorProducerConfigMap> = new Map();
+    private _config: Map<AbstractConstructor<Model>, DecorProducerLoaderMap> = new Map();
 
     public register(
         prototype: Model,
         key: string,
-        loader: DecorConfig,
+        loader: DecorProducerLoader,
     ) {
         const constructor: any = prototype.constructor;
-        const subConfig: DecorProducerConfigMap = this._config.get(constructor) ?? new Map();
+        const subConfig: DecorProducerLoaderMap = this._config.get(constructor) ?? new Map();
         subConfig.set(key, loader)
         this._config.set(constructor, subConfig);
     }
 
     public query(prototype: Model) {
-        const types = getTypes(prototype);
-        const result: DecorProducerConfigMap = new Map();
-        types.forEach(type => {
-            const subConfig: DecorProducerConfigMap = this._config.get(type) ?? new Map();
-            subConfig.forEach((loader, key) => result.set(key, loader));
-        });
+        const result: DecorProducerLoaderMap = new Map();
+        let constructor: any = prototype.constructor;
+        while (constructor) {
+            const loaders: DecorProducerLoaderMap = this._config.get(constructor) ?? new Map();
+            loaders.forEach((loader, key) => {
+                if (result.has(key)) return;
+                result.set(key, loader);
+            })
+            constructor = Object.getPrototypeOf(constructor);
+        }
         return result;
     }
 }
