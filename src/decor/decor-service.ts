@@ -3,7 +3,7 @@ import { Decor } from ".";
 import { decorConsumerManager } from "./decor-consumer-manager";
 import { decorConsumerRegistry } from "./decor-consumer-registry";
 import { decorProducerManager } from "./decor-producer-manager";
-import { useConsoleLog } from "../log/use-console-log";
+import { useLog } from "../log/use-log";
 import { Tag } from "../tag/tag-registry";
 import { decorProducerResolver } from "./decor-producer-resolver";
 
@@ -20,7 +20,7 @@ class DecorService {
         });
     }
 
-    @useConsoleLog()
+    @useLog()
     public unbind(decorConsumerTag: Tag) {
         const decorTypesMap = decorProducerManager.query(decorConsumerTag);
         decorTypesMap.forEach((decorTypes, decorProducerModel) => {
@@ -33,7 +33,7 @@ class DecorService {
         decorProducerManager.remove(decorConsumerTag);
     }
 
-    @useConsoleLog()
+    @useLog()
     public bind(decorConsumerTag: Tag) {
         const consumerModel = decorConsumerTag.target;
         const consumerKey = decorConsumerTag.key;

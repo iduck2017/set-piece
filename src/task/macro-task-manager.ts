@@ -1,6 +1,6 @@
 import { effectResolver } from "../effect/effect-resolver";
 import { eventConsumerResolver } from "../event/event-consumer-resolver";
-import { useConsoleLog } from "../log/use-console-log";
+import { useLog } from "../log/use-log";
 import { weakRefResolver } from "../ref/weak-ref-resolver";
 
 class MacroTaskManager {
@@ -8,7 +8,7 @@ class MacroTaskManager {
 
     private _handlers: Array<() => void> = [];
 
-    @useConsoleLog()
+    @useLog()
     public run(handler: () => unknown) {
         if (this._isPending) return handler();
         console.group("MacroTaskManager.run");
@@ -20,7 +20,7 @@ class MacroTaskManager {
         return result;
     }
 
-    @useConsoleLog()
+    @useLog()
     private resolve() {
         effectResolver.resolve();
         eventConsumerResolver.resolve();

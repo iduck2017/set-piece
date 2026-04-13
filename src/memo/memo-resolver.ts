@@ -1,7 +1,7 @@
 import { depCollector } from "../dep/dep-collector";
 import { depManager } from "../dep/dep-manager";
 import { depService } from "../dep/dep-service";
-import { useConsoleLog } from "../log/use-console-log";
+import { useLog } from "../log/use-log";
 import { Tag } from "../tag/tag-registry";
 import { memoDelegator } from "./memo-delegator";
 import { memoManager } from "../dep/dep-consumer-manager";
@@ -39,7 +39,7 @@ class MemoResolver {
         })
     }
 
-    @useConsoleLog()
+    @useLog()
     private reset(consumerTags: Tag[]) {
         consumerTags.forEach(consumerTag => {
             const model = consumerTag.target;

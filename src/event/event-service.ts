@@ -4,7 +4,7 @@ import { eventConsumerManager } from "./event-consumer-manager";
 import { Tag } from "../tag/tag-registry";
 import { eventProducerManager } from "./event-producer-manager";
 import { eventConsumerRegistry } from "./event-consumer-registry";
-import { useConsoleLog } from "../log/use-console-log";
+import { useLog } from "../log/use-log";
 
 class EventService {
     public emitSync(eventProducerModel: Model, event: Event) {
@@ -29,7 +29,7 @@ class EventService {
         }
     }
 
-    @useConsoleLog()
+    @useLog()
     public unbind(eventConsumerTag: Tag) {
         const eventTypesMap = eventProducerManager.query(eventConsumerTag);
         eventTypesMap.forEach((eventTypes, eventProducerModel) => {
@@ -41,7 +41,7 @@ class EventService {
         eventProducerManager.remove(eventConsumerTag);
     }
 
-    @useConsoleLog()
+    @useLog()
     public bind(eventConsumerTag: Tag) {
         const consumerModel = eventConsumerTag.target;
         const consumerKey = eventConsumerTag.key;

@@ -12,7 +12,7 @@ function useTask<P extends any[], R = any>() {
         if (!method) return;
         descriptor.value = function(this: DepDelegator, ...args: P) {
             const result = method.apply(this, args);
-            console.log(`Dep changed: ${this.tag.name}.${key}`);
+            // console.log(`Dep changed: ${this.tag.name}.${key}`);
             depService.register(this.tag);
             return result;
         }

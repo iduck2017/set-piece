@@ -1,13 +1,13 @@
 import { decorConsumerResolver } from "../decor/decor-consumer-resolver";
 import { effectResolver } from "../effect/effect-resolver";
 import { eventConsumerResolver } from "../event/event-consumer-resolver";
-import { useConsoleLog } from "../log/use-console-log";
+import { useLog } from "../log/use-log";
 import { memoResolver } from "../memo/memo-resolver";
 import { useMicroTask } from "../task/use-micro-task";
 import { Tag } from "../tag/tag-registry";
 
 class DepService {
-    @useConsoleLog()
+    @useLog()
     @useMicroTask()
     public register(tag: Tag) {
         memoResolver.register(tag);

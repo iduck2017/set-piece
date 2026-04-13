@@ -33,7 +33,7 @@ export function useDep<
                     if (descriptor?.set) descriptor.set.call(this, next);
                     else tagDelegator.set(this, key, next);
                     if (prev !== next) {
-                        console.log(`Dep changed: ${tag.name} ${prev} ${next}`);
+                        // console.log(`Dep changed: ${tag.name} ${prev} ${next}`);
                         depService.register(tag)
                     }
                 },

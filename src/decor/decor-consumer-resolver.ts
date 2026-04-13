@@ -1,7 +1,7 @@
 import { depManager } from "../dep/dep-manager";
 import { Tag } from "../tag/tag-registry";
 import { decorManager } from "../dep/dep-consumer-manager";
-import { useConsoleLog } from "../log/use-console-log";
+import { useLog } from "../log/use-log";
 import { decorService } from "./decor-service";
 import { useMicroTask } from "../task/use-micro-task";
 
@@ -37,7 +37,7 @@ class DecorConsumerResolver {
         })
     }
 
-    @useConsoleLog()
+    @useLog()
     private reset(depConsumerTags: Tag[]) {
         depConsumerTags.forEach(depConsumerTag => {
             decorService.unbind(depConsumerTag);

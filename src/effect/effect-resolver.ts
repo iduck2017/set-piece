@@ -1,6 +1,6 @@
 import { depManager } from "../dep/dep-manager";
 import { Tag } from "../tag/tag-registry";
-import { useConsoleLog } from "../log/use-console-log";
+import { useLog } from "../log/use-log";
 import { effectManager } from "../dep/dep-consumer-manager";
 import { useMacroTask } from "../task/use-macro-task";
 
@@ -30,7 +30,7 @@ class EffectResolver {
         })
     }
 
-    @useConsoleLog()
+    @useLog()
     private emit(depConsumerTags: Tag[]) {
         depConsumerTags.forEach(depConsumerTag => {
             const model = depConsumerTag.target;

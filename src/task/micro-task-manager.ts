@@ -1,7 +1,7 @@
 import { decorConsumerResolver } from "../decor/decor-consumer-resolver";
 import { decorProducerResolver } from "../decor/decor-producer-resolver";
 import { LogLevel } from "../log/log-service";
-import { useConsoleLog } from "../log/use-console-log";
+import { useLog } from "../log/use-log";
 import { memoResolver } from "../memo/memo-resolver";
 import { Tag } from "../tag/tag-registry";
 import { useMacroTask } from "./use-macro-task";
@@ -28,7 +28,7 @@ class MicroTaskManager {
     }
 
     @useMicroTask()
-    @useConsoleLog()
+    @useLog()
     private resolve() {
         memoResolver.resolve();
         decorConsumerResolver.resolve();

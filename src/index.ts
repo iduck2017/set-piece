@@ -11,7 +11,7 @@ export { useMountHook } from './hooks/use-mount-hook';
 export { useRebootHook } from './hooks/use-reboot-hook';
 export { useUnmountHook } from './hooks/use-unmount-hook';
 export { useConsoleGroup } from './log/use-console-group';
-export { useConsoleLog } from './log/use-console-log';
+export { useLog } from './log/use-log';
 export { useMemo } from './memo/use-memo';
 export { useRef } from './ref/use-ref';
 export { useWeakRef } from './ref/use-weak-ref';

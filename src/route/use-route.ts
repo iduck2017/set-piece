@@ -5,19 +5,14 @@ import { routeRegistry } from "./route-registry";
 
 export function useRoute<
     I extends Model & Record<string, any>,
-    M extends Model & Record<string, any>,
+    M extends Model & I[K],
     K extends string
->(fact: () => AbstractConstructor<M>):
-    I[K] extends M | undefined ?
-        undefined extends M[K] ?
-            TypedPropertyDecorator<I, K> :
-            TypedPropertyDecorator<never, never> :
-        TypedPropertyDecorator<never, never> {
+>(loader: () => AbstractConstructor<M>) {
     return function(
         prototype: I,
         key: K,
     ) {
         useDep()(prototype, key)
-        routeRegistry.register(prototype, key, fact);
+        routeRegistry.register(prototype, key, loader);
     }
 }

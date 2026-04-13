@@ -9,7 +9,7 @@ export class LogService {
 
     constructor() {
         const that = this;
-        window.console = new Proxy(console, {
+        global.console = new Proxy(console, {
             get(origin, key) {
                 const value: unknown = Reflect.get(origin, key)
                 if (

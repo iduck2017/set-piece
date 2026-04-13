@@ -2,7 +2,6 @@ import { Decor } from ".";
 import { useChild } from "../child/use-child";
 import { useDep } from "../dep/use-dep";
 import { useEffect } from "../effect/use-effect";
-import { useConsoleLog } from "../log/use-console-log";
 import { useMemo } from "../memo/use-memo";
 import { Model } from "../model";
 import { useRoute } from "../route/use-route";
@@ -121,21 +120,41 @@ class MonsterLairModel extends Model {
     }
 }
 
-const monsterA = new MonsterModel('Alan');
-const monsterB = new MonsterModel('Bob');
-const monsterC = new MonsterModel('Coco');
 
-console.log(monsterA.attack)
-monsterA.buff = 20;
-console.log(monsterA.attack)
+describe('decor', () => {
+    const lair = new MonsterLairModel();
+    const monsterA = new MonsterModel('Alan');
+    const monsterB = new MonsterModel('Bob');
 
-const lair = new MonsterLairModel();
-lair.addMonster(monsterA);
-console.log(monsterA.attack)
-console.log(monsterB.attack)
-console.log(monsterC.attack)
+    it('check-attack', () => {
+        expect(monsterA.attack).toBe(110);
+        lair.addMonster(monsterA);
+        expect(monsterA.attack).toBe(110);
+        expect(monsterB.attack).toBe(110);
+    });
 
-lair.addMonster(monsterB);
-console.log(monsterA.attack)
-console.log(monsterB.attack)
-console.log(monsterC.attack)
+    it('add-monster', () => {
+        lair.addMonster(monsterB);
+        expect(monsterA.attack).toBe(115);
+        expect(monsterB.attack).toBe(115);
+    })
+
+    
+    it('buff-monster', () => {
+        monsterA.aura = 10;
+        expect(monsterA.attack).toBe(115);
+        expect(monsterB.attack).toBe(120)
+    })
+
+    it('remove-monster', () => {
+        lair.removeMonster(monsterA);
+        expect(monsterA.attack).toBe(110);
+        expect(monsterB.attack).toBe(110);
+    })
+
+    it('buff-monster', () => {
+        monsterA.buff = 20;
+        expect(monsterA.attack).toBe(120);
+        expect(monsterB.attack).toBe(110)
+    })
+});

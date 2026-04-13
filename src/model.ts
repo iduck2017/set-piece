@@ -8,7 +8,7 @@ import { eventConsumerRegistry } from "./event/event-consumer-registry";
 import { eventService } from "./event/event-service";
 import { mountHookRegistry } from "./hooks/use-mount-hook";
 import { unmountHookRegistry } from "./hooks/use-unmount-hook";
-import { useConsoleLog } from "./log/use-console-log";
+import { useLog } from "./log/use-log";
 import { memoRegistry } from "./memo/memo-registry";
 import { weakRefResolver } from "./ref/weak-ref-resolver";
 import { routeRegistry } from "./route/route-registry";
@@ -23,7 +23,7 @@ export class Model {
         return this.constructor.name;
     }
 
-    @useConsoleLog()
+    @useLog()
     @useMicroTask()
     public init() {
         const memoKeys = memoRegistry.query(this);

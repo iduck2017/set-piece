@@ -1,6 +1,6 @@
 import { LogLevel, logService } from "./log-service";
 
-export function useConsoleLog(level?: LogLevel) {
+export function useLog(level?: LogLevel) {
     return function(
         prototype: object,
         key: string,

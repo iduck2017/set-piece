@@ -1,7 +1,7 @@
 import { depCollector } from "./dep-collector";
 import { depManager } from "./dep-manager";
 import { LogLevel } from "../log/log-service";
-import { useConsoleLog } from "../log/use-console-log";
+import { useLog } from "../log/use-log";
 import { Tag } from "../tag/tag-registry";
 
 export class DepConsumerManager {
@@ -38,7 +38,7 @@ export class DepConsumerManager {
         this._context.set(depTag, consumerTags);
     }
 
-    @useConsoleLog(LogLevel.INFO)
+    @useLog(LogLevel.INFO)
     public collect(depConsumerTag: Tag) {
         const depTags = depCollector.query(depConsumerTag);
         const index = depTags.indexOf(depConsumerTag);

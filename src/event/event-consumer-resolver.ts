@@ -1,7 +1,7 @@
 import { depManager } from "../dep/dep-manager";
 import { Tag } from "../tag/tag-registry";
 import { eventManager } from "../dep/dep-consumer-manager";
-import { useConsoleLog } from "../log/use-console-log";
+import { useLog } from "../log/use-log";
 import { eventService } from "./event-service";
 import { useMacroTask } from "../task/use-macro-task";
 
@@ -31,7 +31,7 @@ class EventConsumerResolver {
         })
     }
 
-    @useConsoleLog()
+    @useLog()
     private reset(depConsumerTags: Tag[]) {
         depConsumerTags.forEach(depConsumerTag => {
             eventService.unbind(depConsumerTag);

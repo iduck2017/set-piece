@@ -1,5 +1,6 @@
 import { useChild } from "../child/use-child";
 import { Model } from "../model";
+import { TypedPropertyDecorator } from "../types";
 import { useRoute } from "./use-route";
 
 export class PineappleModel extends Model {
@@ -18,8 +19,25 @@ export class AppleModel extends Model {
     }
 }
 
+function useRoomRoute<
+    I extends Model & Record<string, any>,
+    K extends string
+>(): I[K] extends RoomModel | undefined ?
+        undefined extends I[K] ?
+            TypedPropertyDecorator<I, K> :
+            TypedPropertyDecorator<never, never> :
+        TypedPropertyDecorator<never, never>  {
+    return function(
+        prototype: I,
+        key: K
+    ) {
+        useRoute(() => RoomModel)(prototype, key)
+    }
+}
+
+
 export class BoxModel extends Model {
-    @useRoute(() => RoomModel)
+    @useRoomRoute()
     private _room?: RoomModel;
     public get room() {
         return this._room;
@@ -66,27 +84,58 @@ export class RoomModel extends Model {
 }
 
 
-const room = new RoomModel();
-const box = new BoxModel();
-const pineapple = new PineappleModel();
-const apple = new AppleModel();
 
-box.addApple(apple)
-console.log(apple.room)
-console.log(box.room);
-console.log(apple.parent)
+describe('use-route', () => {
+    const room = new RoomModel();
+    const box = new BoxModel();
+    const pineapple = new PineappleModel();
 
-room.addBox(box);
-console.log(box.parent)
-console.log(box.room)
-console.log(room.box)
-console.log(apple.room)
+    it('check-root', () => {
+        expect(room.root).toBe(room);
+        expect(box.root).toBe(box);
+        expect(pineapple.root).toBe(pineapple);
+    });
 
-box.setPineapple(pineapple)
-console.log(pineapple.room);
+    it('check-parent', () => {
+        expect(room.parent).toBeUndefined();
+        expect(box.parent).toBeUndefined();
+        expect(pineapple.parent).toBeUndefined();
+    });
 
+    it('put-pineapple', () => {
+        box.setPineapple(pineapple);
+        expect(box.root).toBe(box);
+        expect(pineapple.root).toBe(box);
+        
+        expect(pineapple.parent).toBe(box);
 
-room.removeBox()
-console.log(box.room);
-console.log(apple.room)
-console.log(pineapple.room)
+        expect(box.room).toBe(undefined);
+        expect(pineapple.room).toBe(undefined);
+    })
+
+    it('load-box', () => {
+        console.log('Load box');
+        room.addBox(box);
+        expect(room.root).toBe(room);
+        expect(box.root).toBe(room);
+        expect(pineapple.root).toBe(room);
+        
+        expect(room.parent).toBeUndefined();
+        expect(box.parent).toBe(room);
+        expect(pineapple.parent).toBe(box);
+
+        expect(box.room).toBe(room);
+        expect(pineapple.room).toBe(room);
+    })
+
+    it('unload-box', () => {
+        room.removeBox();
+        expect(room.root).toBe(room);
+        expect(box.root).toBe(box);
+        expect(pineapple.root).toBe(box);
+        
+        expect(box.room).toBeUndefined();
+        expect(pineapple.room).toBeUndefined();
+    })
+
+});

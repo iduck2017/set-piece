@@ -46,62 +46,43 @@ export class MonsterLairModel extends Model {
     }
 }
 
-const player = new PlayerModel();
-const lair = new MonsterLairModel();
-const monster = new MonsterModel();
+describe('use-weak-ref', () => {
+    const player = new PlayerModel();
+    const lair = new MonsterLairModel();
+    const monster = new MonsterModel();
 
-player.setEnemy(monster);
-monster.setEnemy(player);
-console.log(player.enemy);
-console.log(monster.enemy);
+    it('check-initial-status', () => {
+        expect(player.enemy).toBe(undefined);
+        expect(monster.enemy).toBe(undefined);
+    });
 
-lair.prepare(monster, player);
-console.log(player.root);
-console.log(monster.root)
-console.log(player.enemy);
-console.log(monster.enemy);
+    it('set-enemy', () => {
+        player.setEnemy(monster);
+        monster.setEnemy(player);
+        expect(player.enemy).toBe(undefined);
+        expect(monster.enemy).toBe(undefined);
+    })
 
-// lair.dispose();
-// console.log(player.enemy);
-// console.log(monster.enemy)
+    it('force-set-enemy', () => {
+        macroTaskManager.run(() => {
+            player.setEnemy(monster);
+            monster.setEnemy(player);
+            expect(player.enemy).toBe(monster);
+            expect(monster.enemy).toBe(player);
+        })
+        expect(player.enemy).toBe(undefined);
+        expect(monster.enemy).toBe(undefined);
+    })
 
-// describe('use-weak-ref', () => {
-//     const player = new PlayerModel();
-//     const lair = new MonsterLairModel();
-//     const monster = new MonsterModel();
+    it('init-lair', () => {
+        lair.prepare(monster, player);
+        expect(player.enemy).toBe(monster);
+        expect(monster.enemy).toBe(player);
+    })
 
-//     it('check-initial-status', () => {
-//         expect(player.enemy).toBe(undefined);
-//         expect(monster.enemy).toBe(undefined);
-//     });
-
-//     it('set-enemy', () => {
-//         player.setEnemy(monster);
-//         monster.setEnemy(player);
-//         expect(player.enemy).toBe(undefined);
-//         expect(monster.enemy).toBe(undefined);
-//     })
-
-//     it('force-set-enemy', () => {
-//         macroTaskManager.run(() => {
-//             player.setEnemy(monster);
-//             monster.setEnemy(player);
-//             expect(player.enemy).toBe(monster);
-//             expect(monster.enemy).toBe(player);
-//         })
-//         expect(player.enemy).toBe(undefined);
-//         expect(monster.enemy).toBe(undefined);
-//     })
-
-//     it('init-lair', () => {
-//         lair.prepare(monster, player);
-//         expect(player.enemy).toBe(monster);
-//         expect(monster.enemy).toBe(player);
-//     })
-
-//     it('dispose-lair', () => {
-//         lair.dispose();
-//         expect(player.enemy).toBe(undefined);
-//         expect(monster.enemy).toBe(undefined);
-//     })
-// })
+    it('dispose-lair', () => {
+        lair.dispose();
+        expect(player.enemy).toBe(undefined);
+        expect(monster.enemy).toBe(undefined);
+    })
+})
