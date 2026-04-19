@@ -1,4 +1,4 @@
-import { effectResolver } from "../effect/effect-resolver";
+import { deferEffectResolver } from "../effect/defer-effect-resolver";
 import { eventConsumerResolver } from "../event/event-consumer-resolver";
 import { useLog } from "../log/use-log";
 import { weakRefResolver } from "../ref/weak-ref-resolver";
@@ -22,7 +22,7 @@ class ActionManager {
 
     @useLog()
     private resolve() {
-        effectResolver.resolve();
+        deferEffectResolver.resolve();
         eventConsumerResolver.resolve();
         weakRefResolver.resolve();
         const handlers = [...this._handlers];

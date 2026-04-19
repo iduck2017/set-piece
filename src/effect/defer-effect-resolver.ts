@@ -1,13 +1,13 @@
 import { depManager } from "../dep/dep-manager";
 import { Tag } from "../tag/tag-registry";
 import { useLog } from "../log/use-log";
-import { effectManager } from "../dep/dep-consumer-manager";
-import { useMicroAction } from "../action/use-micro-action";
+import { deferEffectManager } from "../dep/dep-consumer-manager";
+import { useAction } from "../action/use-action";
 
-class EffectResolver {
+class DeferEffectResolver {
     private _context: Set<Tag> = new Set();
 
-    @useMicroAction()
+    @useAction()
     public register(depTag: Tag) {
         this._context.add(depTag);
     }
@@ -19,7 +19,7 @@ class EffectResolver {
     public resolve() {
         const depTags = [...this._context];
         this._context.clear();
-        const depConsumerTags = effectManager.query(depTags);
+        const depConsumerTags = deferEffectManager.query(depTags);
         this.unbind(depConsumerTags);
         this.emit(depConsumerTags);
     }
@@ -29,7 +29,7 @@ class EffectResolver {
             const depTags = depManager.query(depConsumerTag)
             depManager.remove(depConsumerTag);
             depTags.forEach((depTag: Tag) => {
-                effectManager.remove(depTag, depConsumerTag);
+                deferEffectManager.remove(depTag, depConsumerTag);
             })
         })
     }
@@ -46,4 +46,4 @@ class EffectResolver {
     }
 }
 
-export const effectResolver = new EffectResolver();
+export const deferEffectResolver = new DeferEffectResolver();

@@ -1,5 +1,6 @@
 import { decorConsumerResolver } from "../decor/decor-consumer-resolver";
 import { decorProducerResolver } from "../decor/decor-producer-resolver";
+import { effectResolver } from "../effect/effect-resolver";
 import { LogLevel } from "../log/log-service";
 import { useLog } from "../log/use-log";
 import { memoResolver } from "../memo/memo-resolver";
@@ -17,8 +18,9 @@ class MicroActionManager {
         const result = handler();
         this._isPending = false;
 
-        const isDirty = 
+        const isDirty =
             memoResolver.check() ||
+            effectResolver.check() ||
             decorConsumerResolver.check() ||
             decorProducerResolver.check()
         if (!isDirty) return result;
@@ -31,6 +33,7 @@ class MicroActionManager {
     @useLog()
     private resolve() {
         memoResolver.resolve();
+        effectResolver.resolve();
         decorConsumerResolver.resolve();
         decorProducerResolver.resolve();
     }
