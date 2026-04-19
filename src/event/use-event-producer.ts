@@ -7,27 +7,27 @@ export type EventProducerLoader<P, R> = () => [
     postEvent: Constructor<PostEvent<P, R>> | undefined
 ]
 
-export function useEventProducer<P, R>(
+export function useEventProducer<P, R, E extends PrevEvent<P>>(
     loader: EventProducerLoader<P, R>
 ) {
     return function(
         prototype: Model,
         key: unknown,
-        descriptor: TypedPropertyDescriptor<Method<R | undefined, [P, PrevEvent<P> | undefined]>>
+        descriptor: TypedPropertyDescriptor<Method<R | undefined, [P, E | undefined]>>
     ) {
-       const method = descriptor.value;
-        if (!method) return descriptor;
+       const handler = descriptor.value;
+        if (!handler) return descriptor;
         descriptor.value = function(
             this: Model, 
             options: P, 
-            event: PrevEvent<P> | undefined
+            event: E | undefined
         ) {
             const [prevEventType, postEventType] = loader();
-            const prevEvent = prevEventType ? new prevEventType({ options }) : undefined;
+            const prevEvent: any = prevEventType ? new prevEventType({ options }) : undefined;
             const postEvent = postEventType ? new postEventType({ options }) : undefined;
             if (prevEvent) this.emit(prevEvent);
             if (prevEvent?.isAborted) return;
-            const result = method.call(this, options, prevEvent);
+            const result = handler.call(this, options, prevEvent);
             if (postEvent) this.emit(postEvent, { isYield: true });
             return result
         }

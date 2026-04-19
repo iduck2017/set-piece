@@ -1,8 +1,8 @@
-import { macroTaskManager } from "../task/macro-task-manager";
+import { actionManager } from "../action/action-manager";
 import { useChild } from "../child/use-child";
 import { Model } from "../model";
 import { useWeakRef } from "./use-weak-ref";
-import { useMacroTask } from "../task/use-macro-task";
+import { useAction } from "../action/use-action";
 
 export class PlayerModel extends Model {
     @useWeakRef()
@@ -32,7 +32,7 @@ export class MonsterLairModel extends Model {
     @useChild()
     private _player?: PlayerModel;
 
-    @useMacroTask()
+    @useAction()
     public prepare(monster: MonsterModel, player: PlayerModel) {
         this._player = player;
         this._monsters.push(monster);
@@ -64,7 +64,7 @@ describe('use-weak-ref', () => {
     })
 
     it('force-set-enemy', () => {
-        macroTaskManager.run(() => {
+        actionManager.run(() => {
             player.setEnemy(monster);
             monster.setEnemy(player);
             expect(player.enemy).toBe(monster);

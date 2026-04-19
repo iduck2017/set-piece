@@ -56,6 +56,5 @@ export function useChild<
             configurable: true,
         });
         useDep()(prototype, key)
-
     }
 }

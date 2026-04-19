@@ -3,7 +3,7 @@ import { eventConsumerResolver } from "../event/event-consumer-resolver";
 import { useLog } from "../log/use-log";
 import { weakRefResolver } from "../ref/weak-ref-resolver";
 
-class MacroTaskManager {
+class ActionManager {
     private _isPending = false;
 
     private _handlers: Array<() => void> = [];
@@ -11,7 +11,7 @@ class MacroTaskManager {
     @useLog()
     public run(handler: () => unknown) {
         if (this._isPending) return handler();
-        console.group("MacroTaskManager.run");
+        console.group("ActionManager.run");
         this._isPending = true;
         const result = handler();
         this._isPending = false;
@@ -34,4 +34,4 @@ class MacroTaskManager {
         this._handlers.push(handler);
     }
 }
-export const macroTaskManager = new MacroTaskManager();
+export const actionManager = new ActionManager();

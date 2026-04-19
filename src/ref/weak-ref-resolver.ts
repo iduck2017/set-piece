@@ -1,6 +1,5 @@
 import { Model } from "../model";
-import { macroTaskManager } from "../task/macro-task-manager";
-import { useMacroTask } from "../task/use-macro-task";
+import { useAction } from "../action/use-action";
 import { weakRefRegistry } from "./weak-ref-registry";
 import { weakRefManager } from "./weak-ref-manager";
 import { Tag } from "../tag/tag-registry";
@@ -11,7 +10,7 @@ class WeakRefResolver {
     public register(dep: Tag): void;
     public register(model: Model): void;
     
-    @useMacroTask()
+    @useAction()
     public register(arg: Tag | Model) {
         if (arg instanceof Model) {
             arg.descendants.forEach(descendant => this._context.add(descendant));

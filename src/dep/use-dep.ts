@@ -5,7 +5,6 @@ import { DepDelegator } from "./dep-delegator";
 import { tagDelegator } from "../tag/tag-delegator";
 import { tagRegistry } from "../tag/tag-registry";
 import { depService } from "./dep-service";
-import { macroTaskManager } from "../task/macro-task-manager";
 
 export function useDep<
     M extends Record<string, any> & Model,

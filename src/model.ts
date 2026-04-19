@@ -12,8 +12,8 @@ import { useLog } from "./log/use-log";
 import { memoRegistry } from "./memo/memo-registry";
 import { weakRefResolver } from "./ref/weak-ref-resolver";
 import { routeRegistry } from "./route/route-registry";
-import { macroTaskManager } from "./task/macro-task-manager";
-import { useMicroTask } from "./task/use-micro-task";
+import { actionManager } from "./action/action-manager";
+import { useMicroAction } from "./action/use-micro-action";
 import { tagRegistry } from "./tag/tag-registry";
 
 export class Model {
@@ -24,7 +24,7 @@ export class Model {
     }
 
     @useLog()
-    @useMicroTask()
+    @useMicroAction()
     public init() {
         const memoKeys = memoRegistry.query(this);
         memoKeys.forEach(key => Reflect.get(this, key))
@@ -53,7 +53,7 @@ export class Model {
         isYield?: boolean;
         isAsync?: boolean;
     }) {
-        if (options?.isYield) return macroTaskManager.then(() => eventService.emitSync(this, event));
+        if (options?.isYield) return actionManager.then(() => eventService.emitSync(this, event));
         if (options?.isAsync) return eventService.emitAsync(this, event);
         eventService.emitSync(this, event);
     }

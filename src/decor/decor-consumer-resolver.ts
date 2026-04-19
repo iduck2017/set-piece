@@ -3,12 +3,12 @@ import { Tag } from "../tag/tag-registry";
 import { decorManager } from "../dep/dep-consumer-manager";
 import { useLog } from "../log/use-log";
 import { decorService } from "./decor-service";
-import { useMicroTask } from "../task/use-micro-task";
+import { useMicroAction } from "../action/use-micro-action";
 
 class DecorConsumerResolver {
     private _context: Set<Tag> = new Set();
 
-    @useMicroTask()
+    @useMicroAction()
     public register(depTag: Tag) {
         this._context.add(depTag);
     }

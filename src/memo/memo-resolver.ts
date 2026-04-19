@@ -5,12 +5,12 @@ import { useLog } from "../log/use-log";
 import { Tag } from "../tag/tag-registry";
 import { memoDelegator } from "./memo-delegator";
 import { memoManager } from "../dep/dep-consumer-manager";
-import { useMicroTask } from "../task/use-micro-task";
+import { useMicroAction } from "../action/use-micro-action";
 
 class MemoResolver {
     private _context: Set<Tag> = new Set();
 
-    @useMicroTask()
+    @useMicroAction()
     public register(tag: Tag) {
         this._context.add(tag);
     }

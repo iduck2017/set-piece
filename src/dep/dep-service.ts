@@ -3,12 +3,12 @@ import { effectResolver } from "../effect/effect-resolver";
 import { eventConsumerResolver } from "../event/event-consumer-resolver";
 import { useLog } from "../log/use-log";
 import { memoResolver } from "../memo/memo-resolver";
-import { useMicroTask } from "../task/use-micro-task";
+import { useMicroAction } from "../action/use-micro-action";
 import { Tag } from "../tag/tag-registry";
 
 class DepService {
     @useLog()
-    @useMicroTask()
+    @useMicroAction()
     public register(tag: Tag) {
         memoResolver.register(tag);
         effectResolver.register(tag);

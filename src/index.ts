@@ -17,8 +17,8 @@ export { useRef } from './ref/use-ref';
 export { useWeakRef } from './ref/use-weak-ref';
 export { useRoute } from './route/use-route';
 export { useStore } from './store/use-store';
-export { useMacroTask } from './task/use-macro-task';
-export { useMicroTask } from './task/use-micro-task';
+export { useAction, runAction } from './action/use-action';
+export { useMicroAction } from './action/use-micro-action';
 export { useRange } from './utils/use-range';
 export { useValidator } from './utils/use-validator';
 

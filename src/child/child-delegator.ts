@@ -1,5 +1,5 @@
 import { Model } from "../model";
-import { useMacroTask } from "../task/use-macro-task";
+import { useAction } from "../action/use-action";
 
 function useLock<P extends any[], R = any>() {
     return function(
@@ -15,7 +15,7 @@ function useLock<P extends any[], R = any>() {
             this.isLocked = false;
             return result;
         }
-        useMacroTask()(prototype, key, descriptor)
+        useAction()(prototype, key, descriptor)
     }
 }
 

@@ -2,12 +2,12 @@ import { depManager } from "../dep/dep-manager";
 import { Tag } from "../tag/tag-registry";
 import { useLog } from "../log/use-log";
 import { effectManager } from "../dep/dep-consumer-manager";
-import { useMacroTask } from "../task/use-macro-task";
+import { useAction } from "../action/use-action";
 
 class EffectResolver {
     private _context: Set<Tag> = new Set();
 
-    @useMacroTask()
+    @useAction()
     public register(depTag: Tag) {
         this._context.add(depTag);
     }

@@ -1,8 +1,8 @@
-import { useMicroTask } from "../task/use-micro-task";
+import { useMicroAction } from "../action/use-micro-action";
 import { Tag } from "../tag/tag-registry";
 import { depService } from "./dep-service";
 
-function useTask<P extends any[], R = any>() {
+function useAction<P extends any[], R = any>() {
     return function(
         prototype: unknown,
         key: unknown,
@@ -16,7 +16,7 @@ function useTask<P extends any[], R = any>() {
             depService.register(this.tag);
             return result;
         }
-        useMicroTask()(prototype, key, descriptor);
+        useMicroAction()(prototype, key, descriptor);
         return descriptor;
     }
 }
@@ -24,27 +24,27 @@ function useTask<P extends any[], R = any>() {
 export class DepDelegator {
     public readonly value: unknown;
 
-    @useTask()
+    @useAction()
     private pop(origin: unknown[]) {
         return origin.pop();
     }
 
-    @useTask()
+    @useAction()
     private push(origin: unknown[], ...items: unknown[]) {
         return origin.push(...items);
     }
 
-    @useTask()
+    @useAction()
     private shift(origin: unknown[]) {
         return origin.shift();
     }
 
-    @useTask()
+    @useAction()
     private unshift(origin: unknown[], ...items: unknown[]) {
         return origin.unshift(...items);
     }
 
-    @useTask()
+    @useAction()
     private splice(
         origin: unknown[], 
         start: number, 
@@ -54,7 +54,7 @@ export class DepDelegator {
         return origin.splice(start, count, ...items);
     }
 
-    @useTask()
+    @useAction()
     private fill(
         origin: unknown[],
         item: unknown,
@@ -64,13 +64,13 @@ export class DepDelegator {
         return origin.fill(item, start, end);
     }
 
-    @useTask()
+    @useAction()
     private set(origin: object, index: string | symbol, next: unknown) {
         Reflect.set(origin, index, next);
         return true;
     }
 
-    @useTask()
+    @useAction()
     private del(origin: object, index: string | symbol) {
         return Reflect.deleteProperty(origin, index);
     }

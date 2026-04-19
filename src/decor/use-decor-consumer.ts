@@ -15,7 +15,7 @@ export function useDecorConsumer<
     return function(
         prototype: I,
         key: string,
-        descriptor: TypedPropertyDescriptor<(decor: Decor, target: T) => void>,
+        descriptor: TypedPropertyDescriptor<(decor: D, target: T) => void>,
     ) {
         decorConsumerRegistry.register(prototype, key, function(i: I) {
             const depConsumerTag = tagRegistry.query(i, key);
@@ -27,7 +27,7 @@ export function useDecorConsumer<
 
         const method = descriptor.value;
         if (!method) return; 
-        descriptor.value = function(this: I, decor: Decor, target: T) {
+        descriptor.value = function(this: I, decor: D, target: T) {
             const depConsumerTag = tagRegistry.query(this, key);
             depCollector.init(depConsumerTag);
             const result = method.call(this, decor, target); 

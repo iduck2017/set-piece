@@ -4,13 +4,13 @@ import { LogLevel } from "../log/log-service";
 import { useLog } from "../log/use-log";
 import { memoResolver } from "../memo/memo-resolver";
 import { Tag } from "../tag/tag-registry";
-import { useMacroTask } from "./use-macro-task";
-import { useMicroTask } from "./use-micro-task";
+import { useAction } from "./use-action";
+import { useMicroAction } from "./use-micro-action";
 
-class MicroTaskManager {
+class MicroActionManager {
     private _isPending = false;
 
-    @useMacroTask()
+    @useAction()
     public run(handler: () => unknown) {
         if (this._isPending) return handler();
         this._isPending = true;
@@ -27,7 +27,7 @@ class MicroTaskManager {
         return result;
     }
 
-    @useMicroTask()
+    @useMicroAction()
     @useLog()
     private resolve() {
         memoResolver.resolve();
@@ -36,4 +36,4 @@ class MicroTaskManager {
     }
 }
 
-export const microTaskManager = new MicroTaskManager();
+export const microActionManager = new MicroActionManager();

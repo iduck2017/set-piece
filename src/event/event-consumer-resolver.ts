@@ -3,12 +3,12 @@ import { Tag } from "../tag/tag-registry";
 import { eventManager } from "../dep/dep-consumer-manager";
 import { useLog } from "../log/use-log";
 import { eventService } from "./event-service";
-import { useMacroTask } from "../task/use-macro-task";
+import { useAction } from "../action/use-action";
 
 class EventConsumerResolver {
     private _context: Set<Tag> = new Set();
 
-    @useMacroTask()
+    @useAction()
     public register(depTag: Tag) {
         this._context.add(depTag);
     }

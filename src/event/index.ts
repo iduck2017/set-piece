@@ -3,6 +3,8 @@ export class Event {
 }
 
 export abstract class PostEvent<P, R> extends Event {
+    protected readonly _brand = Symbol('post-event')
+
     constructor(props: {
         options: P;
         result: R;
@@ -17,6 +19,8 @@ export abstract class PostEvent<P, R> extends Event {
 }
 
 export abstract class PrevEvent<P> extends Event {
+    protected readonly _brand = Symbol('prev-event')
+
     constructor(props: {
         options: P;
     }) {
