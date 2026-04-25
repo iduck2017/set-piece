@@ -2,7 +2,7 @@ import { Decor } from ".";
 import { Model } from "../model";
 import { AbstractConstructor, Constructor } from "../types";
 
-export type DecorProducerLoader<T = any> = () => Constructor<Decor<T>, [origin: T]>
+export type DecorProducerLoader<T = any> = () => Constructor<Decor<T>, [origin: T, target: Model]>
 export type DecorProducerLoaderMap = Map<string, DecorProducerLoader>
 class DecorProducerRegistry {
     private _config: Map<AbstractConstructor<Model>, DecorProducerLoaderMap> = new Map();

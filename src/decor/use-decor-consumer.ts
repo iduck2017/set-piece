@@ -9,13 +9,12 @@ import { decorManager } from "../dep/dep-consumer-manager";
 
 export function useDecorConsumer<
     D extends Decor,
-    I extends Model,
-    T extends Model
->(loader: DecorConsumerLoader<I, T, D>) {
+    I extends Model
+>(loader: DecorConsumerLoader<I, D>) {
     return function(
         prototype: I,
         key: string,
-        descriptor: TypedPropertyDescriptor<(decor: D, target: T) => void>,
+        descriptor: TypedPropertyDescriptor<(decor: D) => void>,
     ) {
         decorConsumerRegistry.register(prototype, key, function(i: I) {
             const depConsumerTag = tagRegistry.query(i, key);
@@ -26,11 +25,11 @@ export function useDecorConsumer<
         });
 
         const method = descriptor.value;
-        if (!method) return; 
-        descriptor.value = function(this: I, decor: D, target: T) {
+        if (!method) return;
+        descriptor.value = function(this: I, decor: D) {
             const depConsumerTag = tagRegistry.query(this, key);
             depCollector.init(depConsumerTag);
-            const result = method.call(this, decor, target); 
+            const result = method.call(this, decor);
             decorManager.collect(depConsumerTag);
             return result;
         }

@@ -4,10 +4,9 @@ import { AbstractConstructor, Constructor } from "../types";
 
 export type EventConsumerLoader<
     I extends Model = Model,
-    T extends Model = Model,
     E extends Event = Event
 > = (i: I) => [
-    target: Array<T | undefined> | T | undefined,
+    target: Array<Model | undefined> | Model | undefined,
     event: Constructor<E>
 ]
 

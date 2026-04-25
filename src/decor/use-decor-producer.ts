@@ -29,7 +29,7 @@ export function useDecorProducer<
                     return decorProducerDelegator.query(depConsumerTag)
                 }
                 const decorConstructors = loader()
-                const decor = new decorConstructors(origin);
+                const decor = new decorConstructors(origin, this);
                 decorService.emit(this, decor);
                 decorProducerDelegator.update(depConsumerTag, decor.result);
                 return decor.result;

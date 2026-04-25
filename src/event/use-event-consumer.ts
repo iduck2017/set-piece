@@ -8,13 +8,12 @@ import { eventManager } from "../dep/dep-consumer-manager";
 
 export function useEventConsumer<
     E extends Event,
-    I extends Model,
-    T extends Model
->(loader: EventConsumerLoader<I, T, E>) {
+    I extends Model
+>(loader: EventConsumerLoader<I, E>) {
     return function(
         prototype: I,
         key: string,
-        descriptor: TypedPropertyDescriptor<(event: E, target: T) => void>,
+        descriptor: TypedPropertyDescriptor<(event: E) => void>,
     ) {
         eventConsumerRegistry.register(prototype, key, function(self: I) {
             const depConsumerTag = tagRegistry.query(self, key);

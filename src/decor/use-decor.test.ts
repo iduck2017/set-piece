@@ -12,8 +12,8 @@ import { useState } from "./use-state";
 class AttackDecor extends Decor<number> {
     public result: number;
     
-    constructor(origin: number) {
-        super(origin);
+    constructor(origin: number, target: Model) {
+        super(origin, target);
         this.result = origin;
     }
 }
@@ -22,7 +22,7 @@ function useMonsterAttackDecorConsumer() {
     return function(
         prototype: MonsterModel,
         key: string,
-        descriptor: TypedPropertyDescriptor<(decor: AttackDecor, target: MonsterModel) => void>
+        descriptor: TypedPropertyDescriptor<(decor: AttackDecor) => void>
     ) {
         return useDecorConsumer((i: MonsterModel) => [i, AttackDecor])(prototype, key, descriptor);
     }
@@ -32,16 +32,9 @@ function useMonsterAllyAttackDecorConsumer() {
     return function(
         prototype: MonsterModel,
         key: string,
-        descriptor: TypedPropertyDescriptor<(decor: AttackDecor, target: MonsterModel) => void>
+        descriptor: TypedPropertyDescriptor<(decor: AttackDecor) => void>
     ) {
-        useDecorConsumer((i: MonsterModel) => [i.lair?.monsters, AttackDecor])(prototype, key, descriptor);
-        const method = descriptor.value;
-        if (!method) return;  
-        descriptor.value = function(this: MonsterModel, decor: AttackDecor, target: MonsterModel) {
-            if (this === target) return;
-            method.call(this, decor, target);
-        }
-        return descriptor;
+        return useDecorConsumer((i: MonsterModel) => [i.lair?.monsters, AttackDecor])(prototype, key, descriptor);
     }
 }
 
@@ -77,12 +70,12 @@ class MonsterModel extends Model {
     }
     
     @useMonsterAttackDecorConsumer()
-    private handleAttack(decor: AttackDecor, target: MonsterModel) {
+    private handleAttack(decor: AttackDecor) {
         decor.result += this.buff;
     }
 
     @useMonsterAllyAttackDecorConsumer()
-    private handleAllyAttack(decor: AttackDecor, target: MonsterModel) {
+    private handleAllyAttack(decor: AttackDecor) {
         decor.result += this.aura;
     }
 

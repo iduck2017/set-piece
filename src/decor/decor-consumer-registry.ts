@@ -4,10 +4,9 @@ import { AbstractConstructor, Constructor } from "../types";
 
 export type DecorConsumerLoader<
     I extends Model = Model,
-    T extends Model = Model,
     D extends Decor = Decor
 > = (i: I) => [
-    target: Array<T | undefined> | T | undefined,
+    target: Array<Model | undefined> | Model | undefined,
     decor: Constructor<D>
 ]
 

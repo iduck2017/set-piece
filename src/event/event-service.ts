@@ -12,7 +12,7 @@ class EventService {
             const consumerModel = eventConsumerTag.target;
             const key = eventConsumerTag.key;
             const handler = Reflect.get(consumerModel, key);
-            if (handler instanceof Function) handler.call(consumerModel, event, eventProducerModel);
+            if (handler instanceof Function) handler.call(consumerModel, event);
         });
     }
 
@@ -23,7 +23,7 @@ class EventService {
             const consumerModel = eventConsumerTag.target;
             const key = eventConsumerTag.key;
             const handler = Reflect.get(consumerModel, key);
-            if (handler instanceof Function) await handler.call(consumerModel, event, eventProducerModel);
+            if (handler instanceof Function) await handler.call(consumerModel, event);
         }
     }
 

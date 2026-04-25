@@ -14,7 +14,7 @@ class DecorService {
             const decorConsumerKey = decorConsumerTag.key;
             const handler = Reflect.get(decorConsumerModel, decorConsumerKey);
             if (handler instanceof Function) {
-                handler.call(decorConsumerModel, decor, decorProducerModel);
+                handler.call(decorConsumerModel, decor);
             }
         });
     }
