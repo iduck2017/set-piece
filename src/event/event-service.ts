@@ -4,8 +4,6 @@ import { eventConsumerManager } from "./event-consumer-manager";
 import { Tag } from "../tag/tag-registry";
 import { eventProducerManager } from "./event-producer-manager";
 import { eventConsumerRegistry } from "./event-consumer-registry";
-import { useLog } from "../log/use-log";
-
 class EventService {
     public emitSync(eventProducerModel: Model, event: Event) {
         console.log('Event emitSync', eventProducerModel.name, event.constructor.name);
@@ -14,34 +12,32 @@ class EventService {
             const consumerModel = eventConsumerTag.target;
             const key = eventConsumerTag.key;
             const handler = Reflect.get(consumerModel, key);
-            if (handler instanceof Function) handler.call(consumerModel, event);
+            if (handler instanceof Function) handler.call(consumerModel, event, eventProducerModel);
         });
     }
 
     public async emitAsync(eventProducerModel: Model, event: Event) {
-        console.log('Event emitAsync', eventProducerModel.name, event.constructor.name);
+        // console.log('Event emitAsync', eventProducerModel.name, event.constructor.name);
         const eventConsumerTags = eventConsumerManager.query(eventProducerModel, event);
         for (const eventConsumerTag of eventConsumerTags) {
             const consumerModel = eventConsumerTag.target;
             const key = eventConsumerTag.key;
             const handler = Reflect.get(consumerModel, key);
-            if (handler instanceof Function) await handler.call(consumerModel, event);
+            if (handler instanceof Function) await handler.call(consumerModel, event, eventProducerModel);
         }
     }
 
-    @useLog()
     public unbind(eventConsumerTag: Tag) {
         const eventTypesMap = eventProducerManager.query(eventConsumerTag);
         eventTypesMap.forEach((eventTypes, eventProducerModel) => {
             eventTypes.forEach(type => {
-                console.log('Event unbind:', eventConsumerTag.name);
+                // console.log('Event unbind:', eventConsumerTag.name);
                 eventConsumerManager.remove(eventProducerModel, type, eventConsumerTag);
             })
         })
         eventProducerManager.remove(eventConsumerTag);
     }
 
-    @useLog()
     public bind(eventConsumerTag: Tag) {
         const consumerModel = eventConsumerTag.target;
         const consumerKey = eventConsumerTag.key;

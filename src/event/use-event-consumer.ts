@@ -14,7 +14,7 @@ export function useEventConsumer<
     return function(
         prototype: I,
         key: string,
-        descriptor: TypedPropertyDescriptor<(event: E) => void>,
+        descriptor: TypedPropertyDescriptor<(event: E, target: T) => void>,
     ) {
         eventConsumerRegistry.register(prototype, key, function(self: I) {
             const depConsumerTag = tagRegistry.query(self, key);

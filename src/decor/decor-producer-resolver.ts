@@ -44,7 +44,7 @@ class DecorProducerResolver {
             decorProducerDelegator.clear(decorProducerTag);
             const next = Reflect.get(decorProducerModel, decorProducerKey);
             if (prev !== next) {
-                console.log('Decor changed:', decorProducerTag.name, prev, next);
+                // console.log('Decor changed:', decorProducerTag.name, prev, next);
                 depService.register(decorProducerTag);
             }
         });

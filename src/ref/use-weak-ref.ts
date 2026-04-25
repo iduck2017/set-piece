@@ -31,11 +31,11 @@ export function useWeakRef<
                 const refTargets = value;
                 const index = value.indexOf(refTarget);
                 if (index === -1) return;
-                console.log('WeakRef unbind', key)
+                // console.log('WeakRef unbind', key)
                 refTargets.splice(index, 1);
-            } 
+            }
             else {
-                console.log('WeakRef unbind', key)
+                // console.log('WeakRef unbind', key)
                 Reflect.set(refSource, key, undefined);
             }
         })

@@ -1,8 +1,6 @@
 import { decorConsumerResolver } from "../decor/decor-consumer-resolver";
 import { decorProducerResolver } from "../decor/decor-producer-resolver";
 import { effectResolver } from "../effect/effect-resolver";
-import { LogLevel } from "../log/log-service";
-import { useLog } from "../log/use-log";
 import { memoResolver } from "../memo/memo-resolver";
 import { Tag } from "../tag/tag-registry";
 import { useAction } from "./use-action";
@@ -30,7 +28,6 @@ class MicroActionManager {
     }
 
     @useMicroAction()
-    @useLog()
     private resolve() {
         memoResolver.resolve();
         effectResolver.resolve();

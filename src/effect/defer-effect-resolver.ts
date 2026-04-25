@@ -1,6 +1,5 @@
 import { depManager } from "../dep/dep-manager";
 import { Tag } from "../tag/tag-registry";
-import { useLog } from "../log/use-log";
 import { deferEffectManager } from "../dep/dep-consumer-manager";
 import { useAction } from "../action/use-action";
 
@@ -34,7 +33,6 @@ class DeferEffectResolver {
         })
     }
 
-    @useLog()
     private emit(depConsumerTags: Tag[]) {
         depConsumerTags.forEach(depConsumerTag => {
             const model = depConsumerTag.target;

@@ -56,7 +56,8 @@ class MonsterModel extends Model {
         return this._name ?? super.name;
     }
 
-    @useState(() => AttackDecor)
+    @useDecorProducer(() => AttackDecor)
+    @useState()
     private _attack = 100;
     public get attack() {
         return this._attack;

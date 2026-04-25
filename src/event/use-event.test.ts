@@ -29,7 +29,7 @@ class PingModel extends Model {
     }
 
     @useEventConsumer((i) => [i._pong, PongEvent])
-    private handlePong(event: PongEvent) {
+    private handlePong(event: PongEvent, target: PongModel) {
         console.log('HandlePong')
         this.count += 1;
     }
@@ -53,7 +53,7 @@ class PongModel extends Model {
     }
 
     @useEventConsumer((i) => [i._ping, PingEvent])
-    private handlePing(event: PingEvent) {
+    private handlePing(event: PingEvent, target: PingModel) {
         console.log('HandlePing');
         this.count += 1;
     }

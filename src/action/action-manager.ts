@@ -1,26 +1,24 @@
 import { deferEffectResolver } from "../effect/defer-effect-resolver";
 import { eventConsumerResolver } from "../event/event-consumer-resolver";
-import { useLog } from "../log/use-log";
 import { weakRefResolver } from "../ref/weak-ref-resolver";
+import { useAction } from "./use-action";
 
 class ActionManager {
     private _isPending = false;
 
     private _handlers: Array<() => void> = [];
 
-    @useLog()
     public run(handler: () => unknown) {
         if (this._isPending) return handler();
-        console.group("ActionManager.run");
+        // console.group("ActionManager.run");
         this._isPending = true;
         const result = handler();
         this._isPending = false;
-        console.groupEnd()
+        // console.groupEnd()
         this.resolve()
         return result;
     }
 
-    @useLog()
     private resolve() {
         deferEffectResolver.resolve();
         eventConsumerResolver.resolve();
@@ -30,6 +28,7 @@ class ActionManager {
         handlers.forEach(handler => handler());
     }
 
+    @useAction()
     public then(handler: () => void) {
         this._handlers.push(handler);
     }

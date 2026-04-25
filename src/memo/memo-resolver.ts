@@ -1,7 +1,6 @@
 import { depCollector } from "../dep/dep-collector";
 import { depManager } from "../dep/dep-manager";
 import { depService } from "../dep/dep-service";
-import { useLog } from "../log/use-log";
 import { Tag } from "../tag/tag-registry";
 import { memoDelegator } from "./memo-delegator";
 import { memoManager } from "../dep/dep-consumer-manager";
@@ -39,7 +38,6 @@ class MemoResolver {
         })
     }
 
-    @useLog()
     private reset(consumerTags: Tag[]) {
         consumerTags.forEach(consumerTag => {
             const model = consumerTag.target;
@@ -48,9 +46,9 @@ class MemoResolver {
             memoDelegator.clear(consumerTag);
             const next = Reflect.get(model, key);
             memoDelegator.update(consumerTag, next);
-            console.log('Memo update', consumerTag.name, prev, next);
+            // console.log('Memo update', consumerTag.name, prev, next);
             if (prev !== next) {
-                console.log(`Memo changed: ${consumerTag.name} ${prev} ${next}`);
+                // console.log(`Memo changed: ${consumerTag.name} ${prev} ${next}`);
                 depService.register(consumerTag);
             }
         })

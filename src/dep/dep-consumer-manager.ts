@@ -1,7 +1,5 @@
 import { depCollector } from "./dep-collector";
 import { depManager } from "./dep-manager";
-import { LogLevel } from "../log/log-service";
-import { useLog } from "../log/use-log";
 import { Tag } from "../tag/tag-registry";
 
 export class DepConsumerManager {
@@ -38,12 +36,11 @@ export class DepConsumerManager {
         this._context.set(depTag, consumerTags);
     }
 
-    @useLog(LogLevel.INFO)
     public collect(depConsumerTag: Tag) {
         const depTags = depCollector.query(depConsumerTag);
         const index = depTags.indexOf(depConsumerTag);
         if (index >= 0) depTags.splice(index, 1);
-        console.log(`Deps collect: ${depConsumerTag.name} -> ${depTags.map(dep => dep.name).join(', ')}`)
+        // console.log(`Deps collect: ${depConsumerTag.name} -> ${depTags.map(dep => dep.name).join(', ')}`)
         depTags.forEach(depTag => {
             this.add(depTag, depConsumerTag);
             depManager.add(depConsumerTag, depTag);

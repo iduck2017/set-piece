@@ -16,7 +16,7 @@ export function useEffect() {
         if (!method) return;
         descriptor.value = function(this: Model) {
             const depConsumerTag = tagRegistry.query(this, key);
-            console.log(`Effect run: ${depConsumerTag.name}`);
+            // console.log(`Effect run: ${depConsumerTag.name}`);
             depCollector.init(depConsumerTag)
             method.call(this);
             effectManager.collect(depConsumerTag);

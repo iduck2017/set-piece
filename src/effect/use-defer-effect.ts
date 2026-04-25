@@ -15,7 +15,7 @@ export function useDeferEffect() {
         if (!method) return;
         descriptor.value = function(this: Model) {
             const depConsumerTag = tagRegistry.query(this, key);
-            console.log(`DeferEffect run: ${depConsumerTag.name}`);
+            // console.log(`DeferEffect run: ${depConsumerTag.name}`);
             depCollector.init(depConsumerTag)
             method.call(this);
             deferEffectManager.collect(depConsumerTag);

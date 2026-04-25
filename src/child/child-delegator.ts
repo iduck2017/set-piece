@@ -36,7 +36,7 @@ export class ChildDelegator {
 
     @useLock()
     private push(origin: Model[], ...next: Model[]) {
-        console.warn('Child push', next)
+        // console.warn('Child push', next)
         const result = origin.push(...next);
         next.forEach(item => item._internal.mount(this.parent));
         return result;

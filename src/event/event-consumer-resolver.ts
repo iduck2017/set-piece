@@ -1,7 +1,6 @@
 import { depManager } from "../dep/dep-manager";
 import { Tag } from "../tag/tag-registry";
 import { eventManager } from "../dep/dep-consumer-manager";
-import { useLog } from "../log/use-log";
 import { eventService } from "./event-service";
 import { useAction } from "../action/use-action";
 
@@ -31,7 +30,6 @@ class EventConsumerResolver {
         })
     }
 
-    @useLog()
     private reset(depConsumerTags: Tag[]) {
         depConsumerTags.forEach(depConsumerTag => {
             eventService.unbind(depConsumerTag);

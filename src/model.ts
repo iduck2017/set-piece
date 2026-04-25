@@ -8,33 +8,49 @@ import { eventConsumerRegistry } from "./event/event-consumer-registry";
 import { eventService } from "./event/event-service";
 import { mountHookRegistry } from "./hooks/use-mount-hook";
 import { unmountHookRegistry } from "./hooks/use-unmount-hook";
-import { useLog } from "./log/use-log";
 import { memoRegistry } from "./memo/memo-registry";
 import { weakRefResolver } from "./ref/weak-ref-resolver";
 import { routeRegistry } from "./route/route-registry";
 import { actionManager } from "./action/action-manager";
 import { useMicroAction } from "./action/use-micro-action";
 import { tagRegistry } from "./tag/tag-registry";
+import { deferEffectRegistry } from "./effect/defer-effect-registry";
+
 
 export class Model {
+    private static _ticket = 1;
+
+    protected _uuid: string;
+    public get uuid() {
+        return this._uuid;
+    }
+
+    constructor() {
+        Model._ticket += 1;
+        this._uuid = Model._ticket.toString(36)
+    }
+
     protected readonly _brand = Symbol('model')
 
     public get name() {
         return this.constructor.name;
     }
 
-    @useLog()
     @useMicroAction()
     public init() {
         const memoKeys = memoRegistry.query(this);
         memoKeys.forEach(key => Reflect.get(this, key))
 
-        const effectKeys = effectRegistry.query(this);
+        const effectKeys = [
+            ...effectRegistry.query(this),
+            ...deferEffectRegistry.query(this),
+        ];
         effectKeys.forEach(key => {
             const effect = Reflect.get(this, key);
             if (!(effect instanceof Function)) return;
             effect.call(this);
         })
+
 
         const eventLoaderMap = eventConsumerRegistry.query(this);
         eventLoaderMap.forEach((loaders, key) => {

@@ -11,7 +11,6 @@ export { useMountHook } from './hooks/use-mount-hook';
 export { useRebootHook } from './hooks/use-reboot-hook';
 export { useUnmountHook } from './hooks/use-unmount-hook';
 export { useConsoleGroup } from './log/use-console-group';
-export { useLog } from './log/use-log';
 export { useMemo } from './memo/use-memo';
 export { useRef } from './ref/use-ref';
 export { useWeakRef } from './ref/use-weak-ref';
@@ -21,6 +20,8 @@ export { useAction, runAction } from './action/use-action';
 export { useMicroAction } from './action/use-micro-action';
 export { useRange } from './utils/use-range';
 export { useValidator } from './utils/use-validator';
+export { useDeferAction } from './action/use-defer-action'
+export { useDeferEffect } from './effect/use-defer-effect'
 
 export { Method, AbstractConstructor, Constructor, TypedPropertyDecorator } from './types'
 export { Model } from './model'

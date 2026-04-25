@@ -3,7 +3,6 @@ import { Decor } from ".";
 import { decorConsumerManager } from "./decor-consumer-manager";
 import { decorConsumerRegistry } from "./decor-consumer-registry";
 import { decorProducerManager } from "./decor-producer-manager";
-import { useLog } from "../log/use-log";
 import { Tag } from "../tag/tag-registry";
 import { decorProducerResolver } from "./decor-producer-resolver";
 
@@ -20,12 +19,11 @@ class DecorService {
         });
     }
 
-    @useLog()
     public unbind(decorConsumerTag: Tag) {
         const decorTypesMap = decorProducerManager.query(decorConsumerTag);
         decorTypesMap.forEach((decorTypes, decorProducerModel) => {
             decorTypes.forEach(decorType => {
-                console.log('Decor unbind:', decorConsumerTag.name);
+                // console.log('Decor unbind:', decorConsumerTag.name);
                 decorConsumerManager.remove(decorProducerModel, decorType, decorConsumerTag);
                 decorProducerResolver.register(decorProducerModel, decorType);
             })
@@ -33,7 +31,6 @@ class DecorService {
         decorProducerManager.remove(decorConsumerTag);
     }
 
-    @useLog()
     public bind(decorConsumerTag: Tag) {
         const consumerModel = decorConsumerTag.target;
         const consumerKey = decorConsumerTag.key;
@@ -45,7 +42,7 @@ class DecorService {
                 const decorProducerModels = value;
                 decorProducerModels?.forEach(decorProducerModel => {
                     if (!decorProducerModel) return;
-                    console.log('Decor bind:', decorConsumerTag.name);
+                    // console.log('Decor bind:', decorConsumerTag.name);
                     decorConsumerManager.add(decorProducerModel, decorType, decorConsumerTag);
                     decorProducerManager.add(decorConsumerTag, decorProducerModel, decorType);
                     decorProducerResolver.register(decorProducerModel, decorType);
@@ -53,7 +50,7 @@ class DecorService {
             }
             if (value instanceof Model) {
                 const decorProducerModel = value;
-                console.log('Decor bind:', decorConsumerTag.name);
+                // console.log('Decor bind:', decorConsumerTag.name);
                 decorConsumerManager.add(decorProducerModel, decorType, decorConsumerTag);
                 decorProducerManager.add(decorConsumerTag, decorProducerModel, decorType);
                 decorProducerResolver.register(decorProducerModel, decorType);
