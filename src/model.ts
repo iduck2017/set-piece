@@ -15,19 +15,14 @@ import { actionManager } from "./action/action-manager";
 import { useMicroAction } from "./action/use-micro-action";
 import { tagRegistry } from "./tag/tag-registry";
 import { deferEffectRegistry } from "./effect/defer-effect-registry";
+import { ticketService } from "./utils/ticket-service";
 
 
 export class Model {
-    private static _ticket = 1;
 
-    protected _uuid: string;
+    protected _uuid: string = ticketService.query()
     public get uuid() {
         return this._uuid;
-    }
-
-    constructor() {
-        Model._ticket += 1;
-        this._uuid = Model._ticket.toString(36)
     }
 
     protected readonly _brand = Symbol('model')
@@ -37,7 +32,7 @@ export class Model {
     }
 
     @useMicroAction()
-    public init() {
+    private init() {
         const memoKeys = memoRegistry.query(this);
         memoKeys.forEach(key => Reflect.get(this, key))
 
@@ -79,6 +74,7 @@ export class Model {
             mount: this.mount.bind(this),
             unmount: this.unmount.bind(this),
             emit: this.emit.bind(this),
+            init: this.init.bind(this)
         }
     }
 

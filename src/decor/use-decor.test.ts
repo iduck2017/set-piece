@@ -4,6 +4,7 @@ import { useDep } from "../dep/use-dep";
 import { useEffect } from "../effect/use-effect";
 import { useMemo } from "../memo/use-memo";
 import { Model } from "../model";
+import { useModel } from "../use-model";
 import { useRoute } from "../route/use-route";
 import { useDecorConsumer } from "./use-decor-consumer";
 import { useDecorProducer } from "./use-decor-producer";
@@ -34,15 +35,15 @@ function useMonsterAllyAttackDecorConsumer() {
         key: string,
         descriptor: TypedPropertyDescriptor<(decor: AttackDecor) => void>
     ) {
-        return useDecorConsumer((i: MonsterModel) => [i.lair?.monsters, AttackDecor])(prototype, key, descriptor);
+        useDecorConsumer((i: MonsterModel) => [i.lair?.monsters, AttackDecor])(prototype, key, descriptor);
     }
 }
 
+@useModel('monster')
 class MonsterModel extends Model {
     constructor(name: string) {
         super()
         this._name = name;
-        this.init()
     }
     private _name?: string;
     public get name() {
@@ -76,6 +77,7 @@ class MonsterModel extends Model {
 
     @useMonsterAllyAttackDecorConsumer()
     private handleAllyAttack(decor: AttackDecor) {
+        if (decor.target === this) return;
         decor.result += this.aura;
     }
 
@@ -90,12 +92,8 @@ class MonsterModel extends Model {
 }
 
 
+@useModel('monster-lair')
 class MonsterLairModel extends Model {
-    constructor() {
-        super()
-        this.init()
-    }
-
     @useChild()
     private _monsters: MonsterModel[] = [];
     @useMemo()

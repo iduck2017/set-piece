@@ -2,6 +2,7 @@ import { Event } from ".";
 import { depManager } from "../dep/dep-manager";
 import { useDep } from "../dep/use-dep";
 import { Model } from "../model";
+import { useModel } from "../use-model";
 import { eventConsumerManager } from "./event-consumer-manager";
 import { useEventConsumer } from "./use-event-consumer";
 
@@ -12,12 +13,9 @@ class PongEvent extends Event {
     protected _brand = Symbol('pong-event')
 }
 
+@useModel('ping')
 class PingModel extends Model {
     protected _brand = Symbol('ping-model')
-    constructor() {
-        super();
-        this.init();
-    }
 
     public count = 0;
 
@@ -35,12 +33,9 @@ class PingModel extends Model {
     }
 }
 
+@useModel('pong')
 class PongModel extends Model {
     protected _brand = Symbol('pong-model')
-    constructor() {
-        super();
-        this.init();
-    }
 
     public count = 0;
 

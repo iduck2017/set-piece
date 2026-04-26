@@ -16,6 +16,7 @@ export { useRef } from './ref/use-ref';
 export { useWeakRef } from './ref/use-weak-ref';
 export { useRoute } from './route/use-route';
 export { useStore } from './store/use-store';
+export { useModel } from './use-model'
 export { useAction, runAction } from './action/use-action';
 export { useMicroAction } from './action/use-micro-action';
 export { useRange } from './utils/use-range';

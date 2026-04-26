@@ -2,12 +2,13 @@ import { useDep } from "../dep/use-dep";
 import { Model } from "../model";
 import { depManager } from "../dep/dep-manager";
 import { useMemo } from "./use-memo";
+import { useModel } from "../use-model";
 
+@useModel('foo')
 export class FooModel extends Model {
     constructor(level: number) {
         super();
         this.level = level;
-        this.init()
     }
 
     @useDep()
