@@ -61,10 +61,10 @@ export class Model {
     }
 
     protected emit(event: Event, options?: {
-        isYield?: boolean;
+        isDefer?: boolean;
         isAsync?: boolean;
     }) {
-        if (options?.isYield) return actionManager.then(() => eventService.emitSync(this, event));
+        if (options?.isDefer) return actionManager.then(() => eventService.emitSync(this, event));
         if (options?.isAsync) return eventService.emitAsync(this, event);
         eventService.emitSync(this, event);
     }

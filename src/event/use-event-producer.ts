@@ -28,7 +28,7 @@ export function useEventProducer<P, R, E extends PrevEvent<P>>(
             if (prevEvent) this.emit(prevEvent);
             if (prevEvent?.isAborted) return;
             const result = handler.call(this, options, prevEvent);
-            if (postEvent) this.emit(postEvent, { isYield: true });
+            if (postEvent) this.emit(postEvent, { isDefer: true });
             return result
         }
     }
