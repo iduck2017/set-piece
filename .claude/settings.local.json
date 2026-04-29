@@ -13,7 +13,10 @@
       "Bash(./node_modules/@esbuild/win32-x64/esbuild.exe --version)",
       "Bash(cmd.exe /c \"node_modules\\\\@esbuild\\\\win32-x64\\\\esbuild.exe --version\")",
       "Bash(cmd.exe /c \"node_modules\\\\@esbuild\\\\win32-x64\\\\esbuild.exe --version 2>&1\")",
-      "Bash(node -e \"const {spawnSync} = require\\('child_process'\\); const r = spawnSync\\('node_modules\\\\\\\\\\\\\\\\@esbuild\\\\\\\\\\\\\\\\win32-x64\\\\\\\\\\\\\\\\esbuild.exe', ['--version']\\); console.log\\('status:', r.status, 'signal:', r.signal, 'error:', r.error, 'stdout:', r.stdout?.toString\\(\\), 'stderr:', r.stderr?.toString\\(\\)\\)\")"
+      "Bash(node -e \"const {spawnSync} = require\\('child_process'\\); const r = spawnSync\\('node_modules\\\\\\\\\\\\\\\\@esbuild\\\\\\\\\\\\\\\\win32-x64\\\\\\\\\\\\\\\\esbuild.exe', ['--version']\\); console.log\\('status:', r.status, 'signal:', r.signal, 'error:', r.error, 'stdout:', r.stdout?.toString\\(\\), 'stderr:', r.stderr?.toString\\(\\)\\)\")",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "Bash(git push *)"
     ]
   }
 }

@@ -25,10 +25,10 @@ export function useEventProducer<P, R, E extends PrevEvent<P>>(
             const [prevEventType, postEventType] = loader();
             const prevEvent: any = prevEventType ? new prevEventType({ options }) : undefined;
             const postEvent = postEventType ? new postEventType({ options }) : undefined;
-            if (prevEvent) this.emit(prevEvent);
+            if (prevEvent) this.emitEvent(prevEvent);
             if (prevEvent?.isAborted) return;
             const result = handler.call(this, options, prevEvent);
-            if (postEvent) this.emit(postEvent, { isDefer: true });
+            if (postEvent) this.emitDeferEvent(postEvent);
             return result
         }
     }

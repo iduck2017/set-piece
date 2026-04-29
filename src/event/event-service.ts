@@ -6,7 +6,7 @@ import { eventProducerManager } from "./event-producer-manager";
 import { eventConsumerRegistry } from "./event-consumer-registry";
 class EventService {
     public emitSync(eventProducerModel: Model, event: Event) {
-        console.log('Event emitSync', eventProducerModel.name, event.constructor.name);
+        // console.log('Event emitSync', eventProducerModel.name, event.constructor.name);
         const eventConsumerTags = eventConsumerManager.query(eventProducerModel, event);
         eventConsumerTags.forEach(eventConsumerTag => {
             const consumerModel = eventConsumerTag.target;

@@ -23,7 +23,7 @@ class PingModel extends Model {
     public _pong?: PongModel;
 
     public run() {
-        this.emit(new PingEvent());
+        this.emitEvent(new PingEvent());
     }
 
     @useEventConsumer((i) => [i._pong, PongEvent])
@@ -44,7 +44,7 @@ class PongModel extends Model {
     public _ping?: PingModel;
 
     public run() {
-        this.emit(new PongEvent());
+        this.emitEvent(new PongEvent());
     }
 
     @useEventConsumer((i) => [i._ping, PingEvent])

@@ -19,7 +19,6 @@ import { ticketService } from "./utils/ticket-service";
 
 
 export class Model {
-
     protected _uuid: string = ticketService.query()
     public get uuid() {
         return this._uuid;
@@ -35,7 +34,6 @@ export class Model {
     private init() {
         const memoKeys = memoRegistry.query(this);
         memoKeys.forEach(key => Reflect.get(this, key))
-
         const effectKeys = [
             ...effectRegistry.query(this),
             ...deferEffectRegistry.query(this),
@@ -45,14 +43,11 @@ export class Model {
             if (!(effect instanceof Function)) return;
             effect.call(this);
         })
-
-
         const eventLoaderMap = eventConsumerRegistry.query(this);
         eventLoaderMap.forEach((loaders, key) => {
             const eventConsumerTag = tagRegistry.query(this, key);
             eventService.bind(eventConsumerTag);
         })
-
         const decorLoaderMap = decorConsumerRegistry.query(this);
         decorLoaderMap.forEach((loaders, key) => {
             const decorConsumerTag = tagRegistry.query(this, key);
@@ -60,20 +55,22 @@ export class Model {
         })
     }
 
-    protected emit(event: Event, options?: {
-        isDefer?: boolean;
-        isAsync?: boolean;
-    }) {
-        if (options?.isDefer) return actionManager.then(() => eventService.emitSync(this, event));
-        if (options?.isAsync) return eventService.emitAsync(this, event);
+    protected emitEvent(event: Event) {
         eventService.emitSync(this, event);
+    }
+
+    protected emitDeferEvent(event: Event) {
+        return actionManager.then(() => eventService.emitSync(this, event));
+    }
+
+    protected emitAsyncEvent(event: Event) {
+        return eventService.emitAsync(this, event);
     }
 
     public get _internal() {
         return {
             mount: this.mount.bind(this),
             unmount: this.unmount.bind(this),
-            emit: this.emit.bind(this),
             init: this.init.bind(this)
         }
     }
@@ -110,12 +107,10 @@ export class Model {
         if (this._parent) return;
         this._parent = parent;
         this.updateRoute();
-        mountHookRegistry.run(this);
     }
 
     private unmount() {
         if (!this._parent) return
-        unmountHookRegistry.run(this);
         this._parent = undefined;
         this.updateRoute();
         weakRefResolver.register(this);
