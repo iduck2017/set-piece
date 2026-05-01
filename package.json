@@ -2,9 +2,8 @@
   "name": "set-piece",
   "version": "3.0.0",
   "private": true,
-  "main": "dist/cjs/index.js",
-  "module": "dist/esm/index.js",
-  "types": "dist/type/index.d.ts",
+  "module": "dist/index.js",
+  "types": "dist/index.d.ts",
   "files": ["dist"],
   "keywords": [
     "typescript",
@@ -17,15 +16,17 @@
     "joi": "^17.13.3"
   },
   "devDependencies": {
-    "jest": "^29.7.0",
     "@types/jest": "^29.5.14",
+    "esbuild": "^0.28.0",
+    "jest": "^29.7.0",
     "ts-jest": "^29.3.2",
     "typescript": "^5.6.2",
     "utility-types": "^3.11.0"
   },
   "scripts": {
     "test": "jest",
+    "watch": "tsc -p tsconfig.json --watch",
     "build": "tsc -p tsconfig.json",
-    "watch": "tsc -p tsconfig.json --watch"
+    "serve": "node esbuild.config.js"
   }
 }

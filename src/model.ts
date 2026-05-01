@@ -1,109 +1,135 @@
-import { listChild } from "./child/as-custom-child";
-import { findRoot, findRouteMap } from "./route/as-route";
-import { emitEventAsync, emitEventSync, Event } from "./event/event";
-import { addListeners, removeListeners, transferListeners } from "./event/listener";
-import { runReloadHooks } from "./lifecycle/on-reload";
-import { runMountHooks } from "./lifecycle/on-mount";
-import { runUnmountHooks } from "./lifecycle/on-unmount";
-import { appendThread } from "./transaction/as-thread";
-import { useEffect } from "./lifecycle/use-effect";
+import { childRegistry } from "./child/child-registry";
+import { decorConsumerRegistry } from "./decor/decor-consumer-registry";
+import { decorProducerResolver } from "./decor/decor-producer-resolver";
+import { decorService } from "./decor/decor-service";
+import { effectRegistry } from "./effect/effect-registry";
+import { Event } from "./event";
+import { eventConsumerRegistry } from "./event/event-consumer-registry";
+import { eventService } from "./event/event-service";
+import { mountHookRegistry } from "./hooks/use-mount-hook";
+import { unmountHookRegistry } from "./hooks/use-unmount-hook";
+import { memoRegistry } from "./memo/memo-registry";
+import { weakRefResolver } from "./ref/weak-ref-resolver";
+import { routeRegistry } from "./route/route-registry";
+import { actionManager } from "./action/action-manager";
+import { useMicroAction } from "./action/use-micro-action";
+import { tagRegistry } from "./tag/tag-registry";
+import { deferEffectRegistry } from "./effect/defer-effect-registry";
+import { ticketService } from "./utils/ticket-service";
+
 
 export class Model {
+    protected _uuid: string = ticketService.query()
+    public get uuid() {
+        return this._uuid;
+    }
 
-    private _parent: Model | undefined;
+    protected readonly _brand = Symbol('model')
+
+    public get name() {
+        return this.constructor.name;
+    }
+
+    @useMicroAction()
+    private init() {
+        const memoKeys = memoRegistry.query(this);
+        memoKeys.forEach(key => Reflect.get(this, key))
+        const effectKeys = [
+            ...effectRegistry.query(this),
+            ...deferEffectRegistry.query(this),
+        ];
+        effectKeys.forEach(key => {
+            const effect = Reflect.get(this, key);
+            if (!(effect instanceof Function)) return;
+            effect.call(this);
+        })
+        const eventLoaderMap = eventConsumerRegistry.query(this);
+        eventLoaderMap.forEach((loaders, key) => {
+            const eventConsumerTag = tagRegistry.query(this, key);
+            eventService.bind(eventConsumerTag);
+        })
+        const decorLoaderMap = decorConsumerRegistry.query(this);
+        decorLoaderMap.forEach((loaders, key) => {
+            const decorConsumerTag = tagRegistry.query(this, key);
+            decorService.bind(decorConsumerTag);
+        })
+    }
+
+    protected emitEvent(event: Event) {
+        eventService.emitSync(this, event);
+    }
+
+    protected emitDeferEvent(event: Event) {
+        return actionManager.then(() => eventService.emitSync(this, event));
+    }
+
+    protected emitAsyncEvent(event: Event) {
+        return eventService.emitAsync(this, event);
+    }
+
+    public get _internal() {
+        return {
+            mount: this.mount.bind(this),
+            unmount: this.unmount.bind(this),
+            init: this.init.bind(this)
+        }
+    }
+
+    public get descendants(): Model[] {
+        const result: Model[] = [];
+        this.children.forEach(child => {
+            result.push(child);
+            result.push(...child.descendants);
+        });
+        return result;
+    }
+
+    public get children(): Model[] {
+        const result: Model[] = [];
+        const iterators = childRegistry.query(this);
+        iterators.forEach((iterator, key) => {
+            result.push(...iterator(this, key));
+        });
+        return result;
+    }
+
+    private _parent?: Model;
     public get parent() {
         return this._parent;
     }
 
-    @useEffect(transferListeners)
     private _root: Model = this;
     public get root() {
         return this._root;
     }
 
-    public get _internal() {
-        return {
-            bindParent: this.bindParent.bind(this),
-            unbindParent: this.unbindParent.bind(this),
-            reload: this.reload.bind(this),
-            emit: this.emit.bind(this),
-        }
-    }
-
-    constructor() {
-        this.load();
-    }
-
-    private bindParent(parent: Model) {
-        if (this._parent) {
-            console.error('Parent already exists');
-            return;
-        }
+    private mount(parent: Model) {
+        if (this._parent) return;
         this._parent = parent;
         this.updateRoute();
-        this.mount();
-    }
-
-    private unbindParent() {
-        if (!this._parent) {
-            console.error('Parent not exists');
-            return;
-        }
-        this.unmount();
-        this._parent = undefined;
-        this.updateRoute();
-    }
-
-    private updateRoute() {
-        const routeMap = findRouteMap(this);
-        routeMap.forEach((value, key) => {
-            Reflect.set(this, key, value);
-        })
-        const root = findRoot(this);
-        this._root = root;
-        
-        const children = listChild(this)
-        children.forEach(child => child.updateRoute())
-    }
-
-    protected emit(event: Event, options?: {
-        isYield?: boolean;
-        isAsync?: boolean;
-    }) {
-        const isYield = options?.isYield ?? false;
-        const isAsync = options?.isAsync ?? false;
-        if (isYield) {
-            appendThread(() => {
-                emitEventSync(this, event);
-            });
-            return;
-        }
-        if (isAsync) {
-            return emitEventAsync(this, event);
-        }
-        emitEventSync(this, event);
-    }
-
-    private load() {
-        addListeners(this);
-    }
-
-    private unload() {
-        removeListeners(this);
-    }
-
-    private mount() {
-        runMountHooks(this);
     }
 
     private unmount() {
-        runUnmountHooks(this);
+        if (!this._parent) return
+        this._parent = undefined;
+        this.updateRoute();
+        weakRefResolver.register(this);
     }
 
-    protected reload() {
-        this.unload();
-        this.load();
-        runReloadHooks(this);
+    private updateRoute() {
+        const routeTypeMap = routeRegistry.query(this);
+        routeTypeMap.forEach((type: Function, key: string) => {
+            let ancestor: Model | undefined = this;
+            while (ancestor) {
+                if (ancestor instanceof type) break;
+                ancestor = ancestor.parent;
+            }
+            Reflect.set(this, key, ancestor);
+        });
+        let root: Model = this;
+        while (root.parent) root = root.parent;
+        this._root = root;
+        this.children.forEach((child: Model) => child.updateRoute());
     }
 
 }

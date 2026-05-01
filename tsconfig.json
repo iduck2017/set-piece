@@ -2,20 +2,21 @@
   "compilerOptions": {
     "noImplicitAny": true,
     "module": "ESNext",
-    "outDir": "./dist/esm",
+    "rootDir": "./src",
+    "outDir": "./dist",
     "lib": ["ES2018", "DOM"],
     "target": "ESNext",
     "jsx": "react",
     "declaration": true,
-    "declarationDir": "./dist/type",
     "allowJs": true,
     "allowSyntheticDefaultImports": true,
-    "moduleResolution": "node",
+    "moduleResolution": "bundler",
     "strict": true,
     "experimentalDecorators": true,
     "useDefineForClassFields": false,
     "strictFunctionTypes": true,
-    "noUncheckedIndexedAccess": true
+    "noUncheckedIndexedAccess": true,
+    "types": ["jest", "node"]
   },
   "include": ["src/**/*", "test/**/*"],
   "exclude": ["dist/**/*"]
