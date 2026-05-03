@@ -1,5 +1,5 @@
+import { useAction } from "../action/action-manager";
 import { Model } from "../model";
-import { useAction } from "../action/use-action";
 
 function useLock<P extends any[], R = any>() {
     return function(

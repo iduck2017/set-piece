@@ -5,7 +5,7 @@ import { Tag, tagRegistry } from "../tag/tag-registry";
 import { decorProducerRegistry } from "./decor-producer-registry";
 import { decorProducerDelegator } from "./decor-producer-delegator";
 import { depService } from "../dep/dep-service";
-import { useMicroAction } from "../action/use-micro-action";
+import { useMicroAction } from "../action/micro-action-manager";
 
 class DecorProducerResolver {
     private _context: Set<Tag> = new Set();

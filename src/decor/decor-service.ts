@@ -37,23 +37,25 @@ class DecorService {
         const loadersMap = decorConsumerRegistry.query(consumerModel);
         const loaders = loadersMap.get(consumerKey) ?? [];
         loaders.forEach(loader => {
-            const [value, decorType] = loader(consumerModel);
+            const result = loader(consumerModel);
+            if (!result) return;
+            const [value, DecorConstructor] = result; 
             if (value instanceof Array) {
                 const decorProducerModels = value;
                 decorProducerModels?.forEach(decorProducerModel => {
                     if (!decorProducerModel) return;
                     // console.log('Decor bind:', decorConsumerTag.name);
-                    decorConsumerManager.add(decorProducerModel, decorType, decorConsumerTag);
-                    decorProducerManager.add(decorConsumerTag, decorProducerModel, decorType);
-                    decorProducerResolver.register(decorProducerModel, decorType);
+                    decorConsumerManager.add(decorProducerModel, DecorConstructor, decorConsumerTag);
+                    decorProducerManager.add(decorConsumerTag, decorProducerModel, DecorConstructor);
+                    decorProducerResolver.register(decorProducerModel, DecorConstructor);
                 })
             }
             if (value instanceof Model) {
                 const decorProducerModel = value;
                 // console.log('Decor bind:', decorConsumerTag.name);
-                decorConsumerManager.add(decorProducerModel, decorType, decorConsumerTag);
-                decorProducerManager.add(decorConsumerTag, decorProducerModel, decorType);
-                decorProducerResolver.register(decorProducerModel, decorType);
+                decorConsumerManager.add(decorProducerModel, DecorConstructor, decorConsumerTag);
+                decorProducerManager.add(decorConsumerTag, decorProducerModel, DecorConstructor);
+                decorProducerResolver.register(decorProducerModel, DecorConstructor);
             }
         })
     }

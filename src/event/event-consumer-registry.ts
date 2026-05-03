@@ -8,7 +8,7 @@ export type EventConsumerLoader<
 > = (i: I) => [
     target: Array<Model | undefined> | Model | undefined,
     event: Constructor<E>
-]
+] | undefined
 
 class EventConsumerRegistry {
     private _config: Map<AbstractConstructor<Model>, Map<string, Array<EventConsumerLoader>>> = new Map();

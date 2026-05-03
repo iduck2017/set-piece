@@ -3,8 +3,8 @@ import { effectResolver } from "../effect/effect-resolver";
 import { deferEffectResolver } from "../effect/defer-effect-resolver";
 import { eventConsumerResolver } from "../event/event-consumer-resolver";
 import { memoResolver } from "../memo/memo-resolver";
-import { useMicroAction } from "../action/use-micro-action";
 import { Tag } from "../tag/tag-registry";
+import { useMicroAction } from "../action/micro-action-manager";
 
 class DepService {
     @useMicroAction()

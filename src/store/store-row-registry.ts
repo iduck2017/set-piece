@@ -18,7 +18,17 @@ class StoreRowRegistry {
     }
 
     public query(constructor: Function): StoreRowConfigMap {
-        return this._context.get(constructor) ?? new Map();
+        const result: StoreRowConfigMap = new Map();
+        let Constructor: any = constructor;
+        while (Constructor) {
+            const subConfig: StoreRowConfigMap = this._context.get(Constructor) ?? new Map();
+            subConfig.forEach((config, key) => {
+                if (result.has(key)) return;
+                result.set(key, config);
+            });
+            Constructor = Object.getPrototypeOf(Constructor);
+        }
+        return result;
     }
 }
 

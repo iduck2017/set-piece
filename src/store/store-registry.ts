@@ -4,17 +4,19 @@ import { Constructor } from "../types";
 class StoreRegistry {
     private _config: Map<string, Constructor<Model>> & Map<Constructor<Model>, string> = new Map();
 
-    public register(code: string, constructor: Constructor<Model>) {
-        this._config.set(code, constructor);
-        this._config.set(constructor, code);
+    public register(code: string, Constructor: Constructor<Model>) {
+        this._config.set(code, Constructor);
+        this._config.set(Constructor, code);
     }
 
-    public query(code: string): Constructor<Model> | undefined
-    public query(constructor: Constructor<Model>): string | undefined
-    public query(arg: string | Constructor<Model>): Constructor<Model> | string | undefined {
-        if (typeof arg === 'string') return this._config.get(arg);
-        else return this._config.get(arg)
+    public getCode(Constructor: Constructor<Model>) {
+        return this._config.get(Constructor);
+    }
+
+    public getConstructor(code: string) {
+        return this._config.get(code)
     }
 }
+
 export const storeRegistry = new StoreRegistry();
 

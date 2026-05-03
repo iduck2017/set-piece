@@ -44,21 +44,23 @@ class EventService {
         const loadersMap = eventConsumerRegistry.query(consumerModel);
         const loaders = loadersMap.get(consumerKey) ?? [];
         loaders.forEach(loader => {
-            const [value, type] = loader(consumerModel);
+            const result = loader(consumerModel);
+            if (!result) return;
+            const [value, EventConstructor] = result;
             if (value instanceof Array) {
                 const eventProducerModels = value;
                 eventProducerModels?.forEach(eventProducerModel => {
                     if (!eventProducerModel) return;
                     console.log('Event bind:', eventConsumerTag.name);
-                    eventConsumerManager.add(eventProducerModel, type, eventConsumerTag);
-                    eventProducerManager.add(eventConsumerTag, eventProducerModel, type);
+                    eventConsumerManager.add(eventProducerModel, EventConstructor, eventConsumerTag);
+                    eventProducerManager.add(eventConsumerTag, eventProducerModel, EventConstructor);
                 })
             }
             if (value instanceof Model) {
                 const eventProducerModel = value;
                 console.log('Event bind:', eventConsumerTag.name);
-                eventConsumerManager.add(eventProducerModel, type, eventConsumerTag);
-                eventProducerManager.add(eventConsumerTag, eventProducerModel, type);
+                eventConsumerManager.add(eventProducerModel, EventConstructor, eventConsumerTag);
+                eventProducerManager.add(eventConsumerTag, eventProducerModel, EventConstructor);
             }
         })
     }

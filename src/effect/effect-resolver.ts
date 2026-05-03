@@ -1,7 +1,7 @@
 import { depManager } from "../dep/dep-manager";
 import { Tag } from "../tag/tag-registry";
 import { effectManager } from "../dep/dep-consumer-manager";
-import { useMicroAction } from "../action/use-micro-action";
+import { useMicroAction } from "../action/micro-action-manager";
 
 class EffectResolver {
     private _context: Set<Tag> = new Set();

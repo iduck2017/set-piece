@@ -3,16 +3,14 @@ import { decorProducerResolver } from "../decor/decor-producer-resolver";
 import { effectResolver } from "../effect/effect-resolver";
 import { memoResolver } from "../memo/memo-resolver";
 import { Model } from "../model";
-import { Tag } from "../tag/tag-registry";
-import { Constructor } from "../types";
-import { useAction } from "./use-action";
-import { useMicroAction } from "./use-micro-action";
+import { Constructor, Method } from "../types";
+import { useAction } from "./action-manager";
 
 class MicroActionManager {
     private _isPending = false;
 
     @useAction()
-    public run(handler: () => unknown) {
+    public launch(handler: () => unknown) {
         if (this._isPending) return handler();
         this._isPending = true;
         const result = handler();
@@ -64,3 +62,20 @@ class MicroActionManager {
 }
 
 export const microActionManager = new MicroActionManager();
+
+export function useMicroAction() {
+    return function(
+        prototype: unknown,
+        key: unknown,
+        descriptor: TypedPropertyDescriptor<Method>,
+    ) {
+        const handler = descriptor.value;
+        if (!handler) return descriptor;
+        descriptor.value = function(...args: any[]) {
+            const _handler = handler.bind(this, ...args)
+            const result = microActionManager.launch(_handler);
+            return result;
+        }
+        return descriptor;
+    }
+}

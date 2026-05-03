@@ -1,8 +1,7 @@
-import { actionManager } from "../action/action-manager";
+import { actionManager, useAction } from "../action/action-manager";
 import { useChild } from "../child/use-child";
 import { Model } from "../model";
 import { useWeakRef } from "./use-weak-ref";
-import { useAction } from "../action/use-action";
 
 export class PlayerModel extends Model {
     @useWeakRef()
@@ -64,7 +63,7 @@ describe('use-weak-ref', () => {
     })
 
     it('force-set-enemy', () => {
-        actionManager.run(() => {
+        actionManager.launch(() => {
             player.setEnemy(monster);
             monster.setEnemy(player);
             expect(player.enemy).toBe(monster);
