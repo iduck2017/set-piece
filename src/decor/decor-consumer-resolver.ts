@@ -2,7 +2,7 @@ import { depManager } from "../dep/dep-manager";
 import { Tag } from "../tag/tag-registry";
 import { decorManager } from "../dep/dep-consumer-manager";
 import { decorService } from "./decor-service";
-import { useMicroAction } from "../action/use-micro-action";
+import { useMicroAction } from "../action/micro-action-manager";
 
 class DecorConsumerResolver {
     private _context: Set<Tag> = new Set();

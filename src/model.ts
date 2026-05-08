@@ -12,10 +12,10 @@ import { memoRegistry } from "./memo/memo-registry";
 import { weakRefResolver } from "./ref/weak-ref-resolver";
 import { routeRegistry } from "./route/route-registry";
 import { actionManager } from "./action/action-manager";
-import { useMicroAction } from "./action/use-micro-action";
 import { tagRegistry } from "./tag/tag-registry";
 import { deferEffectRegistry } from "./effect/defer-effect-registry";
 import { ticketService } from "./utils/ticket-service";
+import { useMicroAction } from "./action/micro-action-manager";
 
 
 export class Model {

@@ -1,8 +1,8 @@
 import { Model } from "../model";
-import { useAction } from "../action/use-action";
 import { weakRefRegistry } from "./weak-ref-registry";
 import { weakRefManager } from "./weak-ref-manager";
 import { Tag } from "../tag/tag-registry";
+import { useAction } from "../action/action-manager";
 
 class WeakRefResolver {
     private _context: Set<Tag | Model> = new Set();

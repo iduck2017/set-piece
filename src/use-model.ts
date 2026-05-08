@@ -1,8 +1,6 @@
-import { runAction, useAction } from "./action/use-action";
 import { Model } from "./model";
 import { Constructor } from "./types";
 import { storeRegistry } from "./store/store-registry";
-import { useMicroAction } from "./action/use-micro-action";
 import { microActionManager } from "./action/micro-action-manager";
 
 export function useModel<T extends Model>(code: string) {

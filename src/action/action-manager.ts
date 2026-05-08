@@ -1,14 +1,13 @@
 import { deferEffectResolver } from "../effect/defer-effect-resolver";
 import { eventConsumerResolver } from "../event/event-consumer-resolver";
 import { weakRefResolver } from "../ref/weak-ref-resolver";
-import { useAction } from "./use-action";
+import { Method } from "../types";
 
 class ActionManager {
     private _isPending = false;
+    private _thenners: Array<() => void> = [];
 
-    private _handlers: Array<() => void> = [];
-
-    public run(handler: () => unknown) {
+    public launch(handler: () => unknown) {
         if (this._isPending) return handler();
         // console.group("ActionManager.run");
         this._isPending = true;
@@ -23,14 +22,32 @@ class ActionManager {
         deferEffectResolver.resolve();
         eventConsumerResolver.resolve();
         weakRefResolver.resolve();
-        const handlers = [...this._handlers];
-        this._handlers.length = 0;
+        const handlers = [...this._thenners];
+        this._thenners.length = 0;
         handlers.forEach(handler => handler());
     }
 
     @useAction()
     public then(handler: () => void) {
-        this._handlers.push(handler);
+        this._thenners.push(handler);
     }
 }
+
 export const actionManager = new ActionManager();
+
+export function useAction() {
+    return function(
+        prototype: unknown,
+        key: unknown,
+        descriptor: TypedPropertyDescriptor<Method>,
+    ) {
+        const handler = descriptor.value;
+        if (!handler) return descriptor;
+        descriptor.value = function(...args: unknown[]) {
+            const _handler = handler.bind(this, ...args)
+            const result = actionManager.launch(_handler);
+            return result
+        }
+        return descriptor;
+    }
+}

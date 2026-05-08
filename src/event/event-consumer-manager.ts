@@ -43,7 +43,7 @@ class EventConsumerManager {
         const eventType: any = event.constructor;
         const subContext: EventConsumerTagsMap = this._context.get(eventProducerModel) ?? new Map();
         const eventConsumerTags = subContext.get(eventType) ?? [];
-        return eventConsumerTags;
+        return [...eventConsumerTags];
     }
 }
 

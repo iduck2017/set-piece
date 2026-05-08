@@ -8,7 +8,7 @@ export type DecorConsumerLoader<
 > = (i: I) => [
     target: Array<Model | undefined> | Model | undefined,
     decor: Constructor<D>
-]
+] | undefined
 
 type DecorConsumerLoadersMap = Map<string, Array<DecorConsumerLoader>>
 class DecorConsumerRegistry {

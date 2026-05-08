@@ -11,11 +11,8 @@ import { useDecorProducer } from "./use-decor-producer";
 import { useState } from "./use-state";
 
 class AttackDecor extends Decor<number> {
-    public result: number;
-    
-    constructor(origin: number, target: Model) {
-        super(origin, target);
-        this.result = origin;
+    public add(value: number) {
+        this._result += value;
     }
 }
 
@@ -72,13 +69,13 @@ class MonsterModel extends Model {
     
     @useMonsterAttackDecorConsumer()
     private handleAttack(decor: AttackDecor) {
-        decor.result += this.buff;
+        decor.add(this.buff)
     }
 
     @useMonsterAllyAttackDecorConsumer()
     private handleAllyAttack(decor: AttackDecor) {
         if (decor.target === this) return;
-        decor.result += this.aura;
+        decor.add(this.aura)
     }
 
 

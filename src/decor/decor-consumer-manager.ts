@@ -43,7 +43,7 @@ class DecorConsumerManager {
         const decorType: any = decor.constructor;
         const subContext: DecorConsumerTagsMap = this._context.get(decorProducerModel) ?? new Map();
         const decorConsumerTags = subContext.get(decorType) ?? [];
-        return decorConsumerTags;
+        return [...decorConsumerTags];
     }
 }
 export const decorConsumerManager = new DecorConsumerManager();
