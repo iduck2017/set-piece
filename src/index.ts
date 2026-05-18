@@ -21,6 +21,10 @@ export { useValidator } from './utils/use-validator';
 export { useDeferAction } from './action/use-defer-action'
 export { useDeferEffect } from './effect/use-defer-effect'
 
+export { frameRegistry } from './frame/frame-registry';
+export { frameService } from './frame/frame-service'
+
+export { Frame } from './frame'
 export { Method, AbstractConstructor, Constructor, TypedPropertyDecorator } from './types'
 export { Model } from './model'
 

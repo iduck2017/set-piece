@@ -11,6 +11,16 @@ import { useDecorProducer } from "./use-decor-producer";
 import { useState } from "./use-state";
 
 class AttackDecor extends Decor<number> {
+    constructor(origin: number, target: Model) {
+        super(origin, target);
+        this._result = origin;
+    }
+
+    protected _result: number;
+    public get result() {
+        return this._result
+    }
+
     public add(value: number) {
         this._result += value;
     }

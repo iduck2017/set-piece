@@ -10,9 +10,9 @@ function useLock<P extends any[], R = any>() {
         const method = descriptor.value;
         if (!method) return;
         descriptor.value = function(this: ChildDelegator, ...args: P) {
-            this.isLocked = true;
+            this.locked = true;
             const result = method.apply(this, args);
-            this.isLocked = false;
+            this.locked = false;
             return result;
         }
         useAction()(prototype, key, descriptor)
@@ -22,9 +22,9 @@ function useLock<P extends any[], R = any>() {
 export class ChildDelegator {
     public readonly value: unknown;
     
-    private _isLocked = false;
-    public set isLocked(value: boolean) {
-        this._isLocked = value;
+    private _locked = false;
+    public set locked(value: boolean) {
+        this._locked = value;
     }
 
     @useLock()
@@ -89,7 +89,7 @@ export class ChildDelegator {
                 set: (origin, index, next) => {
                     const prev = Reflect.get(origin, index);
                     Reflect.set(origin, index, next);
-                    if (this._isLocked) return true;
+                    if (this._locked) return true;
                     if (prev instanceof Model) prev._internal.unmount();
                     if (next instanceof Model) next._internal.mount(this.parent);
                     return true;
@@ -97,7 +97,7 @@ export class ChildDelegator {
                 deleteProperty: (origin, index) => {
                     const prev = Reflect.get(origin, index);
                     Reflect.deleteProperty(origin, index);
-                    if (this._isLocked) return true;
+                    if (this._locked) return true;
                     if (prev instanceof Model) prev._internal.unmount();
                     return true;
                 }

@@ -16,6 +16,9 @@ import { tagRegistry } from "./tag/tag-registry";
 import { deferEffectRegistry } from "./effect/defer-effect-registry";
 import { ticketService } from "./utils/ticket-service";
 import { useMicroAction } from "./action/micro-action-manager";
+import { Frame } from "./frame";
+import { frameRegistry } from "./frame/frame-registry";
+import { frameService } from "./frame/frame-service";
 
 
 export class Model {
@@ -65,6 +68,14 @@ export class Model {
 
     protected emitAsyncEvent(event: Event) {
         return eventService.emitAsync(this, event);
+    }
+
+    protected emitFrame(frame: Frame) {
+        const handlers = frameRegistry.query(this);
+        console.log('emitFrame', handlers, frame);
+        handlers.forEach(handler => frameService.register(() => {
+            return handler(frame)
+        }))
     }
 
     public get _internal() {

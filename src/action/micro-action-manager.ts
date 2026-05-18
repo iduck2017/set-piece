@@ -7,21 +7,21 @@ import { Constructor, Method } from "../types";
 import { useAction } from "./action-manager";
 
 class MicroActionManager {
-    private _isPending = false;
+    private _pending = false;
 
     @useAction()
     public launch(handler: () => unknown) {
-        if (this._isPending) return handler();
-        this._isPending = true;
+        if (this._pending) return handler();
+        this._pending = true;
         const result = handler();
-        this._isPending = false;
+        this._pending = false;
 
-        const isDirty =
+        const dirty =
             memoResolver.check() ||
             effectResolver.check() ||
             decorConsumerResolver.check() ||
             decorProducerResolver.check()
-        if (!isDirty) return result;
+        if (!dirty) return result;
 
         this.resolve()
         return result;
@@ -32,19 +32,19 @@ class MicroActionManager {
         const ReactiveConstructor = {
             [Constructor.name]: class extends Constructor {
                 constructor(...params: any[]) {
-                    if (that._isPending) {
+                    if (that._pending) {
                         super(...params);
                         return;
                     }
-                    that._isPending = true;
+                    that._pending = true;
                     super(...params);
-                    that._isPending = false;
-                    const isDirty =
+                    that._pending = false;
+                    const dirty =
                         memoResolver.check() ||
                         effectResolver.check() ||
                         decorConsumerResolver.check() ||
                         decorProducerResolver.check()
-                    if (!isDirty) return;
+                    if (!dirty) return;
                     that.resolve();
                 }
             }

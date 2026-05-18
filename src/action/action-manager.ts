@@ -4,15 +4,15 @@ import { weakRefResolver } from "../ref/weak-ref-resolver";
 import { Method } from "../types";
 
 class ActionManager {
-    private _isPending = false;
+    private _pending = false;
     private _thenners: Array<() => void> = [];
 
     public launch(handler: () => unknown) {
-        if (this._isPending) return handler();
+        if (this._pending) return handler();
         // console.group("ActionManager.run");
-        this._isPending = true;
+        this._pending = true;
         const result = handler();
-        this._isPending = false;
+        this._pending = false;
         // console.groupEnd()
         this.resolve()
         return result;

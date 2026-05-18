@@ -8,12 +8,10 @@ export abstract class Decor<T = any> {
     constructor(origin: T, target: Model) {
         this.target = target;
         this._origin = origin;
-        this._result = origin;
     }
 
-    private readonly _origin: T;
+    protected readonly _origin: T;
     protected get origin() { return this._origin }
 
-    protected _result: T;
-    public get result() {  return this._result }
+    public abstract get result(): T
 }
