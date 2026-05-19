@@ -19,7 +19,7 @@ class DecorService {
         });
     }
 
-    public unbind(decorConsumerTag: Tag) {
+    public unbind(decorConsumerTag: Tag<Model>) {
         const decorTypesMap = decorProducerManager.query(decorConsumerTag);
         decorTypesMap.forEach((decorTypes, decorProducerModel) => {
             decorTypes.forEach(decorType => {
@@ -31,7 +31,7 @@ class DecorService {
         decorProducerManager.remove(decorConsumerTag);
     }
 
-    public bind(decorConsumerTag: Tag) {
+    public bind(decorConsumerTag: Tag<Model>) {
         const consumerModel = decorConsumerTag.target;
         const consumerKey = decorConsumerTag.key;
         const loadersMap = decorConsumerRegistry.query(consumerModel);

@@ -17,11 +17,10 @@ import { deferEffectRegistry } from "./effect/defer-effect-registry";
 import { ticketService } from "./utils/ticket-service";
 import { useMicroAction } from "./action/micro-action-manager";
 import { Frame } from "./frame";
-import { frameRegistry } from "./frame/frame-registry";
 import { frameService } from "./frame/frame-service";
 
 
-export class Model {
+export abstract class Model {
     protected _uuid: string = ticketService.query()
     public get uuid() {
         return this._uuid;
@@ -71,11 +70,7 @@ export class Model {
     }
 
     protected emitFrame(frame: Frame) {
-        const handlers = frameRegistry.query(this);
-        console.log('emitFrame', handlers, frame);
-        handlers.forEach(handler => frameService.register(() => {
-            return handler(frame)
-        }))
+        frameService.emit(this, frame);
     }
 
     public get _internal() {

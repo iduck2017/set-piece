@@ -5,10 +5,10 @@ import { Tag } from "../tag/tag-registry";
 
 export type EventConstructorsMap = Map<Model, Constructor<Event>[]>
 class EventProducerManager {
-    private _context: WeakMap<Tag, EventConstructorsMap> = new WeakMap();
+    private _context: WeakMap<Tag<Model>, EventConstructorsMap> = new WeakMap();
 
     public add(
-        eventConsumerTag: Tag,
+        eventConsumerTag: Tag<Model>,
         eventProducerModel: Model,
         eventType: Constructor<Event>,
     ) {
@@ -20,11 +20,11 @@ class EventProducerManager {
         this._context.set(eventConsumerTag, subContext);
     }
 
-    public remove(eventConsumerTag: Tag) {
+    public remove(eventConsumerTag: Tag<Model>) {
         this._context.delete(eventConsumerTag);
     }
 
-    public query(eventConsumerTag: Tag): EventConstructorsMap {
+    public query(eventConsumerTag: Tag<Model>): EventConstructorsMap {
         return this._context.get(eventConsumerTag) ?? new Map();
     }
 }

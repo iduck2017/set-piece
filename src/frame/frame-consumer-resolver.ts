@@ -1,11 +1,11 @@
 import { depManager } from "../dep/dep-manager";
-import { Model } from "../model";
+import { View } from "../view";
 import { Tag } from "../tag/tag-registry";
-import { eventManager } from "../dep/dep-consumer-manager";
-import { eventService } from "./event-service";
+import { frameManager } from "../dep/dep-consumer-manager";
+import { frameService } from "./frame-service";
 import { useAction } from "../action/action-manager";
 
-class EventConsumerResolver {
+class FrameConsumerResolver {
     private _context: Set<Tag> = new Set();
 
     @useAction()
@@ -16,27 +16,27 @@ class EventConsumerResolver {
     public resolve() {
         const depTags = [...this._context];
         this._context.clear();
-        const depConsumerTags = eventManager.query(depTags);
+        const depConsumerTags = frameManager.query(depTags);
         this.unbind(depConsumerTags);
         this.reset(depConsumerTags);
     }
 
-    private unbind(depConsumerTags: Tag<Model>[]) {
+    private unbind(depConsumerTags: Tag<View>[]) {
         depConsumerTags.forEach(depConsumerTag => {
             const depTags = depManager.query(depConsumerTag)
             depManager.remove(depConsumerTag);
             depTags.forEach((depTag: Tag) => {
-                eventManager.remove(depTag, depConsumerTag);
+                frameManager.remove(depTag, depConsumerTag);
             })
         })
     }
 
-    private reset(depConsumerTags: Tag<Model>[]) {
+    private reset(depConsumerTags: Tag<View>[]) {
         depConsumerTags.forEach(depConsumerTag => {
-            eventService.unbind(depConsumerTag);
-            eventService.bind(depConsumerTag);
+            frameService.unbind(depConsumerTag);
+            frameService.bind(depConsumerTag);
         })
     }
 }
 
-export const eventConsumerResolver = new EventConsumerResolver();
+export const frameConsumerResolver = new FrameConsumerResolver();

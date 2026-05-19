@@ -27,7 +27,7 @@ class EventService {
         }
     }
 
-    public unbind(eventConsumerTag: Tag) {
+    public unbind(eventConsumerTag: Tag<Model>) {
         const eventTypesMap = eventProducerManager.query(eventConsumerTag);
         eventTypesMap.forEach((eventTypes, eventProducerModel) => {
             eventTypes.forEach(type => {
@@ -38,7 +38,7 @@ class EventService {
         eventProducerManager.remove(eventConsumerTag);
     }
 
-    public bind(eventConsumerTag: Tag) {
+    public bind(eventConsumerTag: Tag<Model>) {
         const consumerModel = eventConsumerTag.target;
         const consumerKey = eventConsumerTag.key;
         const loadersMap = eventConsumerRegistry.query(consumerModel);

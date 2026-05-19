@@ -1,4 +1,5 @@
 import { depManager } from "../dep/dep-manager";
+import { Model } from "../model";
 import { Tag } from "../tag/tag-registry";
 import { decorManager } from "../dep/dep-consumer-manager";
 import { decorService } from "./decor-service";
@@ -26,7 +27,7 @@ class DecorConsumerResolver {
         return true
     }
 
-    private unbind(depConsumerTags: Tag[]) {
+    private unbind(depConsumerTags: Tag<Model>[]) {
         depConsumerTags.forEach(depConsumerTag => {
             const depTags = depManager.query(depConsumerTag)
             depManager.remove(depConsumerTag);
@@ -36,7 +37,7 @@ class DecorConsumerResolver {
         })
     }
 
-    private reset(depConsumerTags: Tag[]) {
+    private reset(depConsumerTags: Tag<Model>[]) {
         depConsumerTags.forEach(depConsumerTag => {
             decorService.unbind(depConsumerTag);
             decorService.bind(depConsumerTag);

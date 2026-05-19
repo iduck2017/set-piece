@@ -5,10 +5,10 @@ import { Tag } from "../tag/tag-registry";
 
 export type DecorConstructorsMap = Map<Model, Constructor<Decor>[]>
 class DecorProducerManager {
-    private _context: WeakMap<Tag, DecorConstructorsMap> = new WeakMap();
+    private _context: WeakMap<Tag<Model>, DecorConstructorsMap> = new WeakMap();
 
     public add(
-        decorConsumerTag: Tag,
+        decorConsumerTag: Tag<Model>,
         decorProducerModel: Model,
         decorType: Constructor<Decor>,
     ) {
@@ -20,11 +20,11 @@ class DecorProducerManager {
         this._context.set(decorConsumerTag, subContext);
     }
 
-    public remove(decorConsumerTag: Tag) {
+    public remove(decorConsumerTag: Tag<Model>) {
         this._context.delete(decorConsumerTag);
     }
 
-    public query(decorConsumerTag: Tag): DecorConstructorsMap {
+    public query(decorConsumerTag: Tag<Model>): DecorConstructorsMap {
         return this._context.get(decorConsumerTag) ?? new Map();
     }
 }

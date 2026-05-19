@@ -1,9 +1,10 @@
-import { Model } from "../model";
+import type { Model } from "../model";
+import type { View } from "../view";
 
-export class Tag {
+export class Tag<T extends Model | View = Model | View> {
     protected _brand = Symbol('tag');
     constructor(
-        public readonly target: Model,
+        public readonly target: T,
         public readonly key: string
     ) {}
 
@@ -13,15 +14,15 @@ export class Tag {
 }
 
 class TagRegistry {
-    private _config: WeakMap<Model, Map<string, Tag>> = new WeakMap();
+    private _config: WeakMap<Model | View, Map<string, Tag<any>>> = new WeakMap();
 
-    public query(model: Model, key: string): Tag {
-        const subConfig: Map<string, Tag> = this._config.get(model) ?? new Map();
+    public query<T extends Model | View>(target: T, key: string): Tag<T> {
+        const subConfig: Map<string, Tag<any>> = this._config.get(target) ?? new Map();
         const value = subConfig.get(key)
-        if (value) return value;
-        const tag: Tag = new Tag(model, key);
+        if (value) return value as Tag<T>;
+        const tag: Tag<T> = new Tag<T>(target, key);
         subConfig.set(key, tag);
-        this._config.set(model, subConfig);
+        this._config.set(target, subConfig);
         return tag;
     }
 }

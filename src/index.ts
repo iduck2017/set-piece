@@ -21,12 +21,20 @@ export { useValidator } from './utils/use-validator';
 export { useDeferAction } from './action/use-defer-action'
 export { useDeferEffect } from './effect/use-defer-effect'
 
-export { frameRegistry } from './frame/frame-registry';
 export { frameService } from './frame/frame-service'
+export { frameResolver } from './frame/frame-resolver'
+export { useFrameConsumer } from './frame/use-frame-consumer'
+export { useViewModel } from './view-model/use-view-model'
 
 export { Frame } from './frame'
 export { Method, AbstractConstructor, Constructor, TypedPropertyDecorator } from './types'
 export { Model } from './model'
+export { View } from './view'
+
+export { useViewChild } from './view-child/use-view-child'
+export { useViewChildDict } from './view-child/use-view-child-dict'
+export { useViewRoute } from './view-route/use-view-route'
+export { useViewRoot } from './view-route/use-view-root'
 
 export { Event, PrevEvent } from './event'
 export { Decor } from './decor'

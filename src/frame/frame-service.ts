@@ -1,47 +1,56 @@
 import { Frame } from ".";
 import { Model } from "../model";
-import { Method } from "../types";
+import { View } from "../view";
+import { Tag } from "../tag/tag-registry";
+import { frameConsumerManager } from "./frame-consumer-manager";
+import { frameConsumerRegistry } from "./frame-consumer-registry";
+import { frameProducerManager } from "./frame-producer-manager";
+import { frameResolver } from "./frame-resolver";
 
 class FrameService {
-    protected _step: number;
-
-    protected _pending: boolean;
-
-    protected _context: Map<number, Array<Method<Promise<void>>>>
-
-    constructor() {
-        this._step = 1;
-        this._pending = false;
-        this._context = new Map()
+    public emit(frameProducerModel: Model, frame: Frame) {
+        const frameConsumerTags = frameConsumerManager.query(frameProducerModel, frame);
+        frameConsumerTags.forEach(frameConsumerTag => {
+            const consumerView = frameConsumerTag.target;
+            const key = frameConsumerTag.key;
+            const handler = Reflect.get(consumerView, key);
+            if (!(handler instanceof Function)) return;
+            frameResolver.register(() => handler.call(consumerView, frame));
+        });
     }
 
-    public proceed() {
-        this._step += 1;
+    public unbind(frameConsumerTag: Tag<View>) {
+        const frameTypesMap = frameProducerManager.query(frameConsumerTag);
+        frameTypesMap.forEach((frameTypes, frameProducerModel) => {
+            frameTypes.forEach(type => {
+                frameConsumerManager.remove(frameProducerModel, type, frameConsumerTag);
+            })
+        })
+        frameProducerManager.remove(frameConsumerTag);
     }
 
-    public register(handler: () => Promise<void>) {
-        const step = this._step;
-        const handlers = this._context.get(step) ?? [];
-        handlers.push(handler);
-        this._context.set(step, handlers);
-    }
-
-    public async resolve() {
-        this._pending = true;
-        const step = this._step;
-        this._step = 1;
-        const context = this._context;
-        this._context = new Map();
-        let current = 0;
-        while (current <= step) {
-            current += 1;
-            const handlers = context.get(current);
-            if (!handlers?.length) continue;
-            await Promise.all(handlers.map((handler) => {
-                return handler()
-            }));
-        }
-        this._pending = false;
+    public bind(frameConsumerTag: Tag<View>) {
+        const consumerView = frameConsumerTag.target;
+        const consumerKey = frameConsumerTag.key;
+        const loadersMap = frameConsumerRegistry.query(consumerView);
+        const loaders = loadersMap.get(consumerKey) ?? [];
+        loaders.forEach(loader => {
+            const result = loader(consumerView);
+            if (!result) return;
+            const [value, FrameConstructor] = result;
+            if (value instanceof Array) {
+                value.forEach(frameProducerModel => {
+                    if (!frameProducerModel) return;
+                    frameConsumerManager.add(frameProducerModel, FrameConstructor, frameConsumerTag);
+                    frameProducerManager.add(frameConsumerTag, frameProducerModel, FrameConstructor);
+                })
+            }
+            if (value instanceof Model) {
+                const frameProducerModel = value;
+                frameConsumerManager.add(frameProducerModel, FrameConstructor, frameConsumerTag);
+                frameProducerManager.add(frameConsumerTag, frameProducerModel, FrameConstructor);
+            }
+        })
     }
 }
 

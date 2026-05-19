@@ -1,4 +1,5 @@
 import { depManager } from "../dep/dep-manager";
+import { Model } from "../model";
 import { Tag } from "../tag/tag-registry";
 import { effectManager } from "../dep/dep-consumer-manager";
 import { useMicroAction } from "../action/micro-action-manager";
@@ -23,7 +24,7 @@ class EffectResolver {
         this.emit(depConsumerTags);
     }
 
-    private unbind(depConsumerTags: Tag[]) {
+    private unbind(depConsumerTags: Tag<Model>[]) {
         depConsumerTags.forEach(depConsumerTag => {
             const depTags = depManager.query(depConsumerTag)
             depManager.remove(depConsumerTag);
@@ -33,7 +34,7 @@ class EffectResolver {
         })
     }
 
-    private emit(depConsumerTags: Tag[]) {
+    private emit(depConsumerTags: Tag<Model>[]) {
         depConsumerTags.forEach(depConsumerTag => {
             const model = depConsumerTag.target;
             const key = depConsumerTag.key;

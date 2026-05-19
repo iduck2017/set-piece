@@ -3,14 +3,14 @@ import { Model } from "../model";
 import { Constructor } from "../types";
 import { Tag } from "../tag/tag-registry";
 
-type EventConsumerTagsMap = Map<Constructor<Event>, Array<Tag>>
+type EventConsumerTagsMap = Map<Constructor<Event>, Array<Tag<Model>>>
 class EventConsumerManager {
     private _context: WeakMap<Model, EventConsumerTagsMap> = new WeakMap();
 
     public add(
         eventProducerModel: Model,
         eventType: Constructor<Event>,
-        eventConsumerTag: Tag,
+        eventConsumerTag: Tag<Model>,
     ) {
         const subContext: EventConsumerTagsMap = this._context.get(eventProducerModel) ?? new Map();
         const eventConsumerTags = subContext.get(eventType) ?? [];
@@ -22,7 +22,7 @@ class EventConsumerManager {
     public remove(
         eventProducerModel: Model,
         eventType: Constructor<Event>,
-        eventConsumerTag: Tag,
+        eventConsumerTag: Tag<Model>,
     ) {
         const subContext: EventConsumerTagsMap = this._context.get(eventProducerModel) ?? new Map();
         const eventConsumerTags = subContext.get(eventType) ?? [];
@@ -34,7 +34,7 @@ class EventConsumerManager {
     }
 
     public query(eventProducerModel: Model): EventConsumerTagsMap
-    public query(eventProducerModel: Model, event: Event): Array<Tag>
+    public query(eventProducerModel: Model, event: Event): Array<Tag<Model>>
     public query(
         eventProducerModel: Model,
         event?: Event

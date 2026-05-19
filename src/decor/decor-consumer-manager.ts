@@ -3,14 +3,14 @@ import { Model } from "../model";
 import { Constructor } from "../types";
 import { Tag } from "../tag/tag-registry";
 
-type DecorConsumerTagsMap = Map<Constructor<Decor>, Array<Tag>>
+type DecorConsumerTagsMap = Map<Constructor<Decor>, Array<Tag<Model>>>
 class DecorConsumerManager {
     private _context: WeakMap<Model, DecorConsumerTagsMap>= new WeakMap();
 
     public add(
         decorProducerModel: Model,
         decorType: Constructor<Decor>,
-        decorConsumerTag: Tag,
+        decorConsumerTag: Tag<Model>,
     ) {
         const subContext: DecorConsumerTagsMap = this._context.get(decorProducerModel) ?? new Map();
         const decorConsumerTags = subContext.get(decorType) ?? [];
@@ -22,7 +22,7 @@ class DecorConsumerManager {
     public remove(
         decorProducerModel: Model,
         decorType: Constructor<Decor>,
-        decorConsumerTag: Tag,
+        decorConsumerTag: Tag<Model>,
     ) {
         const subContext: DecorConsumerTagsMap = this._context.get(decorProducerModel) ?? new Map();
         const decorConsumerTags = subContext.get(decorType) ?? [];
@@ -33,8 +33,8 @@ class DecorConsumerManager {
         this._context.set(decorProducerModel, subContext);
     }
 
-    public query(decorProducerModel: Model): Map<Constructor<Decor>, Array<Tag>>
-    public query(decorProducerModel: Model, decor: Decor): Array<Tag>
+    public query(decorProducerModel: Model): Map<Constructor<Decor>, Array<Tag<Model>>>
+    public query(decorProducerModel: Model, decor: Decor): Array<Tag<Model>>
     public query(
         decorProducerModel: Model,
         decor?: Decor,

@@ -5,17 +5,17 @@ import { Tag } from "../tag/tag-registry";
 import { useAction } from "../action/action-manager";
 
 class WeakRefResolver {
-    private _context: Set<Tag | Model> = new Set();
+    private _context: Set<Tag<Model> | Model> = new Set();
 
-    public register(dep: Tag): void;
+    public register(dep: Tag<Model>): void;
     public register(model: Model): void;
-    
+
     @useAction()
-    public register(arg: Tag | Model) {
+    public register(arg: Tag<Model> | Model) {
         if (arg instanceof Model) {
             arg.descendants.forEach(descendant => this._context.add(descendant));
             this._context.add(arg);
-        } 
+        }
         else this._context.add(arg);
     }
 

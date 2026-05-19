@@ -1,5 +1,12 @@
+import { useMicroAction } from "./action/micro-action-manager";
+import { frameConsumerRegistry } from "./frame/frame-consumer-registry";
+import { frameService } from "./frame/frame-service";
+import { tagRegistry } from "./tag/tag-registry";
+import { viewChildRegistry } from "./view-child/view-child-registry";
+import { viewRootRegistry } from "./view-route/view-root-registry";
+import { viewRouteRegistry } from "./view-route/view-route-registry";
 
-export class View {
+export abstract class View {
     protected readonly _brand = Symbol('view')
 
     public get name() {
@@ -18,7 +25,7 @@ export class View {
 
     public get children(): View[] {
         const result: View[] = [];
-        const iterators = childRegistry.query(this);
+        const iterators = viewChildRegistry.query(this);
         iterators.forEach((iterator, key) => {
             result.push(...iterator(this, key));
         });
@@ -35,6 +42,10 @@ export class View {
         return this._root;
     }
 
+    protected abstract render(): void;
+
+    protected abstract destroy(): void;
+
     private mount(parent: View) {
         if (this._parent) return;
         this._parent = parent;
@@ -48,7 +59,7 @@ export class View {
     }
 
     private updateRoute() {
-        const routeTypeMap = routeRegistry.query(this);
+        const routeTypeMap = viewRouteRegistry.query(this);
         routeTypeMap.forEach((type: Function, key: string) => {
             let ancestor: View | undefined = this;
             while (ancestor) {
@@ -58,9 +69,30 @@ export class View {
             Reflect.set(this, key, ancestor);
         });
         let root: View = this;
+        const prevActived = viewRootRegistry.check(this.root);
         while (root.parent) root = root.parent;
         this._root = root;
+        const nextActived = viewRootRegistry.check(this.root);
+        if (prevActived && !nextActived) this.destroy()
         this.children.forEach((child: View) => child.updateRoute());
+        if (!prevActived && nextActived) this.render();
+    }
+
+    @useMicroAction()
+    private init() {
+        const loadersMap = frameConsumerRegistry.query(this);
+        loadersMap.forEach((_loaders, key) => {
+            const frameConsumerTag = tagRegistry.query(this, key);
+            frameService.bind(frameConsumerTag);
+        })
+    }
+
+    public get _internal() {
+        return {
+            mount: this.mount.bind(this),
+            unmount: this.unmount.bind(this),
+            init: this.init.bind(this),
+        }
     }
 
 }

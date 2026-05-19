@@ -1,6 +1,7 @@
 import { depCollector } from "../dep/dep-collector";
 import { depManager } from "../dep/dep-manager";
 import { depService } from "../dep/dep-service";
+import { Model } from "../model";
 import { Tag } from "../tag/tag-registry";
 import { memoDelegator } from "./memo-delegator";
 import { memoManager } from "../dep/dep-consumer-manager";
@@ -28,7 +29,7 @@ class MemoResolver {
         return true;
     }
 
-    private unbind(consumerTags: Tag[]) {
+    private unbind(consumerTags: Tag<Model>[]) {
         consumerTags.forEach(consumerTag => {
             const depTags = depManager.query(consumerTag)
             depManager.remove(consumerTag);
@@ -38,7 +39,7 @@ class MemoResolver {
         })
     }
 
-    private reset(consumerTags: Tag[]) {
+    private reset(consumerTags: Tag<Model>[]) {
         consumerTags.forEach(consumerTag => {
             const model = consumerTag.target;
             const key = consumerTag.key;
