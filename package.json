@@ -2,9 +2,18 @@
   "name": "set-piece",
   "version": "3.0.0",
   "private": true,
-  "module": "dist/index.js",
-  "types": "dist/index.d.ts",
+  "type": "module",
   "files": ["dist"],
+  "exports": {
+    "./model": {
+      "types": "./dist/model.public.d.ts",
+      "import": "./dist/model.public.js"
+    },
+    "./view": {
+      "types": "./dist/view.public.d.ts",
+      "import": "./dist/view.public.js"
+    }
+  },
   "keywords": [
     "typescript",
     "utils"
@@ -27,6 +36,6 @@
     "test": "jest",
     "watch": "tsc -p tsconfig.json --watch",
     "build": "tsc -p tsconfig.json",
-    "serve": "node esbuild.config.js"
+    "serve": "node esbuild.config.cjs"
   }
 }

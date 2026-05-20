@@ -1,0 +1,78 @@
+import { decorConsumerResolver } from "../../model/decor/decor-consumer-resolver";
+import { decorProducerResolver } from "../../model/decor/decor-producer-resolver";
+import { effectResolver } from "../../model/effect/effect-resolver";
+import { memoResolver } from "../../model/memo/memo-resolver";
+import { Model } from "../../model";
+import { Constructor, Method } from "../../types";
+import { useAction } from "./manager";
+
+class MicroActionManager {
+    private _pending = false;
+
+    @useAction()
+    public launch(handler: () => unknown) {
+        if (this._pending) return handler();
+        this._pending = true;
+        const result = handler();
+        this._pending = false;
+        const dirty = this.precheck();
+        if (!dirty) return result;
+        this.resolve()
+        return result;
+    }
+
+    protected precheck() {
+        const dirty =
+            memoResolver.check() ||
+            effectResolver.check() ||
+            decorConsumerResolver.check() ||
+            decorProducerResolver.check()
+        return dirty;
+    }
+
+    public delegate<T extends Model>(Constructor: Constructor<Model>): Constructor<T> {
+        const that = this;
+        const ConstructorMap = {
+            [Constructor.name]: class extends Constructor {
+                constructor(...params: any[]) {
+                    if (that._pending) super(...params);
+                    if (that._pending) return;
+                    that._pending = true;
+                    super(...params);
+                    that._pending = false;
+                    const dirty = that.precheck()
+                    if (!dirty) return;
+                    that.resolve();
+                }
+            }
+        }[Constructor.name];
+        return ConstructorMap as Constructor<T>;
+    }
+
+    @useMicroAction()
+    private resolve() {
+        memoResolver.resolve();
+        effectResolver.resolve();
+        decorConsumerResolver.resolve();
+        decorProducerResolver.resolve();
+    }
+}
+
+export const microActionManager = new MicroActionManager();
+
+export function useMicroAction() {
+    return function(
+        prototype: unknown,
+        key: unknown,
+        descriptor: TypedPropertyDescriptor<Method>,
+    ) {
+        const handler = descriptor.value;
+        if (!handler) return descriptor;
+        descriptor.value = function(...args: any[]) {
+            const _handler = handler.bind(this, ...args)
+            const result = microActionManager.launch(_handler);
+            return result;
+        }
+        return descriptor;
+    }
+}
