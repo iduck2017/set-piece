@@ -4,16 +4,8 @@
   "private": true,
   "type": "module",
   "files": ["dist"],
-  "exports": {
-    "./model": {
-      "types": "./dist/model.public.d.ts",
-      "import": "./dist/model.public.js"
-    },
-    "./view": {
-      "types": "./dist/view.public.d.ts",
-      "import": "./dist/view.public.js"
-    }
-  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "keywords": [
     "typescript",
     "utils"

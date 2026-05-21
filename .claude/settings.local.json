@@ -20,7 +20,18 @@
       "Bash(npx jest *)",
       "Bash(npx tsc *)",
       "Bash(echo \"EXIT=$?\")",
-      "Bash(npm run *)"
+      "Bash(npm run *)",
+      "Bash(find *)",
+      "Bash(sed *)",
+      "Bash(grep *)",
+      "Bash(git mv *)",
+      "Bash(git rm *)",
+      "Bash(git ls-files *)",
+      "Bash(git status *)",
+      "Bash(git log *)",
+      "Bash(git diff *)",
+      "Bash(rmdir *)",
+      "Bash(for *)"
     ]
   }
 }
