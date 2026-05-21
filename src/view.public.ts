@@ -11,7 +11,7 @@ export { useViewRoute } from './view/route/use-view-route';
 export { useFrameConsumer } from './common/frame/use-frame-consumer';
 
 // Shared data class
-export { Frame } from './common/frame';
+export { Frame, ChangeFrame } from './common/frame';
 
 // Shared utility types
 export { Method, AbstractConstructor, Constructor, TypedPropertyDecorator } from './types';

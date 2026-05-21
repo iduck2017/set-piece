@@ -29,7 +29,8 @@ export { useAction, actionManager, useDeferAction } from './common/action/manage
 export { useMicroAction } from './common/action/micro-manager';
 
 // Frames (producer side + shared data class)
-export { Frame } from './common/frame';
+export { Frame, ChangeFrame } from './common/frame';
+export { useFrameProducer } from './common/frame/use-frame-producer';
 export { frameService } from './common/frame/frame-service';
 export { frameResolver } from './common/frame/frame-resolver';
 

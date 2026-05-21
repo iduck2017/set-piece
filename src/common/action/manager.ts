@@ -1,6 +1,7 @@
 import { deferEffectResolver } from "../../model/effect/defer-effect-resolver";
 import { eventConsumerResolver } from "../../model/event/event-consumer-resolver";
 import { frameConsumerResolver } from "../frame/frame-consumer-resolver";
+import { frameProducerResolver } from "../frame/frame-producer-resolver";
 import { weakRefResolver } from "../../model/ref/weak-ref-resolver";
 import { Method } from "../../types";
 
@@ -21,6 +22,7 @@ class ActionManager {
         deferEffectResolver.resolve();
         eventConsumerResolver.resolve();
         frameConsumerResolver.resolve();
+        frameProducerResolver.resolve();
         weakRefResolver.resolve();
         const handlers = [...this._thenners];
         this._thenners.length = 0;

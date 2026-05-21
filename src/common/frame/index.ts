@@ -10,3 +10,5 @@ export class Frame<T = any> {
         this._detail = detail
     }
 }
+
+export class ChangeFrame<T = any> extends Frame<{ prev: T; next: T }> {}
