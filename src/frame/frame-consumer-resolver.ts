@@ -3,7 +3,7 @@ import { Model } from "../model";
 import { Tag } from "../tag/tag-registry";
 import { frameManager } from "../dep/dep-consumer-manager";
 import { frameService } from "./frame-service";
-import { useAction } from "../action/manager";
+import { useAction } from "../action/action-manager";
 
 class FrameConsumerResolver {
     private _context: Set<Tag> = new Set();

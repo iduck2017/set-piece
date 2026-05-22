@@ -1,6 +1,6 @@
 ﻿import { Decor } from ".";
 import { useChild } from "../child/use-child";
-import { useDep } from "../dep/use-dep";
+import { useDep } from "../dep/dep-registry";
 import { useEffect } from "../effect/use-effect";
 import { useMemo } from "../memo/use-memo";
 import { Model } from "../model";

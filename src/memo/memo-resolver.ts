@@ -5,7 +5,7 @@ import { Model } from "../model";
 import { Tag } from "../tag/tag-registry";
 import { memoDelegator } from "./memo-delegator";
 import { memoManager } from "../dep/dep-consumer-manager";
-import { useMicroAction } from "../action/micro-manager";
+import { useMicroAction } from "../action/micro-action-manager";
 
 class MemoResolver {
     private _context: Set<Tag> = new Set();

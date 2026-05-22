@@ -2,7 +2,8 @@
 import { AbstractConstructor } from "../types";
 
 export type ChildIteratorMap = Map<string, ChildIterator>
-export type ChildIterator = (model: Model & Record<string, any>, key: string) => Model[];
+export type ChildIterator = (model: Record<string, any>, key: string) => Model[];
+
 class ChildRegistry {
     private _config: Map<AbstractConstructor<Model>, ChildIteratorMap> = new Map();
 

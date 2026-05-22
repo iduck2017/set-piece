@@ -2,7 +2,7 @@
 import { TypedPropertyDecorator } from "../types";
 import { weakRefResolver } from "./weak-ref-resolver";
 import { weakRefManager } from "./weak-ref-manager";
-import { useDep } from "../dep/use-dep";
+import { depRegistry } from "../dep/dep-registry";
 import { weakRefRegistry } from "./weak-ref-registry";
 import { tagDelegator } from "../tag/tag-delegator";
 
@@ -16,11 +16,8 @@ export function useRef<
         M[K] extends RefList | undefined ?
             TypedPropertyDecorator<M, K> :
             TypedPropertyDecorator<never, never> {
-    return function(
-        prototype: M,
-        key: K,
-    ) {
-        useDep()(prototype, key)
+    return function(prototype: M, key: K) {
+        depRegistry.register(prototype, key)
     }
 }
 

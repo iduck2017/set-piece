@@ -1,4 +1,4 @@
-﻿import { useMicroAction } from "../action/micro-manager";
+﻿import { useMicroAction } from "../action/micro-action-manager";
 import { Tag } from "../tag/tag-registry";
 import { depService } from "./dep-service";
 

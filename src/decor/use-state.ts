@@ -1,5 +1,5 @@
 ﻿import { Decor } from ".";
-import { useDep } from "../dep/use-dep";
+import { depRegistry } from "../dep/dep-registry";
 import { Model } from "../model";
 
 export function useState<
@@ -10,6 +10,6 @@ export function useState<
         prototype: M,
         key: K,
     ) {
-        useDep()(prototype, key);
+        depRegistry.register(prototype, key);
     }
 }

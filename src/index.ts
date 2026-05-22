@@ -7,7 +7,7 @@ export { useChildDict } from './child/use-child-dict';
 export { useRoute, routeRegistry } from './route/route-registry';
 
 // Reactivity
-export { useDep } from './dep/use-dep';
+export { useDep, depRegistry } from './dep/dep-registry';
 export { useEffect } from './effect/use-effect';
 export { useDeferEffect } from './effect/use-defer-effect';
 export { useMemo } from './memo/use-memo';
@@ -25,8 +25,8 @@ export { useState } from './decor/use-state';
 export { Decor } from './decor';
 
 // Actions
-export { useAction, actionManager, useDeferAction } from './action/manager';
-export { useMicroAction } from './action/micro-manager';
+export { useAction, actionManager, useDeferAction } from './action/action-manager';
+export { useMicroAction } from './action/micro-action-manager';
 
 // Frames
 export { Frame, ChangeFrame } from './frame';

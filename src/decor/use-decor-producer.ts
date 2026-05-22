@@ -1,7 +1,4 @@
-﻿import { Decor } from ".";
-import { useDep } from "../dep/use-dep";
-import { Model } from "../model";
-import { Constructor } from "../types";
+﻿import { Model } from "../model";
 import { tagDelegator } from "../tag/tag-delegator";
 import { tagRegistry } from "../tag/tag-registry";
 import { decorProducerDelegator } from "./decor-producer-delegator";
@@ -19,11 +16,13 @@ export function useDecorProducer<
     ) {
         decorProducerRegistry.register(prototype, key, loader)
         const descriptor = Object.getOwnPropertyDescriptor(prototype, key);
+        const getter = descriptor?.get;
+        const setter = descriptor?.set;
         Object.defineProperty(prototype, key, {
             get(this: Model) {
                 const depConsumerTag = tagRegistry.query(this, key)
                 let origin;
-                if (descriptor?.get) origin = descriptor.get.call(this);
+                if (getter) origin = getter.call(this);
                 else origin = tagDelegator.get(this, key);
                 if (decorProducerDelegator.check(depConsumerTag)) {
                     return decorProducerDelegator.query(depConsumerTag)
@@ -36,7 +35,7 @@ export function useDecorProducer<
             },
             set(this: Model, value) {
                 const decorProducerTag = tagRegistry.query(this, key)
-                if (descriptor?.set) descriptor.set.call(this, value);  
+                if (setter) setter.call(this, value);
                 else tagDelegator.set(this, key, value);
                 decorProducerResolver.register(decorProducerTag);
             },

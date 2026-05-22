@@ -3,7 +3,7 @@ import { Model } from "../model";
 import { memoManager } from "../dep/dep-consumer-manager";
 import { depCollector } from "../dep/dep-collector";
 import { memoDelegator } from "./memo-delegator";
-import { useDep } from "../dep/use-dep";
+import { depRegistry } from "../dep/dep-registry";
 import { memoRegistry } from "./memo-registry";
 import { tagRegistry } from "../tag/tag-registry";
     
@@ -27,7 +27,7 @@ export function useMemo() {
             memoDelegator.update(consumerTag, value);
             return value;
         }
-        useDep()(prototype, key, descriptor)
+        depRegistry.register(prototype, key, descriptor)
     }
 }
 

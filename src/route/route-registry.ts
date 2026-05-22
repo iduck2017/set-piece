@@ -1,4 +1,4 @@
-﻿import { useDep } from "../dep/use-dep";
+﻿import { depRegistry } from "../dep/dep-registry";
 import { Model } from "../model";
 import { AbstractConstructor } from "../types";
 
@@ -46,7 +46,7 @@ export function useRoute<
         prototype: I,
         key: K,
     ) {
-        useDep()(prototype, key)
+        depRegistry.register(prototype, key)
         routeRegistry.register(prototype, key, loader);
     }
 }

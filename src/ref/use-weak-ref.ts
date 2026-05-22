@@ -2,7 +2,7 @@
 import { TypedPropertyDecorator } from "../types";
 import { weakRefResolver } from "./weak-ref-resolver";
 import { weakRefManager } from "./weak-ref-manager";
-import { useDep } from "../dep/use-dep";
+import { depRegistry } from "../dep/dep-registry";
 import { weakRefRegistry } from "./weak-ref-registry";
 import { tagDelegator } from "../tag/tag-delegator";
 import { RefList } from "./use-ref";
@@ -22,7 +22,7 @@ export function useWeakRef<
         prototype: M,
         key: K,
     ) {
-        useDep()(prototype, key)
+        depRegistry.register(prototype, key)
         weakRefRegistry.register(prototype, key, (refSource, key, refTarget) => {
             if (!refSource || !refTarget) return;
             if (refSource.root === refTarget.root) return;
@@ -41,14 +41,16 @@ export function useWeakRef<
         })
 
         const descriptor = Object.getOwnPropertyDescriptor(prototype, key);
+        const getter = descriptor?.get;
+        const setter = descriptor?.set;
         Object.defineProperty(prototype, key, {
             get(this: Model) {
-                if (descriptor?.get) return descriptor.get.call(this);
+                if (getter) return getter.call(this);
                 return tagDelegator.get(this, key);
             },
             set(this: Model, value) {
                 const prev: unknown = Reflect.get(this, key);
-                if (descriptor?.set) descriptor.set.call(this, value);
+                if (setter) setter.call(this, value);
                 else tagDelegator.set(this, key, value);
                 const next: unknown = Reflect.get(this, key);
                 if (prev instanceof Array) {

@@ -16,17 +16,19 @@ export function useRange<
         key: K,
     ) {
         const descriptor = Object.getOwnPropertyDescriptor(prototype, key);
+        const getter = descriptor?.get;
+        const setter = descriptor?.set;
         Object.defineProperty(prototype, key, {
             get() {
-                if (descriptor?.get) return descriptor.get.call(this);
+                if (getter) return getter.call(this);
                 return tagDelegator.get(this, key);
             },
             set(value) {
                 if (typeof value === 'number') {
                     if (maximum !== undefined && value > maximum) value = maximum;
                     if (minimum !== undefined && value < minimum) value = minimum;
-                } 
-                if (descriptor?.set) descriptor.set.call(this, value);
+                }
+                if (setter) setter.call(this, value);
                 tagDelegator.set(this, key, value);
             },
             configurable: true,

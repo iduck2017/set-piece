@@ -2,7 +2,7 @@
 import { Model } from "../model";
 import { Tag } from "../tag/tag-registry";
 import { deferEffectManager } from "../dep/dep-consumer-manager";
-import { useAction } from "../action/manager";
+import { useAction } from "../action/action-manager";
 
 class DeferEffectResolver {
     private _context: Set<Tag> = new Set();

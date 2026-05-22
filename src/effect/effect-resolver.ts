@@ -2,7 +2,7 @@
 import { Model } from "../model";
 import { Tag } from "../tag/tag-registry";
 import { effectManager } from "../dep/dep-consumer-manager";
-import { useMicroAction } from "../action/micro-manager";
+import { useMicroAction } from "../action/micro-action-manager";
 
 class EffectResolver {
     private _context: Set<Tag> = new Set();

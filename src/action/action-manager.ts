@@ -34,7 +34,6 @@ class ActionManager {
         this._handlers.push(handler);
     }
 }
-
 export const actionManager = new ActionManager();
 
 export function useAction() {

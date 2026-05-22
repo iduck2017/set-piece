@@ -1,4 +1,4 @@
-﻿import { actionManager, useAction } from "../action/manager";
+﻿import { actionManager, useAction } from "../action/action-manager";
 import { useChild } from "../child/use-child";
 import { Model } from "../model";
 import { useWeakRef } from "./use-weak-ref";

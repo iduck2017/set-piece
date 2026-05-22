@@ -4,7 +4,7 @@ import { effectResolver } from "../effect/effect-resolver";
 import { memoResolver } from "../memo/memo-resolver";
 import { Model } from "../model";
 import { Constructor, Method } from "../types";
-import { useAction } from "./manager";
+import { useAction } from "./action-manager";
 
 class MicroActionManager {
     private _pending = false;
@@ -57,7 +57,6 @@ class MicroActionManager {
         decorProducerResolver.resolve();
     }
 }
-
 export const microActionManager = new MicroActionManager();
 
 export function useMicroAction() {

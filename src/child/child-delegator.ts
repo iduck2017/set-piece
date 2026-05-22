@@ -1,4 +1,4 @@
-﻿import { useAction } from "../action/manager";
+﻿import { useAction } from "../action/action-manager";
 import { Model } from "../model";
 
 function useLock<P extends any[], R = any>() {
@@ -22,7 +22,7 @@ function useLock<P extends any[], R = any>() {
 export class ChildDelegator {
     public readonly value: unknown;
     
-    private _locked = false;
+    protected _locked;
     public set locked(value: boolean) {
         this._locked = value;
     }
@@ -101,6 +101,8 @@ export class ChildDelegator {
                     return true;
                 }
             });
-        } else this.value = value;
+        } 
+        else this.value = value;
+        this._locked = false;
     }
 }

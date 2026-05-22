@@ -1,6 +1,6 @@
 ﻿import { Event } from ".";
 import { depManager } from "../dep/dep-manager";
-import { useDep } from "../dep/use-dep";
+import { useDep } from "../dep/dep-registry";
 import { Model } from "../model";
 import { useModel } from "../use-model";
 import { eventConsumerManager } from "./event-consumer-manager";

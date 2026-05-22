@@ -1,10 +1,15 @@
-﻿import { useDep } from "../dep/use-dep";
+﻿import { depRegistry } from "../dep/dep-registry";
 import { Model } from "../model";
 import { TypedPropertyDecorator } from "../types";
 import { tagDelegator } from "../tag/tag-delegator";
 import { childRegistry } from "./child-registry";
 
 export type ChildDict = Record<string, Model | undefined>
+
+export function childDictIterator(model: Record<string, any>, key: string) {
+    return Object.values(model[key]).filter(item => item instanceof Model);
+}
+
 export function useChildDict<
     M extends Model & Record<string, any>,
     K extends string
@@ -13,15 +18,12 @@ export function useChildDict<
         TypedPropertyDecorator<M, K> :
         TypedPropertyDecorator<never, never> {
     return function(prototype: M, key: K) {
-        useDep()(prototype, key);
-        childRegistry.register(prototype, key, (model, key) => {
-            return Object.values(model[key]).filter(item => item instanceof Model)
-        });
-
         const descriptor = Object.getOwnPropertyDescriptor(prototype, key);
+        const getter = descriptor?.get;
+        const setter = descriptor?.set;
         Object.defineProperty(prototype, key, {
             get(this: Model) {
-                if (descriptor?.get) return descriptor.get.call(this);
+                if (getter) return getter.call(this);
                 else return tagDelegator.get(this, key);
             },
             set(this: Model, value: ChildDict | undefined) {
@@ -41,8 +43,7 @@ export function useChildDict<
                         return true;
                     }
                 }) : undefined;
-
-                if (descriptor?.set) descriptor.set.call(this, next);
+                if (setter) setter.call(this, next);
                 else tagDelegator.set(this, key, next);
 
                 Object.values(prev ?? {})
@@ -55,5 +56,8 @@ export function useChildDict<
             enumerable: true,
             configurable: true,
         });
-    } as any;
+        
+        depRegistry.register(prototype, key);
+        childRegistry.register(prototype, key, childDictIterator);
+    }
 }

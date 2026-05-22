@@ -6,7 +6,7 @@ import { frameConsumerResolver } from "../frame/frame-consumer-resolver";
 import { frameProducerResolver } from "../frame/frame-producer-resolver";
 import { memoResolver } from "../memo/memo-resolver";
 import { Tag } from "../tag/tag-registry";
-import { useMicroAction } from "../action/micro-manager";
+import { useMicroAction } from "../action/micro-action-manager";
 
 class DepService {
     @useMicroAction()
