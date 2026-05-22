@@ -2,7 +2,6 @@
 import { eventConsumerResolver } from "../event/event-consumer-resolver";
 import { frameConsumerResolver } from "../frame/frame-consumer-resolver";
 import { frameProducerResolver } from "../frame/frame-producer-resolver";
-import { weakRefResolver } from "../ref/weak-ref-resolver";
 import { Method } from "../types";
 
 class ActionManager {
@@ -23,7 +22,6 @@ class ActionManager {
         eventConsumerResolver.resolve();
         frameConsumerResolver.resolve();
         frameProducerResolver.resolve();
-        weakRefResolver.resolve();
         const handlers = [...this._handlers];
         this._handlers.length = 0;
         handlers.forEach(handler => handler());

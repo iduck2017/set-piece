@@ -12,7 +12,6 @@ export { useEffect } from './effect/use-effect';
 export { useDeferEffect } from './effect/use-defer-effect';
 export { useMemo } from './memo/use-memo';
 export { useRef } from './ref/use-ref';
-export { useWeakRef } from './ref/use-weak-ref';
 
 // Events
 export { useEventConsumer } from './event/use-event-consumer';
@@ -39,7 +38,6 @@ export { frameResolver } from './frame/frame-resolver';
 export { useModel } from './use-model';
 export { useRebootHook } from './hooks/use-reboot-hook';
 export { useConsoleGroup } from './log/use-console-group';
-export { useRange } from './utils/use-range';
 export { useValidator } from './utils/use-validator';
 
 // Shared utility types

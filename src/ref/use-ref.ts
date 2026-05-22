@@ -1,10 +1,6 @@
 ﻿import { Model } from "../model";
 import { TypedPropertyDecorator } from "../types";
-import { weakRefResolver } from "./weak-ref-resolver";
-import { weakRefManager } from "./weak-ref-manager";
 import { depRegistry } from "../dep/dep-registry";
-import { weakRefRegistry } from "./weak-ref-registry";
-import { tagDelegator } from "../tag/tag-delegator";
 
 export type RefList = Array<Model | undefined>
 export function useRef<

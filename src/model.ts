@@ -6,7 +6,6 @@ import { Event } from "./event";
 import { eventConsumerRegistry } from "./event/event-consumer-registry";
 import { eventService } from "./event/event-service";
 import { memoRegistry } from "./memo/memo-registry";
-import { weakRefResolver } from "./ref/weak-ref-resolver";
 import { routeRegistry } from "./route/route-registry";
 import { actionManager } from "./action/action-manager";
 import { tagRegistry } from "./tag/tag-registry";
@@ -16,6 +15,7 @@ import { useMicroAction } from "./action/micro-action-manager";
 import { Frame } from "./frame";
 import { frameService } from "./frame/frame-service";
 import { frameConsumerRegistry } from "./frame/frame-consumer-registry";
+import { useAnime } from "./frame/frame-resolver";
 
 export abstract class Model {
     protected readonly _brand = Symbol('model')
@@ -59,7 +59,7 @@ export abstract class Model {
         })
     }
 
-
+    @useAnime()
     protected emitFrame(frame: Frame) {
         frameService.emit(this, frame);
     }
@@ -122,7 +122,6 @@ export abstract class Model {
         if (!this._parent) return
         this._parent = undefined;
         this.updateRoute();
-        weakRefResolver.register(this);
     }
 
     private updateRoute() {
