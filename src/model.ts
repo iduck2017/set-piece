@@ -11,7 +11,7 @@ import { eventResolver } from "./event/event-resolver";
 import { tagRegistry } from "./tag/tag-registry";
 import { deferEffectRegistry } from "./effect/defer-effect-registry";
 import { ticketService } from "./utils/ticket-service";
-import { useMicroAction } from "./action/micro-action-manager";
+import { microActionManager, useMicroAction } from "./action/micro-action-manager";
 import { Frame } from "./frame";
 import { frameService } from "./frame/frame-service";
 import { frameConsumerRegistry } from "./frame/frame-consumer-registry";
@@ -19,6 +19,8 @@ import { useAnime } from "./frame/frame-resolver";
 import { gcService } from "./utils/gc-service";
 import { refConsumerRegistry } from "./ref/ref-consumer-registry";
 import { refRegistry } from "./ref/ref-registry";
+import { storeRegistry } from "./store/store-registry";
+import { Constructor } from "./types";
 
 export abstract class Model {
     protected readonly _brand = Symbol('model')
@@ -77,7 +79,7 @@ export abstract class Model {
         return eventService.emitAsync(this, event);
     }
 
-    public unlink() {
+    protected unlink() {
         [...refConsumerRegistry.query(this)].forEach(tag => {
             const holder: any = tag.target;
             const value = Reflect.get(holder, tag.key);
@@ -101,6 +103,7 @@ export abstract class Model {
             init: this.init.bind(this),
             mount: this.mount.bind(this),
             unmount: this.unmount.bind(this),
+            unlink: this.unlink.bind(this)
         }
     }
 
@@ -158,5 +161,19 @@ export abstract class Model {
         while (root.parent) root = root.parent;
         this._root = root;
         this.children.forEach((child: Model) => child.updateRoute());
+    }
+}
+
+export function useModel<T extends Model>(code: string) {
+    return function(Constructor: Constructor<Model, undefined[]>): Constructor<T> {
+        storeRegistry.register(code, Constructor);
+        Constructor = microActionManager.delegate(Constructor);
+        const HOCConstructor: any = class extends Constructor {
+            constructor(...params: any[]) {
+                super(...params);
+                this._internal.init();
+            }
+        } 
+        return HOCConstructor
     }
 }

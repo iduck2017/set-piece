@@ -1,6 +1,6 @@
 import { Event } from "./event";
 import { Model } from "./model";
-import { useModel } from "./use-model";
+import { useModel } from "./model";
 import { useChild } from "./child/use-child";
 import { Frame } from "./frame";
 import { Decor } from "./decor";
@@ -143,8 +143,8 @@ pong.launch()
 ping.launch()
 
 console.log('unlink')
-ping.unlink();
-pong.unlink()
+ping._internal.unlink();
+pong._internal.unlink()
 console.log(ping.pong)
 console.log(pong.ping)
 pong.launch()

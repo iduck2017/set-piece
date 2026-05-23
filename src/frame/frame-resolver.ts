@@ -27,15 +27,22 @@ class FrameResolver {
     public async launch(handler: () => unknown) {
         if (this._pending) return handler();
         this._pending = true;
-        const result = handler();
-        this._pending = false;
-        await this.resolve();
-        return result;
+        const value = handler();
+        if (value instanceof Promise) {
+            return value.then((result) => {
+                this._pending = false;
+                this.resolve();
+                return result;
+            })
+        } else {
+            this._pending = false;
+            this.resolve();
+            return value;
+        }
     }
 
     public async resolve() {
         const step = this._step;
-        console.log('resolve', step)
         this._step = 1;
         const context = this._context;
         this._context = new Map();

@@ -17,30 +17,30 @@ type DecorConsumerLoadersMap = Map<string, Array<DecorConsumerLoader>>
 class DecorConsumerRegistry {
     private _config: Map<AbstractConstructor<Model>, DecorConsumerLoadersMap> = new Map();
 
-    public register(
-        prototype: Model,
+    public register<I extends Model, D extends Decor>(
+        prototype: I,
         key: string,
-        loader: DecorConsumerLoader<any>,
-        descriptor?: TypedPropertyDescriptor<(decor: any) => void>,
+        descriptor: TypedPropertyDescriptor<(decor: D) => void> | undefined,
+        loader: DecorConsumerLoader<I, D>,
     ) {
         const constructor: any = prototype.constructor;
         const subConfig: DecorConsumerLoadersMap = this._config.get(constructor) ?? new Map();
         const loaders = subConfig.get(key) ?? [];
-        const wrapped: DecorConsumerLoader = function(i: Model) {
-            const depConsumerTag = tagRegistry.query(i, key);
+        const _loader: any = function(that: I) {
+            const depConsumerTag = tagRegistry.query(that, key);
             depCollector.init(depConsumerTag);
-            const result = loader(i);
+            const result = loader(that);
             decorManager.collect(depConsumerTag);
             return result;
         };
-        loaders.push(wrapped);
+        loaders.push(_loader);
         subConfig.set(key, loaders);
         this._config.set(constructor, subConfig);
 
         if (!descriptor) return;
         const handler = descriptor.value;
         if (!handler) return;
-        descriptor.value = function(this: Model, decor: Decor) {
+        descriptor.value = function(this: I, decor: D) {
             const depConsumerTag = tagRegistry.query(this, key);
             depCollector.init(depConsumerTag);
             const result = handler.call(this, decor);
@@ -78,7 +78,7 @@ export function useDecorConsumer<
         key: string,
         descriptor: TypedPropertyDescriptor<(decor: D) => void>,
     ) {
-        decorConsumerRegistry.register(prototype, key, loader, descriptor);
+        decorConsumerRegistry.register(prototype, key, descriptor, loader);
         return descriptor;
     }
 }

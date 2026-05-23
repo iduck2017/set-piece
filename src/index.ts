@@ -35,7 +35,8 @@ export { frameService } from './frame/frame-service';
 export { frameResolver } from './frame/frame-resolver';
 
 // Misc
-export { useModel } from './use-model';
+export { useModel } from './model';
+export { useView } from './view';
 export { useRebootHook } from './hooks/use-reboot-hook';
 export { useConsoleGroup } from './log/use-console-group';
 export { useValidator } from './utils/use-validator';

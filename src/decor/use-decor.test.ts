@@ -5,7 +5,7 @@ import { useEffect } from "../effect/effect-registry";
 import { useMemo } from "../memo/memo-registry";
 import { Model } from "../model";
 import { useRoute } from "../route/route-registry";
-import { useModel } from "../use-model";
+import { useModel } from "../model";
 import { useDecorConsumer } from "./decor-consumer-registry";
 import { useDecorProducer } from "./decor-producer-registry";
 import { useState } from "./use-state";

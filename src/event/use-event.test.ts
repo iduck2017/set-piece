@@ -2,7 +2,7 @@
 import { depManager } from "../dep/dep-manager";
 import { useDep } from "../dep/dep-registry";
 import { Model } from "../model";
-import { useModel } from "../use-model";
+import { useModel } from "../model";
 import { eventConsumerManager } from "./event-consumer-manager";
 import { useEventConsumer } from "./event-consumer-registry";
 
