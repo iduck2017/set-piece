@@ -37,13 +37,13 @@ export function useRef<
                 else tagDelegator.set(this, key, next);
 
                 if (prev instanceof Model) refConsumerRegistry.remove(prev, tag);
+                if (prev instanceof Array)
+                    prev.filter(item => item instanceof Model)
+                        .forEach(item => refConsumerRegistry.remove(item, tag));
                 if (next instanceof Model) refConsumerRegistry.add(next, tag);
-                if (prev instanceof Array) prev.forEach((item: unknown) => {
-                    if (item instanceof Model) refConsumerRegistry.remove(item, tag);
-                });
-                if (next instanceof Array) next.forEach((item: unknown) => {
-                    if (item instanceof Model) refConsumerRegistry.add(item, tag);
-                });
+                if (next instanceof Array)
+                    next.filter(item => item instanceof Model)
+                        .forEach(item => refConsumerRegistry.add(item, tag));
             },
             enumerable: true,
             configurable: true,

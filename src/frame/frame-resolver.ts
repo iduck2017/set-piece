@@ -35,6 +35,7 @@ class FrameResolver {
 
     public async resolve() {
         const step = this._step;
+        console.log('resolve', step)
         this._step = 1;
         const context = this._context;
         this._context = new Map();

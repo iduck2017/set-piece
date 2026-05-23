@@ -9,13 +9,12 @@ class StoreRegistry {
         this._config.set(Constructor, code);
     }
 
-    public getCode(Constructor: Constructor<Model>) {
-        return this._config.get(Constructor);
+    public query(Constructor: Constructor<Model>): string;
+    public query(code: string): Constructor<Model>
+    public query(arg: any): any {
+        return this._config.get(arg);
     }
 
-    public getConstructor(code: string) {
-        return this._config.get(code)
-    }
 }
 
 export const storeRegistry = new StoreRegistry();

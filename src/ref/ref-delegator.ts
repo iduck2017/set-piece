@@ -39,9 +39,8 @@ export class RefDelegator {
     @useLock()
     private push(origin: Model[], ...next: Model[]) {
         const result = origin.push(...next);
-        next.forEach(item => {
-            if (item instanceof Model) refConsumerRegistry.add(item, this.tag);
-        });
+        next.filter(item => item instanceof Model)
+            .forEach(item => refConsumerRegistry.add(item, this.tag));
         return result;
     }
 
@@ -55,9 +54,8 @@ export class RefDelegator {
     @useLock()
     private unshift(origin: Model[], ...next: Model[]) {
         const result = origin.unshift(...next);
-        next.forEach(item => {
-            if (item instanceof Model) refConsumerRegistry.add(item, this.tag);
-        });
+        next.filter(item => item instanceof Model)
+            .forEach(item => refConsumerRegistry.add(item, this.tag));
         return result;
     }
 
@@ -70,12 +68,10 @@ export class RefDelegator {
     ) {
         const prev = origin.slice(start, start + count);
         const result = origin.splice(start, count, ...next);
-        prev.forEach(item => {
-            if (item instanceof Model) refConsumerRegistry.remove(item, this.tag);
-        });
-        next.forEach(item => {
-            if (item instanceof Model) refConsumerRegistry.add(item, this.tag);
-        });
+        prev.filter(item => item instanceof Model)
+            .forEach(item => refConsumerRegistry.remove(item, this.tag));
+        next.filter(item => item instanceof Model)
+            .forEach(item => refConsumerRegistry.add(item, this.tag));
         return result;
     }
 

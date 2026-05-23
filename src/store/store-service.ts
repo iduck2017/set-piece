@@ -7,7 +7,7 @@ class StoreService {
         const config: Record<string, any> = {}
         config.uuid = model.uuid;
         const Constructor: any = model.constructor
-        config.type = storeRegistry.getCode(Constructor);
+        config.type = storeRegistry.query(Constructor);
         const rowConfigMap = storeRowRegistry.query(Constructor);
         for (const [key, [, generator]] of rowConfigMap) {
             config[key] = generator((model as any)[key]);
@@ -16,7 +16,7 @@ class StoreService {
     }
 
     public load(config: any) {
-
+        
     }
 }
 

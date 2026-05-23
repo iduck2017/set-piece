@@ -37,30 +37,25 @@ export abstract class Model {
         gcService.register(this, `${this.constructor.name}#${this._uuid}`);
         const memoKeys = memoRegistry.query(this);
         memoKeys.forEach(key => Reflect.get(this, key))
-        const effectKeys = [
-            ...effectRegistry.query(this),
-            ...deferEffectRegistry.query(this),
-        ];
-        effectKeys.forEach(key => {
-            const effect = Reflect.get(this, key);
-            if (!(effect instanceof Function)) return;
-            effect.call(this);
-        })
+
+        const effectKeys = effectRegistry.query(this);
+        effectKeys.push(...deferEffectRegistry.query(this));
+        effectKeys
+            .map(key => Reflect.get(this, key))
+            .filter(effect => effect instanceof Function)
+            .forEach(effect => effect.call(this))
         const eventLoaderMap = eventConsumerRegistry.query(this);
-        eventLoaderMap.forEach((loaders, key) => {
-            const eventConsumerTag = tagRegistry.query(this, key);
-            eventService.bind(eventConsumerTag);
-        })
         const decorLoaderMap = decorConsumerRegistry.query(this);
-        decorLoaderMap.forEach((loaders, key) => {
-            const decorConsumerTag = tagRegistry.query(this, key);
-            decorService.bind(decorConsumerTag);
-        })
         const frameLoaderMap = frameConsumerRegistry.query(this);
-        frameLoaderMap.forEach((loaders, key) => {
-            const frameConsumerTag = tagRegistry.query(this, key);
-            frameService.bind(frameConsumerTag);
-        })
+        const eventKeys = [...eventLoaderMap.keys()];
+        const decorKeys = [...decorLoaderMap.keys()];
+        const frameKeys = [...frameLoaderMap.keys()];
+        const eventConsumerTags = eventKeys.map(key => tagRegistry.query(this, key));
+        const decorConsumerTags = decorKeys.map(key => tagRegistry.query(this, key));
+        const frameConsumerTags = frameKeys.map(key => tagRegistry.query(this, key));
+        eventConsumerTags.forEach(tag => eventService.bind(tag));
+        decorConsumerTags.forEach(tag => decorService.bind(tag));
+        frameConsumerTags.forEach(tag => frameService.bind(tag));
     }
 
     @useAnime()
