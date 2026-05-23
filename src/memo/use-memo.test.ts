@@ -1,6 +1,6 @@
 ﻿import { Model } from "../model";
 import { depManager } from "../dep/dep-manager";
-import { useMemo } from "./use-memo";
+import { useMemo } from "./memo-registry";
 import { useModel } from "../use-model";
 import { useDep } from "../dep/dep-registry";
 

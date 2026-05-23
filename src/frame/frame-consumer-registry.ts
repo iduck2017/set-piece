@@ -1,6 +1,9 @@
-﻿import { Frame } from ".";
+import { Frame } from ".";
 import { Model } from "../model";
 import { AbstractConstructor, Constructor } from "../types";
+import { depCollector } from "../dep/dep-collector";
+import { frameManager } from "../dep/dep-consumer-manager";
+import { tagRegistry } from "../tag/tag-registry";
 
 export type FrameConsumerLoader<
     I extends Model = Model,
@@ -21,7 +24,14 @@ class FrameConsumerRegistry {
         const constructor: any = prototype.constructor;
         const subConfig = this._config.get(constructor) ?? new Map();
         const loaders = subConfig.get(key) ?? [];
-        loaders.push(loader);
+        const wrapped: FrameConsumerLoader = function(self: Model) {
+            const depConsumerTag = tagRegistry.query(self, key);
+            depCollector.init(depConsumerTag);
+            const result = loader(self);
+            frameManager.collect(depConsumerTag);
+            return result;
+        };
+        loaders.push(wrapped);
         subConfig.set(key, loaders);
         this._config.set(constructor, subConfig);
     }
@@ -46,3 +56,16 @@ class FrameConsumerRegistry {
 }
 
 export const frameConsumerRegistry = new FrameConsumerRegistry();
+
+export function useFrameConsumer<
+    F extends Frame,
+    I extends Model
+>(loader: FrameConsumerLoader<I, F>) {
+    return function(
+        prototype: I,
+        key: string,
+        descriptor: TypedPropertyDescriptor<(frame: F) => Promise<void>>,
+    ) {
+        frameConsumerRegistry.register(prototype, key, loader);
+    }
+}

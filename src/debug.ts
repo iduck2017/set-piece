@@ -5,11 +5,11 @@ import { useChild } from "./child/use-child";
 import { Frame } from "./frame";
 import { Decor } from "./decor";
 import { useRoute } from "./route/route-registry";
-import { useEventConsumer } from "./event/use-event-consumer";
-import { useFrameConsumer } from "./frame/use-frame-consumer";
-import { useDecorProducer } from "./decor/use-decor-producer";
-import { useDecorConsumer } from "./decor/use-decor-consumer";
-import { useMemo } from "./memo/use-memo";
+import { useEventConsumer } from "./event/event-consumer-registry";
+import { useFrameConsumer } from "./frame/frame-consumer-registry";
+import { useDecorProducer } from "./decor/decor-producer-registry";
+import { useDecorConsumer } from "./decor/decor-consumer-registry";
+import { useMemo } from "./memo/memo-registry";
 import { useRef } from "./ref/use-ref";
 
 class PingEvent extends Event {}

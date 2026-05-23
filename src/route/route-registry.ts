@@ -9,14 +9,15 @@ class RouteRegistry {
     private _config: Map<AbstractConstructor<Model>, RouteLoaderMap> = new Map();
 
     public register(
-        prototype: Model, 
-        key: string, 
+        prototype: Model,
+        key: string,
         loader: RouteLoader
     ) {
         const type: any = prototype.constructor;
         const subConfig: RouteLoaderMap = this._config.get(type) ?? new Map();
         subConfig.set(key, loader);
         this._config.set(type, subConfig);
+        depRegistry.register(prototype, key);
     }
 
     public query(prototype: Model): RouteConstructorMap {
@@ -42,11 +43,7 @@ export function useRoute<
     M extends Model & I[K],
     K extends string
 >(loader: () => AbstractConstructor<M>) {
-    return function(
-        prototype: I,
-        key: K,
-    ) {
-        depRegistry.register(prototype, key)
+    return function(prototype: I, key: K) {
         routeRegistry.register(prototype, key, loader);
     }
 }

@@ -4,7 +4,7 @@ import { useDep } from "../dep/dep-registry";
 import { Model } from "../model";
 import { useModel } from "../use-model";
 import { eventConsumerManager } from "./event-consumer-manager";
-import { useEventConsumer } from "./use-event-consumer";
+import { useEventConsumer } from "./event-consumer-registry";
 
 class PingEvent extends Event {
     protected _brand = Symbol('ping-event')

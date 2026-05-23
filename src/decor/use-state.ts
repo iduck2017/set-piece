@@ -1,5 +1,4 @@
-﻿import { Decor } from ".";
-import { depRegistry } from "../dep/dep-registry";
+﻿import { depRegistry } from "../dep/dep-registry";
 import { Model } from "../model";
 
 export function useState<

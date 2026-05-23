@@ -1,13 +1,13 @@
 ﻿import { Decor } from ".";
 import { useChild } from "../child/use-child";
 import { useDep } from "../dep/dep-registry";
-import { useEffect } from "../effect/use-effect";
-import { useMemo } from "../memo/use-memo";
+import { useEffect } from "../effect/effect-registry";
+import { useMemo } from "../memo/memo-registry";
 import { Model } from "../model";
 import { useRoute } from "../route/route-registry";
 import { useModel } from "../use-model";
-import { useDecorConsumer } from "./use-decor-consumer";
-import { useDecorProducer } from "./use-decor-producer";
+import { useDecorConsumer } from "./decor-consumer-registry";
+import { useDecorProducer } from "./decor-producer-registry";
 import { useState } from "./use-state";
 
 class AttackDecor extends Decor<number> {

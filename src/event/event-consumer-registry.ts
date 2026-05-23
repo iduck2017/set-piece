@@ -1,6 +1,9 @@
-﻿import { Event } from ".";
+import { Event } from ".";
 import { Model } from "../model";
 import { AbstractConstructor, Constructor } from "../types";
+import { depCollector } from "../dep/dep-collector";
+import { eventManager } from "../dep/dep-consumer-manager";
+import { tagRegistry } from "../tag/tag-registry";
 
 export type EventConsumerLoader<
     I extends Model = Model,
@@ -21,7 +24,14 @@ class EventConsumerRegistry {
         const constructor: any = prototype.constructor;
         const subConfig = this._config.get(constructor) ?? new Map();
         const loaders = subConfig.get(key) ?? [];
-        loaders.push(loader);
+        const wrapped: EventConsumerLoader = function(self: Model) {
+            const depConsumerTag = tagRegistry.query(self, key);
+            depCollector.init(depConsumerTag);
+            const result = loader(self);
+            eventManager.collect(depConsumerTag);
+            return result;
+        };
+        loaders.push(wrapped);
         subConfig.set(key, loaders);
         this._config.set(constructor, subConfig);
     }
@@ -46,3 +56,16 @@ class EventConsumerRegistry {
 }
 
 export const eventConsumerRegistry = new EventConsumerRegistry();
+
+export function useEventConsumer<
+    E extends Event,
+    I extends Model
+>(loader: EventConsumerLoader<I, E>) {
+    return function(
+        prototype: I,
+        key: string,
+        descriptor: TypedPropertyDescriptor<(event: E) => void>,
+    ) {
+        eventConsumerRegistry.register(prototype, key, loader);
+    }
+}

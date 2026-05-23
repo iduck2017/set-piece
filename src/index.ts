@@ -7,19 +7,19 @@ export { useRoute, routeRegistry } from './route/route-registry';
 
 // Reactivity
 export { useDep, depRegistry } from './dep/dep-registry';
-export { useEffect } from './effect/use-effect';
-export { useDeferEffect } from './effect/use-defer-effect';
-export { useMemo } from './memo/use-memo';
+export { useEffect, effectRegistry } from './effect/effect-registry';
+export { useDeferEffect, deferEffectRegistry } from './effect/defer-effect-registry';
+export { useMemo, memoRegistry } from './memo/memo-registry';
 export { useRef } from './ref/use-ref';
 
 // Events
-export { useEventConsumer } from './event/use-event-consumer';
+export { useEventConsumer, eventConsumerRegistry } from './event/event-consumer-registry';
 export { useStory, eventResolver } from './event/event-resolver';
 export { Event, PrevEvent } from './event';
 
 // Decors
-export { useDecorConsumer } from './decor/use-decor-consumer';
-export { useDecorProducer } from './decor/use-decor-producer';
+export { useDecorConsumer, decorConsumerRegistry } from './decor/decor-consumer-registry';
+export { useDecorProducer, decorProducerRegistry } from './decor/decor-producer-registry';
 export { useState } from './decor/use-state';
 export { Decor } from './decor';
 
@@ -30,7 +30,7 @@ export { useMicroAction } from './action/micro-action-manager';
 // Frames
 export { Frame, ChangeFrame } from './frame';
 export { useFrameProducer } from './frame/frame-producer-resolver' 
-export { useFrameConsumer } from './frame/use-frame-consumer';
+export { useFrameConsumer, frameConsumerRegistry } from './frame/frame-consumer-registry';
 export { frameService } from './frame/frame-service';
 export { frameResolver } from './frame/frame-resolver';
 
