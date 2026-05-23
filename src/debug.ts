@@ -144,7 +144,9 @@ ping.launch()
 
 console.log('unlink')
 ping.unlink();
+pong.unlink()
 console.log(ping.pong)
 console.log(pong.ping)
 pong.launch()
 ping.launch()
+ping = undefined;

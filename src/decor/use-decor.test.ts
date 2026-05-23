@@ -48,7 +48,7 @@ function useMonsterAllyAttackDecorConsumer() {
 
 @useModel('monster')
 class MonsterModel extends Model {
-    constructor(name: string) {
+    constructor(name?: string) {
         super()
         this._name = name;
     }

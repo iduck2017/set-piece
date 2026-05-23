@@ -6,9 +6,9 @@ import { useDep } from "../dep/dep-registry";
 
 @useModel('foo')
 export class FooModel extends Model {
-    constructor(level: number) {
+    constructor(level?: number) {
         super();
-        this.level = level;
+        this.level = level ?? 1;
     }
 
     @useDep()

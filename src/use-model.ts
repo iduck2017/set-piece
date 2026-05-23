@@ -4,14 +4,15 @@ import { storeRegistry } from "./store/store-registry";
 import { microActionManager } from "./action/micro-action-manager";
 
 export function useModel<T extends Model>(code: string) {
-    return function(Constructor: Constructor<Model>): Constructor<T> {
+    return function(Constructor: Constructor<Model, undefined[]>): Constructor<T> {
         storeRegistry.register(code, Constructor);
         Constructor = microActionManager.delegate(Constructor);
-        return class extends Constructor {
+        const HOCConstructor: any = class extends Constructor {
             constructor(...params: any[]) {
                 super(...params);
                 this._internal.init();
             }
-        } as any
+        } 
+        return HOCConstructor
     }
 }

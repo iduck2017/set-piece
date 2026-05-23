@@ -32,9 +32,8 @@ class DepRegistry {
                     const next = new DepDelegator(value, tag).value;
                     if (setter) setter.call(this, next);
                     else tagDelegator.set(this, key, next);
-                    if (prev !== next) {
-                        depService.register(tag);
-                    }
+                    if (prev === next) return;
+                    depService.register(tag);
                 },
                 enumerable: true,
                 configurable: true,
