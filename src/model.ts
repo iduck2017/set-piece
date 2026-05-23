@@ -17,6 +17,8 @@ import { frameService } from "./frame/frame-service";
 import { frameConsumerRegistry } from "./frame/frame-consumer-registry";
 import { useAnime } from "./frame/frame-resolver";
 import { gcService } from "./utils/gc-service";
+import { refConsumerRegistry } from "./ref/ref-consumer-registry";
+import { refRegistry } from "./ref/ref-registry";
 
 export abstract class Model {
     protected readonly _brand = Symbol('model')
@@ -78,6 +80,25 @@ export abstract class Model {
 
     protected emitAsyncEvent(event: Event) {
         return eventService.emitAsync(this, event);
+    }
+
+    public unlink() {
+        [...refConsumerRegistry.query(this)].forEach(tag => {
+            const holder: any = tag.target;
+            const value = Reflect.get(holder, tag.key);
+            if (value === this) {
+                Reflect.set(holder, tag.key, undefined);
+            } else if (value instanceof Array) {
+                let idx = value.indexOf(this);
+                while (idx >= 0) {
+                    value.splice(idx, 1);
+                    idx = value.indexOf(this);
+                }
+            }
+        });
+        refRegistry.query(this).forEach(key => {
+            Reflect.set(this, key, undefined);
+        });
     }
 
     public get _internal() {

@@ -65,12 +65,12 @@ class PongModel extends Model {
 
     @useEventConsumer((that) => [that.ping, PingEvent])
     protected _handlePing(event: PingEvent) {
-        console.log('ping')
+        console.log('ping event')
     }
 
     @useFrameConsumer((that) => [that.ping, PingFrame])
-    protected async _handlePingFrame(event: PingFrame) {
-        alert('ping')
+    protected async _handlePingFrame(frame: PingFrame) {
+        console.log('ping frame')
     }
 
     @useDecorConsumer((that) => [that.ping, PingDecor])
@@ -102,28 +102,28 @@ class PingModel extends Model {
 
 
     @useEventConsumer((that) => [that.pong, PongEvent])
-    protected _handlePing(event: PongEvent) {
-        console.log('pong')
+    protected _handlePong(event: PongEvent) {
+        console.log('pong event')
     }
 
     @useFrameConsumer((that) => [that.pong, PongFrame])
-    protected async _handlePingFrame(event: PongFrame) {
-        alert('pong')
+    protected async _handlePongFrame(frame: PongFrame) {
+        console.log('pong frame')
     }
     
     @useDecorConsumer((that) => [that.pong, PongDecor])
-    protected _handlePingDecor(decor: PongDecor) {
+    protected _handlePongDecor(decor: PongDecor) {
         decor.add();
     }
 
     public launch() {
         this.emitEvent(new PingEvent({}))
+        this.emitFrame(new PingFrame({}))
     }
 }
 
 
-const global: any = window
-
+// const global: any = window
 // const root = new RootModel()
 // global.root = root;
 // root.ping = new PingModel()
@@ -138,7 +138,13 @@ const global: any = window
 let ping: PingModel | undefined = new PingModel() // act as view
 let pong = new PongModel() // act as model
 ping.pong = pong;
+pong.ping = ping;
 pong.launch()
-ping.destroy();
-ping = undefined;
+ping.launch()
+
+console.log('unlink')
+ping.unlink();
+console.log(ping.pong)
+console.log(pong.ping)
 pong.launch()
+ping.launch()

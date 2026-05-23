@@ -32,21 +32,19 @@ class MicroActionManager {
 
     public delegate<T extends Model>(Constructor: Constructor<Model>): Constructor<T> {
         const that = this;
-        const ConstructorMap = {
-            [Constructor.name]: class extends Constructor {
-                constructor(...params: any[]) {
-                    if (that._pending) super(...params);
-                    if (that._pending) return;
-                    that._pending = true;
-                    super(...params);
-                    that._pending = false;
-                    const dirty = that.precheck()
-                    if (!dirty) return;
-                    that.resolve();
-                }
+        const HOCConstructor = class extends Constructor {
+            constructor(...params: any[]) {
+                if (that._pending) super(...params);
+                if (that._pending) return;
+                that._pending = true;
+                super(...params);
+                that._pending = false;
+                const dirty = that.precheck()
+                if (!dirty) return;
+                that.resolve();
             }
-        }[Constructor.name];
-        return ConstructorMap as Constructor<T>;
+        }
+        return HOCConstructor as Constructor<T>;
     }
 
     @useMicroAction()
