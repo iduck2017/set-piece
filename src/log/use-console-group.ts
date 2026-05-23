@@ -1,15 +1,15 @@
 ﻿export function useConsoleGroup() {
     return function(
-        _prototype: object,
-        _key: string,
+        prototype: object,
+        key: string,
         descriptor: TypedPropertyDescriptor<(...args: any[]) => any>,
     ) {
         const handler = descriptor.value;
         if (!handler) return descriptor;
         descriptor.value = function(...args: any[]) {
-            // console.group(`${prototype.constructor.name}.${key}`);
+            console.group(`${prototype.constructor.name}.${key}`);
             const result = handler.apply(this, args);
-            // console.groupEnd();
+            console.groupEnd();
             return result;
         }
         return descriptor;

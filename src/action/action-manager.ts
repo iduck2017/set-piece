@@ -1,12 +1,12 @@
 ﻿import { deferEffectResolver } from "../effect/defer-effect-resolver";
 import { eventConsumerResolver } from "../event/event-consumer-resolver";
+import { eventResolver, useStory } from "../event/event-resolver";
 import { frameConsumerResolver } from "../frame/frame-consumer-resolver";
 import { frameProducerResolver } from "../frame/frame-producer-resolver";
 import { Method } from "../types";
 
 class ActionManager {
     private _pending = false;
-    private _handlers: Array<() => void> = [];
 
     public launch(handler: () => unknown) {
         if (this._pending) return handler();
@@ -17,19 +17,12 @@ class ActionManager {
         return result;
     }
 
+    @useStory()
     private resolve() {
         deferEffectResolver.resolve();
         eventConsumerResolver.resolve();
         frameConsumerResolver.resolve();
         frameProducerResolver.resolve();
-        const handlers = [...this._handlers];
-        this._handlers.length = 0;
-        handlers.forEach(handler => handler());
-    }
-
-    @useAction()
-    public then(handler: () => void) {
-        this._handlers.push(handler);
     }
 }
 export const actionManager = new ActionManager();
@@ -61,7 +54,7 @@ export function useDeferAction() {
         if (!handler) return descriptor;
         descriptor.value = function(...args: any[]) {
             const _handler = handler.bind(this, ...args)
-            actionManager.then(_handler);
+            eventResolver.register(_handler);
         }
         return descriptor;
     }

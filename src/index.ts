@@ -3,7 +3,6 @@ export { Model } from './model';
 
 // Node relationships
 export { useChild } from './child/use-child';
-export { useChildDict } from './child/use-child-dict';
 export { useRoute, routeRegistry } from './route/route-registry';
 
 // Reactivity
@@ -15,6 +14,7 @@ export { useRef } from './ref/use-ref';
 
 // Events
 export { useEventConsumer } from './event/use-event-consumer';
+export { useStory, eventResolver } from './event/event-resolver';
 export { Event, PrevEvent } from './event';
 
 // Decors
@@ -42,3 +42,5 @@ export { useValidator } from './utils/use-validator';
 
 // Shared utility types
 export { Method, AbstractConstructor, Constructor, TypedPropertyDecorator } from './types';
+
+export { gcService } from './utils/gc-service';

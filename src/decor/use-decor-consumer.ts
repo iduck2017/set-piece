@@ -23,7 +23,6 @@ export function useDecorConsumer<
             decorManager.collect(depConsumerTag);
             return result;
         });
-
         const handler = descriptor.value;
         if (!handler) return;
         descriptor.value = function(this: I, decor: D) {

@@ -2,9 +2,9 @@ const esbuild = require('esbuild')
 
 async function main() {
   const ctx = await esbuild.context({
-    entryPoints: ['src/model.public.ts', 'src/view.public.ts'],
+    entryPoints: ['src/debug.ts'],
     bundle: true,
-    outdir: 'dist',
+    outfile: 'dist/debug.js',
     platform: 'browser',
     format: 'esm',
   });

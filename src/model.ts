@@ -7,7 +7,7 @@ import { eventConsumerRegistry } from "./event/event-consumer-registry";
 import { eventService } from "./event/event-service";
 import { memoRegistry } from "./memo/memo-registry";
 import { routeRegistry } from "./route/route-registry";
-import { actionManager } from "./action/action-manager";
+import { eventResolver } from "./event/event-resolver";
 import { tagRegistry } from "./tag/tag-registry";
 import { deferEffectRegistry } from "./effect/defer-effect-registry";
 import { ticketService } from "./utils/ticket-service";
@@ -16,6 +16,7 @@ import { Frame } from "./frame";
 import { frameService } from "./frame/frame-service";
 import { frameConsumerRegistry } from "./frame/frame-consumer-registry";
 import { useAnime } from "./frame/frame-resolver";
+import { gcService } from "./utils/gc-service";
 
 export abstract class Model {
     protected readonly _brand = Symbol('model')
@@ -31,6 +32,7 @@ export abstract class Model {
 
     @useMicroAction()
     private init() {
+        gcService.register(this, `${this.constructor.name}#${this._uuid}`);
         const memoKeys = memoRegistry.query(this);
         memoKeys.forEach(key => Reflect.get(this, key))
         const effectKeys = [
@@ -69,7 +71,9 @@ export abstract class Model {
     }
 
     protected emitDeferEvent(event: Event) {
-        return actionManager.then(() => eventService.emitSync(this, event));
+        eventResolver.register(() => {
+            eventService.emitSync(this, event)
+        });
     }
 
     protected emitAsyncEvent(event: Event) {
