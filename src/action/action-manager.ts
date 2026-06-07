@@ -5,7 +5,7 @@ import { frameConsumerResolver } from "../frame/frame-consumer-resolver";
 import { frameProducerResolver } from "../frame/frame-producer-resolver";
 import { Method } from "../types";
 
-class ActionManager {
+export class ActionManager {
     private _pending = false;
 
     public launch(handler: () => unknown) {
@@ -25,6 +25,7 @@ class ActionManager {
         frameProducerResolver.resolve();
     }
 }
+
 export const actionManager = new ActionManager();
 
 export function useAction() {

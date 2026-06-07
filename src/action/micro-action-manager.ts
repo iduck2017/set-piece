@@ -6,7 +6,7 @@ import { Model } from "../model";
 import { Constructor, Method } from "../types";
 import { useAction } from "./action-manager";
 
-class MicroActionManager {
+export class MicroActionManager {
     private _pending = false;
 
     @useAction()
@@ -32,19 +32,20 @@ class MicroActionManager {
 
     public delegate<T extends Model>(Constructor: Constructor<Model>): Constructor<T> {
         const that = this;
-        const HOCConstructor = class extends Constructor {
-            constructor(...params: any[]) {
-                if (that._pending) super(...params);
-                if (that._pending) return;
-                that._pending = true;
-                super(...params);
-                that._pending = false;
-                const dirty = that.precheck()
-                if (!dirty) return;
-                that.resolve();
+        return {
+            [Constructor.name]: class extends Constructor {
+                constructor(...params: any[]) {
+                    if (that._pending) super(...params);
+                    if (that._pending) return;
+                    that._pending = true;
+                    super(...params);
+                    that._pending = false;
+                    const dirty = that.precheck()
+                    if (!dirty) return;
+                    that.resolve();
+                }
             }
-        }
-        return HOCConstructor as Constructor<T>;
+        }[Constructor.name] as any
     }
 
     @useMicroAction()
@@ -55,6 +56,7 @@ class MicroActionManager {
         decorProducerResolver.resolve();
     }
 }
+
 export const microActionManager = new MicroActionManager();
 
 export function useMicroAction() {

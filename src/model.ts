@@ -80,16 +80,16 @@ export abstract class Model {
     }
 
     protected unlink() {
-        [...refConsumerRegistry.query(this)].forEach(tag => {
+        const refConsumers = refConsumerRegistry.query(this);
+        refConsumers.forEach(tag => {
             const holder: any = tag.target;
             const value = Reflect.get(holder, tag.key);
-            if (value === this) {
-                Reflect.set(holder, tag.key, undefined);
-            } else if (value instanceof Array) {
-                let idx = value.indexOf(this);
-                while (idx >= 0) {
-                    value.splice(idx, 1);
-                    idx = value.indexOf(this);
+            if (value === this) Reflect.set(holder, tag.key, undefined);
+            if (value instanceof Array) {
+                let index = value.indexOf(this);
+                while (index >= 0) {
+                    value.splice(index, 1);
+                    index = value.indexOf(this);
                 }
             }
         });
@@ -138,16 +138,16 @@ export abstract class Model {
     private mount(parent: Model) {
         if (this._parent) return;
         this._parent = parent;
-        this.updateRoute();
+        this.reroute();
     }
 
     private unmount() {
         if (!this._parent) return
         this._parent = undefined;
-        this.updateRoute();
+        this.reroute();
     }
 
-    private updateRoute() {
+    private reroute() {
         const routeTypeMap = routeRegistry.query(this);
         routeTypeMap.forEach((Constructor: Function, key: string) => {
             let ancestor: Model | undefined = this;
@@ -160,20 +160,19 @@ export abstract class Model {
         let root: Model = this;
         while (root.parent) root = root.parent;
         this._root = root;
-        this.children.forEach((child: Model) => child.updateRoute());
+        this.children.forEach((child: Model) => child.reroute());
     }
 }
 
-export function useModel<T extends Model>(code: string) {
-    return function(Constructor: Constructor<Model, undefined[]>): Constructor<T> {
+export function useModel(code: string) {
+    return function(Constructor: Constructor<Model, undefined[]>): any {
         storeRegistry.register(code, Constructor);
         Constructor = microActionManager.delegate(Constructor);
-        const HOCConstructor: any = class extends Constructor {
+        return class extends Constructor {
             constructor(...params: any[]) {
                 super(...params);
                 this._internal.init();
             }
         } 
-        return HOCConstructor
     }
 }

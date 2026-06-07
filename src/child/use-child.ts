@@ -11,9 +11,9 @@ export function childIterator(model: Record<string, any>, key: string) {
     const result: Model[] = [];
     const value = model[key]
     if (value instanceof Model) result.push(model[key]);
-    if (value instanceof Array)
-        value.filter((item: any) => item instanceof Model)
-            .forEach((item: any) => result.push(item));
+    if (value instanceof Array) value
+        .filter((item: any) => item instanceof Model)
+        .forEach((item: any) => result.push(item));
     return result;
 }
 
@@ -43,13 +43,13 @@ export function useChild<
                 else tagDelegator.set(this, key, next);
                 
                 if (prev instanceof Model) prev._internal.unmount();
-                if (prev instanceof Array) 
-                    prev.filter(item => item instanceof Model)
-                        .forEach(item => item._internal.unmount());
+                if (prev instanceof Array) prev
+                    .filter(item => item instanceof Model)
+                    .forEach(item => item._internal.unmount());
                 if (next instanceof Model) next._internal.mount(this);
-                if (next instanceof Array) 
-                    next.filter(item => item instanceof Model)
-                        .forEach(item => item._internal.mount(this));
+                if (next instanceof Array) next
+                    .filter(item => item instanceof Model)
+                    .forEach(item => item._internal.mount(this));
             },
             enumerable: true,
             configurable: true,
