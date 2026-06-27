@@ -5,7 +5,7 @@ import { Tag, tagRegistry } from "../tag/tag-registry";
 import { decorProducerRegistry } from "./decor-producer-registry";
 import { decorProducerDelegator } from "./decor-producer-delegator";
 import { depService } from "../dep/dep-service";
-import { useMicroAction } from "../action/micro-action-manager";
+import { useBlink } from "../action/blink-manager";
 
 class DecorProducerResolver {
     private _context: Set<Tag> = new Set();
@@ -17,7 +17,7 @@ class DecorProducerResolver {
     public register(decorProducerTag: Tag): void
     public register(decorProducerModel: Model, decorType: Constructor<Decor>): void;
 
-    @useMicroAction()
+    @useBlink()
     public register(arg: Tag | Model, decorType?: Constructor<Decor>) {
         if (arg instanceof Model) {
             if (!decorType) return;

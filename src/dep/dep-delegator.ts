@@ -1,4 +1,4 @@
-﻿import { useMicroAction } from "../action/micro-action-manager";
+﻿import { useBlink } from "../action/blink-manager";
 import { Tag } from "../tag/tag-registry";
 import { depService } from "./dep-service";
 
@@ -16,7 +16,7 @@ function useAction<P extends any[], R = any>() {
             depService.register(this.tag);
             return result;
         }
-        useMicroAction()(prototype, key, descriptor);
+        useBlink()(prototype, key, descriptor);
         return descriptor;
     }
 }

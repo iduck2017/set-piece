@@ -6,10 +6,10 @@ import { frameConsumerResolver } from "../frame/frame-consumer-resolver";
 import { frameProducerResolver } from "../frame/frame-producer-resolver";
 import { memoResolver } from "../memo/memo-resolver";
 import { Tag } from "../tag/tag-registry";
-import { useMicroAction } from "../action/micro-action-manager";
+import { useBlink } from "../action/blink-manager";
 
 class DepService {
-    @useMicroAction()
+    @useBlink()
     public register(tag: Tag) {
         memoResolver.register(tag);
         effectResolver.register(tag);

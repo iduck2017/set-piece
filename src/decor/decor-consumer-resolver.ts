@@ -3,12 +3,12 @@ import { Model } from "../model";
 import { Tag } from "../tag/tag-registry";
 import { decorManager } from "../dep/dep-consumer-manager";
 import { decorService } from "./decor-service";
-import { useMicroAction } from "../action/micro-action-manager";
+import { useBlink } from "../action/blink-manager";
 
 class DecorConsumerResolver {
     private _context: Set<Tag> = new Set();
 
-    @useMicroAction()
+    @useBlink()
     public register(depTag: Tag) {
         this._context.add(depTag);
     }

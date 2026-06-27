@@ -1,4 +1,4 @@
-﻿import { decorConsumerResolver } from "../decor/decor-consumer-resolver";
+import { decorConsumerResolver } from "../decor/decor-consumer-resolver";
 import { decorProducerResolver } from "../decor/decor-producer-resolver";
 import { effectResolver } from "../effect/effect-resolver";
 import { memoResolver } from "../memo/memo-resolver";
@@ -6,7 +6,7 @@ import { Model } from "../model";
 import { Constructor, Method } from "../types";
 import { useAction } from "./action-manager";
 
-export class MicroActionManager {
+export class BlinkManager {
     private _pending = false;
 
     @useAction()
@@ -48,7 +48,7 @@ export class MicroActionManager {
         }[Constructor.name] as any
     }
 
-    @useMicroAction()
+    @useBlink()
     private resolve() {
         memoResolver.resolve();
         effectResolver.resolve();
@@ -57,9 +57,9 @@ export class MicroActionManager {
     }
 }
 
-export const microActionManager = new MicroActionManager();
+export const blinkManager = new BlinkManager();
 
-export function useMicroAction() {
+export function useBlink() {
     return function(
         prototype: unknown,
         key: unknown,
@@ -69,7 +69,7 @@ export function useMicroAction() {
         if (!handler) return descriptor;
         descriptor.value = function(...args: any[]) {
             const _handler = handler.bind(this, ...args)
-            const result = microActionManager.launch(_handler);
+            const result = blinkManager.launch(_handler);
             return result;
         }
         return descriptor;

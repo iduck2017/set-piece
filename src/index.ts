@@ -25,7 +25,7 @@ export { Decor } from './decor';
 
 // Actions
 export { useAction, actionManager, useDeferAction } from './action/action-manager';
-export { useMicroAction } from './action/micro-action-manager';
+export { useBlink } from './action/blink-manager';
 
 // Frames
 export { Frame, ChangeFrame } from './frame';

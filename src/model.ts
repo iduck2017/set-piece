@@ -11,7 +11,8 @@ import { eventResolver } from "./event/event-resolver";
 import { tagRegistry } from "./tag/tag-registry";
 import { deferEffectRegistry } from "./effect/defer-effect-registry";
 import { ticketService } from "./utils/ticket-service";
-import { microActionManager, useMicroAction } from "./action/micro-action-manager";
+import { blinkManager, useBlink } from "./action/blink-manager";
+import { useDeferAction } from "./action/action-manager";
 import { Frame } from "./frame";
 import { frameService } from "./frame/frame-service";
 import { frameConsumerRegistry } from "./frame/frame-consumer-registry";
@@ -34,29 +35,38 @@ export abstract class Model {
         return this.constructor.name;
     }
 
-    @useMicroAction()
+    @useBlink()
     private init() {
         gcService.register(this, `${this.constructor.name}#${this._uuid}`);
         const memoKeys = memoRegistry.query(this);
         memoKeys.forEach(key => Reflect.get(this, key))
 
         const effectKeys = effectRegistry.query(this);
-        effectKeys.push(...deferEffectRegistry.query(this));
+        effectKeys
+            .map(key => Reflect.get(this, key))
+            .filter(effect => effect instanceof Function)
+            .forEach(effect => effect.call(this))
+        const decorLoaderMap = decorConsumerRegistry.query(this);
+        const decorKeys = [...decorLoaderMap.keys()];
+        const decorConsumerTags = decorKeys.map(key => tagRegistry.query(this, key));
+        decorConsumerTags.forEach(tag => decorService.bind(tag));
+        this.initDefer();
+    }
+
+    @useDeferAction()
+    private initDefer() {
+        const effectKeys = deferEffectRegistry.query(this);
         effectKeys
             .map(key => Reflect.get(this, key))
             .filter(effect => effect instanceof Function)
             .forEach(effect => effect.call(this))
         const eventLoaderMap = eventConsumerRegistry.query(this);
-        const decorLoaderMap = decorConsumerRegistry.query(this);
         const frameLoaderMap = frameConsumerRegistry.query(this);
         const eventKeys = [...eventLoaderMap.keys()];
-        const decorKeys = [...decorLoaderMap.keys()];
         const frameKeys = [...frameLoaderMap.keys()];
         const eventConsumerTags = eventKeys.map(key => tagRegistry.query(this, key));
-        const decorConsumerTags = decorKeys.map(key => tagRegistry.query(this, key));
         const frameConsumerTags = frameKeys.map(key => tagRegistry.query(this, key));
         eventConsumerTags.forEach(tag => eventService.bind(tag));
-        decorConsumerTags.forEach(tag => decorService.bind(tag));
         frameConsumerTags.forEach(tag => frameService.bind(tag));
     }
 
@@ -167,7 +177,7 @@ export abstract class Model {
 export function useModel(code: string) {
     return function(Constructor: Constructor<Model, undefined[]>): any {
         storeRegistry.register(code, Constructor);
-        Constructor = microActionManager.delegate(Constructor);
+        Constructor = blinkManager.delegate(Constructor);
         return class extends Constructor {
             constructor(...params: any[]) {
                 super(...params);

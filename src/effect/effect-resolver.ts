@@ -2,12 +2,12 @@
 import { Model } from "../model";
 import { Tag } from "../tag/tag-registry";
 import { effectManager } from "../dep/dep-consumer-manager";
-import { useMicroAction } from "../action/micro-action-manager";
+import { useBlink } from "../action/blink-manager";
 
 class EffectResolver {
     private _context: Set<Tag> = new Set();
 
-    @useMicroAction()
+    @useBlink()
     public register(depTag: Tag) {
         this._context.add(depTag);
     }

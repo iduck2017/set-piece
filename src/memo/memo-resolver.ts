@@ -5,12 +5,12 @@ import { Model } from "../model";
 import { Tag } from "../tag/tag-registry";
 import { memoDelegator } from "./memo-delegator";
 import { memoManager } from "../dep/dep-consumer-manager";
-import { useMicroAction } from "../action/micro-action-manager";
+import { useBlink } from "../action/blink-manager";
 
 class MemoResolver {
     private _context: Set<Tag> = new Set();
 
-    @useMicroAction()
+    @useBlink()
     public register(tag: Tag) {
         this._context.add(tag);
     }
