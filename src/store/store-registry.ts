@@ -2,7 +2,7 @@
 import { Constructor } from "../types";
 
 class StoreRegistry {
-    private _config: Map<string, Constructor<Model>> & Map<Constructor<Model>, string> = new Map();
+    private _types: Map<string, Constructor<Model>> & Map<Constructor<Model>, string> = new Map();
 
     /**
      * Associate a persistence code with a model constructor.
@@ -11,24 +11,24 @@ class StoreRegistry {
      * structure.
      *
      * @param code - Stable serialized type code.
-     * @param Constructor - Model constructor represented by the code.
+     * @param ModelCtor - Model constructor represented by the code.
      * @returns Nothing.
      */
-    public register(code: string, Constructor: Constructor<Model>) {
-        this._config.set(code, Constructor);
-        this._config.set(Constructor, code);
+    public register(code: string, ModelCtor: Constructor<Model>) {
+        this._types.set(code, ModelCtor);
+        this._types.set(ModelCtor, code);
     }
 
-    public query(Constructor: Constructor<Model>): string;
+    public query(ModelCtor: Constructor<Model>): string;
     public query(code: string): Constructor<Model>
     /**
      * Look up either the code for a constructor or the constructor for a code.
      *
-     * @param arg - Model constructor or serialized type code.
+     * @param target - Model constructor or serialized type code.
      * @returns The matching code or constructor.
      */
-    public query(arg: any): any {
-        return this._config.get(arg);
+    public query(target: any): any {
+        return this._types.get(target);
     }
 
 }

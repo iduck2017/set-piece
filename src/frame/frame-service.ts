@@ -14,14 +14,14 @@ class FrameService {
      * invoke handlers immediately; it delegates to `frameResolver` so anime
      * boundaries can batch and order delivery.
      *
-     * @param frameProducerModel - Model that emitted or produced the frame.
+     * @param producer - Model that emitted or produced the frame.
      * @param frame - Frame instance to deliver to matching consumers.
      * @returns Nothing.
      */
-    public emit(frameProducerModel: Model, frame: Frame) {
-        const frameConsumerTags = frameConsumerManager.query(frameProducerModel, frame);
-        frameConsumerTags.forEach(frameConsumerTag => {
-            frameResolver.register(frameConsumerTag, frame);
+    public emit(producer: Model, frame: Frame) {
+        const consumerTags = frameConsumerManager.query(producer, frame);
+        consumerTags.forEach(consumerTag => {
+            frameResolver.register(consumerTag, frame);
         });
     }
 
@@ -32,17 +32,17 @@ class FrameService {
      * changed. It clears both producer-to-consumer and consumer-to-producer
      * indexes.
      *
-     * @param frameConsumerTag - Tag pointing to the consumer method to unbind.
+     * @param consumerTag - Tag pointing to the consumer method to unbind.
      * @returns Nothing.
      */
-    public unbind(frameConsumerTag: Tag) {
-        const frameTypesMap = frameProducerManager.query(frameConsumerTag);
-        frameTypesMap.forEach((frameTypes, frameProducerModel) => {
-            frameTypes.forEach(type => {
-                frameConsumerManager.remove(frameProducerModel, type, frameConsumerTag);
+    public unbind(consumerTag: Tag) {
+        const links = frameProducerManager.query(consumerTag);
+        links.forEach((types, producer) => {
+            types.forEach(type => {
+                frameConsumerManager.remove(producer, type, consumerTag);
             })
         })
-        frameProducerManager.remove(frameConsumerTag);
+        frameProducerManager.remove(consumerTag);
     }
 
     /**
@@ -52,29 +52,29 @@ class FrameService {
      * constructor it wants to consume. This method stores those links in both
      * frame managers so emit and future unbind operations can find them.
      *
-     * @param frameConsumerTag - Tag pointing to the consumer method to bind.
+     * @param consumerTag - Tag pointing to the consumer method to bind.
      * @returns Nothing.
      */
-    public bind(frameConsumerTag: Tag) {
-        const consumerModel = frameConsumerTag.target;
-        const consumerKey = frameConsumerTag.key;
-        const loadersMap = frameConsumerRegistry.query(consumerModel);
-        const loaders = loadersMap.get(consumerKey) ?? [];
+    public bind(consumerTag: Tag) {
+        const consumer = consumerTag.target;
+        const key = consumerTag.key;
+        const loaderMap = frameConsumerRegistry.query(consumer);
+        const loaders = loaderMap.get(key) ?? [];
         loaders.forEach(loader => {
-            const result = loader(consumerModel);
-            if (!result) return;
-            const [value, FrameConstructor] = result;
+            const binding = loader(consumer);
+            if (!binding) return;
+            const [value, FrameCtor] = binding;
             if (value instanceof Array) {
-                value.forEach(frameProducerModel => {
-                    if (!frameProducerModel) return;
-                    frameConsumerManager.add(frameProducerModel, FrameConstructor, frameConsumerTag);
-                    frameProducerManager.add(frameConsumerTag, frameProducerModel, FrameConstructor);
+                value.forEach(producer => {
+                    if (!producer) return;
+                    frameConsumerManager.add(producer, FrameCtor, consumerTag);
+                    frameProducerManager.add(consumerTag, producer, FrameCtor);
                 })
             }
             if (value instanceof Model) {
-                const frameProducerModel = value;
-                frameConsumerManager.add(frameProducerModel, FrameConstructor, frameConsumerTag);
-                frameProducerManager.add(frameConsumerTag, frameProducerModel, FrameConstructor);
+                const producer = value;
+                frameConsumerManager.add(producer, FrameCtor, consumerTag);
+                frameProducerManager.add(consumerTag, producer, FrameCtor);
             }
         })
     }

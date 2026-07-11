@@ -5,7 +5,7 @@ import { effectManager } from "../dep/dep-consumer-manager";
 import { useAction } from "../hooks/use-action";
 
 class EffectResolver {
-    private _context: Set<Tag> = new Set();
+    private _queue: Set<Tag> = new Set();
 
     /**
      * Queue a changed dependency tag for action-scoped effects.
@@ -18,7 +18,7 @@ class EffectResolver {
      */
     @useAction()
     public register(depTag: Tag) {
-        this._context.add(depTag);
+        this._queue.add(depTag);
     }
 
     /**
@@ -27,7 +27,7 @@ class EffectResolver {
      * @returns True when at least one changed dependency tag is queued.
      */
     public check() {
-        return Boolean(this._context.size);
+        return Boolean(this._queue.size);
     }
 
     /**
@@ -40,25 +40,25 @@ class EffectResolver {
      * @returns Nothing.
      */
     public resolve() {
-        const depTags = [...this._context];
-        this._context.clear();
-        const depConsumerTags = effectManager.query(depTags);
-        this.unbind(depConsumerTags);
-        this.emit(depConsumerTags);
+        const depTags = [...this._queue];
+        this._queue.clear();
+        const consumerTags = effectManager.query(depTags);
+        this.unbind(consumerTags);
+        this.emit(consumerTags);
     }
 
     /**
      * Remove stale dependency edges before an effect re-collects deps.
      *
-     * @param depConsumerTags - Effect consumer tags that will run again.
+     * @param consumerTags - Effect consumer tags that will run again.
      * @returns Nothing.
      */
-    private unbind(depConsumerTags: Tag[]) {
-        depConsumerTags.forEach(depConsumerTag => {
-            const depTags = depManager.query(depConsumerTag)
-            depManager.remove(depConsumerTag);
+    private unbind(consumerTags: Tag[]) {
+        consumerTags.forEach(consumerTag => {
+            const depTags = depManager.query(consumerTag)
+            depManager.remove(consumerTag);
             depTags.forEach((depTag: Tag) => {
-                effectManager.remove(depTag, depConsumerTag);
+                effectManager.remove(depTag, consumerTag);
             })
         })
     }
@@ -66,13 +66,13 @@ class EffectResolver {
     /**
      * Invoke effect methods so they can collect fresh dependencies.
      *
-     * @param depConsumerTags - Effect consumer tags to execute.
+     * @param consumerTags - Effect consumer tags to execute.
      * @returns Nothing.
      */
-    private emit(depConsumerTags: Tag[]) {
-        depConsumerTags.forEach(depConsumerTag => {
-            const model = depConsumerTag.target;
-            const key = depConsumerTag.key;
+    private emit(consumerTags: Tag[]) {
+        consumerTags.forEach(consumerTag => {
+            const model = consumerTag.target;
+            const key = consumerTag.key;
             const effect = Reflect.get(model, key);
             if (!(effect instanceof Function)) return;
             effect.call(model);

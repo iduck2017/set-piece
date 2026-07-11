@@ -14,18 +14,18 @@ class DecorService {
      * can mutate the decor object before the producer caches and returns
      * `decor.result`.
      *
-     * @param decorProducerModel - Model whose producer property created decor.
+     * @param producer - Model whose producer property created decor.
      * @param decor - Decor instance passed to matching consumer handlers.
      * @returns Nothing.
      */
-    public emit(decorProducerModel: Model, decor: Decor) {
-        const decorConsumerTags = decorConsumerManager.query(decorProducerModel, decor);
-        decorConsumerTags.forEach(decorConsumerTag => {
-            const decorConsumerModel = decorConsumerTag.target;
-            const decorConsumerKey = decorConsumerTag.key;
-            const handler = Reflect.get(decorConsumerModel, decorConsumerKey);
+    public emit(producer: Model, decor: Decor) {
+        const consumerTags = decorConsumerManager.query(producer, decor);
+        consumerTags.forEach(consumerTag => {
+            const consumer = consumerTag.target;
+            const key = consumerTag.key;
+            const handler = Reflect.get(consumer, key);
             if (handler instanceof Function) {
-                handler.call(decorConsumerModel, decor);
+                handler.call(consumer, decor);
             }
         });
     }
@@ -37,18 +37,18 @@ class DecorService {
      * changed. Removed links also queue affected producers so their cached
      * decorated values can be recomputed.
      *
-     * @param decorConsumerTag - Tag pointing to the consumer method to unbind.
+     * @param consumerTag - Tag pointing to the consumer method to unbind.
      * @returns Nothing.
      */
-    public unbind(decorConsumerTag: Tag) {
-        const decorTypesMap = decorProducerManager.query(decorConsumerTag);
-        decorTypesMap.forEach((decorTypes, decorProducerModel) => {
-            decorTypes.forEach(decorType => {
-                decorConsumerManager.remove(decorProducerModel, decorType, decorConsumerTag);
-                decorProducerResolver.register(decorProducerModel, decorType);
+    public unbind(consumerTag: Tag) {
+        const links = decorProducerManager.query(consumerTag);
+        links.forEach((types, producer) => {
+            types.forEach(type => {
+                decorConsumerManager.remove(producer, type, consumerTag);
+                decorProducerResolver.register(producer, type);
             })
         })
-        decorProducerManager.remove(decorConsumerTag);
+        decorProducerManager.remove(consumerTag);
     }
 
     /**
@@ -58,32 +58,32 @@ class DecorService {
      * constructor it wants to consume. This method stores those links in both
      * decor managers and queues the producer for recomputation.
      *
-     * @param decorConsumerTag - Tag pointing to the consumer method to bind.
+     * @param consumerTag - Tag pointing to the consumer method to bind.
      * @returns Nothing.
      */
-    public bind(decorConsumerTag: Tag) {
-        const consumerModel = decorConsumerTag.target;
-        const consumerKey = decorConsumerTag.key;
-        const loadersMap = decorConsumerRegistry.query(consumerModel);
-        const loaders = loadersMap.get(consumerKey) ?? [];
+    public bind(consumerTag: Tag) {
+        const consumer = consumerTag.target;
+        const key = consumerTag.key;
+        const loaderMap = decorConsumerRegistry.query(consumer);
+        const loaders = loaderMap.get(key) ?? [];
         loaders.forEach(loader => {
-            const result = loader(consumerModel);
-            if (!result) return;
-            const [value, DecorConstructor] = result;
+            const binding = loader(consumer);
+            if (!binding) return;
+            const [value, DecorCtor] = binding;
             if (value instanceof Array) {
-                const decorProducerModels = value;
-                decorProducerModels?.forEach(decorProducerModel => {
-                    if (!decorProducerModel) return;
-                    decorConsumerManager.add(decorProducerModel, DecorConstructor, decorConsumerTag);
-                    decorProducerManager.add(decorConsumerTag, decorProducerModel, DecorConstructor);
-                    decorProducerResolver.register(decorProducerModel, DecorConstructor);
+                const producers = value;
+                producers?.forEach(producer => {
+                    if (!producer) return;
+                    decorConsumerManager.add(producer, DecorCtor, consumerTag);
+                    decorProducerManager.add(consumerTag, producer, DecorCtor);
+                    decorProducerResolver.register(producer, DecorCtor);
                 })
             }
             if (value instanceof Model) {
-                const decorProducerModel = value;
-                decorConsumerManager.add(decorProducerModel, DecorConstructor, decorConsumerTag);
-                decorProducerManager.add(decorConsumerTag, decorProducerModel, DecorConstructor);
-                decorProducerResolver.register(decorProducerModel, DecorConstructor);
+                const producer = value;
+                decorConsumerManager.add(producer, DecorCtor, consumerTag);
+                decorProducerManager.add(consumerTag, producer, DecorCtor);
+                decorProducerResolver.register(producer, DecorCtor);
             }
         })
     }

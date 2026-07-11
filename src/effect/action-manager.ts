@@ -1,4 +1,4 @@
-import { effectResolver } from "../effect/effect-resolver";
+import { effectResolver } from "./effect-resolver";
 import { eventProducerResolver } from "../event/event-producer-resolver";
 import { frameProducerResolver } from "../frame/frame-producer-resolver";
 
@@ -17,10 +17,10 @@ export class ActionManager {
     public launch(handler: () => unknown) {
         if (this._pending) return handler();
         this._pending = true;
-        const result = handler();
+        const output = handler();
         this._pending = false;
         this.resolve();
-        return result;
+        return output;
     }
 
     /**

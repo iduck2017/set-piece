@@ -19,9 +19,9 @@ function useProxy<P extends any[], R = any>() {
         const handler = descriptor.value;
         if (!handler) return;
         descriptor.value = function(this: DepDelegator, ...args: P) {
-            const result = handler.apply(this, args);
+            const output = handler.apply(this, args);
             depService.register(this.tag);
-            return result;
+            return output;
         }
         useBlink()(prototype, key, descriptor);
         return descriptor;
@@ -82,7 +82,7 @@ export class DepDelegator {
      *
      * @param origin - Proxied array value.
      * @param start - Start index for replacement.
-     * @param count - Number of items to remove.
+     * @param deleteCount - Number of items to remove.
      * @param items - Items to insert.
      * @returns Removed array items.
      */
@@ -90,10 +90,10 @@ export class DepDelegator {
     private splice(
         origin: unknown[], 
         start: number, 
-        count: number, 
+        deleteCount: number, 
         ...items: unknown[]
     ) {
-        return origin.splice(start, count, ...items);
+        return origin.splice(start, deleteCount, ...items);
     }
 
     /**

@@ -21,9 +21,9 @@ function useLock<P extends any[], R = any>() {
         if (!handler) return;
         descriptor.value = function(this: RefDelegator, ...args: P) {
             this.locked = true;
-            const result = handler.apply(this, args);
+            const output = handler.apply(this, args);
             this.locked = false;
-            return result;
+            return output;
         }
         useAction()(prototype, key, descriptor)
     }
@@ -45,24 +45,24 @@ export class RefDelegator {
      */
     @useLock()
     private pop(origin: Model[]) {
-        const result = origin.pop();
-        if (result instanceof Model) refConsumerRegistry.remove(result, this.tag);
-        return result;
+        const model = origin.pop();
+        if (model instanceof Model) refConsumerRegistry.remove(model, this.tag);
+        return model;
     }
 
     /**
      * Push refs and add holder relationships.
      *
      * @param origin - Proxied ref array.
-     * @param next - Referenced models to append.
+     * @param refs - Referenced models to append.
      * @returns New array length.
      */
     @useLock()
-    private push(origin: Model[], ...next: Model[]) {
-        const result = origin.push(...next);
-        next.filter(item => item instanceof Model)
+    private push(origin: Model[], ...refs: Model[]) {
+        const length = origin.push(...refs);
+        refs.filter(item => item instanceof Model)
             .forEach(item => refConsumerRegistry.add(item, this.tag));
-        return result;
+        return length;
     }
 
     /**
@@ -73,24 +73,24 @@ export class RefDelegator {
      */
     @useLock()
     private shift(origin: Model[]) {
-        const result = origin.shift();
-        if (result instanceof Model) refConsumerRegistry.remove(result, this.tag);
-        return result;
+        const model = origin.shift();
+        if (model instanceof Model) refConsumerRegistry.remove(model, this.tag);
+        return model;
     }
 
     /**
      * Unshift refs and add holder relationships.
      *
      * @param origin - Proxied ref array.
-     * @param next - Referenced models to prepend.
+     * @param refs - Referenced models to prepend.
      * @returns New array length.
      */
     @useLock()
-    private unshift(origin: Model[], ...next: Model[]) {
-        const result = origin.unshift(...next);
-        next.filter(item => item instanceof Model)
+    private unshift(origin: Model[], ...refs: Model[]) {
+        const length = origin.unshift(...refs);
+        refs.filter(item => item instanceof Model)
             .forEach(item => refConsumerRegistry.add(item, this.tag));
-        return result;
+        return length;
     }
 
     /**
@@ -101,24 +101,24 @@ export class RefDelegator {
      *
      * @param origin - Proxied ref array.
      * @param start - Start index for replacement.
-     * @param count - Number of items to remove.
-     * @param next - Referenced models to insert.
+     * @param deleteCount - Number of items to remove.
+     * @param refs - Referenced models to insert.
      * @returns Removed models.
      */
     @useLock()
     private splice(
         origin: Model[],
         start: number,
-        count: number,
-        ...next: Model[]
+        deleteCount: number,
+        ...refs: Model[]
     ) {
-        const prev = origin.slice(start, start + count);
-        const result = origin.splice(start, count, ...next);
-        prev.filter(item => item instanceof Model)
+        const removed = origin.slice(start, start + deleteCount);
+        const items = origin.splice(start, deleteCount, ...refs);
+        removed.filter(item => item instanceof Model)
             .forEach(item => refConsumerRegistry.remove(item, this.tag));
-        next.filter(item => item instanceof Model)
+        refs.filter(item => item instanceof Model)
             .forEach(item => refConsumerRegistry.add(item, this.tag));
-        return result;
+        return items;
     }
 
     /**

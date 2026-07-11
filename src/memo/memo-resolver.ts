@@ -8,7 +8,7 @@ import { memoManager } from "../dep/dep-consumer-manager";
 import { useBlink } from "../hooks/use-blink";
 
 class MemoResolver {
-    private _context: Set<Tag> = new Set();
+    private _queue: Set<Tag> = new Set();
 
     /**
      * Queue a changed dependency tag for memo invalidation.
@@ -21,7 +21,7 @@ class MemoResolver {
      */
     @useBlink()
     public register(tag: Tag) {
-        this._context.add(tag);
+        this._queue.add(tag);
     }
 
     /**
@@ -30,7 +30,7 @@ class MemoResolver {
      * @returns True when at least one changed dependency tag is queued.
      */
     public check() {
-        return Boolean(this._context.size)
+        return Boolean(this._queue.size)
     }
 
     /**
@@ -43,8 +43,8 @@ class MemoResolver {
      * @returns True when at least one memo was recomputed.
      */
     public resolve(): boolean {
-        const depTags = [...this._context];
-        this._context.clear();
+        const depTags = [...this._queue];
+        this._queue.clear();
         const consumerTags = memoManager.query(depTags);
         if (!consumerTags.length) return false;
         this.unbind(consumerTags);

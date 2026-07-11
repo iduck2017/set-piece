@@ -5,7 +5,7 @@ import { Tag } from "../tag/tag-registry";
 
 type DecorConsumerTagsMap = Map<Constructor<Decor>, Array<Tag>>
 class DecorConsumerManager {
-    private _context: WeakMap<Model, DecorConsumerTagsMap>= new WeakMap();
+    private _links: WeakMap<Model, DecorConsumerTagsMap>= new WeakMap();
 
     /**
      * Link one producer model and decor type to one consumer method tag.
@@ -13,21 +13,21 @@ class DecorConsumerManager {
      * This is the producer-to-consumer runtime index used when a decor producer
      * emits a decor instance during property reads.
      *
-     * @param decorProducerModel - Model that owns the producer property.
-     * @param decorType - Decor constructor the consumer is interested in.
-     * @param decorConsumerTag - Tag pointing to the consumer method.
+     * @param producer - Model that owns the producer property.
+     * @param type - Decor constructor the consumer is interested in.
+     * @param consumerTag - Tag pointing to the consumer method.
      * @returns Nothing.
      */
     public add(
-        decorProducerModel: Model,
-        decorType: Constructor<Decor>,
-        decorConsumerTag: Tag,
+        producer: Model,
+        type: Constructor<Decor>,
+        consumerTag: Tag,
     ) {
-        const subContext: DecorConsumerTagsMap = this._context.get(decorProducerModel) ?? new Map();
-        const decorConsumerTags = subContext.get(decorType) ?? [];
-        decorConsumerTags.push(decorConsumerTag);
-        subContext.set(decorType, decorConsumerTags);
-        this._context.set(decorProducerModel, subContext);
+        const links: DecorConsumerTagsMap = this._links.get(producer) ?? new Map();
+        const consumerTags = links.get(type) ?? [];
+        consumerTags.push(consumerTag);
+        links.set(type, consumerTags);
+        this._links.set(producer, links);
     }
 
     /**
@@ -36,23 +36,23 @@ class DecorConsumerManager {
      * This is called when a consumer is unbound because its loader dependencies
      * changed.
      *
-     * @param decorProducerModel - Producer model that owns the runtime link.
-     * @param decorType - Decor constructor for the runtime link.
-     * @param decorConsumerTag - Consumer method tag to remove.
+     * @param producer - Producer model that owns the runtime link.
+     * @param type - Decor constructor for the runtime link.
+     * @param consumerTag - Consumer method tag to remove.
      * @returns Nothing.
      */
     public remove(
-        decorProducerModel: Model,
-        decorType: Constructor<Decor>,
-        decorConsumerTag: Tag,
+        producer: Model,
+        type: Constructor<Decor>,
+        consumerTag: Tag,
     ) {
-        const subContext: DecorConsumerTagsMap = this._context.get(decorProducerModel) ?? new Map();
-        const decorConsumerTags = subContext.get(decorType) ?? [];
-        const index = decorConsumerTags.indexOf(decorConsumerTag);
+        const links: DecorConsumerTagsMap = this._links.get(producer) ?? new Map();
+        const consumerTags = links.get(type) ?? [];
+        const index = consumerTags.indexOf(consumerTag);
         if (index === -1) return;
-        decorConsumerTags.splice(index, 1);
-        subContext.set(decorType, decorConsumerTags);
-        this._context.set(decorProducerModel, subContext);
+        consumerTags.splice(index, 1);
+        links.set(type, consumerTags);
+        this._links.set(producer, links);
     }
 
     /**
@@ -61,21 +61,21 @@ class DecorConsumerManager {
      * Without a decor, this returns the full decor-type map. With a decor, this
      * returns only consumer tags bound to that decor constructor.
      *
-     * @param decorProducerModel - Producer model whose links should be read.
+     * @param producer - Producer model whose links should be read.
      * @param decor - Optional decor instance used to filter by constructor.
      * @returns Either the full link map or the matching consumer tags.
      */
-    public query(decorProducerModel: Model): Map<Constructor<Decor>, Array<Tag>>
-    public query(decorProducerModel: Model, decor: Decor): Array<Tag>
+    public query(producer: Model): Map<Constructor<Decor>, Array<Tag>>
+    public query(producer: Model, decor: Decor): Array<Tag>
     public query(
-        decorProducerModel: Model,
+        producer: Model,
         decor?: Decor,
     ) {
-        if (!decor) return this._context.get(decorProducerModel) ?? new Map();
-        const decorType: any = decor.constructor;
-        const subContext: DecorConsumerTagsMap = this._context.get(decorProducerModel) ?? new Map();
-        const decorConsumerTags = subContext.get(decorType) ?? [];
-        return [...decorConsumerTags];
+        if (!decor) return this._links.get(producer) ?? new Map();
+        const type: any = decor.constructor;
+        const links: DecorConsumerTagsMap = this._links.get(producer) ?? new Map();
+        const consumerTags = links.get(type) ?? [];
+        return [...consumerTags];
     }
 }
 export const decorConsumerManager = new DecorConsumerManager();

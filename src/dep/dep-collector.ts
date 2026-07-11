@@ -1,7 +1,7 @@
 ﻿import { Tag } from "../tag/tag-registry";
 
 class DepCollector {
-    private _context: Map<Tag, Tag[]> = new Map();
+    private _collections: Map<Tag, Tag[]> = new Map();
 
     /**
      * Add a read dependency to every active consumer collection.
@@ -12,7 +12,7 @@ class DepCollector {
      * @returns Nothing.
      */
     public collect(tag: Tag) {
-        this._context.forEach((tags) => {
+        this._collections.forEach((tags) => {
             if (tags.includes(tag)) return;
             tags.push(tag);
         })
@@ -28,8 +28,8 @@ class DepCollector {
      * @returns Nothing.
      */
     public init(depConsumerTag: Tag) {
-        const tags = this._context.get(depConsumerTag) ?? [];
-        this._context.set(depConsumerTag, tags);
+        const tags = this._collections.get(depConsumerTag) ?? [];
+        this._collections.set(depConsumerTag, tags);
     }
 
     /**
@@ -39,7 +39,7 @@ class DepCollector {
      * @returns Nothing.
      */
     public clear(depConsumerTag: Tag) {
-        this._context.delete(depConsumerTag);
+        this._collections.delete(depConsumerTag);
     }
 
     /**
@@ -49,7 +49,7 @@ class DepCollector {
      * @returns Dependency tags read while the consumer was collecting.
      */
     public query(depConsumerTag: Tag) {
-        return this._context.get(depConsumerTag) ?? [];
+        return this._collections.get(depConsumerTag) ?? [];
     }
 }
 

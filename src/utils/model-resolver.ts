@@ -1,5 +1,5 @@
-import { useBlink } from "./hooks/use-blink";
-import type { Model } from "./model";
+import { useBlink } from "../hooks/use-blink";
+import type { Model } from "../model";
 
 class ModelResolver {
     private readonly _context: Set<Model> = new Set();

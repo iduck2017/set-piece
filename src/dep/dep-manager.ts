@@ -2,7 +2,7 @@
 import { Tag } from "../tag/tag-registry";
 
 class DepManager {
-    private _context: WeakMap<Tag, Tag[]> = new WeakMap();
+    private _links: WeakMap<Tag, Tag[]> = new WeakMap();
 
     /**
      * Return the dependency tags currently owned by a consumer tag.
@@ -11,7 +11,7 @@ class DepManager {
      * @returns Dependency tags currently connected to the consumer.
      */
     public query(depConsumerTag: Tag) {
-        return this._context.get(depConsumerTag) ?? [];
+        return this._links.get(depConsumerTag) ?? [];
     }
 
     /**
@@ -25,10 +25,10 @@ class DepManager {
      * @returns Nothing.
      */
     public add(depConsumerTag: Tag, tag: Tag) {
-        const tags = this._context.get(depConsumerTag) ?? [];
+        const tags = this._links.get(depConsumerTag) ?? [];
         if (tags.includes(tag)) return;
         tags.push(tag);
-        this._context.set(depConsumerTag, tags);
+        this._links.set(depConsumerTag, tags);
     }
 
     /**
@@ -40,12 +40,12 @@ class DepManager {
      * @returns Nothing.
      */
     public remove(depConsumerTag: Tag, tag?: Tag) {
-        const tags = this._context.get(depConsumerTag) ?? [];
-        if (!tag) return this._context.delete(depConsumerTag);
+        const tags = this._links.get(depConsumerTag) ?? [];
+        if (!tag) return this._links.delete(depConsumerTag);
         const index = tags.indexOf(tag);
         if (index === -1) return;
         tags.splice(index, 1);
-        this._context.set(depConsumerTag, tags);
+        this._links.set(depConsumerTag, tags);
     }
 }
 

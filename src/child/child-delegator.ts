@@ -20,9 +20,9 @@ function useLock<P extends any[], R = any>() {
         if (!handler) return;
         descriptor.value = function(this: ChildDelegator, ...args: P) {
             this.locked = true;
-            const result = handler.apply(this, args);
+            const output = handler.apply(this, args);
             this.locked = false;
-            return result;
+            return output;
         }
         useAction()(prototype, key, descriptor)
     }
@@ -44,23 +44,23 @@ export class ChildDelegator {
      */
     @useLock()
     private pop(origin: Model[]) {
-        const result = origin.pop();
-        if (result) result._internal.unmount();
-        return result;
+        const child = origin.pop();
+        if (child) child._internal.unmount();
+        return child;
     }
 
     /**
      * Push children and mount them to the parent.
      *
      * @param origin - Proxied child array.
-     * @param next - Child models to append.
+     * @param children - Child models to append.
      * @returns New array length.
      */
     @useLock()
-    private push(origin: Model[], ...next: Model[]) {
-        const result = origin.push(...next);
-        next.forEach(item => item._internal.mount(this.parent));
-        return result;
+    private push(origin: Model[], ...children: Model[]) {
+        const length = origin.push(...children);
+        children.forEach(item => item._internal.mount(this.parent));
+        return length;
     }
 
     /**
@@ -71,23 +71,23 @@ export class ChildDelegator {
      */
     @useLock()
     private shift(origin: Model[]) {
-        const result = origin.shift();
-        if (result) result._internal.unmount();
-        return result;
+        const child = origin.shift();
+        if (child) child._internal.unmount();
+        return child;
     }
 
     /**
      * Unshift children and mount them to the parent.
      *
      * @param origin - Proxied child array.
-     * @param next - Child models to prepend.
+     * @param children - Child models to prepend.
      * @returns New array length.
      */
     @useLock()
-    private unshift(origin: Model[], ...next: Model[]) {
-        const result = origin.unshift(...next);
-        next.forEach(item => item._internal.mount(this.parent));
-        return result;
+    private unshift(origin: Model[], ...children: Model[]) {
+        const length = origin.unshift(...children);
+        children.forEach(item => item._internal.mount(this.parent));
+        return length;
     }
 
     /**
@@ -98,22 +98,22 @@ export class ChildDelegator {
      *
      * @param origin - Proxied child array.
      * @param start - Start index for replacement.
-     * @param count - Number of items to remove.
-     * @param next - Child models to insert.
+     * @param deleteCount - Number of items to remove.
+     * @param children - Child models to insert.
      * @returns Removed child models.
      */
     @useLock()
     private splice(
         origin: Model[], 
         start: number, 
-        count: number, 
-        ...next: Model[]
+        deleteCount: number, 
+        ...children: Model[]
     ) {
-        const prev = origin.slice(start, start + count);
-        const result = origin.splice(start, count, ...next);
-        prev.forEach(item => item._internal.unmount());
-        next.forEach(item => item._internal.mount(this.parent));
-        return result;
+        const removed = origin.slice(start, start + deleteCount);
+        const items = origin.splice(start, deleteCount, ...children);
+        removed.forEach(item => item._internal.unmount());
+        children.forEach(item => item._internal.mount(this.parent));
+        return items;
     }
 
     /**

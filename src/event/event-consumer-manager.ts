@@ -5,28 +5,28 @@ import { Tag } from "../tag/tag-registry";
 
 type EventConsumerTagsMap = Map<Constructor<Event>, Array<Tag>>
 class EventConsumerManager {
-    private _context: WeakMap<Model, EventConsumerTagsMap> = new WeakMap();
+    private _links: WeakMap<Model, EventConsumerTagsMap> = new WeakMap();
 
     /**
      * Link one producer model and event type to one consumer method tag.
      *
      * This is the producer-to-consumer runtime index used by event emission.
      *
-     * @param eventProducerModel - Model that may emit the event.
-     * @param eventType - Event constructor the consumer is interested in.
-     * @param eventConsumerTag - Tag pointing to the consumer method.
+     * @param producer - Model that may emit the event.
+     * @param type - Event constructor the consumer is interested in.
+     * @param consumerTag - Tag pointing to the consumer method.
      * @returns Nothing.
      */
     public add(
-        eventProducerModel: Model,
-        eventType: Constructor<Event>,
-        eventConsumerTag: Tag,
+        producer: Model,
+        type: Constructor<Event>,
+        consumerTag: Tag,
     ) {
-        const subContext: EventConsumerTagsMap = this._context.get(eventProducerModel) ?? new Map();
-        const eventConsumerTags = subContext.get(eventType) ?? [];
-        eventConsumerTags.push(eventConsumerTag);
-        subContext.set(eventType, eventConsumerTags);
-        this._context.set(eventProducerModel, subContext);
+        const links: EventConsumerTagsMap = this._links.get(producer) ?? new Map();
+        const consumerTags = links.get(type) ?? [];
+        consumerTags.push(consumerTag);
+        links.set(type, consumerTags);
+        this._links.set(producer, links);
     }
 
     /**
@@ -35,23 +35,23 @@ class EventConsumerManager {
      * This is called when a consumer is unbound because its loader dependencies
      * changed.
      *
-     * @param eventProducerModel - Producer model that owns the runtime link.
-     * @param eventType - Event constructor for the runtime link.
-     * @param eventConsumerTag - Consumer method tag to remove.
+     * @param producer - Producer model that owns the runtime link.
+     * @param type - Event constructor for the runtime link.
+     * @param consumerTag - Consumer method tag to remove.
      * @returns Nothing.
      */
     public remove(
-        eventProducerModel: Model,
-        eventType: Constructor<Event>,
-        eventConsumerTag: Tag,
+        producer: Model,
+        type: Constructor<Event>,
+        consumerTag: Tag,
     ) {
-        const subContext: EventConsumerTagsMap = this._context.get(eventProducerModel) ?? new Map();
-        const eventConsumerTags = subContext.get(eventType) ?? [];
-        const index = eventConsumerTags.indexOf(eventConsumerTag);
+        const links: EventConsumerTagsMap = this._links.get(producer) ?? new Map();
+        const consumerTags = links.get(type) ?? [];
+        const index = consumerTags.indexOf(consumerTag);
         if (index === -1) return;
-        eventConsumerTags.splice(index, 1);
-        subContext.set(eventType, eventConsumerTags);
-        this._context.set(eventProducerModel, subContext);
+        consumerTags.splice(index, 1);
+        links.set(type, consumerTags);
+        this._links.set(producer, links);
     }
 
     /**
@@ -60,21 +60,21 @@ class EventConsumerManager {
      * Without an event, this returns the full event-type map. With an event,
      * this returns only consumer tags bound to that event constructor.
      *
-     * @param eventProducerModel - Producer model whose links should be read.
+     * @param producer - Producer model whose links should be read.
      * @param event - Optional emitted event used to filter by constructor.
      * @returns Either the full link map or the matching consumer tags.
      */
-    public query(eventProducerModel: Model): EventConsumerTagsMap
-    public query(eventProducerModel: Model, event: Event): Array<Tag>
+    public query(producer: Model): EventConsumerTagsMap
+    public query(producer: Model, event: Event): Array<Tag>
     public query(
-        eventProducerModel: Model,
+        producer: Model,
         event?: Event
     ) {
-        if (!event) return this._context.get(eventProducerModel) ?? new Map();
-        const eventType: any = event.constructor;
-        const subContext: EventConsumerTagsMap = this._context.get(eventProducerModel) ?? new Map();
-        const eventConsumerTags = subContext.get(eventType) ?? [];
-        return [...eventConsumerTags];
+        if (!event) return this._links.get(producer) ?? new Map();
+        const type: any = event.constructor;
+        const links: EventConsumerTagsMap = this._links.get(producer) ?? new Map();
+        const consumerTags = links.get(type) ?? [];
+        return [...consumerTags];
     }
 }
 

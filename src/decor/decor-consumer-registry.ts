@@ -15,7 +15,7 @@ export type DecorConsumerLoader<
 
 type DecorConsumerLoadersMap = Map<string, Array<DecorConsumerLoader>>
 class DecorConsumerRegistry {
-    private _config: Map<AbstractConstructor<Model>, DecorConsumerLoadersMap> = new Map();
+    private _loaders: Map<AbstractConstructor<Model>, DecorConsumerLoadersMap> = new Map();
 
     /**
      * Register decor loader and handler logic with dependency collection.
@@ -36,29 +36,29 @@ class DecorConsumerRegistry {
         descriptor: TypedPropertyDescriptor<(decor: D) => void> | undefined,
         loader: DecorConsumerLoader<I, D>,
     ) {
-        const constructor: any = prototype.constructor;
-        const subConfig: DecorConsumerLoadersMap = this._config.get(constructor) ?? new Map();
-        const loaders = subConfig.get(key) ?? [];
-        const _loader: any = function(that: I) {
-            const depConsumerTag = tagRegistry.query(that, key);
-            depCollector.init(depConsumerTag);
-            const result = loader(that);
-            decorManager.collect(depConsumerTag);
-            return result;
+        const ctor: any = prototype.constructor;
+        const loaderMap: DecorConsumerLoadersMap = this._loaders.get(ctor) ?? new Map();
+        const loaders = loaderMap.get(key) ?? [];
+        const wrapped: any = function(model: I) {
+            const consumerTag = tagRegistry.query(model, key);
+            depCollector.init(consumerTag);
+            const binding = loader(model);
+            decorManager.collect(consumerTag);
+            return binding;
         };
-        loaders.push(_loader);
-        subConfig.set(key, loaders);
-        this._config.set(constructor, subConfig);
+        loaders.push(wrapped);
+        loaderMap.set(key, loaders);
+        this._loaders.set(ctor, loaderMap);
 
         if (!descriptor) return;
         const handler = descriptor.value;
         if (!handler) return;
         descriptor.value = function(this: I, decor: D) {
-            const depConsumerTag = tagRegistry.query(this, key);
-            depCollector.init(depConsumerTag);
-            const result = handler.call(this, decor);
-            decorManager.collect(depConsumerTag);
-            return result;
+            const consumerTag = tagRegistry.query(this, key);
+            depCollector.init(consumerTag);
+            const output = handler.call(this, decor);
+            decorManager.collect(consumerTag);
+            return output;
         }
     }
 
@@ -69,21 +69,21 @@ class DecorConsumerRegistry {
      * @returns Map from consumer method key to registered loader list.
      */
     public query(prototype: Model) {
-        const result: DecorConsumerLoadersMap = new Map();
-        let constructor: any = prototype.constructor;
-        while (constructor) {
-            const subConfig: DecorConsumerLoadersMap = this._config.get(constructor) ?? new Map();
-            subConfig.forEach((loaders, key) => {
-                const subResult = result.get(key) ?? [];
+        const loaderMap: DecorConsumerLoadersMap = new Map();
+        let ctor: any = prototype.constructor;
+        while (ctor) {
+            const current: DecorConsumerLoadersMap = this._loaders.get(ctor) ?? new Map();
+            current.forEach((loaders, key) => {
+                const collected = loaderMap.get(key) ?? [];
                 loaders.forEach(loader => {
-                    if (subResult.includes(loader)) return;
-                    subResult.push(loader);
+                    if (collected.includes(loader)) return;
+                    collected.push(loader);
                 })
-                result.set(key, subResult);
+                loaderMap.set(key, collected);
             })
-            constructor = Object.getPrototypeOf(constructor);
+            ctor = Object.getPrototypeOf(ctor);
         }
-        return result;
+        return loaderMap;
     }
 }
 export const decorConsumerRegistry = new DecorConsumerRegistry();

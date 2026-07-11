@@ -7,6 +7,7 @@ import { eventConsumerRegistry } from "./event/event-consumer-registry";
 import { eventService } from "./event/event-service";
 import { memoRegistry } from "./memo/memo-registry";
 import { routeRegistry } from "./route/route-registry";
+import { routeResolver } from "./route/route-resolver";
 import { eventResolver } from "./event/event-resolver";
 import { useStory } from "./hooks/use-story";
 import { tagRegistry } from "./tag/tag-registry";
@@ -22,10 +23,6 @@ import { refRegistry } from "./ref/ref-registry";
 type EmitOptions = {
     isDefer?: boolean;
     isAsync?: boolean;
-}
-
-type AsyncEmitOptions = EmitOptions & {
-    isAsync: true;
 }
 
 export abstract class Model {
@@ -83,7 +80,7 @@ export abstract class Model {
      * @param options - Emit options with `isAsync: true`.
      * @returns Promise resolved after all async consumers finish.
      */
-    protected emit(event: Event, options: AsyncEmitOptions): Promise<void>;
+    protected emit(event: Event, options?: EmitOptions): Promise<void>;
     /**
      * Emit an event synchronously or defer it to the current story.
      *
@@ -91,7 +88,7 @@ export abstract class Model {
      * @param options - Optional deferred emit settings.
      * @returns The event emission result.
      */
-    protected emit(event: Event, options?: EmitOptions): unknown;
+    protected emit(event: Event, options?: EmitOptions): void;
     /**
      * Route the payload by runtime type and emit options.
      *
@@ -143,26 +140,27 @@ export abstract class Model {
             init: this.init.bind(this),
             mount: this.mount.bind(this),
             unmount: this.unmount.bind(this),
+            reroute: this.reroute.bind(this),
             unlink: this.unlink.bind(this)
         }
     }
 
     public get descendants(): Model[] {
-        const result: Model[] = [];
+        const descendants: Model[] = [];
         this.children.forEach(child => {
-            result.push(child);
-            result.push(...child.descendants);
+            descendants.push(child);
+            descendants.push(...child.descendants);
         });
-        return result;
+        return descendants;
     }
 
     public get children(): Model[] {
-        const result: Model[] = [];
+        const children: Model[] = [];
         const iterators = childRegistry.query(this);
         iterators.forEach((iterator, key) => {
-            result.push(...iterator(this, key));
+            children.push(...iterator(this, key));
         });
-        return result;
+        return children;
     }
 
     private _parent?: Model;
@@ -172,7 +170,7 @@ export abstract class Model {
     public get root() { return this._root; }
 
     /**
-     * Attach this model to a parent and refresh derived routes.
+     * Attach this model to a parent and queue derived route refresh.
      *
      * `useChild()` calls this when a model becomes owned child state.
      *
@@ -182,11 +180,11 @@ export abstract class Model {
     private mount(parent: Model) {
         if (this._parent) return;
         this._parent = parent;
-        this.reroute();
+        routeResolver.register(this);
     }
 
     /**
-     * Detach this model from its parent and refresh derived routes.
+     * Detach this model from its parent and queue derived route refresh.
      *
      * `useChild()` calls this when a child is removed or replaced.
      *
@@ -195,23 +193,23 @@ export abstract class Model {
     private unmount() {
         if (!this._parent) return
         this._parent = undefined;
-        this.reroute();
+        routeResolver.register(this);
     }
 
     /**
      * Recompute nearest route ancestors, root, and descendant routes.
      *
-     * This is triggered after mount/unmount changes. It updates route fields for
-     * this model and all descendants.
+     * `RouteResolver` calls this after mount/unmount changes. It updates route
+     * fields for this model and all descendants.
      *
      * @returns Nothing.
      */
     private reroute() {
-        const routeTypeMap = routeRegistry.query(this);
-        routeTypeMap.forEach((Constructor: Function, key: string) => {
+        const routes = routeRegistry.query(this);
+        routes.forEach((RouteCtor: Function, key: string) => {
             let ancestor: Model | undefined = this;
             while (ancestor) {
-                if (ancestor instanceof Constructor) break;
+                if (ancestor instanceof RouteCtor) break;
                 ancestor = ancestor.parent;
             }
             Reflect.set(this, key, ancestor);

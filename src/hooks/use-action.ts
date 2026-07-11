@@ -1,5 +1,5 @@
 import { Method } from "../types";
-import { actionManager } from "../utils/action-manager";
+import { actionManager } from "../effect/action-manager";
 
 /**
  * Create a method decorator that opens an action boundary.
@@ -20,8 +20,8 @@ export function useAction() {
         if (!handler) return descriptor;
         descriptor.value = function(...args: unknown[]) {
             const _handler = handler.bind(this, ...args);
-            const result = actionManager.launch(_handler);
-            return result;
+            const output = actionManager.launch(_handler);
+            return output;
         };
         return descriptor;
     };

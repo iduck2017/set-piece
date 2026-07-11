@@ -5,7 +5,7 @@ import { effectManager } from "../dep/dep-consumer-manager";
 import { tagRegistry } from "../tag/tag-registry";
 
 class EffectRegistry {
-    private _config: Map<AbstractConstructor<Model>, string[]> = new Map();
+    private _keys: Map<AbstractConstructor<Model>, string[]> = new Map();
 
     /**
      * Register an effect method and wrap it with dependency collection.
@@ -23,10 +23,10 @@ class EffectRegistry {
         key: string,
         descriptor?: TypedPropertyDescriptor<() => void>,
     ) {
-        const constrcutor: any = prototype.constructor;
-        const keys = this._config.get(constrcutor) ?? [];
+        const ctor: any = prototype.constructor;
+        const keys = this._keys.get(ctor) ?? [];
         keys.push(key);
-        this._config.set(constrcutor, keys);
+        this._keys.set(ctor, keys);
 
         if (!descriptor) return;
         const handler = descriptor.value;
@@ -46,17 +46,17 @@ class EffectRegistry {
      * @returns Effect method keys registered on the model hierarchy.
      */
     public query(prototype: Model) {
-        let constructor: any = prototype.constructor;
-        const result: string[] = [];
-        while (constructor) {
-            const keys = this._config.get(constructor) ?? [];
+        let ctor: any = prototype.constructor;
+        const effects: string[] = [];
+        while (ctor) {
+            const keys = this._keys.get(ctor) ?? [];
             keys.forEach(key => {
-                if (result.includes(key)) return;
-                result.push(key);
+                if (effects.includes(key)) return;
+                effects.push(key);
             })
-            constructor = Object.getPrototypeOf(constructor);
+            ctor = Object.getPrototypeOf(ctor);
         }
-        return result;
+        return effects;
     }
 }
 

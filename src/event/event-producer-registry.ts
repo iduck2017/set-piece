@@ -5,7 +5,7 @@ import { AbstractConstructor, Constructor } from "../types";
 export type EventProducerLoader<T = any> = () => Constructor<DiffEvent<T>, [{ next: T }]>;
 
 class EventProducerRegistry {
-    private _config: Map<AbstractConstructor<Model>, Map<string, EventProducerLoader>> = new Map();
+    private _loaders: Map<AbstractConstructor<Model>, Map<string, EventProducerLoader>> = new Map();
 
     /**
      * Register the event constructor loader for a producer property.
@@ -24,10 +24,10 @@ class EventProducerRegistry {
         key: string,
         loader: EventProducerLoader,
     ) {
-        const constructor: any = prototype.constructor;
-        const subConfig = this._config.get(constructor) ?? new Map<string, EventProducerLoader>();
-        subConfig.set(key, loader);
-        this._config.set(constructor, subConfig);
+        const ctor: any = prototype.constructor;
+        const loaders = this._loaders.get(ctor) ?? new Map<string, EventProducerLoader>();
+        loaders.set(key, loader);
+        this._loaders.set(ctor, loaders);
     }
 
     /**
@@ -39,12 +39,12 @@ class EventProducerRegistry {
      * event producer.
      */
     public query(target: Model, key: string): EventProducerLoader | undefined {
-        let constructor: any = target.constructor;
-        while (constructor) {
-            const subConfig = this._config.get(constructor);
-            const loader = subConfig?.get(key);
+        let ctor: any = target.constructor;
+        while (ctor) {
+            const loaders = this._loaders.get(ctor);
+            const loader = loaders?.get(key);
             if (loader) return loader;
-            constructor = Object.getPrototypeOf(constructor);
+            ctor = Object.getPrototypeOf(ctor);
         }
         return undefined;
     }

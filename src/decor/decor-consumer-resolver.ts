@@ -5,7 +5,7 @@ import { decorService } from "./decor-service";
 import { useBlink } from "../hooks/use-blink";
 
 class DecorConsumerResolver {
-    private _context: Set<Tag> = new Set();
+    private _queue: Set<Tag> = new Set();
 
     /**
      * Queue a changed dependency that may affect decor consumer bindings.
@@ -18,7 +18,7 @@ class DecorConsumerResolver {
      */
     @useBlink()
     public register(depTag: Tag) {
-        this._context.add(depTag);
+        this._queue.add(depTag);
     }
 
     /**
@@ -27,7 +27,7 @@ class DecorConsumerResolver {
      * @returns True when at least one changed dependency tag is queued.
      */
     public check() {
-        return Boolean(this._context.size)
+        return Boolean(this._queue.size)
     }
 
     /**
@@ -39,27 +39,27 @@ class DecorConsumerResolver {
      * @returns True when at least one consumer binding was refreshed.
      */
     public resolve(): boolean {
-        const depTags = [...this._context];
-        this._context.clear();
-        const depConsumerTags = decorManager.query(depTags);
-        if (!depConsumerTags.length) return false;
-        this.unbind(depConsumerTags);
-        this.reset(depConsumerTags);
+        const depTags = [...this._queue];
+        this._queue.clear();
+        const consumerTags = decorManager.query(depTags);
+        if (!consumerTags.length) return false;
+        this.unbind(consumerTags);
+        this.reset(consumerTags);
         return true
     }
 
     /**
      * Remove old dependency edges before consumer loaders re-run.
      *
-     * @param depConsumerTags - Consumer method tags whose loaders changed.
+     * @param consumerTags - Consumer method tags whose loaders changed.
      * @returns Nothing.
      */
-    private unbind(depConsumerTags: Tag[]) {
-        depConsumerTags.forEach(depConsumerTag => {
-            const depTags = depManager.query(depConsumerTag)
-            depManager.remove(depConsumerTag);
+    private unbind(consumerTags: Tag[]) {
+        consumerTags.forEach(consumerTag => {
+            const depTags = depManager.query(consumerTag)
+            depManager.remove(consumerTag);
             depTags.forEach((depTag: Tag) => {
-                decorManager.remove(depTag, depConsumerTag);
+                decorManager.remove(depTag, consumerTag);
             })
         })
     }
@@ -67,13 +67,13 @@ class DecorConsumerResolver {
     /**
      * Rebind runtime decor links for affected consumer tags.
      *
-     * @param depConsumerTags - Consumer method tags that should be rebound.
+     * @param consumerTags - Consumer method tags that should be rebound.
      * @returns Nothing.
      */
-    private reset(depConsumerTags: Tag[]) {
-        depConsumerTags.forEach(depConsumerTag => {
-            decorService.unbind(depConsumerTag);
-            decorService.bind(depConsumerTag);
+    private reset(consumerTags: Tag[]) {
+        consumerTags.forEach(consumerTag => {
+            decorService.unbind(consumerTag);
+            decorService.bind(consumerTag);
         })
     }
 }

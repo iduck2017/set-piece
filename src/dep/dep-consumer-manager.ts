@@ -3,29 +3,29 @@ import { depManager } from "./dep-manager";
 import { Tag } from "../tag/tag-registry";
 
 export class DepConsumerManager {
-    private _context: WeakMap<Tag, Tag[]> = new WeakMap();
+    private _links: WeakMap<Tag, Tag[]> = new WeakMap();
 
     /**
      * Find all consumers affected by one or more changed dependency tags.
      *
      * This forward map is queried by resolvers after reactive state changes.
      *
-     * @param arg - One changed dependency tag or a list of changed tags.
+     * @param target - One changed dependency tag or a list of changed tags.
      * @returns Unique consumer tags that depend on the changed dependency tags.
      */
     public query(depTag: Tag): Tag[]
     public query(depTags: Tag[]): Tag[]
-    public query(arg: Tag | Tag[]): Tag[] {
-        if (!(arg instanceof Array)) return this.query([arg]);
-        const result: Tag[] = [];
-        arg.forEach((depTag) => {
-            const consumerTags = this._context.get(depTag);
+    public query(target: Tag | Tag[]): Tag[] {
+        if (!(target instanceof Array)) return this.query([target]);
+        const tags: Tag[] = [];
+        target.forEach((depTag) => {
+            const consumerTags = this._links.get(depTag);
             consumerTags?.forEach(consumerTag => {
-                if (result.includes(consumerTag)) return;
-                result.push(consumerTag);
+                if (tags.includes(consumerTag)) return;
+                tags.push(consumerTag);
             })
         })
-        return result;
+        return tags;
     }
 
     /**
@@ -36,10 +36,10 @@ export class DepConsumerManager {
      * @returns Nothing.
      */
     public add(depTag: Tag, depConsumerTag: Tag) {
-        const consumerTags = this._context.get(depTag) ?? [];
+        const consumerTags = this._links.get(depTag) ?? [];
         if (consumerTags.includes(depConsumerTag)) return;
         consumerTags.push(depConsumerTag);
-        this._context.set(depTag, consumerTags);
+        this._links.set(depTag, consumerTags);
     }
 
     /**
@@ -51,12 +51,12 @@ export class DepConsumerManager {
      * @returns Nothing.
      */
     public remove(depTag: Tag, depConsumerTag?: Tag) {
-        if (!depConsumerTag) return this._context.delete(depTag);
-        const consumerTags = this._context.get(depTag) ?? [];
+        if (!depConsumerTag) return this._links.delete(depTag);
+        const consumerTags = this._links.get(depTag) ?? [];
         const index = consumerTags.indexOf(depConsumerTag);
         if (index === -1) return;
         consumerTags.splice(index, 1);
-        this._context.set(depTag, consumerTags);
+        this._links.set(depTag, consumerTags);
     }
 
     /**

@@ -18,13 +18,13 @@ export type ChildList = Array<Model | undefined>
  * @returns Child models found in the property value.
  */
 function childIterator(model: Record<string, any>, key: string) {
-    const result: Model[] = [];
+    const children: Model[] = [];
     const value = model[key]
-    if (value instanceof Model) result.push(model[key]);
+    if (value instanceof Model) children.push(model[key]);
     if (value instanceof Array) value
         .filter((item: any) => item instanceof Model)
-        .forEach((item: any) => result.push(item));
-    return result;
+        .forEach((item: any) => children.push(item));
+    return children;
 }
 
 /**

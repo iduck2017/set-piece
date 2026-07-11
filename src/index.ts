@@ -5,6 +5,7 @@ export { Model } from './model';
 export { useChild } from './hooks/use-child';
 export { useRoute } from './hooks/use-route';
 export { routeRegistry } from './route/route-registry';
+export { routeResolver } from './route/route-resolver';
 
 /** Reactivity */
 export { useDep } from './hooks/use-dep';
@@ -33,7 +34,7 @@ export { Event, DiffEvent, PrevEvent } from './event';
 
 /** Actions */
 export { useAction } from './hooks/use-action';
-export { actionManager } from './utils/action-manager';
+export { actionManager } from './effect/action-manager';
 export { useBlink } from './hooks/use-blink';
 
 /** Frames */

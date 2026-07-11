@@ -9,7 +9,7 @@ type FrameContext = {
 class FrameResolver {
     protected _step: number;
     protected _pending: boolean;
-    protected _context: Map<number, FrameContext[]>
+    protected _queue: Map<number, FrameContext[]>
 
     /**
      * Initialize the frame queue used by one anime boundary.
@@ -20,7 +20,7 @@ class FrameResolver {
     constructor() {
         this._step = 1;
         this._pending = false;
-        this._context = new Map()
+        this._queue = new Map()
     }
 
     /**
@@ -47,9 +47,9 @@ class FrameResolver {
      */
     public register(consumerTag: Tag, frame: Frame) {
         const step = this._step;
-        const context = this._context.get(step) ?? [];
-        context.push({ consumerTag, frame });
-        this._context.set(step, context);
+        const frames = this._queue.get(step) ?? [];
+        frames.push({ consumerTag, frame });
+        this._queue.set(step, frames);
     }
 
     /**
@@ -90,12 +90,12 @@ class FrameResolver {
     public async resolve() {
         const step = this._step;
         this._step = 1;
-        const context = this._context;
-        this._context = new Map();
+        const queue = this._queue;
+        this._queue = new Map();
         let current = 0;
         while (current <= step) {
             current += 1;
-            const frames = context.get(current);
+            const frames = queue.get(current);
             if (!frames?.length) continue;
             await Promise.all(frames.map(({ consumerTag, frame }) => {
                 const model = consumerTag.target;

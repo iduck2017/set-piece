@@ -2,7 +2,7 @@ import { Model } from "../model";
 import { Tag } from "../tag/tag-registry";
 
 class RefConsumerRegistry {
-    private _context: WeakMap<Model, Set<Tag>> = new WeakMap();
+    private _links: WeakMap<Model, Set<Tag>> = new WeakMap();
 
     /**
      * Track that a ref model is held by a consumer tag.
@@ -12,9 +12,9 @@ class RefConsumerRegistry {
      * @returns Nothing.
      */
     public add(ref: Model, consumerTag: Tag) {
-        const tags = this._context.get(ref) ?? new Set();
+        const tags = this._links.get(ref) ?? new Set();
         tags.add(consumerTag);
-        this._context.set(ref, tags);
+        this._links.set(ref, tags);
     }
 
     /**
@@ -25,7 +25,7 @@ class RefConsumerRegistry {
      * @returns Nothing.
      */
     public remove(ref: Model, consumerTag: Tag) {
-        const tags = this._context.get(ref);
+        const tags = this._links.get(ref);
         if (!tags) return;
         tags.delete(consumerTag);
     }
@@ -39,8 +39,8 @@ class RefConsumerRegistry {
      * @returns Tags for properties currently holding the model.
      */
     public query(ref: Model): Tag[] {
-        const result = this._context.get(ref);
-        return [...result ?? []]
+        const tags = this._links.get(ref);
+        return [...tags ?? []]
     }
 }
 

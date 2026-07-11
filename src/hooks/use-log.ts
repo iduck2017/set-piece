@@ -16,9 +16,9 @@ export function useLog() {
         if (!handler) return descriptor;
         descriptor.value = function(...args: any[]) {
             console.group(`${prototype.constructor.name}.${key}`);
-            const result = handler.apply(this, args);
+            const output = handler.apply(this, args);
             console.groupEnd();
-            return result;
+            return output;
         }
         return descriptor;
     }

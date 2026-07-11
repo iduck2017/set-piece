@@ -9,7 +9,7 @@ type EventContext = {
 
 class EventResolver {
     private _pending = false;
-    private _context: EventContext[] = [];
+    private _queue: EventContext[] = [];
 
     /**
      * Queue a deferred event emitted during the current story.
@@ -22,7 +22,7 @@ class EventResolver {
      * @returns Nothing.
      */
     public register(model: Model, event: Event) {
-        this._context.push({ model, event });
+        this._queue.push({ model, event });
     }
 
     /**
@@ -37,10 +37,10 @@ class EventResolver {
     public launch(handler: () => unknown) {
         if (this._pending) return handler();
         this._pending = true;
-        const result = handler();
+        const output = handler();
         this._pending = false;
         this.resolve();
-        return result;
+        return output;
     }
 
     /**
@@ -49,9 +49,9 @@ class EventResolver {
      * @returns Nothing.
      */
     public resolve() {
-        const context = [...this._context];
-        this._context.length = 0;
-        context.forEach(({ model, event }) => {
+        const queue = [...this._queue];
+        this._queue.length = 0;
+        queue.forEach(({ model, event }) => {
             eventService.emitSync(model, event);
         });
     }

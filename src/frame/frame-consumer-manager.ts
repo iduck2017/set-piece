@@ -5,28 +5,28 @@ import { Tag } from "../tag/tag-registry";
 
 type FrameConsumerTagsMap = Map<Constructor<Frame>, Array<Tag>>
 class FrameConsumerManager {
-    private _context: WeakMap<Model, FrameConsumerTagsMap> = new WeakMap();
+    private _links: WeakMap<Model, FrameConsumerTagsMap> = new WeakMap();
 
     /**
      * Link one producer model and frame type to one consumer method tag.
      *
      * This is the producer-to-consumer runtime index used by frame emission.
      *
-     * @param frameProducerModel - Model that may emit the frame.
-     * @param frameType - Frame constructor the consumer is interested in.
-     * @param frameConsumerTag - Tag pointing to the consumer method.
+     * @param producer - Model that may emit the frame.
+     * @param type - Frame constructor the consumer is interested in.
+     * @param consumerTag - Tag pointing to the consumer method.
      * @returns Nothing.
      */
     public add(
-        frameProducerModel: Model,
-        frameType: Constructor<Frame>,
-        frameConsumerTag: Tag,
+        producer: Model,
+        type: Constructor<Frame>,
+        consumerTag: Tag,
     ) {
-        const subContext: FrameConsumerTagsMap = this._context.get(frameProducerModel) ?? new Map();
-        const frameConsumerTags = subContext.get(frameType) ?? [];
-        frameConsumerTags.push(frameConsumerTag);
-        subContext.set(frameType, frameConsumerTags);
-        this._context.set(frameProducerModel, subContext);
+        const links: FrameConsumerTagsMap = this._links.get(producer) ?? new Map();
+        const consumerTags = links.get(type) ?? [];
+        consumerTags.push(consumerTag);
+        links.set(type, consumerTags);
+        this._links.set(producer, links);
     }
 
     /**
@@ -35,23 +35,23 @@ class FrameConsumerManager {
      * This is called when a consumer is unbound because its loader dependencies
      * changed.
      *
-     * @param frameProducerModel - Producer model that owns the runtime link.
-     * @param frameType - Frame constructor for the runtime link.
-     * @param frameConsumerTag - Consumer method tag to remove.
+     * @param producer - Producer model that owns the runtime link.
+     * @param type - Frame constructor for the runtime link.
+     * @param consumerTag - Consumer method tag to remove.
      * @returns Nothing.
      */
     public remove(
-        frameProducerModel: Model,
-        frameType: Constructor<Frame>,
-        frameConsumerTag: Tag,
+        producer: Model,
+        type: Constructor<Frame>,
+        consumerTag: Tag,
     ) {
-        const subContext: FrameConsumerTagsMap = this._context.get(frameProducerModel) ?? new Map();
-        const frameConsumerTags = subContext.get(frameType) ?? [];
-        const index = frameConsumerTags.indexOf(frameConsumerTag);
+        const links: FrameConsumerTagsMap = this._links.get(producer) ?? new Map();
+        const consumerTags = links.get(type) ?? [];
+        const index = consumerTags.indexOf(consumerTag);
         if (index === -1) return;
-        frameConsumerTags.splice(index, 1);
-        subContext.set(frameType, frameConsumerTags);
-        this._context.set(frameProducerModel, subContext);
+        consumerTags.splice(index, 1);
+        links.set(type, consumerTags);
+        this._links.set(producer, links);
     }
 
     /**
@@ -60,21 +60,21 @@ class FrameConsumerManager {
      * Without a frame, this returns the full frame-type map. With a frame, this
      * returns only consumer tags bound to that frame constructor.
      *
-     * @param frameProducerModel - Producer model whose links should be read.
+     * @param producer - Producer model whose links should be read.
      * @param frame - Optional emitted frame used to filter by constructor.
      * @returns Either the full link map or the matching consumer tags.
      */
-    public query(frameProducerModel: Model): FrameConsumerTagsMap
-    public query(frameProducerModel: Model, frame: Frame): Array<Tag>
+    public query(producer: Model): FrameConsumerTagsMap
+    public query(producer: Model, frame: Frame): Array<Tag>
     public query(
-        frameProducerModel: Model,
+        producer: Model,
         frame?: Frame
     ) {
-        if (!frame) return this._context.get(frameProducerModel) ?? new Map();
-        const frameType: any = frame.constructor;
-        const subContext: FrameConsumerTagsMap = this._context.get(frameProducerModel) ?? new Map();
-        const frameConsumerTags = subContext.get(frameType) ?? [];
-        return [...frameConsumerTags];
+        if (!frame) return this._links.get(producer) ?? new Map();
+        const type: any = frame.constructor;
+        const links: FrameConsumerTagsMap = this._links.get(producer) ?? new Map();
+        const consumerTags = links.get(type) ?? [];
+        return [...consumerTags];
     }
 }
 

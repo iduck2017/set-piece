@@ -1,4 +1,4 @@
-import { modelResolver } from "../model-resolver";
+import { modelResolver } from "../utils/model-resolver";
 import { Model } from "../model";
 import { storeRegistry } from "../store/store-registry";
 import { Constructor } from "../types";
@@ -15,10 +15,10 @@ import { blinkManager } from "../utils/blink-manager";
  * @returns Class decorator for model classes.
  */
 export function useModel(code: string) {
-    return function(Constructor: Constructor<Model, undefined[]>): any {
-        storeRegistry.register(code, Constructor);
-        Constructor = blinkManager.delegate(Constructor);
-        return class extends Constructor {
+    return function(ModelCtor: Constructor<Model, undefined[]>): any {
+        storeRegistry.register(code, ModelCtor);
+        const Wrapped = blinkManager.delegate(ModelCtor);
+        return class extends Wrapped {
             /**
              * Construct the model and queue it for blink-time initialization.
              *

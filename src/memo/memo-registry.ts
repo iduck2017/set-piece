@@ -7,7 +7,7 @@ import { tagRegistry } from "../tag/tag-registry";
 import { memoDelegator } from "./memo-delegator";
 
 class MemoRegistry {
-    private _config: Map<AbstractConstructor<Model>, string[]> = new Map();
+    private _keys: Map<AbstractConstructor<Model>, string[]> = new Map();
 
     /**
      * Register a memo getter and wrap it with cache/dependency collection.
@@ -21,10 +21,10 @@ class MemoRegistry {
      * @returns Nothing.
      */
     public register(prototype: Model, key: string, descriptor?: PropertyDescriptor) {
-        const type: any = prototype.constructor;
-        const keys = this._config.get(type) ?? [];
+        const ctor: any = prototype.constructor;
+        const keys = this._keys.get(ctor) ?? [];
         keys.push(key);
-        this._config.set(type, keys);
+        this._keys.set(ctor, keys);
 
         if (!descriptor) return;
         const getter = descriptor.get;
@@ -50,17 +50,17 @@ class MemoRegistry {
      * @returns Memo getter keys registered on the model hierarchy.
      */
     public query(prototype: Model): string[] {
-        let constructor: any = prototype.constructor;
-        const result: string[] = [];
-        while (constructor) {
-            const keys = this._config.get(constructor) ?? [];
+        let ctor: any = prototype.constructor;
+        const memos: string[] = [];
+        while (ctor) {
+            const keys = this._keys.get(ctor) ?? [];
             keys.forEach(key => {
-                if (result.includes(key)) return;
-                result.push(key);
+                if (memos.includes(key)) return;
+                memos.push(key);
             })
-            constructor = Object.getPrototypeOf(constructor);
+            ctor = Object.getPrototypeOf(ctor);
         }
-        return result;
+        return memos;
     }
 }
 export const memoRegistry = new MemoRegistry();

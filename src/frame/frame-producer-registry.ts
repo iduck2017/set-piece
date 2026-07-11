@@ -5,7 +5,7 @@ import { AbstractConstructor, Constructor } from "../types";
 export type FrameProducerLoader<T = any> = () => Constructor<DiffFrame<T>, [{ next: T }]>;
 
 class FrameProducerRegistry {
-    private _config: Map<AbstractConstructor<Model>, Map<string, FrameProducerLoader>> = new Map();
+    private _loaders: Map<AbstractConstructor<Model>, Map<string, FrameProducerLoader>> = new Map();
 
     /**
      * Register the frame constructor loader for a producer property.
@@ -24,10 +24,10 @@ class FrameProducerRegistry {
         key: string,
         loader: FrameProducerLoader,
     ) {
-        const constructor: any = prototype.constructor;
-        const subConfig = this._config.get(constructor) ?? new Map<string, FrameProducerLoader>();
-        subConfig.set(key, loader);
-        this._config.set(constructor, subConfig);
+        const ctor: any = prototype.constructor;
+        const loaders = this._loaders.get(ctor) ?? new Map<string, FrameProducerLoader>();
+        loaders.set(key, loader);
+        this._loaders.set(ctor, loaders);
     }
 
     /**
@@ -39,12 +39,12 @@ class FrameProducerRegistry {
      * frame producer.
      */
     public query(target: Model, key: string): FrameProducerLoader | undefined {
-        let constructor: any = target.constructor;
-        while (constructor) {
-            const subConfig = this._config.get(constructor);
-            const loader = subConfig?.get(key);
+        let ctor: any = target.constructor;
+        while (ctor) {
+            const loaders = this._loaders.get(ctor);
+            const loader = loaders?.get(key);
             if (loader) return loader;
-            constructor = Object.getPrototypeOf(constructor);
+            ctor = Object.getPrototypeOf(ctor);
         }
         return undefined;
     }

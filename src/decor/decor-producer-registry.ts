@@ -11,7 +11,7 @@ export type DecorProducerLoader<T = any> = () => Constructor<Decor<T>, [origin: 
 export type DecorProducerLoaderMap = Map<string, DecorProducerLoader>
 
 class DecorProducerRegistry {
-    private _config: Map<AbstractConstructor<Model>, DecorProducerLoaderMap> = new Map();
+    private _loaders: Map<AbstractConstructor<Model>, DecorProducerLoaderMap> = new Map();
 
     /**
      * Register and wrap a property as a decor producer.
@@ -30,34 +30,34 @@ class DecorProducerRegistry {
         key: string,
         loader: DecorProducerLoader,
     ) {
-        const constructor: any = prototype.constructor;
-        const subConfig: DecorProducerLoaderMap = this._config.get(constructor) ?? new Map();
-        subConfig.set(key, loader)
-        this._config.set(constructor, subConfig);
+        const ctor: any = prototype.constructor;
+        const loaders: DecorProducerLoaderMap = this._loaders.get(ctor) ?? new Map();
+        loaders.set(key, loader)
+        this._loaders.set(ctor, loaders);
 
         const descriptor = Object.getOwnPropertyDescriptor(prototype, key);
         const getter = descriptor?.get;
         const setter = descriptor?.set;
         Object.defineProperty(prototype, key, {
             get(this: Model) {
-                const depConsumerTag = tagRegistry.query(this, key)
+                const tag = tagRegistry.query(this, key)
                 let origin;
                 if (getter) origin = getter.call(this);
                 else origin = tagDelegator.get(this, key);
-                if (decorProducerDelegator.check(depConsumerTag)) {
-                    return decorProducerDelegator.query(depConsumerTag)
+                if (decorProducerDelegator.check(tag)) {
+                    return decorProducerDelegator.query(tag)
                 }
-                const decorConstructors = loader()
-                const decor = new decorConstructors(origin, this);
+                const DecorCtor = loader()
+                const decor = new DecorCtor(origin, this);
                 decorService.emit(this, decor);
-                decorProducerDelegator.update(depConsumerTag, decor.result);
+                decorProducerDelegator.update(tag, decor.result);
                 return decor.result;
             },
             set(this: Model, value) {
-                const decorProducerTag = tagRegistry.query(this, key)
+                const tag = tagRegistry.query(this, key)
                 if (setter) setter.call(this, value);
                 else tagDelegator.set(this, key, value);
-                decorProducerResolver.register(decorProducerTag);
+                decorProducerResolver.register(tag);
             },
             enumerable: true,
             configurable: true,
@@ -74,17 +74,17 @@ class DecorProducerRegistry {
      * @returns Map from producer property key to decor constructor loader.
      */
     public query(prototype: Model) {
-        const result: DecorProducerLoaderMap = new Map();
-        let constructor: any = prototype.constructor;
-        while (constructor) {
-            const loaders: DecorProducerLoaderMap = this._config.get(constructor) ?? new Map();
+        const collected: DecorProducerLoaderMap = new Map();
+        let ctor: any = prototype.constructor;
+        while (ctor) {
+            const loaders: DecorProducerLoaderMap = this._loaders.get(ctor) ?? new Map();
             loaders.forEach((loader, key) => {
-                if (result.has(key)) return;
-                result.set(key, loader);
+                if (collected.has(key)) return;
+                collected.set(key, loader);
             })
-            constructor = Object.getPrototypeOf(constructor);
+            ctor = Object.getPrototypeOf(ctor);
         }
-        return result;
+        return collected;
     }
 }
 export const decorProducerRegistry = new DecorProducerRegistry();

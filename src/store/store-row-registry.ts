@@ -4,7 +4,7 @@ export type StoreRowConfig = [(value: any) => any, (value: any) => any];
 export type StoreRowConfigMap = Map<string, StoreRowConfig>;
 
 class StoreRowRegistry {
-    private _context: Map<Function, StoreRowConfigMap> = new Map();
+    private _rows: Map<Function, StoreRowConfigMap> = new Map();
 
     /**
      * Register row-level serializers for a model property.
@@ -21,29 +21,29 @@ class StoreRowRegistry {
         parser: (value: any) => any, 
         generator: (value: any) => any
     ) {
-        const configMap: StoreRowConfigMap = this._context.get(prototype.constructor) ?? new Map();
-        configMap.set(key, [parser, generator]);
-        this._context.set(prototype.constructor, configMap);
+        const rows: StoreRowConfigMap = this._rows.get(prototype.constructor) ?? new Map();
+        rows.set(key, [parser, generator]);
+        this._rows.set(prototype.constructor, rows);
     }
 
     /**
      * Collect inherited row serializers for a model constructor.
      *
-     * @param constructor - Constructor whose hierarchy should be inspected.
+     * @param ctor - Constructor whose hierarchy should be inspected.
      * @returns Map from property key to parser/generator pair.
      */
-    public query(constructor: Function): StoreRowConfigMap {
-        const result: StoreRowConfigMap = new Map();
-        let Constructor: any = constructor;
-        while (Constructor) {
-            const subConfig: StoreRowConfigMap = this._context.get(Constructor) ?? new Map();
-            subConfig.forEach((config, key) => {
-                if (result.has(key)) return;
-                result.set(key, config);
+    public query(ctor: Function): StoreRowConfigMap {
+        const rows: StoreRowConfigMap = new Map();
+        let currentCtor: any = ctor;
+        while (currentCtor) {
+            const current: StoreRowConfigMap = this._rows.get(currentCtor) ?? new Map();
+            current.forEach((config, key) => {
+                if (rows.has(key)) return;
+                rows.set(key, config);
             });
-            Constructor = Object.getPrototypeOf(Constructor);
+            currentCtor = Object.getPrototypeOf(currentCtor);
         }
-        return result;
+        return rows;
     }
 }
 

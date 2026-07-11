@@ -4,7 +4,7 @@ import { eventProducerRegistry } from "./event-producer-registry";
 import { useStory } from "../hooks/use-story";
 
 class EventProducerResolver {
-    private _context: Set<Tag> = new Set();
+    private _queue: Set<Tag> = new Set();
 
     /**
      * Queue a producer property tag whose value changed during an action.
@@ -16,7 +16,7 @@ class EventProducerResolver {
      * @returns Nothing.
      */
     public register(tag: Tag) {
-        this._context.add(tag);
+        this._queue.add(tag);
     }
 
     /**
@@ -30,15 +30,15 @@ class EventProducerResolver {
      */
     @useStory()
     public resolve() {
-        const tags = [...this._context];
-        this._context.clear();
+        const tags = [...this._queue];
+        this._queue.clear();
         tags.forEach(tag => {
             const loader = eventProducerRegistry.query(tag.target, tag.key);
             if (!loader) return;
-            const EventConstructor = loader();
+            const EventCtor = loader();
             const model = tag.target;
             const next = Reflect.get(model, tag.key);
-            const event = new EventConstructor({ next });
+            const event = new EventCtor({ next });
             eventService.emitSync(model, event);
         });
     }

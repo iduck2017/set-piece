@@ -12,10 +12,10 @@ class StoreService {
     public save(model: Model) {
         const config: Record<string, any> = {}
         config.uuid = model.uuid;
-        const Constructor: any = model.constructor
-        config.type = storeRegistry.query(Constructor);
-        const rowConfigMap = storeRowRegistry.query(Constructor);
-        for (const [key, [, generator]] of rowConfigMap) {
+        const ModelCtor: any = model.constructor
+        config.type = storeRegistry.query(ModelCtor);
+        const rows = storeRowRegistry.query(ModelCtor);
+        for (const [key, [, generator]] of rows) {
             config[key] = generator((model as any)[key]);
         }
         return config;

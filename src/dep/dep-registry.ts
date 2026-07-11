@@ -7,7 +7,7 @@ import { tagDelegator } from "../tag/tag-delegator";
 import { tagRegistry } from "../tag/tag-registry";
 
 class DepRegistry {
-    private _config: Map<AbstractConstructor<Model>, string[]> = new Map();
+    private _keys: Map<AbstractConstructor<Model>, string[]> = new Map();
 
     /**
      * Install reactive behavior for a property or getter.
@@ -22,10 +22,10 @@ class DepRegistry {
      * @returns Nothing.
      */
     public register(prototype: Model, key: string, descriptor?: TypedPropertyDescriptor<any>) {
-        const constructor: any = prototype.constructor;
-        const keys = this._config.get(constructor) ?? [];
+        const ctor: any = prototype.constructor;
+        const keys = this._keys.get(ctor) ?? [];
         keys.push(key);
-        this._config.set(constructor, keys);
+        this._keys.set(ctor, keys);
 
         if (!descriptor) {
             const descriptor = Object.getOwnPropertyDescriptor(prototype, key);

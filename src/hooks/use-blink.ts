@@ -20,8 +20,8 @@ export function useBlink() {
         if (!handler) return descriptor;
         descriptor.value = function(...args: any[]) {
             const _handler = handler.bind(this, ...args)
-            const result = blinkManager.launch(_handler);
-            return result;
+            const output = blinkManager.launch(_handler);
+            return output;
         }
         return descriptor;
     }

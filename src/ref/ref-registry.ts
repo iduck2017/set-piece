@@ -2,7 +2,7 @@ import { Model } from "../model";
 import { AbstractConstructor } from "../types";
 
 class RefRegistry {
-    private _config: Map<AbstractConstructor<Model>, string[]> = new Map();
+    private _keys: Map<AbstractConstructor<Model>, string[]> = new Map();
 
     /**
      * Remember that a property stores external model references.
@@ -12,10 +12,10 @@ class RefRegistry {
      * @returns Nothing.
      */
     public register(prototype: Model, key: string) {
-        const constructor: any = prototype.constructor;
-        const keys = this._config.get(constructor) ?? [];
+        const ctor: any = prototype.constructor;
+        const keys = this._keys.get(ctor) ?? [];
         keys.push(key);
-        this._config.set(constructor, keys);
+        this._keys.set(ctor, keys);
     }
 
     /**
@@ -25,17 +25,17 @@ class RefRegistry {
      * @returns Ref property keys registered on the model hierarchy.
      */
     public query(prototype: Model): string[] {
-        let constructor: any = prototype.constructor;
-        const result: string[] = [];
-        while (constructor) {
-            const keys = this._config.get(constructor) ?? [];
+        let ctor: any = prototype.constructor;
+        const refs: string[] = [];
+        while (ctor) {
+            const keys = this._keys.get(ctor) ?? [];
             keys.forEach(key => {
-                if (result.includes(key)) return;
-                result.push(key);
+                if (refs.includes(key)) return;
+                refs.push(key);
             });
-            constructor = Object.getPrototypeOf(constructor);
+            ctor = Object.getPrototypeOf(ctor);
         }
-        return result;
+        return refs;
     }
 }
 

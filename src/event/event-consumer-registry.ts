@@ -14,7 +14,7 @@ export type EventConsumerLoader<
 ] | undefined
 
 class EventConsumerRegistry {
-    private _config: Map<AbstractConstructor<Model>, Map<string, Array<EventConsumerLoader>>> = new Map();
+    private _loaders: Map<AbstractConstructor<Model>, Map<string, Array<EventConsumerLoader>>> = new Map();
 
     /**
      * Register an event consumer loader and wrap it with dependency collection.
@@ -33,19 +33,19 @@ class EventConsumerRegistry {
         key: string,
         loader: EventConsumerLoader<any>
     ) {
-        const constructor: any = prototype.constructor;
-        const subConfig = this._config.get(constructor) ?? new Map();
-        const loaders = subConfig.get(key) ?? [];
+        const ctor: any = prototype.constructor;
+        const loaderMap = this._loaders.get(ctor) ?? new Map();
+        const loaders = loaderMap.get(key) ?? [];
         const wrapped: EventConsumerLoader = function(self: Model) {
-            const depConsumerTag = tagRegistry.query(self, key);
-            depCollector.init(depConsumerTag);
-            const result = loader(self);
-            eventManager.collect(depConsumerTag);
-            return result;
+            const consumerTag = tagRegistry.query(self, key);
+            depCollector.init(consumerTag);
+            const binding = loader(self);
+            eventManager.collect(consumerTag);
+            return binding;
         };
         loaders.push(wrapped);
-        subConfig.set(key, loaders);
-        this._config.set(constructor, subConfig);
+        loaderMap.set(key, loaders);
+        this._loaders.set(ctor, loaderMap);
     }
 
     /**
@@ -55,21 +55,21 @@ class EventConsumerRegistry {
      * @returns Map from consumer method key to registered loader list.
      */
     public query(prototype: Model) {
-        const result: Map<string, Array<EventConsumerLoader>> = new Map();
-        let constructor: any = prototype.constructor;
-        while (constructor) {
-            const subConfig: Map<string, Array<EventConsumerLoader>> = this._config.get(constructor) ?? new Map();
-            subConfig.forEach((loaders, key) => {
-                const subResult = result.get(key) ?? [];
+        const loaderMap: Map<string, Array<EventConsumerLoader>> = new Map();
+        let ctor: any = prototype.constructor;
+        while (ctor) {
+            const current: Map<string, Array<EventConsumerLoader>> = this._loaders.get(ctor) ?? new Map();
+            current.forEach((loaders, key) => {
+                const collected = loaderMap.get(key) ?? [];
                 loaders.forEach(loader => {
-                    if (subResult.includes(loader)) return;
-                    subResult.push(loader);
+                    if (collected.includes(loader)) return;
+                    collected.push(loader);
                 })
-                result.set(key, subResult);
+                loaderMap.set(key, collected);
             })
-            constructor = Object.getPrototypeOf(constructor);
+            ctor = Object.getPrototypeOf(ctor);
         }
-        return result;
+        return loaderMap;
     }
 }
 

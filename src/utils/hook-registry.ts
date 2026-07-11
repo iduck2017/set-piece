@@ -2,7 +2,7 @@ import { Model } from "../model";
 import { AbstractConstructor } from "../types";
 
 export class HookRegistry {
-    private _context: Map<AbstractConstructor<Model>, string[]> = new Map();
+    private _keys: Map<AbstractConstructor<Model>, string[]> = new Map();
 
     /**
      * Collect inherited hook handlers from the model prototype chain.
@@ -11,19 +11,19 @@ export class HookRegistry {
      * @returns Bound hook functions in ancestor-to-descendant lookup order.
      */
     public query(model: Model) {
-        let constructor: any = model.constructor;
-        const result: Function[] = [];
-        while (constructor) {
-            const keys = this._context.get(constructor) ?? [];
+        let ctor: any = model.constructor;
+        const hooks: Function[] = [];
+        while (ctor) {
+            const keys = this._keys.get(ctor) ?? [];
             keys.forEach(key => {
                 const handler = Reflect.get(model, key);
                 if (handler instanceof Function) {
-                    result.push(handler.bind(model));
+                    hooks.push(handler.bind(model));
                 }
             });
-            constructor = Object.getPrototypeOf(constructor);
+            ctor = Object.getPrototypeOf(ctor);
         }
-        return result;
+        return hooks;
     }
 
     /**
@@ -45,9 +45,9 @@ export class HookRegistry {
      * @returns Nothing.
      */
     public register(prototype: Model, key: string) {
-        const constructor: any = prototype.constructor;
-        const keys = this._context.get(constructor) ?? [];
+        const ctor: any = prototype.constructor;
+        const keys = this._keys.get(ctor) ?? [];
         keys.push(key);
-        this._context.set(constructor, keys);
+        this._keys.set(ctor, keys);
     }
 }

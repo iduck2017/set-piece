@@ -4,7 +4,7 @@ import { useAnime } from "../hooks/use-anime";
 import { frameService } from "./frame-service";
 
 class FrameProducerResolver {
-    private _context: Set<Tag> = new Set();
+    private _queue: Set<Tag> = new Set();
 
     /**
      * Queue a producer property tag whose value changed during an action.
@@ -16,7 +16,7 @@ class FrameProducerResolver {
      * @returns Nothing.
      */
     public register(tag: Tag) {
-        this._context.add(tag);
+        this._queue.add(tag);
     }
 
     /**
@@ -30,15 +30,15 @@ class FrameProducerResolver {
      */
     @useAnime()
     public resolve() {
-        const tags = [...this._context];
-        this._context.clear();
+        const tags = [...this._queue];
+        this._queue.clear();
         tags.forEach(tag => {
             const loader = frameProducerRegistry.query(tag.target, tag.key);
             if (!loader) return;
-            const FrameConstructor = loader();
+            const FrameCtor = loader();
             const model = tag.target;
             const next = Reflect.get(model, tag.key);
-            const frame = new FrameConstructor({ next });
+            const frame = new FrameCtor({ next });
             frameService.emit(model, frame);
         })
     }

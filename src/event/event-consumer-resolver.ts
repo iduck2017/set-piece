@@ -6,7 +6,7 @@ import { eventService } from "./event-service";
 import { useBlink } from "../hooks/use-blink";
 
 class EventConsumerResolver {
-    private _context: Set<Tag> = new Set();
+    private _queue: Set<Tag> = new Set();
 
     /**
      * Queue a changed dependency that may affect event consumer bindings.
@@ -19,7 +19,7 @@ class EventConsumerResolver {
      */
     @useBlink()
     public register(depTag: Tag) {
-        this._context.add(depTag);
+        this._queue.add(depTag);
     }
 
     /**
@@ -28,7 +28,7 @@ class EventConsumerResolver {
      * @returns True when at least one changed dependency tag is queued.
      */
     public check() {
-        return Boolean(this._context.size);
+        return Boolean(this._queue.size);
     }
 
     /**
@@ -40,25 +40,25 @@ class EventConsumerResolver {
      * @returns Nothing.
      */
     public resolve() {
-        const depTags = [...this._context];
-        this._context.clear();
-        const depConsumerTags = eventManager.query(depTags);
-        this.unbind(depConsumerTags);
-        this.reset(depConsumerTags);
+        const depTags = [...this._queue];
+        this._queue.clear();
+        const consumerTags = eventManager.query(depTags);
+        this.unbind(consumerTags);
+        this.reset(consumerTags);
     }
 
     /**
      * Remove old dependency edges before consumer loaders re-run.
      *
-     * @param depConsumerTags - Consumer method tags whose loaders changed.
+     * @param consumerTags - Consumer method tags whose loaders changed.
      * @returns Nothing.
      */
-    private unbind(depConsumerTags: Tag[]) {
-        depConsumerTags.forEach(depConsumerTag => {
-            const depTags = depManager.query(depConsumerTag)
-            depManager.remove(depConsumerTag);
+    private unbind(consumerTags: Tag[]) {
+        consumerTags.forEach(consumerTag => {
+            const depTags = depManager.query(consumerTag)
+            depManager.remove(consumerTag);
             depTags.forEach((depTag: Tag) => {
-                eventManager.remove(depTag, depConsumerTag);
+                eventManager.remove(depTag, consumerTag);
             })
         })
     }
@@ -66,13 +66,13 @@ class EventConsumerResolver {
     /**
      * Rebind runtime event links for affected consumer tags.
      *
-     * @param depConsumerTags - Consumer method tags that should be rebound.
+     * @param consumerTags - Consumer method tags that should be rebound.
      * @returns Nothing.
      */
-    private reset(depConsumerTags: Tag[]) {
-        depConsumerTags.forEach(depConsumerTag => {
-            eventService.unbind(depConsumerTag);
-            eventService.bind(depConsumerTag);
+    private reset(consumerTags: Tag[]) {
+        consumerTags.forEach(consumerTag => {
+            eventService.unbind(consumerTag);
+            eventService.bind(consumerTag);
         })
     }
 }

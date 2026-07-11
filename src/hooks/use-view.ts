@@ -1,5 +1,5 @@
 import { Model } from "../model";
-import { modelResolver } from "../model-resolver";
+import { modelResolver } from "../utils/model-resolver";
 import { Constructor } from "../types";
 import { blinkManager } from "../utils/blink-manager";
 
@@ -12,10 +12,10 @@ import { blinkManager } from "../utils/blink-manager";
  * @returns Class decorator for view model classes.
  */
 export function useView<T extends Model>() {
-    return function(Constructor: Constructor<Model>): Constructor<T> {
-        Constructor = blinkManager.delegate(Constructor);
+    return function(ViewCtor: Constructor<Model>): Constructor<T> {
+        const Wrapped = blinkManager.delegate(ViewCtor);
         return {
-            [Constructor.name]: class extends Constructor {
+            [Wrapped.name]: class extends Wrapped {
                 /**
                  * Construct the view and queue it for blink-time initialization.
                  *
@@ -26,6 +26,6 @@ export function useView<T extends Model>() {
                     modelResolver.register(this);
                 }
             }
-        }[Constructor.name] as any
+        }[Wrapped.name] as any
     }
 }

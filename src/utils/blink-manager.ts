@@ -4,7 +4,8 @@ import { eventConsumerResolver } from "../event/event-consumer-resolver";
 import { frameConsumerResolver } from "../frame/frame-consumer-resolver";
 import { memoResolver } from "../memo/memo-resolver";
 import { Model } from "../model";
-import { modelResolver } from "../model-resolver";
+import { modelResolver } from "./model-resolver";
+import { routeResolver } from "../route/route-resolver";
 import { Constructor } from "../types";
 import { useAction } from "../hooks/use-action";
 
@@ -24,12 +25,12 @@ export class BlinkManager {
     public launch(handler: () => unknown) {
         if (this._pending) return handler();
         this._pending = true;
-        const result = handler();
+        const output = handler();
         this._pending = false;
         const dirty = this.precheck();
-        if (!dirty) return result;
+        if (!dirty) return output;
         this.resolve()
-        return result;
+        return output;
     }
 
     /**
@@ -45,6 +46,7 @@ export class BlinkManager {
             decorProducerResolver.check() ||
             eventConsumerResolver.check() ||
             frameConsumerResolver.check() ||
+            routeResolver.check() ||
             modelResolver.check()
         return dirty;
     }
@@ -55,13 +57,13 @@ export class BlinkManager {
      * This is used by `useModel()` and `useView()` so a constructor can create
      * nested models while all initialization waits for the same blink boundary.
      *
-     * @param Constructor - Model constructor to wrap.
+     * @param ModelCtor - Model constructor to wrap.
      * @returns A constructor with blink-aware initialization semantics.
      */
-    public delegate<T extends Model>(Constructor: Constructor<Model>): Constructor<T> {
+    public delegate<T extends Model>(ModelCtor: Constructor<Model>): Constructor<T> {
         const that = this;
         return {
-            [Constructor.name]: class extends Constructor {
+            [ModelCtor.name]: class extends ModelCtor {
                 /**
                  * Construct the model while preserving the outer blink boundary.
                  *
@@ -78,7 +80,7 @@ export class BlinkManager {
                     that.resolve();
                 }
             }
-        }[Constructor.name] as any
+        }[ModelCtor.name] as any
     }
 
     /**
@@ -90,7 +92,7 @@ export class BlinkManager {
      * @returns The resolver result.
      */
     private resolve() {
-        return this.launch(() => this.resolveContext());
+        return this.launch(() => this.flush());
     }
 
     /**
@@ -101,8 +103,9 @@ export class BlinkManager {
      *
      * @returns Nothing.
      */
-    private resolveContext() {
+    private flush() {
         modelResolver.resolve();
+        routeResolver.resolve();
         memoResolver.resolve();
         decorProducerResolver.resolve();
         

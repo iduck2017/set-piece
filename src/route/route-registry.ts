@@ -6,13 +6,13 @@ type RouteLoader = () => AbstractConstructor<Model>
 type RouteLoaderMap = Map<string, RouteLoader>
 type RouteConstructorMap = Map<string, AbstractConstructor<Model>>;
 class RouteRegistry {
-    private _config: Map<AbstractConstructor<Model>, RouteLoaderMap> = new Map();
+    private _loaders: Map<AbstractConstructor<Model>, RouteLoaderMap> = new Map();
 
     /**
      * Register a routed property and mark it as dependency-backed state.
      *
      * `useRoute()` calls this during decorator evaluation. The route is later
-     * recalculated by `Model.reroute()` after mount or unmount changes.
+     * recalculated by `RouteResolver` after mount or unmount changes.
      *
      * @param prototype - Prototype that owns the route property.
      * @param key - Route property key.
@@ -24,10 +24,10 @@ class RouteRegistry {
         key: string,
         loader: RouteLoader
     ) {
-        const type: any = prototype.constructor;
-        const subConfig: RouteLoaderMap = this._config.get(type) ?? new Map();
-        subConfig.set(key, loader);
-        this._config.set(type, subConfig);
+        const ctor: any = prototype.constructor;
+        const loaders: RouteLoaderMap = this._loaders.get(ctor) ?? new Map();
+        loaders.set(key, loader);
+        this._loaders.set(ctor, loaders);
         depRegistry.register(prototype, key);
     }
 
@@ -38,18 +38,18 @@ class RouteRegistry {
      * @returns Map from route property key to target model constructor.
      */
     public query(prototype: Model): RouteConstructorMap {
-        let constructor: any = prototype.constructor;
-        const result: RouteConstructorMap = new Map();
-        while (constructor) {
-            const subConfig: RouteLoaderMap = this._config.get(constructor) ?? new Map();
-            subConfig.forEach((loader, key) => {
-                if (result.has(key)) return;
-                const routeConstructor = loader();
-                result.set(key, routeConstructor);
+        let ctor: any = prototype.constructor;
+        const routes: RouteConstructorMap = new Map();
+        while (ctor) {
+            const loaders: RouteLoaderMap = this._loaders.get(ctor) ?? new Map();
+            loaders.forEach((loader, key) => {
+                if (routes.has(key)) return;
+                const RouteCtor = loader();
+                routes.set(key, RouteCtor);
             });
-            constructor = Object.getPrototypeOf(constructor);
+            ctor = Object.getPrototypeOf(ctor);
         }
-        return result;
+        return routes;
     }
 }
 

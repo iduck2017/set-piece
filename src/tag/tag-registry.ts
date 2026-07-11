@@ -17,7 +17,7 @@ export class Tag {
 }
 
 class TagRegistry {
-    private _config: WeakMap<Model, Map<string, Tag>> = new WeakMap();
+    private _tags: WeakMap<Model, Map<string, Tag>> = new WeakMap();
 
     /**
      * Return the stable tag for a model property, creating it if needed.
@@ -30,12 +30,12 @@ class TagRegistry {
      * @returns Stable tag for the model/key pair.
      */
     public query(target: Model, key: string): Tag {
-        const subConfig: Map<string, Tag> = this._config.get(target) ?? new Map();
-        const value = subConfig.get(key)
+        const tags: Map<string, Tag> = this._tags.get(target) ?? new Map();
+        const value = tags.get(key)
         if (value) return value;
         const tag = new Tag(target, key);
-        subConfig.set(key, tag);
-        this._config.set(target, subConfig);
+        tags.set(key, tag);
+        this._tags.set(target, tags);
         return tag;
     }
 }

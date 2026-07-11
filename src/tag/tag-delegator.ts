@@ -2,7 +2,7 @@
 import { Tag, tagRegistry } from "./tag-registry";
 
 class TagDelegator {
-    private _context: WeakMap<Tag, any> = new WeakMap();
+    private _values: WeakMap<Tag, any> = new WeakMap();
 
     /**
      * Remove the stored value for a tag.
@@ -11,7 +11,7 @@ class TagDelegator {
      * @returns Nothing.
      */
     public clear(tag: Tag) {
-        this._context.delete(tag);
+        this._values.delete(tag);
     }
 
     /**
@@ -23,7 +23,7 @@ class TagDelegator {
      */
     public get(target: Model, key: string) {
         const tag = tagRegistry.query(target, key);
-        return this._context.get(tag);
+        return this._values.get(tag);
     }
 
     /**
@@ -36,7 +36,7 @@ class TagDelegator {
      */
     public set(target: Model, key: string, value: unknown) {
         const tag = tagRegistry.query(target, key);
-        this._context.set(tag, value);
+        this._values.set(tag, value);
     }
 }
 

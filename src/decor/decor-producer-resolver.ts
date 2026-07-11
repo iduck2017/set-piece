@@ -8,7 +8,7 @@ import { depService } from "../dep/dep-service";
 import { useBlink } from "../hooks/use-blink";
 
 class DecorProducerResolver {
-    private _context: Set<Tag> = new Set();
+    private _queue: Set<Tag> = new Set();
 
     /**
      * Report whether decorated producer values need recomputation.
@@ -16,11 +16,11 @@ class DecorProducerResolver {
      * @returns True when at least one producer tag is queued.
      */
     public check() {
-        return Boolean(this._context.size)
+        return Boolean(this._queue.size)
     }
 
-    public register(decorProducerTag: Tag): void
-    public register(decorProducerModel: Model, decorType: Constructor<Decor>): void;
+    public register(tag: Tag): void
+    public register(model: Model, DecorCtor: Constructor<Decor>): void;
 
     /**
      * Queue a producer tag directly or by matching a producer/decor pair.
@@ -29,23 +29,23 @@ class DecorProducerResolver {
      * is used when consumer bindings change and any affected producer values
      * need to be recalculated.
      *
-     * @param arg - Producer tag, or producer model used for decor-type lookup.
-     * @param decorType - Decor constructor used with the producer model form.
+     * @param target - Producer tag, or producer model used for decor-type lookup.
+     * @param DecorCtor - Decor constructor used with the producer model form.
      * @returns Nothing.
      */
     @useBlink()
-    public register(arg: Tag | Model, decorType?: Constructor<Decor>) {
-        if (arg instanceof Model) {
-            if (!decorType) return;
-            const decorProducerModel = arg;
-            const subConfig = decorProducerRegistry.query(decorProducerModel)
-            subConfig.forEach((decorProducerLoader, key) => {
-                if (decorProducerLoader() === decorType) {
-                    const decorProducerTag = tagRegistry.query(decorProducerModel, key);
-                    this.register(decorProducerTag)
+    public register(target: Tag | Model, DecorCtor?: Constructor<Decor>) {
+        if (target instanceof Model) {
+            if (!DecorCtor) return;
+            const model = target;
+            const loaders = decorProducerRegistry.query(model)
+            loaders.forEach((loader, key) => {
+                if (loader() === DecorCtor) {
+                    const tag = tagRegistry.query(model, key);
+                    this.register(tag)
                 }
             })
-        } else this._context.add(arg);
+        } else this._queue.add(target);
     }
 
     /**
@@ -58,18 +58,18 @@ class DecorProducerResolver {
      * @returns True after the resolver drains its queue.
      */
     public resolve(): boolean {
-        const depProducerTags = [...this._context];
-        this._context.clear();
+        const tags = [...this._queue];
+        this._queue.clear();
 
-        if (!depProducerTags) return false;
-        depProducerTags.forEach(decorProducerTag => {
-            const decorProducerModel = decorProducerTag.target;
-            const decorProducerKey = decorProducerTag.key;
-            const prev = Reflect.get(decorProducerModel, decorProducerKey);
-            decorProducerDelegator.clear(decorProducerTag);
-            const next = Reflect.get(decorProducerModel, decorProducerKey);
+        if (!tags) return false;
+        tags.forEach(tag => {
+            const model = tag.target;
+            const key = tag.key;
+            const prev = Reflect.get(model, key);
+            decorProducerDelegator.clear(tag);
+            const next = Reflect.get(model, key);
             if (prev !== next) {
-                depService.register(decorProducerTag);
+                depService.register(tag);
             }
         });
         return true;
