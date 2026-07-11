@@ -1,13 +1,23 @@
-import { Model } from "../model";
-import { TypedPropertyDecorator } from "../types";
 import { depRegistry } from "../dep/dep-registry";
+import { Model } from "../model";
+import { refConsumerRegistry } from "../ref/ref-consumer-registry";
+import { RefDelegator } from "../ref/ref-delegator";
+import { refRegistry } from "../ref/ref-registry";
 import { tagDelegator } from "../tag/tag-delegator";
 import { tagRegistry } from "../tag/tag-registry";
-import { RefDelegator } from "./ref-delegator";
-import { refConsumerRegistry } from "./ref-consumer-registry";
-import { refRegistry } from "./ref-registry";
+import { TypedPropertyDecorator } from "../types";
 
 export type RefList = Array<Model | undefined>
+
+/**
+ * Create a property decorator for external model references.
+ *
+ * Unlike `useChild`, referenced models are not mounted as children. Instead,
+ * holder relationships are tracked so `Model.unlink()` can clear references to
+ * a model when needed.
+ *
+ * @returns Property decorator for optional model refs or ref arrays.
+ */
 export function useRef<
     M extends Model & Record<string, any>,
     K extends string

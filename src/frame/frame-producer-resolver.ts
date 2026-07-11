@@ -1,16 +1,33 @@
-import { Model } from "../model";
 import { Tag } from "../tag/tag-registry";
-import { FrameProducerLoader, frameProducerRegistry } from "./frame-producer-registry";
-import { useAnime } from "./frame-resolver";
+import { frameProducerRegistry } from "./frame-producer-registry";
+import { useAnime } from "../hooks/use-anime";
 import { frameService } from "./frame-service";
 
 class FrameProducerResolver {
     private _context: Set<Tag> = new Set();
 
+    /**
+     * Queue a producer property tag whose value changed during an action.
+     *
+     * `depService.register()` calls this for every reactive write. At anime
+     * resolution, matching producer registrations emit diff frames.
+     *
+     * @param tag - Tag for the changed producer property.
+     * @returns Nothing.
+     */
     public register(tag: Tag) {
         this._context.add(tag);
     }
 
+    /**
+     * Emit diff frames for all queued producer property changes.
+     *
+     * This runs inside the anime boundary. For each changed property with a
+     * registered frame producer, it builds the configured diff frame and queues
+     * it through `frameService.emit()`.
+     *
+     * @returns Nothing.
+     */
     @useAnime()
     public resolve() {
         const tags = [...this._context];
@@ -28,15 +45,3 @@ class FrameProducerResolver {
 }
 
 export const frameProducerResolver = new FrameProducerResolver();
-
-export function useFrameProducer<
-    M extends Model & Record<string, any>,
-    K extends string,
->(loader: FrameProducerLoader<M[K]>) {
-    return function(
-        prototype: M,
-        key: K,
-    ) {
-        frameProducerRegistry.register(prototype, key, loader);
-    }
-}

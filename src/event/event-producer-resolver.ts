@@ -1,16 +1,33 @@
-import { Model } from "../model";
 import { Tag } from "../tag/tag-registry";
 import { eventService } from "./event-service";
-import { EventProducerLoader, eventProducerRegistry } from "./event-producer-registry";
-import { useStory } from "./event-resolver";
+import { eventProducerRegistry } from "./event-producer-registry";
+import { useStory } from "../hooks/use-story";
 
 class EventProducerResolver {
     private _context: Set<Tag> = new Set();
 
+    /**
+     * Queue a producer property tag whose value changed during an action.
+     *
+     * `depService.register()` calls this for every reactive write. At story
+     * resolution, matching producer registrations emit diff events.
+     *
+     * @param tag - Tag for the changed producer property.
+     * @returns Nothing.
+     */
     public register(tag: Tag) {
         this._context.add(tag);
     }
 
+    /**
+     * Emit diff events for all queued producer property changes.
+     *
+     * This runs inside the story boundary. For each changed property with a
+     * registered event producer, it builds the configured diff event and emits
+     * it synchronously through `eventService`.
+     *
+     * @returns Nothing.
+     */
     @useStory()
     public resolve() {
         const tags = [...this._context];
@@ -28,16 +45,3 @@ class EventProducerResolver {
 }
 
 export const eventProducerResolver = new EventProducerResolver();
-
-export function useEventProducer<
-    M extends Model & Record<string, any>,
-    K extends string,
->(loader: EventProducerLoader<M[K]>) {
-    return function(
-        prototype: M,
-        key: K,
-    ) {
-        eventProducerRegistry.register(prototype, key, loader);
-    };
-}
-

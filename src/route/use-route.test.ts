@@ -1,22 +1,18 @@
-﻿import { useChild } from "../child/use-child";
+import { useChild } from "../hooks/use-child";
 import { Model } from "../model";
 import { TypedPropertyDecorator } from "../types";
-import { useRoute } from "./route-registry";
+import { useRoute } from "../hooks/use-route";
 
 export class PineappleModel extends Model {
     @useRoute(() => RoomModel)
     private _room?: RoomModel;
-    public get room() {
-        return this._room;
-    }
+    public get room() { return this._room; }
 }
 
 export class AppleModel extends Model {
     @useRoute(() => RoomModel)
     private _room?: RoomModel;
-    public get room() {
-        return this._room;
-    }
+    public get room() { return this._room; }
 }
 
 function useRoomRoute<
@@ -39,15 +35,11 @@ function useRoomRoute<
 export class BoxModel extends Model {
     @useRoomRoute()
     private _room?: RoomModel;
-    public get room() {
-        return this._room;
-    }
+    public get room() { return this._room; }
 
     @useChild()
     private _pineapple?: PineappleModel;
-    public get pineapple() {
-        return this._pineapple;
-    }
+    public get pineapple() { return this._pineapple; }
     public setPineapple(pineapple: PineappleModel) {
         this._pineapple = pineapple;
     }
@@ -57,9 +49,7 @@ export class BoxModel extends Model {
 
     @useChild()
     private _apples: AppleModel[] = [];
-    public get apples() {
-        return this._apples;
-    }
+    public get apples() { return this._apples; }
     public addApple(apple: AppleModel) {
         this._apples.push(apple);
     }
@@ -72,9 +62,7 @@ export class BoxModel extends Model {
 export class RoomModel extends Model {
     @useChild()
     private _box?: BoxModel;
-    public get box() {
-        return this._box;
-    }
+    public get box() { return this._box; }
     public addBox(box: BoxModel) {
         this._box = box;
     }

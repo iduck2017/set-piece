@@ -1,23 +1,28 @@
-﻿import { Model, useModel } from "../model";
+import { Model } from "../model";
+import { useModel } from "../hooks/use-model";
 import { depManager } from "../dep/dep-manager";
-import { useMemo } from "./memo-registry";
-import { useDep } from "../dep/dep-registry";
+import { useMemo } from "../hooks/use-memo";
+import { useDep } from "../hooks/use-dep";
 
 @useModel('foo')
 export class FooModel extends Model {
     constructor(level?: number) {
         super();
-        this.level = level ?? 1;
+        this._level = level ?? 1;
     }
 
     @useDep()
-    public kelvin: number = 3
+    private _kelvin: number = 3
+    public get kelvin() { return this._kelvin; }
+    public set kelvin(value: number) { this._kelvin = value; }
 
     @useDep()
-    public child?: FooModel;
+    private _child?: FooModel;
+    public get child() { return this._child; }
+    public set child(value: FooModel | undefined) { this._child = value; }
 
-
-    public level: number;
+    private _level: number;
+    public get level() { return this._level; }
 
     @useMemo()
     get descendant(): FooModel {
@@ -31,9 +36,7 @@ export class FooModel extends Model {
     }
 
     @useMemo()
-    get celsius() {
-        return this.kelvin - 273
-    }
+    get celsius() { return this.kelvin - 273 }
 }
 
 

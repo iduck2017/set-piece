@@ -8,6 +8,17 @@ type RouteConstructorMap = Map<string, AbstractConstructor<Model>>;
 class RouteRegistry {
     private _config: Map<AbstractConstructor<Model>, RouteLoaderMap> = new Map();
 
+    /**
+     * Register a routed property and mark it as dependency-backed state.
+     *
+     * `useRoute()` calls this during decorator evaluation. The route is later
+     * recalculated by `Model.reroute()` after mount or unmount changes.
+     *
+     * @param prototype - Prototype that owns the route property.
+     * @param key - Route property key.
+     * @param loader - Function returning the ancestor model constructor.
+     * @returns Nothing.
+     */
     public register(
         prototype: Model,
         key: string,
@@ -20,6 +31,12 @@ class RouteRegistry {
         depRegistry.register(prototype, key);
     }
 
+    /**
+     * Collect inherited route loaders and resolve them to constructors.
+     *
+     * @param prototype - Model instance whose constructor chain is inspected.
+     * @returns Map from route property key to target model constructor.
+     */
     public query(prototype: Model): RouteConstructorMap {
         let constructor: any = prototype.constructor;
         const result: RouteConstructorMap = new Map();
@@ -37,13 +54,3 @@ class RouteRegistry {
 }
 
 export const routeRegistry = new RouteRegistry();
-
-export function useRoute<
-    I extends Model & Record<string, any>,
-    M extends Model & I[K],
-    K extends string
->(loader: () => AbstractConstructor<M>) {
-    return function(prototype: I, key: K) {
-        routeRegistry.register(prototype, key, loader);
-    }
-}

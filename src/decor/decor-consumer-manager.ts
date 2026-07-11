@@ -7,6 +7,17 @@ type DecorConsumerTagsMap = Map<Constructor<Decor>, Array<Tag>>
 class DecorConsumerManager {
     private _context: WeakMap<Model, DecorConsumerTagsMap>= new WeakMap();
 
+    /**
+     * Link one producer model and decor type to one consumer method tag.
+     *
+     * This is the producer-to-consumer runtime index used when a decor producer
+     * emits a decor instance during property reads.
+     *
+     * @param decorProducerModel - Model that owns the producer property.
+     * @param decorType - Decor constructor the consumer is interested in.
+     * @param decorConsumerTag - Tag pointing to the consumer method.
+     * @returns Nothing.
+     */
     public add(
         decorProducerModel: Model,
         decorType: Constructor<Decor>,
@@ -19,6 +30,17 @@ class DecorConsumerManager {
         this._context.set(decorProducerModel, subContext);
     }
 
+    /**
+     * Remove one producer/decor/consumer runtime link.
+     *
+     * This is called when a consumer is unbound because its loader dependencies
+     * changed.
+     *
+     * @param decorProducerModel - Producer model that owns the runtime link.
+     * @param decorType - Decor constructor for the runtime link.
+     * @param decorConsumerTag - Consumer method tag to remove.
+     * @returns Nothing.
+     */
     public remove(
         decorProducerModel: Model,
         decorType: Constructor<Decor>,
@@ -33,6 +55,16 @@ class DecorConsumerManager {
         this._context.set(decorProducerModel, subContext);
     }
 
+    /**
+     * Return decor consumer links for a producer.
+     *
+     * Without a decor, this returns the full decor-type map. With a decor, this
+     * returns only consumer tags bound to that decor constructor.
+     *
+     * @param decorProducerModel - Producer model whose links should be read.
+     * @param decor - Optional decor instance used to filter by constructor.
+     * @returns Either the full link map or the matching consumer tags.
+     */
     public query(decorProducerModel: Model): Map<Constructor<Decor>, Array<Tag>>
     public query(decorProducerModel: Model, decor: Decor): Array<Tag>
     public query(
@@ -47,4 +79,3 @@ class DecorConsumerManager {
     }
 }
 export const decorConsumerManager = new DecorConsumerManager();
-

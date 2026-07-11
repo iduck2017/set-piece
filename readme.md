@@ -38,8 +38,8 @@ import {
   useRef,
   Event,
   Frame,
-  ChangeFrame,
-  ChangeEvent,
+  DiffFrame,
+  DiffEvent,
   useEventConsumer,
   useEventProducer,
   useFrameConsumer,
@@ -343,7 +343,7 @@ consumer loader 会收集依赖。上面的 `self.target` 变化时，event cons
 也可以用 `@useEventProducer()` 把字段变化自动变成 event：
 
 ```ts
-class CountChangedEvent extends ChangeEvent<number> {}
+class CountChangedEvent extends DiffEvent<number> {}
 
 @useModel('counter')
 class CounterModel extends Model {
@@ -380,7 +380,7 @@ this.emit(new CountFrame({ next: this.count }));
 ```ts
 @useModel('counter')
 class CounterModel extends Model {
-  @useFrameProducer(() => ChangeFrame)
+  @useFrameProducer(() => DiffFrame)
   @useDep()
   public count = 0;
 }
@@ -393,8 +393,8 @@ class CounterViewModel extends Model {
   @useRef()
   public counter?: CounterModel;
 
-  @useFrameConsumer((self: CounterViewModel) => [self.counter, ChangeFrame])
-  private async handleCount(frame: ChangeFrame<number>) {
+  @useFrameConsumer((self: CounterViewModel) => [self.counter, DiffFrame])
+  private async handleCount(frame: DiffFrame<number>) {
     console.log(frame.detail.next);
   }
 }
@@ -422,8 +422,8 @@ class CounterView extends Model {
 import {
   Model,
   Event,
-  ChangeEvent,
-  ChangeFrame,
+  DiffEvent,
+  DiffFrame,
   useModel,
   useDep,
   useMemo,
@@ -436,7 +436,7 @@ import {
 } from 'set-piece';
 
 class TodoDoneEvent extends Event<{ id: string }> {}
-class TodoStatusEvent extends ChangeEvent<string> {}
+class TodoStatusEvent extends DiffEvent<string> {}
 
 @useModel('todo')
 class TodoModel extends Model {
@@ -452,7 +452,7 @@ class TodoModel extends Model {
   @useDep()
   public status = 'open';
 
-  @useFrameProducer(() => ChangeFrame)
+  @useFrameProducer(() => DiffFrame)
   @useDep()
   public done = false;
 
@@ -484,8 +484,8 @@ class TodoListModel extends Model {
     this.doneIds.push(event.detail.id);
   }
 
-  @useFrameConsumer((self: TodoListModel) => [self.todos, ChangeFrame])
-  private async handleTodoFrame(frame: ChangeFrame<boolean>) {
+  @useFrameConsumer((self: TodoListModel) => [self.todos, DiffFrame])
+  private async handleTodoFrame(frame: DiffFrame<boolean>) {
     console.log('todo done changed:', frame.detail.next);
   }
 

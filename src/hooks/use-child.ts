@@ -1,13 +1,23 @@
-﻿import { depRegistry } from "../dep/dep-registry";
+import { depRegistry } from "../dep/dep-registry";
 import { Model } from "../model";
 import { TypedPropertyDecorator } from "../types";
 import { tagDelegator } from "../tag/tag-delegator";
-import { ChildDelegator } from "./child-delegator";
-import { childRegistry } from "./child-registry";
+import { ChildDelegator } from "../child/child-delegator";
+import { childRegistry } from "../child/child-registry";
 
 export type ChildList = Array<Model | undefined>
 
-export function childIterator(model: Record<string, any>, key: string) {
+/**
+ * Read a decorated child property as a normalized model list.
+ *
+ * `ChildRegistry` calls this when `Model.children` or `Model.descendants` is
+ * queried.
+ *
+ * @param model - Model instance that owns the child property.
+ * @param key - Decorated child property key.
+ * @returns Child models found in the property value.
+ */
+function childIterator(model: Record<string, any>, key: string) {
     const result: Model[] = [];
     const value = model[key]
     if (value instanceof Model) result.push(model[key]);
@@ -17,13 +27,23 @@ export function childIterator(model: Record<string, any>, key: string) {
     return result;
 }
 
+/**
+ * Create a property decorator for owned child model state.
+ *
+ * Use this on a property that stores one child model or a child model array.
+ * Assignments and array mutations mount new children to the owner and unmount
+ * removed children. The property is also registered as reactive dependency
+ * state.
+ *
+ * @returns Property decorator for child model properties.
+ */
 export function useChild<
     M extends Model & Record<string, any>,
     K extends string
 >():
-    M[K] extends Model | undefined ? 
+    M[K] extends Model | undefined ?
         TypedPropertyDecorator<M, K> :
-        M[K] extends ChildList | undefined ? 
+        M[K] extends ChildList | undefined ?
             TypedPropertyDecorator<M, K> :
             TypedPropertyDecorator<never, never> {
     return function(prototype: M, key: K) {
@@ -41,7 +61,7 @@ export function useChild<
 
                 if (setter) setter.call(this, next);
                 else tagDelegator.set(this, key, next);
-                
+
                 if (prev instanceof Model) prev._internal.unmount();
                 if (prev instanceof Array) prev
                     .filter(item => item instanceof Model)

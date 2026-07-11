@@ -1,5 +1,5 @@
-﻿import { Model } from "../model";
-import { useChild } from "./use-child";
+import { Model } from "../model";
+import { useChild } from "../hooks/use-child";
 import { childRegistry } from "./child-registry";
 
 class AppleModel extends Model {}
@@ -7,9 +7,7 @@ class PineappleModel extends Model {}
 class BoxModel extends Model {
     @useChild()
     private _pineapple?: PineappleModel = new PineappleModel();
-    public get pineapple() {
-        return this._pineapple;
-    }
+    public get pineapple() { return this._pineapple; }
     public setPineapple(pineapple: PineappleModel) {
         this._pineapple = pineapple;
     }
@@ -19,9 +17,7 @@ class BoxModel extends Model {
 
     @useChild()
     private _apples: AppleModel[] = [];
-    public get apples() {
-        return [...this._apples];
-    }
+    public get apples() { return [...this._apples]; }
     public addApple(apple: AppleModel) {
         this._apples.push(apple);
     }

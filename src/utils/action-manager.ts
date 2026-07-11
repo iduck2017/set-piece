@@ -1,11 +1,19 @@
 import { effectResolver } from "../effect/effect-resolver";
 import { eventProducerResolver } from "../event/event-producer-resolver";
 import { frameProducerResolver } from "../frame/frame-producer-resolver";
-import { Method } from "../types";
 
 export class ActionManager {
     private _pending = false;
 
+    /**
+     * Execute one action and flush action-scoped resolvers at the boundary.
+     *
+     * Nested actions reuse the outer action so effects and producers flush once
+     * after the outermost mutation finishes.
+     *
+     * @param handler - Operation that may mutate dependency-backed state.
+     * @returns The handler result.
+     */
     public launch(handler: () => unknown) {
         if (this._pending) return handler();
         this._pending = true;
@@ -15,6 +23,14 @@ export class ActionManager {
         return result;
     }
 
+    /**
+     * Flush work that should happen after user state mutation settles.
+     *
+     * Effects run first, then event and frame producers emit diff payloads for
+     * properties changed during the action.
+     *
+     * @returns Nothing.
+     */
     private resolve() {
         effectResolver.resolve();
         eventProducerResolver.resolve();
@@ -23,20 +39,3 @@ export class ActionManager {
 }
 
 export const actionManager = new ActionManager();
-
-export function useAction() {
-    return function(
-        prototype: unknown,
-        key: unknown,
-        descriptor: TypedPropertyDescriptor<Method>,
-    ) {
-        const handler = descriptor.value;
-        if (!handler) return descriptor;
-        descriptor.value = function(...args: unknown[]) {
-            const _handler = handler.bind(this, ...args);
-            const result = actionManager.launch(_handler);
-            return result;
-        };
-        return descriptor;
-    };
-}

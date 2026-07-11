@@ -6,9 +6,18 @@ import { frameConsumerResolver } from "../frame/frame-consumer-resolver";
 import { frameProducerResolver } from "../frame/frame-producer-resolver";
 import { memoResolver } from "../memo/memo-resolver";
 import { Tag } from "../tag/tag-registry";
-import { useBlink } from "../action/blink-manager";
+import { useBlink } from "../hooks/use-blink";
 
 class DepService {
+    /**
+     * Fan out one changed dependency to every resolver that tracks deps.
+     *
+     * Reactive setters call this after a value changes. Each resolver decides
+     * whether the changed tag affects its own graph.
+     *
+     * @param tag - Dependency tag whose value changed.
+     * @returns Nothing.
+     */
     @useBlink()
     public register(tag: Tag) {
         memoResolver.register(tag);

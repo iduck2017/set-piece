@@ -13,6 +13,18 @@ export type DecorProducerLoaderMap = Map<string, DecorProducerLoader>
 class DecorProducerRegistry {
     private _config: Map<AbstractConstructor<Model>, DecorProducerLoaderMap> = new Map();
 
+    /**
+     * Register and wrap a property as a decor producer.
+     *
+     * Reads create the configured decor from the raw origin value, emit it to
+     * bound decor consumers, cache `decor.result`, and return that result.
+     * Writes update the raw value and queue this producer for recomputation.
+     *
+     * @param prototype - Prototype that owns the producer property.
+     * @param key - Producer property key.
+     * @param loader - Function returning the decor constructor to apply.
+     * @returns Nothing.
+     */
     public register(
         prototype: Model,
         key: string,
@@ -52,6 +64,15 @@ class DecorProducerRegistry {
         });
     }
 
+    /**
+     * Collect inherited decor producer loaders for a model.
+     *
+     * `DecorProducerResolver.register(model, decorType)` uses this to find
+     * producer properties that emit a specific decor type.
+     *
+     * @param prototype - Model instance whose constructor chain is inspected.
+     * @returns Map from producer property key to decor constructor loader.
+     */
     public query(prototype: Model) {
         const result: DecorProducerLoaderMap = new Map();
         let constructor: any = prototype.constructor;
@@ -67,13 +88,3 @@ class DecorProducerRegistry {
     }
 }
 export const decorProducerRegistry = new DecorProducerRegistry();
-
-export function useDecorProducer<
-    M extends Model & Record<string, any>,
-    K extends string,
->(loader: DecorProducerLoader<M[K]>) {
-    return function(prototype: M, key: K) {
-        decorProducerRegistry.register(prototype, key, loader);
-    }
-}
-

@@ -7,6 +7,17 @@ import { tagRegistry } from "../tag/tag-registry";
 class EffectRegistry {
     private _config: Map<AbstractConstructor<Model>, string[]> = new Map();
 
+    /**
+     * Register an effect method and wrap it with dependency collection.
+     *
+     * Effects run during model initialization and during action flushes after
+     * dependencies they previously read change.
+     *
+     * @param prototype - Prototype that owns the effect method.
+     * @param key - Effect method key.
+     * @param descriptor - Method descriptor supplied by TypeScript.
+     * @returns Nothing.
+     */
     public register(
         prototype: Model,
         key: string,
@@ -28,6 +39,12 @@ class EffectRegistry {
         }
     }
 
+    /**
+     * Collect inherited effect method keys for a model.
+     *
+     * @param prototype - Model instance whose constructor chain is inspected.
+     * @returns Effect method keys registered on the model hierarchy.
+     */
     public query(prototype: Model) {
         let constructor: any = prototype.constructor;
         const result: string[] = [];
@@ -44,13 +61,3 @@ class EffectRegistry {
 }
 
 export const effectRegistry = new EffectRegistry();
-
-export function useEffect() {
-    return function(
-        prototype: Model,
-        key: string,
-        descriptor: TypedPropertyDescriptor<() => void>,
-    ) {
-        effectRegistry.register(prototype, key, descriptor);
-    }
-}

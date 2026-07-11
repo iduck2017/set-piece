@@ -1,6 +1,5 @@
 import { Frame } from ".";
 import { Tag } from "../tag/tag-registry";
-import { Method } from "../types";
 
 type FrameContext = {
     consumerTag: Tag;
@@ -12,16 +11,40 @@ class FrameResolver {
     protected _pending: boolean;
     protected _context: Map<number, FrameContext[]>
 
+    /**
+     * Initialize the frame queue used by one anime boundary.
+     *
+     * The resolver starts at step 1 so frames emitted before any manual
+     * `proceed()` call are delivered in the first batch.
+     */
     constructor() {
         this._step = 1;
         this._pending = false;
         this._context = new Map()
     }
 
+    /**
+     * Advance the frame step for subsequently registered frames.
+     *
+     * Consumers can use this to split frame handling into ordered batches.
+     * `resolve()` waits for all handlers in a step before moving to the next.
+     *
+     * @returns Nothing.
+     */
     public proceed() {
         this._step += 1;
     }
 
+    /**
+     * Queue a frame for the current step and consumer method.
+     *
+     * This is called by `frameService.emit()` after it finds all consumers
+     * currently bound to the producer model and frame type.
+     *
+     * @param consumerTag - Tag pointing to the consumer model and method key.
+     * @param frame - Frame instance that should be passed to the consumer.
+     * @returns Nothing.
+     */
     public register(consumerTag: Tag, frame: Frame) {
         const step = this._step;
         const context = this._context.get(step) ?? [];
@@ -29,6 +52,16 @@ class FrameResolver {
         this._context.set(step, context);
     }
 
+    /**
+     * Run an anime boundary and flush queued frames after it completes.
+     *
+     * Nested anime calls reuse the outer boundary, so frame resolution happens
+     * once at the end of the outermost call. Promise results are awaited before
+     * the queue is resolved.
+     *
+     * @param handler - User or framework operation that may emit frames.
+     * @returns The handler result, preserving promise results when present.
+     */
     public async launch(handler: () => unknown) {
         if (this._pending) return handler();
         this._pending = true;
@@ -46,6 +79,14 @@ class FrameResolver {
         }
     }
 
+    /**
+     * Drain queued frames in step order.
+     *
+     * For each step, all consumer handlers are invoked concurrently and awaited
+     * before the next step starts. This is the final dispatch stage for frames.
+     *
+     * @returns A promise that resolves after all queued frame handlers finish.
+     */
     public async resolve() {
         const step = this._step;
         this._step = 1;
@@ -68,19 +109,3 @@ class FrameResolver {
 }
 
 export const frameResolver = new FrameResolver();
-
-export function useAnime() {
-    return function(
-        _prototype: unknown,
-        _key: unknown,
-        descriptor: TypedPropertyDescriptor<Method>,
-    ) {
-        const handler = descriptor.value;
-        if (!handler) return descriptor;
-        descriptor.value = function(...args: unknown[]) {
-            const _handler = handler.bind(this, ...args);
-            return frameResolver.launch(_handler);
-        }
-        return descriptor;
-    }
-}

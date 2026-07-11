@@ -7,20 +7,17 @@ import { eventConsumerRegistry } from "./event/event-consumer-registry";
 import { eventService } from "./event/event-service";
 import { memoRegistry } from "./memo/memo-registry";
 import { routeRegistry } from "./route/route-registry";
-import { eventResolver, useStory } from "./event/event-resolver";
+import { eventResolver } from "./event/event-resolver";
+import { useStory } from "./hooks/use-story";
 import { tagRegistry } from "./tag/tag-registry";
 import { ticketService } from "./utils/ticket-service";
-import { blinkManager } from "./action/blink-manager";
 import { Frame } from "./frame";
 import { frameService } from "./frame/frame-service";
 import { frameConsumerRegistry } from "./frame/frame-consumer-registry";
-import { useAnime } from "./frame/frame-resolver";
+import { useAnime } from "./hooks/use-anime";
 import { gcService } from "./utils/gc-service";
 import { refConsumerRegistry } from "./ref/ref-consumer-registry";
 import { refRegistry } from "./ref/ref-registry";
-import { storeRegistry } from "./store/store-registry";
-import { Constructor } from "./types";
-import { modelResolver } from "./model-resolver";
 
 type EmitOptions = {
     isDefer?: boolean;
@@ -35,14 +32,19 @@ export abstract class Model {
     protected readonly _brand = Symbol('model')
 
     protected _uuid: string = ticketService.query()
-    public get uuid() {
-        return this._uuid;
-    }
+    public get uuid() { return this._uuid; }
 
-    public get name() {
-        return this.constructor.name;
-    }
+    public get name() { return this.constructor.name; }
 
+    /**
+     * Initialize all reactive registrations for this model.
+     *
+     * This runs from `ModelResolver` inside a blink. It warms memo getters,
+     * executes effects once, and binds decor, event, and frame consumers for
+     * the first time.
+     *
+     * @returns Nothing.
+     */
     private init() {
         gcService.register(this, `${this.constructor.name}#${this._uuid}`);
         const memoKeys = memoRegistry.query(this);
@@ -66,9 +68,40 @@ export abstract class Model {
         frameConsumerTags.forEach(tag => frameService.bind(tag));
     }
 
+    /**
+     * Emit a frame through the anime frame queue.
+     *
+     * @param frame - Frame instance to queue for bound consumers.
+     * @param options - Currently ignored for frames.
+     * @returns The frame emission result.
+     */
     protected emit(frame: Frame, options?: EmitOptions): unknown;
+    /**
+     * Emit an event asynchronously.
+     *
+     * @param event - Event instance to deliver.
+     * @param options - Emit options with `isAsync: true`.
+     * @returns Promise resolved after all async consumers finish.
+     */
     protected emit(event: Event, options: AsyncEmitOptions): Promise<void>;
+    /**
+     * Emit an event synchronously or defer it to the current story.
+     *
+     * @param event - Event instance to deliver.
+     * @param options - Optional deferred emit settings.
+     * @returns The event emission result.
+     */
     protected emit(event: Event, options?: EmitOptions): unknown;
+    /**
+     * Route the payload by runtime type and emit options.
+     *
+     * Frames go through `frameService`. Events can be sync, async, or deferred
+     * through `eventResolver`.
+     *
+     * @param target - Frame or event payload to emit.
+     * @param options - Event emit options.
+     * @returns The chosen service result.
+     */
     @useAnime()
     @useStory()
     protected emit(target: Frame | Event, options: EmitOptions = {}) {
@@ -78,6 +111,14 @@ export abstract class Model {
         return eventService.emitSync(this, target);
     }
 
+    /**
+     * Remove this model from ref holders and clear refs held by this model.
+     *
+     * This is an internal cleanup helper used before a model leaves the object
+     * graph.
+     *
+     * @returns Nothing.
+     */
     protected unlink() {
         const refConsumers = refConsumerRegistry.query(this);
         refConsumers.forEach(tag => {
@@ -125,27 +166,46 @@ export abstract class Model {
     }
 
     private _parent?: Model;
-    public get parent() {
-        return this._parent;
-    }
+    public get parent() { return this._parent; }
 
     private _root: Model = this;
-    public get root() {
-        return this._root;
-    }
+    public get root() { return this._root; }
 
+    /**
+     * Attach this model to a parent and refresh derived routes.
+     *
+     * `useChild()` calls this when a model becomes owned child state.
+     *
+     * @param parent - Parent model that now owns this child.
+     * @returns Nothing.
+     */
     private mount(parent: Model) {
         if (this._parent) return;
         this._parent = parent;
         this.reroute();
     }
 
+    /**
+     * Detach this model from its parent and refresh derived routes.
+     *
+     * `useChild()` calls this when a child is removed or replaced.
+     *
+     * @returns Nothing.
+     */
     private unmount() {
         if (!this._parent) return
         this._parent = undefined;
         this.reroute();
     }
 
+    /**
+     * Recompute nearest route ancestors, root, and descendant routes.
+     *
+     * This is triggered after mount/unmount changes. It updates route fields for
+     * this model and all descendants.
+     *
+     * @returns Nothing.
+     */
     private reroute() {
         const routeTypeMap = routeRegistry.query(this);
         routeTypeMap.forEach((Constructor: Function, key: string) => {
@@ -160,18 +220,5 @@ export abstract class Model {
         while (root.parent) root = root.parent;
         this._root = root;
         this.children.forEach((child: Model) => child.reroute());
-    }
-}
-
-export function useModel(code: string) {
-    return function(Constructor: Constructor<Model, undefined[]>): any {
-        storeRegistry.register(code, Constructor);
-        Constructor = blinkManager.delegate(Constructor);
-        return class extends Constructor {
-            constructor(...params: any[]) {
-                super(...params);
-                modelResolver.register(this);
-            }
-        } 
     }
 }

@@ -1,9 +1,10 @@
 import { Decor } from ".";
-import { useDep } from "../dep/dep-registry";
-import { Model, useModel } from "../model";
-import { useDecorConsumer } from "./decor-consumer-registry";
-import { useDecorProducer } from "./decor-producer-registry";
-import { useState } from "./use-state";
+import { useDep } from "../hooks/use-dep";
+import { Model } from "../model";
+import { useModel } from "../hooks/use-model";
+import { useDecorConsumer } from "../hooks/use-decor-consumer";
+import { useDecorProducer } from "../hooks/use-decor-producer";
+import { useState } from "../hooks/use-state";
 
 class AttackDecor extends Decor<number> {
     private _result: number;
@@ -13,9 +14,7 @@ class AttackDecor extends Decor<number> {
         this._result = origin;
     }
 
-    public get result() {
-        return this._result;
-    }
+    public get result() { return this._result; }
 
     public add(value: number) {
         this._result += value;
@@ -28,12 +27,12 @@ class MonsterModel extends Model {
     @useState()
     private _attack = 100;
 
-    public get attack() {
-        return this._attack;
-    }
+    public get attack() { return this._attack; }
 
     @useDep()
-    public buff = 10;
+    private _buff = 10;
+    public get buff() { return this._buff; }
+    public set buff(value: number) { this._buff = value; }
 
     @useDecorConsumer((self: MonsterModel) => [self, AttackDecor])
     private handleAttack(decor: AttackDecor) {
@@ -51,4 +50,3 @@ describe('decor', () => {
         expect(monster.attack).toBe(120);
     });
 });
-

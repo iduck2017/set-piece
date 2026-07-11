@@ -16,6 +16,18 @@ export type FrameConsumerLoader<
 class FrameConsumerRegistry {
     private _config: Map<AbstractConstructor<Model>, Map<string, Array<FrameConsumerLoader>>> = new Map();
 
+    /**
+     * Register a frame consumer loader and wrap it with dependency collection.
+     *
+     * The loader is declared by `useFrameConsumer()`. It runs during model
+     * initialization and every binding refresh to decide which producer models
+     * and frame type the method should consume.
+     *
+     * @param prototype - Prototype that owns the consumer method.
+     * @param key - Consumer method key.
+     * @param loader - Function that returns target producer(s) and frame type.
+     * @returns Nothing.
+     */
     public register(
         prototype: Model,
         key: string,
@@ -36,6 +48,12 @@ class FrameConsumerRegistry {
         this._config.set(constructor, subConfig);
     }
 
+    /**
+     * Collect inherited frame consumer loaders for a model instance.
+     *
+     * @param prototype - Model instance whose constructor chain is inspected.
+     * @returns Map from consumer method key to registered loader list.
+     */
     public query(prototype: Model) {
         const result: Map<string, Array<FrameConsumerLoader>> = new Map();
         let constructor: any = prototype.constructor;
@@ -56,16 +74,3 @@ class FrameConsumerRegistry {
 }
 
 export const frameConsumerRegistry = new FrameConsumerRegistry();
-
-export function useFrameConsumer<
-    F extends Frame,
-    I extends Model
->(loader: FrameConsumerLoader<I, F>) {
-    return function(
-        prototype: I,
-        key: string,
-        descriptor: TypedPropertyDescriptor<(frame: F) => Promise<void>>,
-    ) {
-        frameConsumerRegistry.register(prototype, key, loader);
-    }
-}

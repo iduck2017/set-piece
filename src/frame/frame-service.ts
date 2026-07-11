@@ -7,6 +7,17 @@ import { frameProducerManager } from "./frame-producer-manager";
 import { frameResolver } from "./frame-resolver";
 
 class FrameService {
+    /**
+     * Queue a frame for every consumer currently bound to the producer.
+     *
+     * This is called by model `emit(frame)` and by frame producers. It does not
+     * invoke handlers immediately; it delegates to `frameResolver` so anime
+     * boundaries can batch and order delivery.
+     *
+     * @param frameProducerModel - Model that emitted or produced the frame.
+     * @param frame - Frame instance to deliver to matching consumers.
+     * @returns Nothing.
+     */
     public emit(frameProducerModel: Model, frame: Frame) {
         const frameConsumerTags = frameConsumerManager.query(frameProducerModel, frame);
         frameConsumerTags.forEach(frameConsumerTag => {
@@ -14,6 +25,16 @@ class FrameService {
         });
     }
 
+    /**
+     * Remove all runtime frame links owned by one consumer tag.
+     *
+     * This is used before rebinding a consumer whose loader dependencies
+     * changed. It clears both producer-to-consumer and consumer-to-producer
+     * indexes.
+     *
+     * @param frameConsumerTag - Tag pointing to the consumer method to unbind.
+     * @returns Nothing.
+     */
     public unbind(frameConsumerTag: Tag) {
         const frameTypesMap = frameProducerManager.query(frameConsumerTag);
         frameTypesMap.forEach((frameTypes, frameProducerModel) => {
@@ -24,6 +45,16 @@ class FrameService {
         frameProducerManager.remove(frameConsumerTag);
     }
 
+    /**
+     * Run frame consumer loaders and create runtime links.
+     *
+     * The loader returns a producer model or producer model list plus the frame
+     * constructor it wants to consume. This method stores those links in both
+     * frame managers so emit and future unbind operations can find them.
+     *
+     * @param frameConsumerTag - Tag pointing to the consumer method to bind.
+     * @returns Nothing.
+     */
     public bind(frameConsumerTag: Tag) {
         const consumerModel = frameConsumerTag.target;
         const consumerKey = frameConsumerTag.key;

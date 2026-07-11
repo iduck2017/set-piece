@@ -1,17 +1,21 @@
-import { useDep } from "../dep/dep-registry";
-import { Model, useModel } from "../model";
-import { useEffect } from "./effect-registry";
+import { useDep } from "../hooks/use-dep";
+import { Model } from "../model";
+import { useModel } from "../hooks/use-model";
+import { useEffect } from "../hooks/use-effect";
 
 @useModel('effect-demo')
 class EffectModel extends Model {
     @useDep()
-    public count = 1;
+    private _count = 1;
+    public get count() { return this._count; }
+    public set count(value: number) { this._count = value; }
 
-    public records: number[] = [];
+    private _records: number[] = [];
+    public get records() { return this._records; }
 
     @useEffect()
     private recordCount() {
-        this.records.push(this.count);
+        this._records.push(this.count);
     }
 }
 

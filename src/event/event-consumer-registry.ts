@@ -16,6 +16,18 @@ export type EventConsumerLoader<
 class EventConsumerRegistry {
     private _config: Map<AbstractConstructor<Model>, Map<string, Array<EventConsumerLoader>>> = new Map();
 
+    /**
+     * Register an event consumer loader and wrap it with dependency collection.
+     *
+     * The loader is declared by `useEventConsumer()`. It runs during model
+     * initialization and every binding refresh to decide which producer models
+     * and event type the method should consume.
+     *
+     * @param prototype - Prototype that owns the consumer method.
+     * @param key - Consumer method key.
+     * @param loader - Function that returns target producer(s) and event type.
+     * @returns Nothing.
+     */
     public register(
         prototype: Model,
         key: string,
@@ -36,6 +48,12 @@ class EventConsumerRegistry {
         this._config.set(constructor, subConfig);
     }
 
+    /**
+     * Collect inherited event consumer loaders for a model instance.
+     *
+     * @param prototype - Model instance whose constructor chain is inspected.
+     * @returns Map from consumer method key to registered loader list.
+     */
     public query(prototype: Model) {
         const result: Map<string, Array<EventConsumerLoader>> = new Map();
         let constructor: any = prototype.constructor;
@@ -56,16 +74,3 @@ class EventConsumerRegistry {
 }
 
 export const eventConsumerRegistry = new EventConsumerRegistry();
-
-export function useEventConsumer<
-    E extends Event,
-    I extends Model
->(loader: EventConsumerLoader<I, E>) {
-    return function(
-        prototype: I,
-        key: string,
-        descriptor: TypedPropertyDescriptor<(event: E) => void>,
-    ) {
-        eventConsumerRegistry.register(prototype, key, loader);
-    }
-}

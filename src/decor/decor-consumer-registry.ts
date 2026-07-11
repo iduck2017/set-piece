@@ -17,6 +17,19 @@ type DecorConsumerLoadersMap = Map<string, Array<DecorConsumerLoader>>
 class DecorConsumerRegistry {
     private _config: Map<AbstractConstructor<Model>, DecorConsumerLoadersMap> = new Map();
 
+    /**
+     * Register decor loader and handler logic with dependency collection.
+     *
+     * The loader decides which producer model(s) and decor type a method should
+     * consume. The optional descriptor is wrapped so dependencies read inside
+     * the handler also participate in future binding refreshes.
+     *
+     * @param prototype - Prototype that owns the consumer method.
+     * @param key - Consumer method key.
+     * @param descriptor - Method descriptor for the decor handler.
+     * @param loader - Function returning target producer(s) and decor type.
+     * @returns Nothing.
+     */
     public register<I extends Model, D extends Decor>(
         prototype: I,
         key: string,
@@ -49,6 +62,12 @@ class DecorConsumerRegistry {
         }
     }
 
+    /**
+     * Collect inherited decor consumer loaders for a model.
+     *
+     * @param prototype - Model instance whose constructor chain is inspected.
+     * @returns Map from consumer method key to registered loader list.
+     */
     public query(prototype: Model) {
         const result: DecorConsumerLoadersMap = new Map();
         let constructor: any = prototype.constructor;
@@ -68,18 +87,3 @@ class DecorConsumerRegistry {
     }
 }
 export const decorConsumerRegistry = new DecorConsumerRegistry();
-
-export function useDecorConsumer<
-    D extends Decor,
-    I extends Model
->(loader: DecorConsumerLoader<I, D>) {
-    return function(
-        prototype: I,
-        key: string,
-        descriptor: TypedPropertyDescriptor<(decor: D) => void>,
-    ) {
-        decorConsumerRegistry.register(prototype, key, descriptor, loader);
-        return descriptor;
-    }
-}
-

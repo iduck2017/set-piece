@@ -7,6 +7,17 @@ import { Tag } from "../tag/tag-registry";
 import { decorProducerResolver } from "./decor-producer-resolver";
 
 class DecorService {
+    /**
+     * Apply a decor instance to all currently bound consumers.
+     *
+     * This is called while a decor producer property is being read. Consumers
+     * can mutate the decor object before the producer caches and returns
+     * `decor.result`.
+     *
+     * @param decorProducerModel - Model whose producer property created decor.
+     * @param decor - Decor instance passed to matching consumer handlers.
+     * @returns Nothing.
+     */
     public emit(decorProducerModel: Model, decor: Decor) {
         const decorConsumerTags = decorConsumerManager.query(decorProducerModel, decor);
         decorConsumerTags.forEach(decorConsumerTag => {
@@ -19,6 +30,16 @@ class DecorService {
         });
     }
 
+    /**
+     * Remove all runtime decor links owned by one consumer tag.
+     *
+     * This is used before rebinding a consumer whose loader dependencies
+     * changed. Removed links also queue affected producers so their cached
+     * decorated values can be recomputed.
+     *
+     * @param decorConsumerTag - Tag pointing to the consumer method to unbind.
+     * @returns Nothing.
+     */
     public unbind(decorConsumerTag: Tag) {
         const decorTypesMap = decorProducerManager.query(decorConsumerTag);
         decorTypesMap.forEach((decorTypes, decorProducerModel) => {
@@ -30,6 +51,16 @@ class DecorService {
         decorProducerManager.remove(decorConsumerTag);
     }
 
+    /**
+     * Run decor consumer loaders and create runtime links.
+     *
+     * The loader returns a producer model or producer model list plus the decor
+     * constructor it wants to consume. This method stores those links in both
+     * decor managers and queues the producer for recomputation.
+     *
+     * @param decorConsumerTag - Tag pointing to the consumer method to bind.
+     * @returns Nothing.
+     */
     public bind(decorConsumerTag: Tag) {
         const consumerModel = decorConsumerTag.target;
         const consumerKey = decorConsumerTag.key;
@@ -58,4 +89,3 @@ class DecorService {
     }
 }
 export const decorService = new DecorService();
-

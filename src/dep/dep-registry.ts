@@ -9,6 +9,18 @@ import { tagRegistry } from "../tag/tag-registry";
 class DepRegistry {
     private _config: Map<AbstractConstructor<Model>, string[]> = new Map();
 
+    /**
+     * Install reactive behavior for a property or getter.
+     *
+     * For plain properties, the generated getter collects reads and the setter
+     * proxies mutable values, stores the new value, and notifies `DepService`.
+     * For accessor descriptors, only the getter is wrapped for read collection.
+     *
+     * @param prototype - Prototype that owns the dependency property/getter.
+     * @param key - Property or getter key.
+     * @param descriptor - Optional accessor descriptor supplied by TypeScript.
+     * @returns Nothing.
+     */
     public register(prototype: Model, key: string, descriptor?: TypedPropertyDescriptor<any>) {
         const constructor: any = prototype.constructor;
         const keys = this._config.get(constructor) ?? [];
@@ -50,16 +62,3 @@ class DepRegistry {
     }
 }
 export const depRegistry = new DepRegistry();
-
-export function useDep<
-    M extends Record<string, any> & Model,
-    K extends string
->() {
-    return function(
-        prototype: M,
-        key: K,
-        descriptor?: TypedPropertyDescriptor<M[K]>
-    ) {
-        depRegistry.register(prototype, key, descriptor);
-    }
-}

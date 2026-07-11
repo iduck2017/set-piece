@@ -6,6 +6,15 @@ export type StoreRowConfigMap = Map<string, StoreRowConfig>;
 class StoreRowRegistry {
     private _context: Map<Function, StoreRowConfigMap> = new Map();
 
+    /**
+     * Register row-level serializers for a model property.
+     *
+     * @param prototype - Prototype that owns the stored property.
+     * @param key - Stored property key.
+     * @param parser - Function used when loading serialized values.
+     * @param generator - Function used when saving runtime values.
+     * @returns Nothing.
+     */
     public register(
         prototype: Model, 
         key: string, 
@@ -17,6 +26,12 @@ class StoreRowRegistry {
         this._context.set(prototype.constructor, configMap);
     }
 
+    /**
+     * Collect inherited row serializers for a model constructor.
+     *
+     * @param constructor - Constructor whose hierarchy should be inspected.
+     * @returns Map from property key to parser/generator pair.
+     */
     public query(constructor: Function): StoreRowConfigMap {
         const result: StoreRowConfigMap = new Map();
         let Constructor: any = constructor;
