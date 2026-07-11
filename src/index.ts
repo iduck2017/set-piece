@@ -1,58 +1,74 @@
-/** Core */
+/** Core models */
 export { Model } from './model';
 
-/** Node relationships */
-export { useChild } from './hooks/use-child';
-export { useRoute } from './hooks/use-route';
-export { routeRegistry } from './route/route-registry';
-export { routeResolver } from './route/route-resolver';
-
-/** Reactivity */
-export { useDep } from './hooks/use-dep';
-export { depRegistry } from './dep/dep-registry';
-export { useEffect } from './hooks/use-effect';
-export { effectRegistry } from './effect/effect-registry';
-export { useMemo } from './hooks/use-memo';
-export { memoRegistry } from './memo/memo-registry';
-export { useRef } from './hooks/use-ref';
-
-/** Decors */
-export { useDecorConsumer } from './hooks/use-decor-consumer';
-export { decorConsumerRegistry } from './decor/decor-consumer-registry';
-export { useDecorProducer } from './hooks/use-decor-producer';
-export { decorProducerRegistry } from './decor/decor-producer-registry';
-export { useState } from './hooks/use-state';
+/** Domain payloads */
 export { Decor } from './decor';
-
-/** Events */
-export { useEventConsumer } from './hooks/use-event-consumer';
-export { eventConsumerRegistry } from './event/event-consumer-registry';
-export { useEventProducer } from './hooks/use-event-producer';
-export { useStory } from './hooks/use-story';
-export { eventResolver } from './event/event-resolver';
 export { Event, DiffEvent, PrevEvent } from './event';
-
-/** Actions */
-export { useAction } from './hooks/use-action';
-export { actionManager } from './effect/action-manager';
-export { useBlink } from './hooks/use-blink';
-
-/** Frames */
 export { Frame, DiffFrame } from './frame';
-export { useFrameProducer } from './hooks/use-frame-producer'
-export { useFrameConsumer } from './hooks/use-frame-consumer';
-export { frameConsumerRegistry } from './frame/frame-consumer-registry';
-export { frameService } from './frame/frame-service';
-export { frameResolver } from './frame/frame-resolver';
 
-/** Misc */
+/** Model and view hooks */
 export { useModel } from './hooks/use-model';
 export { useView } from './hooks/use-view';
-export { HookRegistry } from './utils/hook-registry';
+
+/** Action and lifecycle hooks */
+export { useAction } from './hooks/use-action';
+export { useBlink } from './hooks/use-blink';
+export { useStory } from './hooks/use-story';
+
+/** State and dependency hooks */
+export { useDep } from './hooks/use-dep';
+export { useState } from './hooks/use-state';
+export { useMemo } from './hooks/use-memo';
+export { useEffect } from './hooks/use-effect';
+export { useRef } from './hooks/use-ref';
+
+/** Relationship hooks */
+export { useChild } from './hooks/use-child';
+export { useRoute } from './hooks/use-route';
+
+/** Decor hooks */
+export { useDecorConsumer } from './hooks/use-decor-consumer';
+export { useDecorProducer } from './hooks/use-decor-producer';
+
+/** Event hooks */
+export { useEventConsumer } from './hooks/use-event-consumer';
+export { useEventProducer } from './hooks/use-event-producer';
+
+/** Frame hooks */
+export { useFrameConsumer } from './hooks/use-frame-consumer';
+export { useFrameProducer } from './hooks/use-frame-producer';
+
+/** Utility hooks */
 export { useLog } from './hooks/use-log';
 export { useCheck as useValidator } from './hooks/use-check';
 
-/** Shared utility types */
-export { Method, AbstractConstructor, Constructor, TypedPropertyDecorator } from './types';
+/** Registries */
+export { depRegistry } from './dep/dep-registry';
+export { effectRegistry } from './effect/effect-registry';
+export { memoRegistry } from './memo/memo-registry';
+export { routeRegistry } from './route/route-registry';
+export { decorConsumerRegistry } from './decor/decor-consumer-registry';
+export { decorProducerRegistry } from './decor/decor-producer-registry';
+export { eventConsumerRegistry } from './event/event-consumer-registry';
+export { frameConsumerRegistry } from './frame/frame-consumer-registry';
 
+/** Resolvers and managers */
+export { actionManager } from './effect/action-manager';
+export { routeResolver } from './route/route-resolver';
+export { eventResolver } from './event/event-resolver';
+export { frameResolver } from './frame/frame-resolver';
+
+/** Services */
+export { frameService } from './frame/frame-service';
 export { gcService } from './utils/gc-service';
+
+/** Utilities */
+export { HookRegistry } from './utils/hook-registry';
+
+/** Shared types */
+export type {
+    AbstractConstructor,
+    Constructor,
+    Method,
+    TypedPropertyDecorator,
+} from './types';

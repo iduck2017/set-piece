@@ -1,19 +1,19 @@
 # set-piece
 
-`set-piece` 是一个以 `Model` 为中心的 TypeScript 状态建模框架。它把普通对象组织成一棵可追踪的模型树，并提供响应式依赖、派生值、事件、帧消息、父子关系和路由查找等能力。
+`set-piece` 是一个以 `Model` 为中心的 TypeScript 状态建模框架。它把普通对象组织成可追踪的模型树，并提供依赖收集、派生值、effect、decor、event、frame、父子关系、route 和 ref 等能力。
 
-这个库的核心思想是：
+核心流程可以理解为：
 
 ```text
-Model 上的字段变化
-  -> 记录为依赖变更
-  -> 在 blink/action/anime/story 边界中统一收敛
-  -> 刷新 memo、effect、event/frame 绑定或派发消息
+Model state changes
+  -> dep tag is registered
+  -> blink/action/story/anime boundaries collect work
+  -> resolvers refresh memo, route, decor, event, frame, and effect
 ```
 
-## 基础配置
+## Setup
 
-项目使用装饰器 API，需要 TypeScript 开启：
+项目使用 TypeScript decorator，需要开启：
 
 ```json
 {
@@ -24,51 +24,115 @@ Model 上的字段变化
 }
 ```
 
-典型导入：
+常用导入：
 
 ```ts
 import {
   Model,
+  Decor,
+  Event,
+  DiffEvent,
+  Frame,
+  DiffFrame,
   useModel,
+  useView,
   useDep,
+  useState,
   useMemo,
   useEffect,
   useChild,
   useRoute,
   useRef,
-  Event,
-  Frame,
-  DiffFrame,
-  DiffEvent,
+  useDecorConsumer,
+  useDecorProducer,
   useEventConsumer,
   useEventProducer,
   useFrameConsumer,
   useFrameProducer,
-  useView,
-  Decor,
-  useDecorConsumer,
-  useDecorProducer,
-  useState,
 } from 'set-piece';
 ```
 
-## 1. Tag：最底层的身份标记
+## Tag
 
-框架内部会给每个 `model + key` 创建一个 `Tag`。
+框架内部会给每个 `model + key` 创建稳定的 `Tag`：
 
 ```text
-someModel.count       -> Tag(someModel, "count")
-someModel.total       -> Tag(someModel, "total")
-someModel.handlePing  -> Tag(someModel, "handlePing")
+counter.count      -> Tag(counter, "count")
+counter.total      -> Tag(counter, "total")
+view.handleChange  -> Tag(view, "handleChange")
 ```
 
-`Tag` 是依赖系统的最小单位。一个字段被读取、一个 memo 被重算、一个 event consumer 需要重绑，最终都会落到 tag 之间的关系。
+`Tag` 是依赖系统的最小单位。字段读取、memo 重算、consumer 重新绑定，最终都会记录为 tag 之间的关系。普通业务代码通常不需要直接操作 tag。
 
-普通使用者通常不需要直接操作 `tagRegistry`。
+## Lifecycle
 
-## 2. Dep：可追踪字段
+`blink` 是同步收敛边界，负责刷新依赖图和绑定关系。顺序是：
 
-用 `@useDep()` 标记一个可追踪字段。
+```text
+modelResolver.resolve()
+routeResolver.resolve()
+memoResolver.resolve()
+decorProducerResolver.resolve()
+decorConsumerResolver.resolve()
+eventConsumerResolver.resolve()
+frameConsumerResolver.resolve()
+```
+
+`action` 是用户状态修改后的副作用边界。顺序是：
+
+```text
+effectResolver.resolve()
+eventProducerResolver.resolve()
+frameProducerResolver.resolve()
+```
+
+`story` 是 event 的延后派发边界：
+
+```text
+eventResolver.resolve()
+```
+
+`anime` 是 frame 的派发边界：
+
+```text
+frameResolver.resolve()
+```
+
+多数情况下不需要手动使用这些边界。`@useDep()` 写入、model 构造、consumer 绑定等内部流程会自动进入对应边界。需要显式包裹业务方法时，可以使用 `@useAction()`、`@useBlink()`、`@useStory()` 或 `@useAnime()`。
+
+## Model
+
+所有业务对象都继承 `Model`。
+
+```ts
+@useModel('todo')
+class TodoModel extends Model {
+  @useDep()
+  public title = '';
+}
+```
+
+`@useModel(code)` 会注册模型类型，并把构造流程接入 blink。model 创建后不会在 constructor 里直接完成初始化，而是进入 `modelResolver`：
+
+```text
+new TodoModel()
+  -> modelResolver.register(model)
+  -> blink flush
+  -> model._internal.init()
+```
+
+初始化会做这些事情：
+
+- 注册到 `gcService`
+- 预热 memo getter
+- 执行 effect 并收集依赖
+- 绑定 decor consumer
+- 绑定 event consumer
+- 绑定 frame consumer
+
+## Dep And State
+
+`@useDep()` 标记一个可追踪字段。
 
 ```ts
 @useModel('counter')
@@ -78,27 +142,22 @@ class CounterModel extends Model {
 }
 ```
 
-当 `count` 被读取时，当前正在收集依赖的 consumer 会记录它。
+字段被读取时，当前正在收集依赖的 consumer 会记录它。字段被写入时，框架会通知相关 resolver。
 
-当 `count` 被写入时，框架会通知依赖系统：
-
-```text
-count changed
-  -> memo/effect/eventConsumer/frameConsumer/frameProducer 等 resolver 收到 dep tag
-```
-
-数组也会被代理，常见 mutation 会触发依赖更新：
+数组和对象也会被代理，常见 mutation 会触发依赖更新：
 
 ```ts
 @useDep()
 public items: string[] = [];
 
-this.items.push('a'); // 会触发依赖更新
+this.items.push('a');
 ```
 
-## 3. Memo：派生值
+`@useState()` 是 decor producer 常用的 state 标记，本质上也会注册为依赖字段。
 
-用 `@useMemo()` 标记 getter，框架会缓存它的结果，并自动收集它依赖了哪些 `@useDep()` 或其它 memo。
+## Memo
+
+`@useMemo()` 标记 getter。框架会缓存 getter 结果，并自动收集 getter 读取过的依赖。
 
 ```ts
 @useModel('counter')
@@ -110,68 +169,20 @@ class CounterModel extends Model {
   public get double() {
     return this.count * 2;
   }
-
-  @useMemo()
-  public get label() {
-    return `count=${this.count}, double=${this.double}`;
-  }
 }
 
 const counter = new CounterModel();
-counter.label; // "count=1, double=2"
+counter.double; // 2
 
 counter.count = 3;
-counter.label; // "count=3, double=6"
+counter.double; // 6
 ```
 
-memo 的刷新发生在 `blink` 阶段。一次字段变化结束后，相关 memo 会被清缓存、重算，并继续通知下游 memo。
+memo 的失效和重算发生在 blink 阶段。如果 memo 输出变化，它会继续通知依赖它的下游。
 
-## 4. Blink：同步收敛边界
+## Effect
 
-`blink` 是框架的同步响应式收敛层。
-
-它主要负责：
-
-```text
-memoResolver.resolve()
-eventConsumerResolver.resolve()
-frameConsumerResolver.resolve()
-modelResolver.resolve()
-```
-
-也就是说，blink 结束时会处理：
-
-- memo 重算
-- event consumer 重新绑定
-- frame consumer 重新绑定
-- model 初始化
-
-用户可以用 `@useBlink()` 包裹方法，让方法结束后触发 blink 收敛：
-
-```ts
-class CounterModel extends Model {
-  @useDep()
-  public count = 0;
-
-  @useBlink()
-  public reset() {
-    this.count = 0;
-  }
-}
-```
-
-多数情况下你不需要手动使用 `useBlink()`，因为 `@useDep()` 字段写入已经会进入 blink。
-
-## 5. Action 和 Effect
-
-`action` 是比 blink 更外层的动作边界。它现在主要负责 action 结束后的用户副作用：
-
-```text
-effectResolver.resolve()
-frameProducerResolver.resolve()
-```
-
-用 `@useEffect()` 声明一个 effect：
+`@useEffect()` 声明 action 阶段执行的副作用。
 
 ```ts
 @useModel('counter')
@@ -188,56 +199,11 @@ class CounterModel extends Model {
 }
 ```
 
-effect 会在 model 初始化时执行一次，并收集依赖。之后依赖变化时，effect 会在 action 收尾阶段重新执行。
+effect 会在 model 初始化时执行一次并收集依赖。之后相关依赖变化时，effect 会在 action 收尾阶段重新执行。
 
-可以用 `@useAction()` 包裹业务方法：
+## Child
 
-```ts
-class CounterModel extends Model {
-  @useDep()
-  public count = 0;
-
-  @useAction()
-  public increase() {
-    this.count += 1;
-  }
-}
-```
-
-## 6. Model：模型实例和初始化
-
-所有业务对象都继承 `Model`。
-
-用 `@useModel(code)` 注册模型类型：
-
-```ts
-@useModel('todo')
-class TodoModel extends Model {
-  @useDep()
-  public title = '';
-}
-```
-
-创建 model 时，框架不会直接在 constructor 里同步初始化，而是注册到 `modelResolver`。初始化会在 blink 结束时执行：
-
-```text
-new TodoModel()
-  -> modelResolver.register(model)
-  -> blink resolve
-  -> model._internal.init()
-```
-
-初始化会做这些事：
-
-- 注册到 `gcService`
-- 预热 memo
-- 执行 effect，收集 effect 依赖
-- 绑定 event consumer
-- 绑定 frame consumer
-
-## 7. Child：父子关系
-
-`@useChild()` 表示拥有关系。它会让子 model 进入父 model 的 `children` 列表，并维护 `parent/root/descendants`。
+`@useChild()` 表示拥有关系。它会维护 `parent`、`root`、`children` 和 `descendants`。
 
 ```ts
 @useModel('todo-list')
@@ -255,9 +221,9 @@ todo.parent === list; // true
 list.children;        // [todo]
 ```
 
-`useChild` 同时也是 dep，所以 child 字段变化会触发 memo、consumer 绑定等刷新。
+child 字段同时也是依赖字段，因此 child 变化会触发 memo、route 和 consumer 绑定刷新。
 
-## 8. Route：向祖先查找模型
+## Route
 
 `@useRoute()` 用来在当前 model 上保存某种祖先类型的引用。
 
@@ -272,11 +238,11 @@ class CardModel extends Model {
 }
 ```
 
-当 `CardModel` 被挂到某个 `BoardModel` 后，`card.board` 会指向最近的 `BoardModel` 祖先。挂载关系变化时，route 会重新计算。
+当 `CardModel` 被挂到某个 `BoardModel` 后，`card.board` 会指向最近的 `BoardModel` 祖先。挂载关系变化时，route 会进入 `routeResolver`，并在 blink 阶段统一刷新。
 
-## 9. Ref：非拥有引用
+## Ref
 
-`@useRef()` 表示普通引用关系，不是父子关系。
+`@useRef()` 表示普通引用关系，不是拥有关系。
 
 ```ts
 @useModel('user')
@@ -289,47 +255,85 @@ class TaskModel extends Model {
 }
 ```
 
-`useRef` 会维护反向引用表。某个 model `unlink()` 时，引用它的 ref 字段会被清理，避免留下悬挂引用。
-
-区别：
+`useRef` 会维护反向引用表。某个 model `unlink()` 时，引用它的 ref 字段会被清理，避免悬挂引用。
 
 ```text
-useChild = 拥有关系，会影响 parent/root/children
-useRef   = 普通引用，只负责断开引用
+useChild = ownership, updates parent/root/children
+useRef   = reference, only tracks holders
 ```
 
-## 10. Event：同步、延后和异步事件
+## Decor
 
-定义事件：
+`Decor` 用来把一个原始值交给一组 consumer 修饰，最后把修饰后的结果作为属性读取值。
+
+```ts
+class AttackDecor extends Decor<number> {
+  private _result: number;
+
+  constructor(origin: number, target: Model) {
+    super(origin, target);
+    this._result = origin;
+  }
+
+  public get result() {
+    return this._result;
+  }
+
+  public add(value: number) {
+    this._result += value;
+  }
+}
+```
+
+生产 decor：
+
+```ts
+class MonsterModel extends Model {
+  @useDecorProducer(() => AttackDecor)
+  @useState()
+  private _attack = 100;
+
+  public get attack() {
+    return this._attack;
+  }
+}
+```
+
+消费 decor：
+
+```ts
+class BuffModel extends Model {
+  @useDep()
+  public value = 10;
+
+  @useDecorConsumer((self: BuffModel) => [self.target, AttackDecor])
+  private handleAttack(decor: AttackDecor) {
+    decor.add(this.value);
+  }
+}
+```
+
+decor producer 的值变化时会进入 `decorProducerResolver`。decor consumer 的 loader 依赖变化时会进入 `decorConsumerResolver`。两者都在 blink 阶段刷新。
+
+## Event And Story
+
+`Event` 适合表达业务事件。事件可以同步、延后或异步派发。延后事件会进入 `story` 边界，并在 story 结束时由 `eventResolver` 统一派发。
 
 ```ts
 class PingEvent extends Event<{ message: string }> {}
-```
 
-发事件使用统一的 `emit()`：
-
-```ts
 this.emit(new PingEvent({ message: 'hello' }));
 this.emit(new PingEvent({ message: 'later' }), { isDefer: true });
 await this.emit(new PingEvent({ message: 'async' }), { isAsync: true });
 ```
 
-监听事件用 `@useEventConsumer()`：
+监听事件：
 
 ```ts
-@useModel('pong')
-class PongModel extends Model {
-  public count = 0;
-}
-
 @useModel('ping')
 class PingModel extends Model {
-  @useDep()
+  @useRef()
   public target?: PongModel;
-
-  public run() {
-    this.emit(new PingEvent({ message: 'ping' }));
-  }
 
   @useEventConsumer((self: PingModel) => [self.target, PingEvent])
   private handlePing(event: PingEvent) {
@@ -338,7 +342,7 @@ class PingModel extends Model {
 }
 ```
 
-consumer loader 会收集依赖。上面的 `self.target` 变化时，event consumer 会在 blink 阶段重新绑定到新的 target。
+consumer loader 会收集依赖。上面的 `self.target` 变化时，event consumer 会在 blink 阶段重新绑定。
 
 也可以用 `@useEventProducer()` 把字段变化自动变成 event：
 
@@ -353,25 +357,19 @@ class CounterModel extends Model {
 }
 ```
 
-当 `count` 变化时，action 收尾阶段会自动发出：
+字段变化后，event producer 会在 action 阶段发出：
 
 ```ts
 new CountChangedEvent({ next: this.count })
 ```
 
-## 11. Frame：按帧派发的消息
+## Frame And Anime
 
-`Frame` 类似 event，但它走 `anime/frameResolver` 调度，适合表达状态变化帧、动画帧或需要分 step 处理的消息。
-
-定义 frame：
+`Frame` 类似 event，但它走 `anime` 边界和 `frameResolver` 调度，适合表达状态变化帧、动画帧或需要分 step 处理的消息。
 
 ```ts
 class CountFrame extends Frame<{ next: number }> {}
-```
 
-手动发 frame：
-
-```ts
 this.emit(new CountFrame({ next: this.count }));
 ```
 
@@ -400,9 +398,9 @@ class CounterViewModel extends Model {
 }
 ```
 
-和 event consumer 一样，frame consumer 的 loader 会收集依赖；监听目标变化时会自动重绑。
+frame consumer 的 loader 也会收集依赖；监听目标变化时会在 blink 阶段自动重绑。
 
-## 12. View
+## View
 
 `@useView()` 用于给非 store model 的视图类接入同样的 blink 初始化流程。
 
@@ -416,7 +414,7 @@ class CounterView extends Model {
 
 它不会注册 model code，但会把构造函数交给 blink/modelResolver 初始化。
 
-## 13. 完整示例
+## Complete Example
 
 ```ts
 import {
@@ -501,77 +499,3 @@ const todo = new TodoModel('1', 'Write docs');
 list.todos.push(todo);
 todo.complete();
 ```
-
-## 14. Decor：可组合的值修饰
-
-`decor` 用来把一个原始值交给一组 consumer 修饰，最后把修饰后的结果作为属性读取值。
-
-定义一个 decor：
-
-```ts
-class AttackDecor extends Decor<number> {
-  private _result: number;
-
-  constructor(origin: number, target: Model) {
-    super(origin, target);
-    this._result = origin;
-  }
-
-  public get result() {
-    return this._result;
-  }
-
-  public add(value: number) {
-    this._result += value;
-  }
-}
-```
-
-生产 decor：
-
-```ts
-@useDecorProducer(() => AttackDecor)
-@useState()
-private _attack = 100;
-
-public get attack() {
-  return this._attack;
-}
-```
-
-消费 decor：
-
-```ts
-@useDecorConsumer((self: MonsterModel) => [self, AttackDecor])
-private handleAttack(decor: AttackDecor) {
-  decor.add(this.buff);
-}
-```
-
-当 `buff` 或 decor producer 相关依赖变化时，decor 会在 blink 阶段重新绑定和重算。
-
-## 调度关系速记
-
-```text
-blink
-  memo
-  decor consumer binding
-  decor producer
-  event consumer binding
-  frame consumer binding
-  model init
-
-action
-  effect
-  frame producer
-
-story
-  deferred event
-
-anime
-  frame dispatch
-```
-
-## 当前约定
-
-`effect` 只属于 action，不再属于 blink。
