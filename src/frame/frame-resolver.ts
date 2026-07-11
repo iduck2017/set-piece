@@ -1,11 +1,16 @@
+import { Frame } from ".";
+import { Tag } from "../tag/tag-registry";
 import { Method } from "../types";
+
+type FrameContext = {
+    consumerTag: Tag;
+    frame: Frame;
+}
 
 class FrameResolver {
     protected _step: number;
-
     protected _pending: boolean;
-
-    protected _context: Map<number, Array<Method<Promise<void>>>>
+    protected _context: Map<number, FrameContext[]>
 
     constructor() {
         this._step = 1;
@@ -17,11 +22,11 @@ class FrameResolver {
         this._step += 1;
     }
 
-    public register(handler: () => Promise<void>) {
+    public register(consumerTag: Tag, frame: Frame) {
         const step = this._step;
-        const handlers = this._context.get(step) ?? [];
-        handlers.push(handler);
-        this._context.set(step, handlers);
+        const context = this._context.get(step) ?? [];
+        context.push({ consumerTag, frame });
+        this._context.set(step, context);
     }
 
     public async launch(handler: () => unknown) {
@@ -49,10 +54,14 @@ class FrameResolver {
         let current = 0;
         while (current <= step) {
             current += 1;
-            const handlers = context.get(current);
-            if (!handlers?.length) continue;
-            await Promise.all(handlers.map((handler) => {
-                return handler()
+            const frames = context.get(current);
+            if (!frames?.length) continue;
+            await Promise.all(frames.map(({ consumerTag, frame }) => {
+                const model = consumerTag.target;
+                const key = consumerTag.key;
+                const handler = Reflect.get(model, key);
+                if (!(handler instanceof Function)) return;
+                return handler.call(model, frame);
             }));
         }
     }

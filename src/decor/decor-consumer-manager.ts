@@ -1,4 +1,4 @@
-﻿import { Decor } from ".";
+import { Decor } from ".";
 import { Model } from "../model";
 import { Constructor } from "../types";
 import { Tag } from "../tag/tag-registry";
@@ -47,3 +47,4 @@ class DecorConsumerManager {
     }
 }
 export const decorConsumerManager = new DecorConsumerManager();
+

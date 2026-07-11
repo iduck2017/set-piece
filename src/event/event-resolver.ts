@@ -1,11 +1,19 @@
+import { Event } from ".";
+import { eventService } from "./event-service";
+import { Model } from "../model";
 import { Method } from "../types";
+
+type EventContext = {
+    model: Model;
+    event: Event;
+}
 
 class EventResolver {
     private _pending = false;
-    private _handlers: Array<() => void> = [];
+    private _context: EventContext[] = [];
 
-    public register(handler: () => void) {
-        this._handlers.push(handler);
+    public register(model: Model, event: Event) {
+        this._context.push({ model, event });
     }
 
     public launch(handler: () => unknown) {
@@ -18,9 +26,11 @@ class EventResolver {
     }
 
     public resolve() {
-        const handlers = [...this._handlers];
-        this._handlers.length = 0;
-        handlers.forEach(handler => handler());
+        const context = [...this._context];
+        this._context.length = 0;
+        context.forEach(({ model, event }) => {
+            eventService.emitSync(model, event);
+        });
     }
 }
 

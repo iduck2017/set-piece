@@ -1,8 +1,10 @@
 import { decorConsumerResolver } from "../decor/decor-consumer-resolver";
 import { decorProducerResolver } from "../decor/decor-producer-resolver";
-import { effectResolver } from "../effect/effect-resolver";
+import { eventConsumerResolver } from "../event/event-consumer-resolver";
+import { frameConsumerResolver } from "../frame/frame-consumer-resolver";
 import { memoResolver } from "../memo/memo-resolver";
 import { Model } from "../model";
+import { modelResolver } from "../model-resolver";
 import { Constructor, Method } from "../types";
 import { useAction } from "./action-manager";
 
@@ -24,9 +26,11 @@ export class BlinkManager {
     protected precheck() {
         const dirty =
             memoResolver.check() ||
-            effectResolver.check() ||
             decorConsumerResolver.check() ||
-            decorProducerResolver.check()
+            decorProducerResolver.check() ||
+            eventConsumerResolver.check() ||
+            frameConsumerResolver.check() ||
+            modelResolver.check()
         return dirty;
     }
 
@@ -50,8 +54,10 @@ export class BlinkManager {
 
     @useBlink()
     private resolve() {
+        modelResolver.resolve();
         memoResolver.resolve();
-        effectResolver.resolve();
+        eventConsumerResolver.resolve();
+        frameConsumerResolver.resolve();
         decorConsumerResolver.resolve();
         decorProducerResolver.resolve();
     }

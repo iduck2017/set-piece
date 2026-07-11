@@ -1,4 +1,4 @@
-﻿import { depRegistry } from "../dep/dep-registry";
+import { depRegistry } from "../dep/dep-registry";
 import { Model } from "../model";
 
 export function useState<
@@ -12,3 +12,4 @@ export function useState<
         depRegistry.register(prototype, key);
     }
 }
+

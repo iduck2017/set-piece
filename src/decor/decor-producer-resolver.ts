@@ -1,4 +1,4 @@
-﻿import { Decor } from ".";
+import { Decor } from ".";
 import { Model } from "../model";
 import { Constructor } from "../types";
 import { Tag, tagRegistry } from "../tag/tag-registry";
@@ -9,7 +9,7 @@ import { useBlink } from "../action/blink-manager";
 
 class DecorProducerResolver {
     private _context: Set<Tag> = new Set();
-    
+
     public check() {
         return Boolean(this._context.size)
     }
@@ -35,7 +35,7 @@ class DecorProducerResolver {
     public resolve(): boolean {
         const depProducerTags = [...this._context];
         this._context.clear();
-        
+
         if (!depProducerTags) return false;
         depProducerTags.forEach(decorProducerTag => {
             const decorProducerModel = decorProducerTag.target;
@@ -44,7 +44,6 @@ class DecorProducerResolver {
             decorProducerDelegator.clear(decorProducerTag);
             const next = Reflect.get(decorProducerModel, decorProducerKey);
             if (prev !== next) {
-                // console.log('Decor changed:', decorProducerTag.name, prev, next);
                 depService.register(decorProducerTag);
             }
         });
@@ -52,3 +51,4 @@ class DecorProducerResolver {
     }
 }
 export const decorProducerResolver = new DecorProducerResolver();
+

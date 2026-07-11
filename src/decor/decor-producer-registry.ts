@@ -76,3 +76,4 @@ export function useDecorProducer<
         decorProducerRegistry.register(prototype, key, loader);
     }
 }
+

@@ -49,7 +49,7 @@ class DecorConsumerRegistry {
         }
     }
 
-   public query(prototype: Model) {
+    public query(prototype: Model) {
         const result: DecorConsumerLoadersMap = new Map();
         let constructor: any = prototype.constructor;
         while (constructor) {
@@ -82,3 +82,4 @@ export function useDecorConsumer<
         return descriptor;
     }
 }
+

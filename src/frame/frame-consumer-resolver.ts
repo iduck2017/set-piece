@@ -3,14 +3,18 @@ import { Model } from "../model";
 import { Tag } from "../tag/tag-registry";
 import { frameManager } from "../dep/dep-consumer-manager";
 import { frameService } from "./frame-service";
-import { useAction } from "../action/action-manager";
+import { useBlink } from "../action/blink-manager";
 
 class FrameConsumerResolver {
     private _context: Set<Tag> = new Set();
 
-    @useAction()
+    @useBlink()
     public register(depTag: Tag) {
         this._context.add(depTag);
+    }
+
+    public check() {
+        return Boolean(this._context.size);
     }
 
     public resolve() {

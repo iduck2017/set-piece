@@ -10,11 +10,7 @@ class FrameService {
     public emit(frameProducerModel: Model, frame: Frame) {
         const frameConsumerTags = frameConsumerManager.query(frameProducerModel, frame);
         frameConsumerTags.forEach(frameConsumerTag => {
-            const consumerModel = frameConsumerTag.target;
-            const key = frameConsumerTag.key;
-            const handler = Reflect.get(consumerModel, key);
-            if (!(handler instanceof Function)) return;
-            frameResolver.register(() => handler.call(consumerModel, frame));
+            frameResolver.register(frameConsumerTag, frame);
         });
     }
 

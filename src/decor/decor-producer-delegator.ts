@@ -1,4 +1,4 @@
-﻿import { Tag } from "../tag/tag-registry";
+import { Tag } from "../tag/tag-registry";
 
 class DecorProducerDelegator {
     private _context: WeakMap<Tag, any> = new WeakMap();
@@ -21,3 +21,4 @@ class DecorProducerDelegator {
 }
 
 export const decorProducerDelegator = new DecorProducerDelegator();
+

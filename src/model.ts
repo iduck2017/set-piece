@@ -7,12 +7,10 @@ import { eventConsumerRegistry } from "./event/event-consumer-registry";
 import { eventService } from "./event/event-service";
 import { memoRegistry } from "./memo/memo-registry";
 import { routeRegistry } from "./route/route-registry";
-import { eventResolver } from "./event/event-resolver";
+import { eventResolver, useStory } from "./event/event-resolver";
 import { tagRegistry } from "./tag/tag-registry";
-import { deferEffectRegistry } from "./effect/defer-effect-registry";
 import { ticketService } from "./utils/ticket-service";
-import { blinkManager, useBlink } from "./action/blink-manager";
-import { useDeferAction } from "./action/action-manager";
+import { blinkManager } from "./action/blink-manager";
 import { Frame } from "./frame";
 import { frameService } from "./frame/frame-service";
 import { frameConsumerRegistry } from "./frame/frame-consumer-registry";
@@ -22,6 +20,16 @@ import { refConsumerRegistry } from "./ref/ref-consumer-registry";
 import { refRegistry } from "./ref/ref-registry";
 import { storeRegistry } from "./store/store-registry";
 import { Constructor } from "./types";
+import { modelResolver } from "./model-resolver";
+
+type EmitOptions = {
+    isDefer?: boolean;
+    isAsync?: boolean;
+}
+
+type AsyncEmitOptions = EmitOptions & {
+    isAsync: true;
+}
 
 export abstract class Model {
     protected readonly _brand = Symbol('model')
@@ -35,12 +43,10 @@ export abstract class Model {
         return this.constructor.name;
     }
 
-    @useBlink()
     private init() {
         gcService.register(this, `${this.constructor.name}#${this._uuid}`);
         const memoKeys = memoRegistry.query(this);
         memoKeys.forEach(key => Reflect.get(this, key))
-
         const effectKeys = effectRegistry.query(this);
         effectKeys
             .map(key => Reflect.get(this, key))
@@ -50,16 +56,6 @@ export abstract class Model {
         const decorKeys = [...decorLoaderMap.keys()];
         const decorConsumerTags = decorKeys.map(key => tagRegistry.query(this, key));
         decorConsumerTags.forEach(tag => decorService.bind(tag));
-        this.initDefer();
-    }
-
-    @useDeferAction()
-    private initDefer() {
-        const effectKeys = deferEffectRegistry.query(this);
-        effectKeys
-            .map(key => Reflect.get(this, key))
-            .filter(effect => effect instanceof Function)
-            .forEach(effect => effect.call(this))
         const eventLoaderMap = eventConsumerRegistry.query(this);
         const frameLoaderMap = frameConsumerRegistry.query(this);
         const eventKeys = [...eventLoaderMap.keys()];
@@ -70,23 +66,16 @@ export abstract class Model {
         frameConsumerTags.forEach(tag => frameService.bind(tag));
     }
 
+    protected emit(frame: Frame, options?: EmitOptions): unknown;
+    protected emit(event: Event, options: AsyncEmitOptions): Promise<void>;
+    protected emit(event: Event, options?: EmitOptions): unknown;
     @useAnime()
-    protected emitFrame(frame: Frame) {
-        frameService.emit(this, frame);
-    }
-
-    protected emitEvent(event: Event) {
-        eventService.emitSync(this, event);
-    }
-
-    protected emitDeferEvent(event: Event) {
-        eventResolver.register(() => {
-            eventService.emitSync(this, event)
-        });
-    }
-
-    protected emitAsyncEvent(event: Event) {
-        return eventService.emitAsync(this, event);
+    @useStory()
+    protected emit(target: Frame | Event, options: EmitOptions = {}) {
+        if (target instanceof Frame) return frameService.emit(this, target);
+        if (options.isAsync) return eventService.emitAsync(this, target);
+        if (options.isDefer) return eventResolver.register(this, target);
+        return eventService.emitSync(this, target);
     }
 
     protected unlink() {
@@ -181,7 +170,7 @@ export function useModel(code: string) {
         return class extends Constructor {
             constructor(...params: any[]) {
                 super(...params);
-                this._internal.init();
+                modelResolver.register(this);
             }
         } 
     }

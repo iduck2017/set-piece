@@ -1,5 +1,6 @@
 import { blinkManager } from "./action/blink-manager";
 import { Model } from "./model";
+import { modelResolver } from "./model-resolver";
 import { Constructor } from "./types";
 
 export function useView<T extends Model>() {
@@ -9,7 +10,7 @@ export function useView<T extends Model>() {
             [Constructor.name]: class extends Constructor {
                 constructor(...params: any[]) {
                     super(...params);
-                    this._internal.init();
+                    modelResolver.register(this);
                 }
             } 
         }[Constructor.name] as any

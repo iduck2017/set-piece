@@ -1,7 +1,7 @@
 ﻿import { Model } from "../model";
 import { Method } from "../types";
 
-export function useValidator<
+export function useCheck<
     M extends Model,
     R extends any,
     P extends any[]

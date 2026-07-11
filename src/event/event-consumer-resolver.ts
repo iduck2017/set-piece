@@ -3,14 +3,18 @@ import { Model } from "../model";
 import { Tag } from "../tag/tag-registry";
 import { eventManager } from "../dep/dep-consumer-manager";
 import { eventService } from "./event-service";
-import { useAction } from "../action/action-manager";
+import { useBlink } from "../action/blink-manager";
 
 class EventConsumerResolver {
     private _context: Set<Tag> = new Set();
 
-    @useAction()
+    @useBlink()
     public register(depTag: Tag) {
         this._context.add(depTag);
+    }
+
+    public check() {
+        return Boolean(this._context.size);
     }
 
     public resolve() {

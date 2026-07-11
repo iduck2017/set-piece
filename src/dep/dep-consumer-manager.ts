@@ -52,6 +52,5 @@ export class DepConsumerManager {
 export const eventManager = new DepConsumerManager();
 export const memoManager = new DepConsumerManager();
 export const effectManager = new DepConsumerManager();
-export const deferEffectManager = new DepConsumerManager();
 export const decorManager = new DepConsumerManager();
 export const frameManager = new DepConsumerManager();

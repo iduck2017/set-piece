@@ -1,4 +1,4 @@
-﻿import { Model } from "../model";
+import { Model } from "../model";
 import { Decor } from ".";
 import { decorConsumerManager } from "./decor-consumer-manager";
 import { decorConsumerRegistry } from "./decor-consumer-registry";
@@ -23,7 +23,6 @@ class DecorService {
         const decorTypesMap = decorProducerManager.query(decorConsumerTag);
         decorTypesMap.forEach((decorTypes, decorProducerModel) => {
             decorTypes.forEach(decorType => {
-                // console.log('Decor unbind:', decorConsumerTag.name);
                 decorConsumerManager.remove(decorProducerModel, decorType, decorConsumerTag);
                 decorProducerResolver.register(decorProducerModel, decorType);
             })
@@ -39,12 +38,11 @@ class DecorService {
         loaders.forEach(loader => {
             const result = loader(consumerModel);
             if (!result) return;
-            const [value, DecorConstructor] = result; 
+            const [value, DecorConstructor] = result;
             if (value instanceof Array) {
                 const decorProducerModels = value;
                 decorProducerModels?.forEach(decorProducerModel => {
                     if (!decorProducerModel) return;
-                    // console.log('Decor bind:', decorConsumerTag.name);
                     decorConsumerManager.add(decorProducerModel, DecorConstructor, decorConsumerTag);
                     decorProducerManager.add(decorConsumerTag, decorProducerModel, DecorConstructor);
                     decorProducerResolver.register(decorProducerModel, DecorConstructor);
@@ -52,7 +50,6 @@ class DecorService {
             }
             if (value instanceof Model) {
                 const decorProducerModel = value;
-                // console.log('Decor bind:', decorConsumerTag.name);
                 decorConsumerManager.add(decorProducerModel, DecorConstructor, decorConsumerTag);
                 decorProducerManager.add(decorConsumerTag, decorProducerModel, DecorConstructor);
                 decorProducerResolver.register(decorProducerModel, DecorConstructor);
@@ -61,3 +58,4 @@ class DecorService {
     }
 }
 export const decorService = new DecorService();
+

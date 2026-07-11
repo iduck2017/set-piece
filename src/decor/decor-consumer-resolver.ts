@@ -1,5 +1,4 @@
-﻿import { depManager } from "../dep/dep-manager";
-import { Model } from "../model";
+import { depManager } from "../dep/dep-manager";
 import { Tag } from "../tag/tag-registry";
 import { decorManager } from "../dep/dep-consumer-manager";
 import { decorService } from "./decor-service";
@@ -46,3 +45,4 @@ class DecorConsumerResolver {
 }
 
 export const decorConsumerResolver = new DecorConsumerResolver();
+

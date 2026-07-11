@@ -2,7 +2,7 @@
 import { Tag } from "../tag/tag-registry";
 import { depService } from "./dep-service";
 
-function useAction<P extends any[], R = any>() {
+function useProxy<P extends any[], R = any>() {
     return function(
         prototype: unknown,
         key: unknown,
@@ -24,27 +24,27 @@ function useAction<P extends any[], R = any>() {
 export class DepDelegator {
     public readonly value: unknown;
 
-    @useAction()
+    @useProxy()
     private pop(origin: unknown[]) {
         return origin.pop();
     }
 
-    @useAction()
+    @useProxy()
     private push(origin: unknown[], ...items: unknown[]) {
         return origin.push(...items);
     }
 
-    @useAction()
+    @useProxy()
     private shift(origin: unknown[]) {
         return origin.shift();
     }
 
-    @useAction()
+    @useProxy()
     private unshift(origin: unknown[], ...items: unknown[]) {
         return origin.unshift(...items);
     }
 
-    @useAction()
+    @useProxy()
     private splice(
         origin: unknown[], 
         start: number, 
@@ -54,7 +54,7 @@ export class DepDelegator {
         return origin.splice(start, count, ...items);
     }
 
-    @useAction()
+    @useProxy()
     private fill(
         origin: unknown[],
         item: unknown,
@@ -64,13 +64,13 @@ export class DepDelegator {
         return origin.fill(item, start, end);
     }
 
-    @useAction()
+    @useProxy()
     private set(origin: object, index: string | symbol, next: unknown) {
         Reflect.set(origin, index, next);
         return true;
     }
 
-    @useAction()
+    @useProxy()
     private del(origin: object, index: string | symbol) {
         return Reflect.deleteProperty(origin, index);
     }
