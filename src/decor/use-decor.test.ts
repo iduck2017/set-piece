@@ -6,9 +6,11 @@ import { useDecorConsumer } from "../hooks/use-decor-consumer";
 import { useDecorProducer } from "../hooks/use-decor-producer";
 import { useState } from "../hooks/use-state";
 
+class AttackDecor extends NumDecor {}
+
 @useModel('decor-monster')
 class MonsterModel extends Model {
-    @useDecorProducer(() => NumDecor)
+    @useDecorProducer(() => AttackDecor)
     @useState()
     private _attack = 100;
 
@@ -19,8 +21,8 @@ class MonsterModel extends Model {
     public get buff() { return this._buff; }
     public set buff(value: number) { this._buff = value; }
 
-    @useDecorConsumer((self: MonsterModel) => [self, NumDecor])
-    private handleAttack(decor: NumDecor) {
+    @useDecorConsumer((self: MonsterModel) => [self, AttackDecor])
+    private handleAttack(decor: AttackDecor) {
         decor.add(this.buff);
     }
 }

@@ -4,6 +4,9 @@ import { decorManager } from "../dep/dep-consumer-manager";
 import { decorService } from "./decor-service";
 import { useBlink } from "../hooks/use-blink";
 
+/**
+ * Refreshes decor consumer bindings when loader dependencies change.
+ */
 class DecorConsumerResolver {
     private _queue: Set<Tag> = new Set();
 

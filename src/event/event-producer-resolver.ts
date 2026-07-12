@@ -3,6 +3,9 @@ import { eventService } from "./event-service";
 import { eventProducerRegistry } from "./event-producer-registry";
 import { useStory } from "../hooks/use-story";
 
+/**
+ * Emits diff events for dependency-backed producer changes.
+ */
 class EventProducerResolver {
     private _queue: Set<Tag> = new Set();
 

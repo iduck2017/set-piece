@@ -1,5 +1,8 @@
 ﻿import { Tag } from "../tag/tag-registry";
 
+/**
+ * Collects dependency reads for active consumers.
+ */
 class DepCollector {
     private _collections: Map<Tag, Tag[]> = new Map();
 

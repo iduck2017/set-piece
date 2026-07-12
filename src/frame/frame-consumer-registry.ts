@@ -13,6 +13,9 @@ export type FrameConsumerLoader<
     frame: Constructor<F>
 ] | undefined
 
+/**
+ * Stores frame consumer loaders declared by `useFrameConsumer()`.
+ */
 class FrameConsumerRegistry {
     private _loaders: Map<AbstractConstructor<Model>, Map<string, Array<FrameConsumerLoader>>> = new Map();
 

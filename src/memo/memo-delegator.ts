@@ -1,5 +1,8 @@
 ﻿import { Tag } from "../tag/tag-registry";
 
+/**
+ * Caches memo getter outputs by memo tag.
+ */
 class MemoDelegator {
     private _cache: WeakMap<Tag, unknown> = new WeakMap();
 

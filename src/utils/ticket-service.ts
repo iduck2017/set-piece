@@ -1,4 +1,7 @@
-﻿class TicketService {
+﻿/**
+ * Generates process-local unique model ids.
+ */
+class TicketService {
     protected _timestamp = Date.now();
     protected _ticket = 36 ** 7;
 
@@ -11,8 +14,10 @@
      * @returns Base36 timestamp and ticket pair.
      */
     public query() {  
+        /** Move to the next ticket in the current millisecond window. */
         this._ticket += 1;
         if (this._ticket >= 36 ** 8) {
+            /** Roll over only after time advances, keeping ids unique. */
             this._ticket = 36 ** 7;
             while (Date.now() === this._timestamp) {}
             this._timestamp = Date.now();

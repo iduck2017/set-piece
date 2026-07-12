@@ -6,6 +6,9 @@ import { frameConsumerRegistry } from "./frame-consumer-registry";
 import { frameProducerManager } from "./frame-producer-manager";
 import { frameResolver } from "./frame-resolver";
 
+/**
+ * Maintains runtime frame listener links and queues emitted frames.
+ */
 class FrameService {
     /**
      * Queue a frame for every consumer currently bound to the producer.
@@ -36,12 +39,14 @@ class FrameService {
      * @returns Nothing.
      */
     public unbind(consumerTag: Tag) {
+        /** Read reverse links so each old producer/type pair can be removed. */
         const links = frameProducerManager.query(consumerTag);
         links.forEach((types, producer) => {
             types.forEach(type => {
                 frameConsumerManager.remove(producer, type, consumerTag);
             })
         })
+        /** Drop the reverse index after producer links are cleared. */
         frameProducerManager.remove(consumerTag);
     }
 
@@ -56,10 +61,12 @@ class FrameService {
      * @returns Nothing.
      */
     public bind(consumerTag: Tag) {
+        /** Find every loader declared on this consumer method. */
         const consumer = consumerTag.target;
         const key = consumerTag.key;
         const loaderMap = frameConsumerRegistry.query(consumer);
         const loaders = loaderMap.get(key) ?? [];
+        /** Run loaders and create links for single or list producer targets. */
         loaders.forEach(loader => {
             const binding = loader(consumer);
             if (!binding) return;

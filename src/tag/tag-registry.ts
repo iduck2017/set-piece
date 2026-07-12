@@ -1,5 +1,8 @@
 ﻿import type { Model } from "../model";
 
+/**
+ * Stable identifier for one model property or method.
+ */
 export class Tag {
     protected _brand = Symbol('tag');
     /**
@@ -16,6 +19,9 @@ export class Tag {
     public get name() { return `${this.target.name}.${this.key}` }
 }
 
+/**
+ * Creates and caches tags for model/key pairs.
+ */
 class TagRegistry {
     private _tags: WeakMap<Model, Map<string, Tag>> = new WeakMap();
 

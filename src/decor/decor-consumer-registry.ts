@@ -14,6 +14,9 @@ export type DecorConsumerLoader<
 ] | undefined
 
 type DecorConsumerLoadersMap = Map<string, Array<DecorConsumerLoader>>
+/**
+ * Stores decor consumer loaders declared by `useDecorConsumer()`.
+ */
 class DecorConsumerRegistry {
     private _loaders: Map<AbstractConstructor<Model>, DecorConsumerLoadersMap> = new Map();
 

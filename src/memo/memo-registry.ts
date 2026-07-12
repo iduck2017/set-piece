@@ -6,6 +6,9 @@ import { memoManager } from "../dep/dep-consumer-manager";
 import { tagRegistry } from "../tag/tag-registry";
 import { memoDelegator } from "./memo-delegator";
 
+/**
+ * Stores memo getter keys and installs memo dependency collection.
+ */
 class MemoRegistry {
     private _keys: Map<AbstractConstructor<Model>, string[]> = new Map();
 

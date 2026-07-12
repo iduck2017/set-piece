@@ -1,6 +1,9 @@
 import { useBlink } from "../hooks/use-blink";
 import type { Model } from "../model";
 
+/**
+ * Queues newly constructed models for blink-time initialization.
+ */
 class ModelResolver {
     private readonly _context: Set<Model> = new Set();
 

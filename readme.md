@@ -54,6 +54,8 @@ import {
 } from 'set-piece';
 ```
 
+`Event`、`Frame`、`Decor` 以及 `DiffEvent`、`PrevEvent`、`DiffFrame`、`NumDecor` 都是抽象基类。业务代码需要先继承出带业务语义的类型，再把这个业务类型用于 `emit`、producer 或 consumer。
+
 ## Tag
 
 框架内部会给每个 `model + key` 创建稳定的 `Tag`：
@@ -266,7 +268,7 @@ useRef   = reference, only tracks holders
 
 ## Decor
 
-`Decor` 用来把一个原始值交给一组 consumer 修饰，最后把修饰后的结果作为属性读取值。数值叠加场景可以直接使用 `NumDecor`。
+`Decor` 用来把一个原始值交给一组 consumer 修饰，最后把修饰后的结果作为属性读取值。数值叠加场景可以继承 `NumDecor`，再用业务类型标识这类 decor。
 
 ```ts
 class AttackDecor extends NumDecor {}
@@ -355,7 +357,7 @@ new CountChangedEvent({ next: this.count })
 `Frame` 类似 event，但它走 `anime` 边界和 `frameResolver` 调度，适合表达状态变化帧、动画帧或需要分 step 处理的消息。
 
 ```ts
-class CountFrame extends Frame<{ next: number }> {}
+class CountFrame extends DiffFrame<number> {}
 
 this.emit(new CountFrame({ next: this.count }));
 ```
@@ -365,7 +367,7 @@ this.emit(new CountFrame({ next: this.count }));
 ```ts
 @useModel('counter')
 class CounterModel extends Model {
-  @useFrameProducer(() => DiffFrame)
+  @useFrameProducer(() => CountFrame)
   @useDep()
   public count = 0;
 }
@@ -378,8 +380,8 @@ class CounterViewModel extends Model {
   @useRef()
   public counter?: CounterModel;
 
-  @useFrameConsumer((self: CounterViewModel) => [self.counter, DiffFrame])
-  private async handleCount(frame: DiffFrame<number>) {
+  @useFrameConsumer((self: CounterViewModel) => [self.counter, CountFrame])
+  private async handleCount(frame: CountFrame) {
     console.log(frame.detail.next);
   }
 }
@@ -422,6 +424,7 @@ import {
 
 class TodoDoneEvent extends Event<{ id: string }> {}
 class TodoStatusEvent extends DiffEvent<string> {}
+class TodoDoneFrame extends DiffFrame<boolean> {}
 
 @useModel('todo')
 class TodoModel extends Model {
@@ -437,7 +440,7 @@ class TodoModel extends Model {
   @useDep()
   public status = 'open';
 
-  @useFrameProducer(() => DiffFrame)
+  @useFrameProducer(() => TodoDoneFrame)
   @useDep()
   public done = false;
 
@@ -469,8 +472,8 @@ class TodoListModel extends Model {
     this.doneIds.push(event.detail.id);
   }
 
-  @useFrameConsumer((self: TodoListModel) => [self.todos, DiffFrame])
-  private async handleTodoFrame(frame: DiffFrame<boolean>) {
+  @useFrameConsumer((self: TodoListModel) => [self.todos, TodoDoneFrame])
+  private async handleTodoFrame(frame: TodoDoneFrame) {
     console.log('todo done changed:', frame.detail.next);
   }
 

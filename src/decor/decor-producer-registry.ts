@@ -10,6 +10,9 @@ import { decorService } from "./decor-service";
 export type DecorProducerLoader<T = any> = () => Constructor<Decor<T>, [origin: T, target: Model]>
 export type DecorProducerLoaderMap = Map<string, DecorProducerLoader>
 
+/**
+ * Stores and installs decor producer property wrappers.
+ */
 class DecorProducerRegistry {
     private _loaders: Map<AbstractConstructor<Model>, DecorProducerLoaderMap> = new Map();
 

@@ -7,6 +7,9 @@ type EventContext = {
     event: Event;
 }
 
+/**
+ * Queues normal events and flushes them at story boundaries.
+ */
 class EventResolver {
     private _pending = false;
     private _queue: EventContext[] = [];
@@ -35,7 +38,9 @@ class EventResolver {
      * @returns The handler result.
      */
     public launch(handler: () => unknown) {
+        /** Nested stories append to the outer queue. */
         if (this._pending) return handler();
+        /** Run user work first, then flush queued normal events. */
         this._pending = true;
         const output = handler();
         this._pending = false;
@@ -49,8 +54,10 @@ class EventResolver {
      * @returns Nothing.
      */
     public resolve() {
+        /** Snapshot and clear first so handlers can queue future events. */
         const queue = [...this._queue];
         this._queue.length = 0;
+        /** Deliver queued events synchronously in registration order. */
         queue.forEach(({ model, event }) => {
             eventService.emit(model, event);
         });

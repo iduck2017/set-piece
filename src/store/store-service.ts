@@ -2,6 +2,9 @@
 import { storeRegistry } from "./store-registry";
 import { storeRowRegistry } from "./store-row-registry";
 
+/**
+ * Serializes and restores models through registered store metadata.
+ */
 class StoreService {
     /**
      * Serialize a model instance using its registered code and row configs.

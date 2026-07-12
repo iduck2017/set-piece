@@ -4,6 +4,9 @@ import { Constructor } from "../types";
 import { Tag } from "../tag/tag-registry";
 
 type DecorConsumerTagsMap = Map<Constructor<Decor>, Array<Tag>>
+/**
+ * Stores runtime decor producer-to-consumer links.
+ */
 class DecorConsumerManager {
     private _links: WeakMap<Model, DecorConsumerTagsMap>= new WeakMap();
 

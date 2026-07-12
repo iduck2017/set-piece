@@ -3,6 +3,9 @@
 export type StoreRowConfig = [(value: any) => any, (value: any) => any];
 export type StoreRowConfigMap = Map<string, StoreRowConfig>;
 
+/**
+ * Stores per-field serializers used by store persistence.
+ */
 class StoreRowRegistry {
     private _rows: Map<Function, StoreRowConfigMap> = new Map();
 

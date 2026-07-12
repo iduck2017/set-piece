@@ -1,5 +1,8 @@
 import { Model } from '../model';
 
+/**
+ * Base value transformer used by decor producers and consumers.
+ */
 export abstract class Decor<T = any> {
     protected readonly _brand = Symbol('decor')
 
@@ -23,7 +26,10 @@ export abstract class Decor<T = any> {
     public abstract get result(): T
 }
 
-export class NumDecor extends Decor<number> {
+/**
+ * Base decor for numeric accumulation.
+ */
+export abstract class NumDecor extends Decor<number> {
     private _result: number;
     public get result() { return this._result; }
 

@@ -1,6 +1,9 @@
 ﻿import { Model } from "../model";
 import { Constructor } from "../types";
 
+/**
+ * Maps model constructors to stable persistence codes.
+ */
 class StoreRegistry {
     private _types: Map<string, Constructor<Model>> & Map<Constructor<Model>, string> = new Map();
 

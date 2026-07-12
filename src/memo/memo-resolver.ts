@@ -7,6 +7,9 @@ import { memoDelegator } from "./memo-delegator";
 import { memoManager } from "../dep/dep-consumer-manager";
 import { useBlink } from "../hooks/use-blink";
 
+/**
+ * Invalidates and recomputes memos affected by dependency changes.
+ */
 class MemoResolver {
     private _queue: Set<Tag> = new Set();
 
@@ -43,10 +46,13 @@ class MemoResolver {
      * @returns True when at least one memo was recomputed.
      */
     public resolve(): boolean {
+        /** Snapshot and clear first so recomputation can queue the next wave. */
         const depTags = [...this._queue];
         this._queue.clear();
+        /** Map changed dependency tags to memo getters that consumed them. */
         const consumerTags = memoManager.query(depTags);
         if (!consumerTags.length) return false;
+        /** Drop old edges before getters collect their fresh dependencies. */
         this.unbind(consumerTags);
         this.reset(consumerTags);
         return true;
@@ -76,12 +82,15 @@ class MemoResolver {
      */
     private reset(consumerTags: Tag[]) {
         consumerTags.forEach(consumerTag => {
+            /** Read previous cached output before clearing the memo cache. */
             const model = consumerTag.target;
             const key = consumerTag.key;
             const prev = Reflect.get(model, key);
+            /** Clear and read again so the getter recomputes and recollects. */
             memoDelegator.clear(consumerTag);
             const next = Reflect.get(model, key);
             memoDelegator.update(consumerTag, next);
+            /** Propagate only real memo output changes. */
             if (prev !== next) {
                 depService.register(consumerTag);
             }

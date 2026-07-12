@@ -1,6 +1,9 @@
 ﻿
 import { Tag } from "../tag/tag-registry";
 
+/**
+ * Stores reverse consumer-to-dependency links.
+ */
 class DepManager {
     private _links: WeakMap<Tag, Tag[]> = new WeakMap();
 

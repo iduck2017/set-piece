@@ -4,6 +4,9 @@ import { AbstractConstructor, Constructor } from "../types";
 
 export type EventProducerLoader<T = any> = () => Constructor<DiffEvent<T>, [{ next: T }]>;
 
+/**
+ * Stores event producer loaders declared by `useEventProducer()`.
+ */
 class EventProducerRegistry {
     private _loaders: Map<AbstractConstructor<Model>, Map<string, EventProducerLoader>> = new Map();
 

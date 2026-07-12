@@ -6,6 +6,9 @@ import { decorProducerManager } from "./decor-producer-manager";
 import { Tag } from "../tag/tag-registry";
 import { decorProducerResolver } from "./decor-producer-resolver";
 
+/**
+ * Maintains runtime decor links and applies decor consumers.
+ */
 class DecorService {
     /**
      * Apply a decor instance to all currently bound consumers.
@@ -41,6 +44,7 @@ class DecorService {
      * @returns Nothing.
      */
     public unbind(consumerTag: Tag) {
+        /** Read reverse links so each old producer/type pair can be removed. */
         const links = decorProducerManager.query(consumerTag);
         links.forEach((types, producer) => {
             types.forEach(type => {
@@ -48,6 +52,7 @@ class DecorService {
                 decorProducerResolver.register(producer, type);
             })
         })
+        /** Drop the reverse index after affected producers have been queued. */
         decorProducerManager.remove(consumerTag);
     }
 
@@ -62,10 +67,12 @@ class DecorService {
      * @returns Nothing.
      */
     public bind(consumerTag: Tag) {
+        /** Find every loader declared on this consumer method. */
         const consumer = consumerTag.target;
         const key = consumerTag.key;
         const loaderMap = decorConsumerRegistry.query(consumer);
         const loaders = loaderMap.get(key) ?? [];
+        /** Run loaders and create links for single or list producer targets. */
         loaders.forEach(loader => {
             const binding = loader(consumer);
             if (!binding) return;

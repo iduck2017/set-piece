@@ -2,6 +2,9 @@ import { effectResolver } from "./effect-resolver";
 import { eventProducerResolver } from "../event/event-producer-resolver";
 import { frameProducerResolver } from "../frame/frame-producer-resolver";
 
+/**
+ * Coordinates action boundaries and flushes action-scoped work.
+ */
 export class ActionManager {
     private _pending = false;
 

@@ -6,6 +6,9 @@ import { depService } from "./dep-service";
 import { tagDelegator } from "../tag/tag-delegator";
 import { tagRegistry } from "../tag/tag-registry";
 
+/**
+ * Installs reactive getters and setters for dependency-backed fields.
+ */
 class DepRegistry {
     private _keys: Map<AbstractConstructor<Model>, string[]> = new Map();
 

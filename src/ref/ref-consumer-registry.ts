@@ -1,6 +1,9 @@
 import { Model } from "../model";
 import { Tag } from "../tag/tag-registry";
 
+/**
+ * Tracks which tags hold references to each model.
+ */
 class RefConsumerRegistry {
     private _links: WeakMap<Model, Set<Tag>> = new WeakMap();
 

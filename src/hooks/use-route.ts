@@ -1,6 +1,6 @@
 import { routeRegistry } from "../route/route-registry";
 import { Model } from "../model";
-import { AbstractConstructor } from "../types";
+import { AbstractConstructor, TypedPropertyDecorator } from "../types";
 
 /**
  * Create a property decorator for nearest-ancestor route lookup.

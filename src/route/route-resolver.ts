@@ -1,6 +1,9 @@
 import { useBlink } from "../hooks/use-blink";
 import type { Model } from "../model";
 
+/**
+ * Recomputes route fields after model mount or unmount changes.
+ */
 class RouteResolver {
     private _queue: Set<Model> = new Set();
 

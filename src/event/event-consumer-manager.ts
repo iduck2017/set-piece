@@ -4,6 +4,9 @@ import { Constructor } from "../types";
 import { Tag } from "../tag/tag-registry";
 
 type EventConsumerTagsMap = Map<Constructor<Event>, Array<Tag>>
+/**
+ * Stores runtime event producer-to-consumer links.
+ */
 class EventConsumerManager {
     private _links: WeakMap<Model, EventConsumerTagsMap> = new WeakMap();
 

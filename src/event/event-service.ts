@@ -4,6 +4,10 @@ import { eventConsumerManager } from "./event-consumer-manager";
 import { Tag } from "../tag/tag-registry";
 import { eventProducerManager } from "./event-producer-manager";
 import { eventConsumerRegistry } from "./event-consumer-registry";
+
+/**
+ * Maintains runtime event listener links and dispatches emitted events.
+ */
 class EventService {
     /**
      * Emit an event to all currently bound consumers.
@@ -36,12 +40,14 @@ class EventService {
      * @returns Nothing.
      */
     public unbind(consumerTag: Tag) {
+        /** Read reverse links so each old producer/type pair can be removed. */
         const links = eventProducerManager.query(consumerTag);
         links.forEach((types, producer) => {
             types.forEach(type => {
                 eventConsumerManager.remove(producer, type, consumerTag);
             })
         })
+        /** Drop the reverse index after producer links are cleared. */
         eventProducerManager.remove(consumerTag);
     }
 
@@ -56,10 +62,12 @@ class EventService {
      * @returns Nothing.
      */
     public bind(consumerTag: Tag) {
+        /** Find every loader declared on this consumer method. */
         const consumer = consumerTag.target;
         const key = consumerTag.key;
         const loaderMap = eventConsumerRegistry.query(consumer);
         const loaders = loaderMap.get(key) ?? [];
+        /** Run loaders and create links for single or list producer targets. */
         loaders.forEach(loader => {
             const binding = loader(consumer);
             if (!binding) return;

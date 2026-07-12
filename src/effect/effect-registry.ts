@@ -4,6 +4,9 @@ import { depCollector } from "../dep/dep-collector";
 import { effectManager } from "../dep/dep-consumer-manager";
 import { tagRegistry } from "../tag/tag-registry";
 
+/**
+ * Stores effect method keys declared by `useEffect()`.
+ */
 class EffectRegistry {
     private _keys: Map<AbstractConstructor<Model>, string[]> = new Map();
 

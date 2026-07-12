@@ -7,6 +7,9 @@ import { decorProducerDelegator } from "./decor-producer-delegator";
 import { depService } from "../dep/dep-service";
 import { useBlink } from "../hooks/use-blink";
 
+/**
+ * Recomputes decorated producer values after source or binding changes.
+ */
 class DecorProducerResolver {
     private _queue: Set<Tag> = new Set();
 
@@ -36,6 +39,7 @@ class DecorProducerResolver {
     @useBlink()
     public register(target: Tag | Model, DecorCtor?: Constructor<Decor>) {
         if (target instanceof Model) {
+            /** Consumer changes register by decor type, so find matching producers. */
             if (!DecorCtor) return;
             const model = target;
             const loaders = decorProducerRegistry.query(model)
@@ -58,16 +62,19 @@ class DecorProducerResolver {
      * @returns True after the resolver drains its queue.
      */
     public resolve(): boolean {
+        /** Snapshot and clear first so recomputation can queue the next wave. */
         const tags = [...this._queue];
         this._queue.clear();
-
         if (!tags) return false;
         tags.forEach(tag => {
+            /** Read the previous decorated value before clearing the cache. */
             const model = tag.target;
             const key = tag.key;
             const prev = Reflect.get(model, key);
+            /** Clear and read again to rebuild the decor result. */
             decorProducerDelegator.clear(tag);
             const next = Reflect.get(model, key);
+            /** Notify dependents only if the visible decorated value changed. */
             if (prev !== next) {
                 depService.register(tag);
             }

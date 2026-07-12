@@ -4,6 +4,9 @@ import { AbstractConstructor, Constructor } from "../types";
 
 export type FrameProducerLoader<T = any> = () => Constructor<DiffFrame<T>, [{ next: T }]>;
 
+/**
+ * Stores frame producer loaders declared by `useFrameProducer()`.
+ */
 class FrameProducerRegistry {
     private _loaders: Map<AbstractConstructor<Model>, Map<string, FrameProducerLoader>> = new Map();
 

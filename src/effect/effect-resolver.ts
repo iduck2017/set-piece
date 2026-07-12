@@ -4,6 +4,9 @@ import { Tag } from "../tag/tag-registry";
 import { effectManager } from "../dep/dep-consumer-manager";
 import { useAction } from "../hooks/use-action";
 
+/**
+ * Re-runs effects affected by dependency changes.
+ */
 class EffectResolver {
     private _queue: Set<Tag> = new Set();
 
@@ -40,9 +43,12 @@ class EffectResolver {
      * @returns Nothing.
      */
     public resolve() {
+        /** Snapshot and clear first so effects can queue later work safely. */
         const depTags = [...this._queue];
         this._queue.clear();
+        /** Map changed dependency tags to effect methods that consumed them. */
         const consumerTags = effectManager.query(depTags);
+        /** Remove stale edges before each effect re-runs and recollects. */
         this.unbind(consumerTags);
         this.emit(consumerTags);
     }
@@ -71,6 +77,7 @@ class EffectResolver {
      */
     private emit(consumerTags: Tag[]) {
         consumerTags.forEach(consumerTag => {
+            /** Invoke the effect through the model so `this` stays stable. */
             const model = consumerTag.target;
             const key = consumerTag.key;
             const effect = Reflect.get(model, key);

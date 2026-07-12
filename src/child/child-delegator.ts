@@ -28,6 +28,9 @@ function useLock<P extends any[], R = any>() {
     }
 }
 
+/**
+ * Proxies child values so parent ownership stays in sync with mutations.
+ */
 export class ChildDelegator {
     public readonly value: unknown;
     
@@ -138,8 +141,10 @@ export class ChildDelegator {
      */
     constructor(value: unknown, private readonly parent: Model) {
         if (value instanceof Array) {
+            /** Proxy child arrays so ownership follows in-place mutations. */
             this.value = new Proxy(value, {
                 get: (origin, index) => {
+                    /** Replace mutating helpers with mount-aware wrappers. */
                     if (index === 'pop') return this.pop.bind(this, origin);
                     if (index === 'push') return this.push.bind(this, origin);
                     if (index === 'fill') return this.fill.bind(this, origin);
@@ -149,6 +154,7 @@ export class ChildDelegator {
                     return Reflect.get(origin, index)
                 },
                 set: (origin, index, next) => {
+                    /** Direct index writes replace one child relationship. */
                     const prev = Reflect.get(origin, index);
                     Reflect.set(origin, index, next);
                     if (this._locked) return true;
@@ -157,6 +163,7 @@ export class ChildDelegator {
                     return true;
                 },
                 deleteProperty: (origin, index) => {
+                    /** Direct deletes detach the removed child. */
                     const prev = Reflect.get(origin, index);
                     Reflect.deleteProperty(origin, index);
                     if (this._locked) return true;

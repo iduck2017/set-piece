@@ -13,6 +13,9 @@ export type EventConsumerLoader<
     event: Constructor<E>
 ] | undefined
 
+/**
+ * Stores event consumer loaders declared by `useEventConsumer()`.
+ */
 class EventConsumerRegistry {
     private _loaders: Map<AbstractConstructor<Model>, Map<string, Array<EventConsumerLoader>>> = new Map();
 

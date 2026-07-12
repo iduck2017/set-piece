@@ -4,6 +4,9 @@ import { Constructor } from "../types";
 import { Tag } from "../tag/tag-registry";
 
 type FrameConsumerTagsMap = Map<Constructor<Frame>, Array<Tag>>
+/**
+ * Stores runtime frame producer-to-consumer links.
+ */
 class FrameConsumerManager {
     private _links: WeakMap<Model, FrameConsumerTagsMap> = new WeakMap();
 

@@ -1,5 +1,8 @@
 import { Tag } from "../tag/tag-registry";
 
+/**
+ * Caches decorated producer results by producer tag.
+ */
 class DecorProducerDelegator {
     private _cache: WeakMap<Tag, any> = new WeakMap();
 

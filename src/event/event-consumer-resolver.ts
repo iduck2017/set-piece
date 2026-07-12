@@ -5,6 +5,9 @@ import { eventManager } from "../dep/dep-consumer-manager";
 import { eventService } from "./event-service";
 import { useBlink } from "../hooks/use-blink";
 
+/**
+ * Refreshes event listener bindings when their loader dependencies change.
+ */
 class EventConsumerResolver {
     private _queue: Set<Tag> = new Set();
 

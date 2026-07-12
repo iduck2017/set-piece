@@ -8,6 +8,9 @@ import { memoResolver } from "../memo/memo-resolver";
 import { Tag } from "../tag/tag-registry";
 import { useBlink } from "../hooks/use-blink";
 
+/**
+ * Fans dependency writes out to every resolver interested in changes.
+ */
 class DepService {
     /**
      * Fan out one changed dependency to every resolver that tracks deps.

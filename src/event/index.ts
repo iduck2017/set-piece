@@ -1,4 +1,7 @@
-export class Event<P = any> {
+/**
+ * Base payload for business events dispatched through story boundaries.
+ */
+export abstract class Event<P = any> {
     protected readonly _brand = Symbol('event');
 
     public readonly detail: P;
@@ -12,8 +15,14 @@ export class Event<P = any> {
     }
 }
 
-export class DiffEvent<T = any> extends Event<{ next: T }> {}
+/**
+ * Base event for property-change payloads produced from dependency writes.
+ */
+export abstract class DiffEvent<T = any> extends Event<{ next: T }> {}
 
+/**
+ * Base event for previous-value flows that dispatch immediately.
+ */
 export abstract class PrevEvent<P> extends Event<P> {
     protected readonly _brand = Symbol('prev-event');
 

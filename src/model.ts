@@ -20,6 +20,9 @@ import { gcService } from "./utils/gc-service";
 import { refConsumerRegistry } from "./ref/ref-consumer-registry";
 import { refRegistry } from "./ref/ref-registry";
 
+/**
+ * Base class for reactive domain objects managed by set-piece.
+ */
 export abstract class Model {
     protected readonly _brand = Symbol('model')
 
@@ -39,17 +42,21 @@ export abstract class Model {
      */
     private init() {
         gcService.register(this, `${this.constructor.name}#${this._uuid}`);
+        /** Warm memo getters so their dependencies are collected immediately. */
         const memoKeys = memoRegistry.query(this);
         memoKeys.forEach(key => Reflect.get(this, key))
+        /** Run initial effects after memo state is available. */
         const effectKeys = effectRegistry.query(this);
         effectKeys
             .map(key => Reflect.get(this, key))
             .filter(effect => effect instanceof Function)
             .forEach(effect => effect.call(this))
+        /** Bind decor consumers before event and frame listeners. */
         const decorLoaderMap = decorConsumerRegistry.query(this);
         const decorKeys = [...decorLoaderMap.keys()];
         const decorConsumerTags = decorKeys.map(key => tagRegistry.query(this, key));
         decorConsumerTags.forEach(tag => decorService.bind(tag));
+        /** Bind message consumers after all local initialization is done. */
         const eventLoaderMap = eventConsumerRegistry.query(this);
         const frameLoaderMap = frameConsumerRegistry.query(this);
         const eventKeys = [...eventLoaderMap.keys()];
@@ -103,6 +110,7 @@ export abstract class Model {
      * @returns Nothing.
      */
     protected unlink() {
+        /** First remove external ref holders that point at this model. */
         const refConsumers = refConsumerRegistry.query(this);
         refConsumers.forEach(tag => {
             const holder: any = tag.target;
@@ -116,6 +124,7 @@ export abstract class Model {
                 }
             }
         });
+        /** Then clear refs owned by this model so it stops holding others. */
         refRegistry.query(this).forEach(key => {
             Reflect.set(this, key, undefined);
         });
@@ -191,6 +200,7 @@ export abstract class Model {
      * @returns Nothing.
      */
     private reroute() {
+        /** Resolve each route property to the nearest matching ancestor. */
         const routes = routeRegistry.query(this);
         routes.forEach((RouteCtor: Function, key: string) => {
             let ancestor: Model | undefined = this;
@@ -200,9 +210,11 @@ export abstract class Model {
             }
             Reflect.set(this, key, ancestor);
         });
+        /** Recompute root from the parent chain after route links update. */
         let root: Model = this;
         while (root.parent) root = root.parent;
         this._root = root;
+        /** Propagate route changes through the mounted subtree. */
         this.children.forEach((child: Model) => child.reroute());
     }
 }

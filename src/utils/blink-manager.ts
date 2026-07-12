@@ -10,6 +10,9 @@ import { Constructor } from "../types";
 import { useAction } from "../hooks/use-action";
 import { useBlink } from "../hooks/use-blink";
 
+/**
+ * Coordinates blink boundaries and flushes dependency graph updates.
+ */
 export class BlinkManager {
     private _pending = false;
 
@@ -24,10 +27,13 @@ export class BlinkManager {
      */
     @useAction()
     public launch(handler: () => unknown) {
+        /** Nested blink work is folded into the outer boundary. */
         if (this._pending) return handler();
+        /** Run the caller first, then inspect whether anything was queued. */
         this._pending = true;
         const output = handler();
         this._pending = false;
+        /** Flush only when a resolver has pending blink-scoped work. */
         const dirty = this.precheck();
         if (!dirty) return output;
         this.resolve()
@@ -71,11 +77,14 @@ export class BlinkManager {
                  * @param params - Constructor parameters forwarded to the model.
                  */
                 constructor(...params: any[]) {
+                    /** Reuse an active blink when nested model construction occurs. */
                     if (that._pending) super(...params);
                     if (that._pending) return;
+                    /** Otherwise create a construction blink and flush after super. */
                     that._pending = true;
                     super(...params);
                     that._pending = false;
+                    /** Construction may queue model initialization and bindings. */
                     const dirty = that.precheck()
                     if (!dirty) return;
                     that.resolve();
@@ -94,11 +103,12 @@ export class BlinkManager {
      */
     @useBlink()
     private resolve() {
+        /** Associate value changes before listeners refresh their bindings. */
         modelResolver.resolve();
         routeResolver.resolve();
         memoResolver.resolve();
         decorProducerResolver.resolve();
-        
+        /** Refresh listeners after values and derived values have settled. */
         decorConsumerResolver.resolve();
         eventConsumerResolver.resolve();
         frameConsumerResolver.resolve();

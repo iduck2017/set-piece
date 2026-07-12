@@ -1,6 +1,9 @@
 import { Model } from "../model";
 import { AbstractConstructor } from "../types";
 
+/**
+ * Stores ref property keys declared by `useRef()`.
+ */
 class RefRegistry {
     private _keys: Map<AbstractConstructor<Model>, string[]> = new Map();
 

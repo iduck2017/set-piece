@@ -28,6 +28,9 @@ function useProxy<P extends any[], R = any>() {
     }
 }
 
+/**
+ * Proxies mutable dependency values so in-place edits notify dependents.
+ */
 export class DepDelegator {
     public readonly value: unknown;
 
@@ -152,8 +155,10 @@ export class DepDelegator {
      */
     constructor(origin: unknown, public readonly tag: Tag) {
         if (origin instanceof Array) {
+            /** Proxy arrays so helpers and index writes both become reactive. */
             this.value = new Proxy(origin, {
                 get: (origin, index) => {
+                    /** Replace mutating helpers with tagged wrappers. */
                     if (index === 'pop') return this.pop.bind(this, origin);
                     if (index === 'push') return this.push.bind(this, origin);
                     if (index === 'shift') return this.shift.bind(this, origin);
@@ -165,6 +170,9 @@ export class DepDelegator {
                 set: this.set.bind(this),
                 deleteProperty: this.del.bind(this)
             });
-        } else this.value = origin;
+        } else {
+            /** Non-array values are already handled by the property setter. */
+            this.value = origin;
+        }
     }
 }

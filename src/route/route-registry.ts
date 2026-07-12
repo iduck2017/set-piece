@@ -5,6 +5,9 @@ import { AbstractConstructor } from "../types";
 type RouteLoader = () => AbstractConstructor<Model>
 type RouteLoaderMap = Map<string, RouteLoader>
 type RouteConstructorMap = Map<string, AbstractConstructor<Model>>;
+/**
+ * Stores route loaders declared by `useRoute()`.
+ */
 class RouteRegistry {
     private _loaders: Map<AbstractConstructor<Model>, RouteLoaderMap> = new Map();
 

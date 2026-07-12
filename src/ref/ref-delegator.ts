@@ -29,6 +29,9 @@ function useLock<P extends any[], R = any>() {
     }
 }
 
+/**
+ * Proxies ref values so holder links stay in sync with mutations.
+ */
 export class RefDelegator {
     public readonly value: unknown;
 
@@ -143,8 +146,10 @@ export class RefDelegator {
      */
     constructor(value: unknown, private readonly tag: Tag) {
         if (value instanceof Array) {
+            /** Proxy ref arrays so holder links follow in-place mutations. */
             this.value = new Proxy(value, {
                 get: (origin, index) => {
+                    /** Replace mutating helpers with ref-aware wrappers. */
                     if (index === 'pop') return this.pop.bind(this, origin);
                     if (index === 'push') return this.push.bind(this, origin);
                     if (index === 'fill') return this.fill.bind(this, origin);
@@ -154,6 +159,7 @@ export class RefDelegator {
                     return Reflect.get(origin, index);
                 },
                 set: (origin, index, next) => {
+                    /** Direct index writes replace one ref holder link. */
                     const prev = Reflect.get(origin, index);
                     Reflect.set(origin, index, next);
                     if (this._locked) return true;
@@ -162,6 +168,7 @@ export class RefDelegator {
                     return true;
                 },
                 deleteProperty: (origin, index) => {
+                    /** Direct deletes remove the old holder link. */
                     const prev = Reflect.get(origin, index);
                     Reflect.deleteProperty(origin, index);
                     if (this._locked) return true;

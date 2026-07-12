@@ -3,6 +3,9 @@ import { frameProducerRegistry } from "./frame-producer-registry";
 import { useAnime } from "../hooks/use-anime";
 import { frameService } from "./frame-service";
 
+/**
+ * Emits diff frames for dependency-backed producer changes.
+ */
 class FrameProducerResolver {
     private _queue: Set<Tag> = new Set();
 

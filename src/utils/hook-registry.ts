@@ -1,6 +1,9 @@
 import { Model } from "../model";
 import { AbstractConstructor } from "../types";
 
+/**
+ * Stores and runs lifecycle hook method keys.
+ */
 export class HookRegistry {
     private _keys: Map<AbstractConstructor<Model>, string[]> = new Map();
 

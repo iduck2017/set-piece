@@ -1,6 +1,9 @@
 ﻿import { Model } from "../model";
 import { Tag, tagRegistry } from "./tag-registry";
 
+/**
+ * Stores raw property values by tag.
+ */
 class TagDelegator {
     private _values: WeakMap<Tag, any> = new WeakMap();
 

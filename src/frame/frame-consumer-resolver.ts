@@ -5,6 +5,9 @@ import { frameManager } from "../dep/dep-consumer-manager";
 import { frameService } from "./frame-service";
 import { useBlink } from "../hooks/use-blink";
 
+/**
+ * Refreshes frame consumer bindings when loader dependencies change.
+ */
 class FrameConsumerResolver {
     private _queue: Set<Tag> = new Set();
 

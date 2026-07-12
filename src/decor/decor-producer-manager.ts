@@ -4,6 +4,9 @@ import { Constructor } from "../types";
 import { Tag } from "../tag/tag-registry";
 
 export type DecorConstructorsMap = Map<Model, Constructor<Decor>[]>
+/**
+ * Stores reverse decor consumer-to-producer links.
+ */
 class DecorProducerManager {
     private _links: WeakMap<Tag, DecorConstructorsMap> = new WeakMap();
 

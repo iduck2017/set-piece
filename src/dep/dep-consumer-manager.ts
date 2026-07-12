@@ -2,6 +2,9 @@
 import { depManager } from "./dep-manager";
 import { Tag } from "../tag/tag-registry";
 
+/**
+ * Stores dependency-to-consumer links for resolver lookups.
+ */
 export class DepConsumerManager {
     private _links: WeakMap<Tag, Tag[]> = new WeakMap();
 

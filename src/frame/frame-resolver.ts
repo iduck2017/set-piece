@@ -6,6 +6,9 @@ type FrameContext = {
     frame: Frame;
 }
 
+/**
+ * Queues frame delivery and drains it in anime step order.
+ */
 class FrameResolver {
     protected _step: number;
     protected _pending: boolean;
@@ -63,9 +66,12 @@ class FrameResolver {
      * @returns The handler result, preserving promise results when present.
      */
     public async launch(handler: () => unknown) {
+        /** Nested anime calls share the outer queue and step counter. */
         if (this._pending) return handler();
+        /** Run the caller first; emitted frames are only queued for now. */
         this._pending = true;
         const value = handler();
+        /** Async handlers must finish before queued frames are delivered. */
         if (value instanceof Promise) {
             return value.then((result) => {
                 this._pending = false;
@@ -88,10 +94,12 @@ class FrameResolver {
      * @returns A promise that resolves after all queued frame handlers finish.
      */
     public async resolve() {
+        /** Snapshot queue and step range before handlers can enqueue again. */
         const step = this._step;
         this._step = 1;
         const queue = this._queue;
         this._queue = new Map();
+        /** Deliver lower steps first; handlers in the same step run together. */
         let current = 0;
         while (current <= step) {
             current += 1;
