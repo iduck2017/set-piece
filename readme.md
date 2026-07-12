@@ -30,8 +30,10 @@ Model state changes
 import {
   Model,
   Decor,
+  NumDecor,
   Event,
   DiffEvent,
+  PrevEvent,
   Frame,
   DiffFrame,
   useModel,
@@ -264,25 +266,10 @@ useRef   = reference, only tracks holders
 
 ## Decor
 
-`Decor` 用来把一个原始值交给一组 consumer 修饰，最后把修饰后的结果作为属性读取值。
+`Decor` 用来把一个原始值交给一组 consumer 修饰，最后把修饰后的结果作为属性读取值。数值叠加场景可以直接使用 `NumDecor`。
 
 ```ts
-class AttackDecor extends Decor<number> {
-  private _result: number;
-
-  constructor(origin: number, target: Model) {
-    super(origin, target);
-    this._result = origin;
-  }
-
-  public get result() {
-    return this._result;
-  }
-
-  public add(value: number) {
-    this._result += value;
-  }
-}
+class AttackDecor extends NumDecor {}
 ```
 
 生产 decor：
@@ -317,14 +304,14 @@ decor producer 的值变化时会进入 `decorProducerResolver`。decor consumer
 
 ## Event And Story
 
-`Event` 适合表达业务事件。事件可以同步、延后或异步派发。延后事件会进入 `story` 边界，并在 story 结束时由 `eventResolver` 统一派发。
+`Event` 适合表达业务事件。`emit` 只接收一个 event 实例，不再接收 options。普通 event 默认进入 `story` 边界，并在 story 结束时由 `eventResolver` 统一派发。`PrevEvent` 表示需要立刻处理的前置事件，会同步派发。
 
 ```ts
 class PingEvent extends Event<{ message: string }> {}
+class BeforePingEvent extends PrevEvent<{ message: string }> {}
 
-this.emit(new PingEvent({ message: 'hello' }));
-this.emit(new PingEvent({ message: 'later' }), { isDefer: true });
-await this.emit(new PingEvent({ message: 'async' }), { isAsync: true });
+this.emit(new PingEvent({ message: 'later' }));
+this.emit(new BeforePingEvent({ message: 'now' }));
 ```
 
 监听事件：

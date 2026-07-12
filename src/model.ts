@@ -2,7 +2,7 @@
 import { decorConsumerRegistry } from "./decor/decor-consumer-registry";
 import { decorService } from "./decor/decor-service";
 import { effectRegistry } from "./effect/effect-registry";
-import { Event } from "./event";
+import { Event, PrevEvent } from "./event";
 import { eventConsumerRegistry } from "./event/event-consumer-registry";
 import { eventService } from "./event/event-service";
 import { memoRegistry } from "./memo/memo-registry";
@@ -19,11 +19,6 @@ import { useAnime } from "./hooks/use-anime";
 import { gcService } from "./utils/gc-service";
 import { refConsumerRegistry } from "./ref/ref-consumer-registry";
 import { refRegistry } from "./ref/ref-registry";
-
-type EmitOptions = {
-    isDefer?: boolean;
-    isAsync?: boolean;
-}
 
 export abstract class Model {
     protected readonly _brand = Symbol('model')
@@ -69,43 +64,34 @@ export abstract class Model {
      * Emit a frame through the anime frame queue.
      *
      * @param frame - Frame instance to queue for bound consumers.
-     * @param options - Currently ignored for frames.
      * @returns The frame emission result.
      */
-    protected emit(frame: Frame, options?: EmitOptions): unknown;
+    protected emit(frame: Frame): unknown;
     /**
-     * Emit an event asynchronously.
+     * Emit an event through the story queue.
+     *
+     * `PrevEvent` is emitted synchronously. Other events are deferred until the
+     * current story resolves.
      *
      * @param event - Event instance to deliver.
-     * @param options - Emit options with `isAsync: true`.
-     * @returns Promise resolved after all async consumers finish.
-     */
-    protected emit(event: Event, options?: EmitOptions): Promise<void>;
-    /**
-     * Emit an event synchronously or defer it to the current story.
-     *
-     * @param event - Event instance to deliver.
-     * @param options - Optional deferred emit settings.
      * @returns The event emission result.
      */
-    protected emit(event: Event, options?: EmitOptions): void;
+    protected emit(event: Event): void;
     /**
-     * Route the payload by runtime type and emit options.
+     * Route the payload by runtime type.
      *
-     * Frames go through `frameService`. Events can be sync, async, or deferred
-     * through `eventResolver`.
+     * Frames go through `frameService`. Previous-value events emit
+     * synchronously, while normal events are queued through `eventResolver`.
      *
      * @param target - Frame or event payload to emit.
-     * @param options - Event emit options.
      * @returns The chosen service result.
      */
     @useAnime()
     @useStory()
-    protected emit(target: Frame | Event, options: EmitOptions = {}) {
+    protected emit(target: Frame | Event) {
         if (target instanceof Frame) return frameService.emit(this, target);
-        if (options.isAsync) return eventService.emitAsync(this, target);
-        if (options.isDefer) return eventResolver.register(this, target);
-        return eventService.emitSync(this, target);
+        if (target instanceof PrevEvent) return eventService.emit(this, target);
+        return eventResolver.register(this, target);
     }
 
     /**

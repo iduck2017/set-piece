@@ -8,6 +8,7 @@ import { modelResolver } from "./model-resolver";
 import { routeResolver } from "../route/route-resolver";
 import { Constructor } from "../types";
 import { useAction } from "../hooks/use-action";
+import { useBlink } from "../hooks/use-blink";
 
 export class BlinkManager {
     private _pending = false;
@@ -84,18 +85,6 @@ export class BlinkManager {
     }
 
     /**
-     * Re-enter the blink manager so resolver side effects can cascade safely.
-     *
-     * Some resolver work can enqueue more blink work. Re-entering through
-     * `launch()` preserves the pending guard.
-     *
-     * @returns The resolver result.
-     */
-    private resolve() {
-        return this.launch(() => this.flush());
-    }
-
-    /**
      * Resolve all blink-scoped queues in dependency order.
      *
      * Model initialization and memo/decor producers run before consumer
@@ -103,7 +92,8 @@ export class BlinkManager {
      *
      * @returns Nothing.
      */
-    private flush() {
+    @useBlink()
+    private resolve() {
         modelResolver.resolve();
         routeResolver.resolve();
         memoResolver.resolve();

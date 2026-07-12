@@ -17,7 +17,7 @@ export type ChildList = Array<Model | undefined>
  * @param key - Decorated child property key.
  * @returns Child models found in the property value.
  */
-function childIterator(model: Record<string, any>, key: string) {
+function iterator(model: Record<string, any>, key: string) {
     const children: Model[] = [];
     const value = model[key]
     if (value instanceof Model) children.push(model[key]);
@@ -75,7 +75,7 @@ export function useChild<
             configurable: true,
         });
 
-        childRegistry.register(prototype, key, childIterator);
+        childRegistry.register(prototype, key, iterator);
         depRegistry.register(prototype, key)
     }
 }

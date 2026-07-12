@@ -6,16 +6,16 @@ import { eventProducerManager } from "./event-producer-manager";
 import { eventConsumerRegistry } from "./event-consumer-registry";
 class EventService {
     /**
-     * Emit an event synchronously to all currently bound consumers.
+     * Emit an event to all currently bound consumers.
      *
-     * This is the normal event dispatch path. It looks up consumers by producer
-     * model and event constructor, then invokes each matching handler.
+     * This looks up consumers by producer model and event constructor, then
+     * invokes each matching handler.
      *
      * @param producer - Model that emitted the event.
      * @param event - Event instance delivered to matching consumers.
      * @returns Nothing.
      */
-    public emitSync(producer: Model, event: Event) {
+    public emit(producer: Model, event: Event) {
         const consumerTags = eventConsumerManager.query(producer, event);
         consumerTags.forEach(consumerTag => {
             const consumer = consumerTag.target;
@@ -23,26 +23,6 @@ class EventService {
             const handler = Reflect.get(consumer, key);
             if (handler instanceof Function) handler.call(consumer, event);
         });
-    }
-
-    /**
-     * Emit an event to consumers sequentially and await each handler.
-     *
-     * Use this for async event delivery where consumer order should be
-     * preserved.
-     *
-     * @param producer - Model that emitted the event.
-     * @param event - Event instance delivered to matching consumers.
-     * @returns A promise resolved after all matching handlers finish.
-     */
-    public async emitAsync(producer: Model, event: Event) {
-        const consumerTags = eventConsumerManager.query(producer, event);
-        for (const consumerTag of consumerTags) {
-            const consumer = consumerTag.target;
-            const key = consumerTag.key;
-            const handler = Reflect.get(consumer, key);
-            if (handler instanceof Function) await handler.call(consumer, event);
-        }
     }
 
     /**

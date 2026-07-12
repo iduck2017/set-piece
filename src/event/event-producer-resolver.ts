@@ -24,7 +24,7 @@ class EventProducerResolver {
      *
      * This runs inside the story boundary. For each changed property with a
      * registered event producer, it builds the configured diff event and emits
-     * it synchronously through `eventService`.
+     * it through `eventService`.
      *
      * @returns Nothing.
      */
@@ -39,7 +39,7 @@ class EventProducerResolver {
             const model = tag.target;
             const next = Reflect.get(model, tag.key);
             const event = new EventCtor({ next });
-            eventService.emitSync(model, event);
+            eventService.emit(model, event);
         });
     }
 }

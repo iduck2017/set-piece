@@ -1,17 +1,31 @@
-import { DiffEvent, Event } from ".";
+import { DiffEvent, Event, PrevEvent } from ".";
 import { useDep } from "../hooks/use-dep";
 import { Model } from "../model";
 import { useModel } from "../hooks/use-model";
 import { useEventConsumer } from "../hooks/use-event-consumer";
 import { useEventProducer } from "../hooks/use-event-producer";
+import { useStory } from "../hooks/use-story";
 
-class PingEvent extends Event {}
+class PingEvent extends Event<{ records?: string[] }> {}
+class BeforePingEvent extends PrevEvent<{ records?: string[] }> {}
 class CountChangedEvent extends DiffEvent<number> {}
 
 @useModel('event-pinger')
 class PingerModel extends Model {
     public ping() {
         this.emit(new PingEvent({}));
+    }
+
+    @useStory()
+    public pingInStory(records: string[]) {
+        this.emit(new PingEvent({ records }));
+        records.push('after');
+    }
+
+    @useStory()
+    public beforePingInStory(records: string[]) {
+        this.emit(new BeforePingEvent({ records }));
+        records.push('after');
     }
 }
 
@@ -26,8 +40,14 @@ class ListenerModel extends Model {
     public get pingCount() { return this._pingCount; }
 
     @useEventConsumer((self: ListenerModel) => [self.pinger, PingEvent])
-    private handlePing(_event: PingEvent) {
+    private handlePing(event: PingEvent) {
         this._pingCount += 1;
+        event.detail.records?.push('handled');
+    }
+
+    @useEventConsumer((self: ListenerModel) => [self.pinger, BeforePingEvent])
+    private handleBeforePing(event: BeforePingEvent) {
+        event.detail.records?.push('handled');
     }
 }
 
@@ -82,5 +102,19 @@ describe('event', () => {
         counter.count = 2;
 
         expect(listener.values).toEqual([1, 2]);
+    });
+
+    it('defers normal events but emits prev events immediately in story', () => {
+        const pinger = new PingerModel();
+        const listener = new ListenerModel();
+        listener.pinger = pinger;
+
+        const records: string[] = [];
+        pinger.pingInStory(records);
+        expect(records).toEqual(['after', 'handled']);
+
+        const prevRecords: string[] = [];
+        pinger.beforePingInStory(prevRecords);
+        expect(prevRecords).toEqual(['handled', 'after']);
     });
 });

@@ -12,10 +12,10 @@ class EventResolver {
     private _queue: EventContext[] = [];
 
     /**
-     * Queue a deferred event emitted during the current story.
+     * Queue a normal event emitted during the current story.
      *
-     * `Model.emit(event, { isDefer: true })` calls this instead of emitting
-     * immediately.
+     * `Model.emit(event)` calls this for non-`PrevEvent` events instead of
+     * emitting immediately.
      *
      * @param model - Producer model that emitted the event.
      * @param event - Event instance to emit when the story resolves.
@@ -44,7 +44,7 @@ class EventResolver {
     }
 
     /**
-     * Emit all deferred events synchronously and clear the queue.
+     * Emit all deferred events and clear the queue.
      *
      * @returns Nothing.
      */
@@ -52,7 +52,7 @@ class EventResolver {
         const queue = [...this._queue];
         this._queue.length = 0;
         queue.forEach(({ model, event }) => {
-            eventService.emitSync(model, event);
+            eventService.emit(model, event);
         });
     }
 }

@@ -22,3 +22,29 @@ export abstract class Decor<T = any> {
     protected _origin: T;
     public abstract get result(): T
 }
+
+export class NumDecor extends Decor<number> {
+    private _result: number;
+    public get result() { return this._result; }
+
+    /**
+     * Create a numeric decor whose result starts from the producer value.
+     *
+     * @param origin - Raw number before decor consumers run.
+     * @param target - Model that owns the decorated producer property.
+     */
+    constructor(origin: number, target: Model) {
+        super(origin, target);
+        this._result = origin;
+    }
+
+    /**
+     * Add a numeric modifier to the decorated result.
+     *
+     * @param value - Amount added by a decor consumer.
+     * @returns Nothing.
+     */
+    public add(value: number) {
+        this._result += value;
+    }
+}

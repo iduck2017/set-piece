@@ -2,7 +2,7 @@
 export { Model } from './model';
 
 /** Domain payloads */
-export { Decor } from './decor';
+export { Decor, NumDecor } from './decor';
 export { Event, DiffEvent, PrevEvent } from './event';
 export { Frame, DiffFrame } from './frame';
 
