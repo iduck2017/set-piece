@@ -2,7 +2,7 @@
 export { Model } from './model';
 
 /** Domain payloads */
-export { Decor, NumDecor } from './decor';
+export { Decor, NumDecor, BoolDecor } from './decor';
 export { Event, DiffEvent, PrevEvent } from './event';
 export { Frame, DiffFrame } from './frame';
 
@@ -14,6 +14,7 @@ export { useView } from './hooks/use-view';
 export { useAction } from './hooks/use-action';
 export { useBlink } from './hooks/use-blink';
 export { useStory } from './hooks/use-story';
+export { useAnime } from './hooks/use-anime';
 
 /** State and dependency hooks */
 export { useDep } from './hooks/use-dep';

@@ -31,6 +31,7 @@ import {
   Model,
   Decor,
   NumDecor,
+  BoolDecor,
   Event,
   DiffEvent,
   PrevEvent,
@@ -42,6 +43,7 @@ import {
   useState,
   useMemo,
   useEffect,
+  useAnime,
   useChild,
   useRoute,
   useRef,
@@ -54,7 +56,7 @@ import {
 } from 'set-piece';
 ```
 
-`Event`、`Frame`、`Decor` 以及 `DiffEvent`、`PrevEvent`、`DiffFrame`、`NumDecor` 都是抽象基类。业务代码需要先继承出带业务语义的类型，再把这个业务类型用于 `emit`、producer 或 consumer。
+`Event`、`Frame`、`Decor` 以及 `DiffEvent`、`PrevEvent`、`DiffFrame`、`NumDecor`、`BoolDecor` 都是抽象基类。业务代码需要先继承出带业务语义的类型，再把这个业务类型用于 `emit`、producer 或 consumer。
 
 ## Tag
 
@@ -268,7 +270,7 @@ useRef   = reference, only tracks holders
 
 ## Decor
 
-`Decor` 用来把一个原始值交给一组 consumer 修饰，最后把修饰后的结果作为属性读取值。数值叠加场景可以继承 `NumDecor`，再用业务类型标识这类 decor。
+`Decor` 用来把一个原始值交给一组 consumer 修饰，最后把修饰后的结果作为属性读取值。数值叠加或覆盖场景可以继承 `NumDecor`，布尔覆盖场景可以继承 `BoolDecor`，再用业务类型标识这类 decor。
 
 ```ts
 class AttackDecor extends NumDecor {}

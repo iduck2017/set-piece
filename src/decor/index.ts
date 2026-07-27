@@ -53,4 +53,43 @@ export abstract class NumDecor extends Decor<number> {
     public add(value: number) {
         this._result += value;
     }
+
+    /**
+     * Replace the decorated numeric result.
+     *
+     * @param value - Number supplied by a decor consumer.
+     * @returns Nothing.
+     */
+    public set(value: number) {
+        this._result = value;
+    }
+}
+
+/**
+ * Base decor for boolean overrides.
+ */
+export abstract class BoolDecor extends Decor<boolean> {
+    private _result: boolean;
+    public get result() { return this._result; }
+
+    /**
+     * Create a boolean decor whose result starts from the producer value.
+     *
+     * @param origin - Raw boolean before decor consumers run.
+     * @param target - Model that owns the decorated producer property.
+     */
+    constructor(origin: boolean, target: Model) {
+        super(origin, target);
+        this._result = origin;
+    }
+
+    /**
+     * Replace the decorated boolean result.
+     *
+     * @param value - Boolean value supplied by a decor consumer.
+     * @returns Nothing.
+     */
+    public set(value: boolean) {
+        this._result = value;
+    }
 }
