@@ -70,7 +70,17 @@ view.handleChange  -> Tag(view, "handleChange")
 
 `Tag` 是依赖系统的最小单位。字段读取、memo 重算、consumer 重新绑定，最终都会记录为 tag 之间的关系。普通业务代码通常不需要直接操作 tag。
 
-## Lifecycle
+### 实现方式
+
+框架使用 `WeakMap<Model, Map<string, Tag>>` 为每个实例字段缓存唯一的 `Tag`，再用以 `Tag` 为 key 的弱引用表保存字段值和各种依赖关系。装饰器、resolver 和 manager 之间不直接使用字符串定位状态，而是传递稳定的 `Tag` 对象。
+
+### 模块职责
+
+- `Tag`：表示一个稳定的 `model + key` 状态槽。
+- `TagRegistry`：创建并缓存 model 字段对应的唯一 `Tag`。
+- `TagDelegator`：以 `Tag` 为 key 保存装饰字段的底层值。
+
+## Blink
 
 `blink` 是同步收敛边界，负责刷新依赖图和绑定关系。顺序是：
 
@@ -84,27 +94,49 @@ eventConsumerResolver.resolve()
 frameConsumerResolver.resolve()
 ```
 
-`action` 是用户状态修改后的副作用边界。顺序是：
+多数情况下不需要手动使用 blink。`@useDep()` 写入、model 构造和 consumer 绑定等内部流程会自动进入 blink；需要显式建立同步收敛边界时，可以使用 `@useBlink()`。
+
+### 实现方式
+
+`useBlink` 用 `BlinkManager.launch()` 包装方法。manager 使用 `_pending` 合并嵌套 blink，最外层 handler 完成后先通过 `precheck()` 判断是否存在待处理工作，再按固定顺序调用各 resolver；resolver 产生的新 blink 会继续复用当前边界，使依赖值先稳定，再刷新 consumer binding。
+
+### 模块职责
+
+- `useBlink`：为方法建立可嵌套的同步收敛边界。
+- `BlinkManager`：检查并按顺序协调所有 blink resolver。
+- `ModelResolver`：初始化新创建的 model 或 view。
+- `RouteResolver`：刷新 model 子树的 route 和 root。
+- `MemoResolver`：失效和重算派生值。
+- `DecorProducerResolver`：重新计算 decor producer 的最终结果。
+- `DecorConsumerResolver`：重新绑定 decor consumer。
+- `EventConsumerResolver`：重新绑定 event consumer。
+- `FrameConsumerResolver`：重新绑定 frame consumer。
+
+## Action
+
+`action` 是状态修改后的 ref 校验和副作用边界。顺序是：
 
 ```text
+refResolver.resolve()
 effectResolver.resolve()
 eventProducerResolver.resolve()
 frameProducerResolver.resolve()
 ```
 
-`story` 是 event 的延后派发边界：
+普通响应式写入会通过 blink 自动进入 action；需要把多次状态修改合并成一次副作用刷新时，可以用 `@useAction()` 包装业务方法。
 
-```text
-eventResolver.resolve()
-```
+### 实现方式
 
-`anime` 是 frame 的派发边界：
+`useAction` 用 `ActionManager.launch()` 包装方法。manager 使用 `_pending` 合并嵌套 action，内层调用只执行 handler，最外层 handler 完成后才依次处理 ref、effect 和自动 producer。`BlinkManager.launch()` 本身也接入 action，因此没有显式装饰器的单次字段写入仍会形成完整的 action 边界。
 
-```text
-frameResolver.resolve()
-```
+### 模块职责
 
-多数情况下不需要手动使用这些边界。`@useDep()` 写入、model 构造、consumer 绑定等内部流程会自动进入对应边界。需要显式包裹业务方法时，可以使用 `@useAction()`、`@useBlink()`、`@useStory()` 或 `@useAnime()`。
+- `useAction`：把一次或多次状态修改包裹成统一的副作用边界。
+- `ActionManager`：在 action 结束后依次处理 ref、effect、event producer 和 frame producer。
+- `RefResolver`：清除 reroute 后跨 root 的主动和被动 ref。
+- `EffectResolver`：重新执行依赖发生变化的 effect。
+- `EventProducerResolver`：把字段变化转换成 diff event。
+- `FrameProducerResolver`：把字段变化转换成 diff frame。
 
 ## Model
 
@@ -136,7 +168,19 @@ new TodoModel()
 - 绑定 event consumer
 - 绑定 frame consumer
 
-## Dep And State
+### 实现方式
+
+`@useModel(code)` 先登记模型类型，再用 `BlinkManager.delegate()` 包装构造函数。实例完成 `super()` 后进入 `ModelResolver`，由 blink 调用 `_internal.init()`，统一预热 memo、执行初始 effect 并建立 decor、event、frame 的运行时绑定。
+
+### 模块职责
+
+- `Model`：提供 uuid、消息发送、初始化入口以及 parent、root、children 等模型树能力。
+- `useModel`：登记 model code，并包装模型构造过程。
+- `ModelResolver`：暂存新实例，在 blink 中调用模型初始化。
+- `StoreRegistry`：维护 model code 与构造函数的双向映射。
+- `gcService`：使用 `FinalizationRegistry` 观察 model 被垃圾回收。
+
+## Dep
 
 `@useDep()` 标记一个可追踪字段。
 
@@ -150,7 +194,7 @@ class CounterModel extends Model {
 
 字段被读取时，当前正在收集依赖的 consumer 会记录它。字段被写入时，框架会通知相关 resolver。
 
-数组和对象也会被代理，常见 mutation 会触发依赖更新：
+数组也会被代理，常见 mutation 会触发依赖更新：
 
 ```ts
 @useDep()
@@ -159,7 +203,45 @@ public items: string[] = [];
 this.items.push('a');
 ```
 
-`@useState()` 是 decor producer 常用的 state 标记，本质上也会注册为依赖字段。
+### 实现方式
+
+`DepRegistry` 把字段改写为基于 `TagDelegator` 的 getter/setter：getter 向当前 `DepCollector` 报告读取，setter 包装数组、保存新值并调用 `DepService`。`DepService` 再把变更广播给 memo、effect、decor、event 和 frame 的 resolver；数组的原地 mutation 由 `DepDelegator` 的 Proxy 转换成同样的依赖通知。
+
+### 模块职责
+
+- `useDep`：把字段或 getter 登记为可追踪依赖。
+- `DepRegistry`：安装响应式 getter/setter，并记录依赖字段元数据。
+- `DepDelegator`：代理数组 mutation 和下标操作，向依赖系统报告原地修改。
+- `DepCollector`：在 memo、effect 或 loader 执行期间临时收集被读取的 Tag。
+- `DepManager`：保存 consumer→dependency 的反向依赖边。
+- `DepConsumerManager`：保存 dependency→consumer 的正向依赖边，并提交收集结果。
+- `DepService`：把一个字段变更分发给所有相关 resolver。
+
+## State
+
+`@useState()` 标记普通响应式状态，常用于 decor producer 的原始值字段。它只提供依赖追踪，不会单独产生 decor、event 或 frame。
+
+```ts
+class MonsterModel extends Model {
+  @useDecorProducer(() => AttackDecor)
+  @useState()
+  private _attack = 100;
+
+  public get attack() {
+    return this._attack;
+  }
+}
+```
+
+### 实现方式
+
+`useState` 是对 `DepRegistry.register()` 的轻量调用，不维护独立的 registry、manager 或 resolver。字段读写仍然使用完整的 dep getter/setter、依赖收集和变更分发流程；单独命名主要用于表达“这是 producer 的内部原始状态”。
+
+### 模块职责
+
+- `useState`：把普通状态字段登记到依赖系统，不附加 producer 行为。
+- `DepRegistry`：复用与 `useDep` 相同的响应式字段实现。
+- `DepService`：把 state 变化通知给 memo、effect 和各类 producer/consumer resolver。
 
 ## Memo
 
@@ -186,6 +268,18 @@ counter.double; // 6
 
 memo 的失效和重算发生在 blink 阶段。如果 memo 输出变化，它会继续通知依赖它的下游。
 
+### 实现方式
+
+`MemoRegistry` 包装 getter，首次读取时开启依赖收集并把结果缓存在 `MemoDelegator`。依赖字段变化后，`MemoResolver` 根据依赖图找到受影响的 memo，解除旧依赖、清除缓存并重新读取 getter；只有新旧结果不同才继续通过 `DepService` 向下游传播。
+
+### 模块职责
+
+- `useMemo`：登记需要缓存的派生 getter。
+- `MemoRegistry`：包装 getter、收集依赖并维护 memo 字段元数据。
+- `MemoDelegator`：按 memo Tag 缓存派生结果。
+- `memoManager`：保存 dependency→memo 的依赖关系。
+- `MemoResolver`：在 blink 中失效、重算 memo，并传播真实的输出变化。
+
 ## Effect
 
 `@useEffect()` 声明 action 阶段执行的副作用。
@@ -206,6 +300,18 @@ class CounterModel extends Model {
 ```
 
 effect 会在 model 初始化时执行一次并收集依赖。之后相关依赖变化时，effect 会在 action 收尾阶段重新执行。
+
+### 实现方式
+
+`EffectRegistry` 包装 effect 方法，每次执行前开启依赖收集。字段变化后，`EffectResolver` 从依赖图中找到受影响的方法，先解除旧依赖，再重新调用 effect 以收集新的动态依赖；`ActionManager` 保证这些调用发生在当前状态修改完成之后。
+
+### 模块职责
+
+- `useEffect`：登记响应式副作用方法。
+- `EffectRegistry`：保存 effect 元数据并包装依赖收集逻辑。
+- `effectManager`：保存 dependency→effect 的依赖关系。
+- `EffectResolver`：在 action 阶段重绑依赖并重新执行受影响的 effect。
+- `ActionManager`：合并嵌套 action，统一触发副作用阶段。
 
 ## Child
 
@@ -229,6 +335,17 @@ list.children;        // [todo]
 
 child 字段同时也是依赖字段，因此 child 变化会触发 memo、route 和 consumer 绑定刷新。
 
+### 实现方式
+
+`useChild` 为字段安装所有权 setter，并把数组交给 `ChildDelegator` 代理。单值替换或数组 mutation 会对移除项调用 `unmount()`、对新增项调用 `mount(parent)`；随后 parent、root、route 和整棵子树的派生状态通过 action/blink 自动刷新。
+
+### 模块职责
+
+- `useChild`：声明单个或数组形式的子模型所有权，并同时接入依赖系统。
+- `ChildRegistry`：记录 child 字段及其子模型迭代器，供 `Model.children` 查询。
+- `ChildDelegator`：代理数组 mutation，维护新增和移除模型的 mount/unmount。
+- `Model.mount/unmount`：更新直接 parent，并登记 route 刷新。
+
 ## Route
 
 `@useRoute()` 用来在当前 model 上保存某种祖先类型的引用。
@@ -246,6 +363,17 @@ class CardModel extends Model {
 
 当 `CardModel` 被挂到某个 `BoardModel` 后，`card.board` 会指向最近的 `BoardModel` 祖先。挂载关系变化时，route 会进入 `routeResolver`，并在 blink 阶段统一刷新。
 
+### 实现方式
+
+`RouteRegistry` 保存字段对应的目标构造函数，并把 route 字段注册为依赖状态。mount/unmount 后，`RouteResolver` 暂存需要刷新的 model；blink 中的 `Model.reroute()` 从当前对象沿 parent 查找最近匹配实例，重新计算 root，再递归处理所有 children。
+
+### 模块职责
+
+- `useRoute`：声明字段需要引用的祖先模型类型。
+- `RouteRegistry`：保存 route loader，并安装响应式字段。
+- `RouteResolver`：合并需要 reroute 的 model，在 blink 中触发子树刷新。
+- `Model.reroute`：计算 route、root，并向 descendants 传播树变化。
+
 ## Ref
 
 `@useRef()` 表示普通引用关系，不是拥有关系。
@@ -261,12 +389,26 @@ class TaskModel extends Model {
 }
 ```
 
-`useRef` 会维护反向引用表。某个 model `unlink()` 时，引用它的 ref 字段会被清理，避免悬挂引用。
+`useRef` 会维护反向引用表。模型树发生 reroute 后，`RefResolver` 会在 action
+结束时校验主动引用和被动引用；如果引用两端不再拥有相同的 `root`，单值 ref
+会被设为 `undefined`，数组 ref 中对应的 model 会通过 `splice` 移除。
 
 ```text
 useChild = ownership, updates parent/root/children
 useRef   = reference, only tracks holders
 ```
+
+### 实现方式
+
+`useRef` 为字段安装引用 setter，并通过 `RefConsumerRegistry` 同时保存被引用 model 到持有字段 Tag 的反向关系。数组由 `RefDelegator` 代理，每次 mutation 都同步增加或删除一条 Tag；reroute 时 `RefResolver` 收集相关 model，在 action 末尾分别检查主动引用和被动引用，并用 `undefined` 或原数组 `splice()` 清除跨 root 的关系。
+
+### 模块职责
+
+- `useRef`：声明非所有权引用，并让引用字段同时具备依赖能力。
+- `RefRegistry`：记录每种 model 声明的 ref 字段，用于主动引用检查。
+- `RefConsumerRegistry`：以数组保存 referenced model→holder Tag 的反向引用，支持重复数组元素。
+- `RefDelegator`：代理 ref 数组 mutation，同步维护反向引用记录。
+- `RefResolver`：在 action 末尾清除 root 不同的单值和数组引用。
 
 ## Decor
 
@@ -306,16 +448,30 @@ class BuffModel extends Model {
 
 decor producer 的值变化时会进入 `decorProducerResolver`。decor consumer 的 loader 依赖变化时会进入 `decorConsumerResolver`。两者都在 blink 阶段刷新。
 
-## Event And Story
+### 实现方式
 
-`Event` 适合表达业务事件。`emit` 只接收一个 event 实例，不再接收 options。普通 event 默认进入 `story` 边界，并在 story 结束时由 `eventResolver` 统一派发。`PrevEvent` 表示需要立刻处理的前置事件，会同步派发。
+producer getter 会用原始值创建业务 `Decor`，由 `DecorService` 找到绑定的 consumer 并依次修改 decor，最终结果缓存在 `DecorProducerDelegator`。consumer loader 执行时会收集动态依赖，并由正反两个 manager 保存绑定；原始值或绑定变化后，两个 resolver 分别负责重算 producer 和重绑 consumer。
+
+### 模块职责
+
+- `Decor/NumDecor/BoolDecor`：承载原始值、目标 model 和可被 consumer 修改的最终结果。
+- `DecorProducerRegistry`：包装 producer 字段，创建 Decor、执行组合并登记 producer 类型。
+- `DecorProducerDelegator`：缓存每个 producer Tag 的 decor 结果。
+- `DecorProducerResolver`：定位失效 producer，清缓存重算，并传播最终结果变化。
+- `DecorConsumerRegistry`：保存 consumer loader，并收集 loader 的动态依赖。
+- `DecorConsumerManager`：保存 producer+Decor 类型→consumer Tag 的正向绑定。
+- `DecorProducerManager`：保存 consumer Tag→producer+Decor 类型的反向绑定。
+- `DecorConsumerResolver`：依赖变化后解除旧关系并重新运行 consumer loader。
+- `DecorService`：建立/解除双向绑定，并把 Decor 派发给匹配的 consumer。
+
+## Event
+
+`Event` 适合表达业务事件。`emit` 只接收一个 event 实例，不再接收 options。
 
 ```ts
 class PingEvent extends Event<{ message: string }> {}
-class BeforePingEvent extends PrevEvent<{ message: string }> {}
 
-this.emit(new PingEvent({ message: 'later' }));
-this.emit(new BeforePingEvent({ message: 'now' }));
+this.emit(new PingEvent({ message: 'hello' }));
 ```
 
 监听事件：
@@ -354,9 +510,52 @@ class CounterModel extends Model {
 new CountChangedEvent({ next: this.count })
 ```
 
-## Frame And Anime
+### 实现方式
 
-`Frame` 类似 event，但它走 `anime` 边界和 `frameResolver` 调度，适合表达状态变化帧、动画帧或需要分 step 处理的消息。
+consumer loader 在初始化和依赖变化时运行，正反两个 manager 保存 producer、Event 类型与 handler Tag 的绑定。`EventService` 根据 producer 和 event 构造函数找到 handler 并同步调用；字段 producer 则由 `EventProducerResolver` 在 action 末尾创建 `{ next }` diff event。显式 event 的派发边界由 Story 负责。
+
+### 模块职责
+
+- `Event/DiffEvent`：定义普通业务 event 和字段变化 event。
+- `EventConsumerRegistry`：保存 consumer loader，并收集其动态依赖。
+- `EventConsumerManager`：保存 producer+Event 类型→consumer Tag 的正向绑定。
+- `EventProducerManager`：保存 consumer Tag→producer+Event 类型的反向绑定。
+- `EventConsumerResolver`：依赖变化后重新绑定 consumer。
+- `EventProducerRegistry`：记录字段 producer 对应的 DiffEvent 构造函数。
+- `EventProducerResolver`：在 action 末尾把字段变化转换成 diff event。
+- `EventService`：维护运行时绑定并同步调用匹配的 event handler。
+
+## Story
+
+`story` 是普通 event 的延后派发边界。普通 `Event` 会先进入队列，在最外层 story 的 handler 完成后统一派发；`PrevEvent` 表示必须立即处理的前置事件，会跳过队列同步派发。
+
+```ts
+class PingEvent extends Event<{ records: string[] }> {}
+class BeforePingEvent extends PrevEvent<{ records: string[] }> {}
+
+@useStory()
+public ping(records: string[]) {
+  this.emit(new PingEvent({ records }));
+  this.emit(new BeforePingEvent({ records }));
+  records.push('after emit');
+}
+```
+
+### 实现方式
+
+`useStory` 用 `EventResolver.launch()` 包装方法，嵌套 story 共享外层 `_pending` 和 event 队列。`Model.emit()` 遇到普通 Event 时调用 `EventResolver.register()`，最外层 handler 返回后按登记顺序交给 `EventService`；遇到 `PrevEvent` 时则直接调用 `EventService.emit()`。
+
+### 模块职责
+
+- `useStory`：为方法建立可嵌套的 event 延后派发边界。
+- `EventResolver`：暂存普通 event，并在最外层 story 结束时按顺序派发。
+- `PrevEvent`：表示跳过 story 队列、需要立即处理的前置 event。
+- `EventService`：执行 story 最终派发或 PrevEvent 的即时派发。
+- `Model.emit`：根据 Event 类型选择进入队列或立即派发。
+
+## Frame
+
+`Frame` 适合表达状态变化帧、动画帧或需要异步处理的消息。它和 Event 使用独立的类型与绑定表。
 
 ```ts
 class CountFrame extends DiffFrame<number> {}
@@ -391,6 +590,46 @@ class CounterViewModel extends Model {
 
 frame consumer 的 loader 也会收集依赖；监听目标变化时会在 blink 阶段自动重绑。
 
+### 实现方式
+
+frame consumer loader 在初始化和依赖变化时运行，正反两个 manager 保存 producer、Frame 类型与 handler Tag 的绑定。`FrameService` 根据 producer 和 frame 构造函数找到 consumer，但不直接调用 handler，而是把任务登记到 Anime 的 `FrameResolver`；字段 producer 由 `FrameProducerResolver` 在 action 末尾创建 `{ next }` frame。
+
+### 模块职责
+
+- `Frame/DiffFrame`：定义普通 frame 和字段变化 frame。
+- `FrameConsumerRegistry`：保存 consumer loader，并收集其动态依赖。
+- `FrameConsumerManager`：保存 producer+Frame 类型→consumer Tag 的正向绑定。
+- `FrameProducerManager`：保存 consumer Tag→producer+Frame 类型的反向绑定。
+- `FrameConsumerResolver`：依赖变化后重新绑定 frame consumer。
+- `FrameProducerRegistry`：记录字段 producer 对应的 DiffFrame 构造函数。
+- `FrameProducerResolver`：在 action 末尾把字段变化转换成 frame。
+- `FrameService`：维护运行时绑定，并把匹配 frame 加入派发队列。
+
+## Anime
+
+`anime` 是 frame 的分 step 派发边界。frame 会先登记到当前 step，最外层 anime 的 handler 完成后再按 step 顺序执行；同一步的异步 consumer 会并行运行，全部完成后才会进入下一步。
+
+```ts
+@useAnime()
+public play() {
+  this.emit(new CountFrame({ next: 1 }));
+  frameResolver.proceed();
+  this.emit(new CountFrame({ next: 2 }));
+}
+```
+
+### 实现方式
+
+`useAnime` 用 `FrameResolver.launch()` 包装方法，嵌套 anime 共用外层 `_pending`、step 和队列。`FrameService.emit()` 把每个 consumer Tag 与 frame 登记到当前 step；边界结束后，resolver 从低 step 到高 step 处理队列，并使用 `Promise.all` 等待当前 step 的所有 handler。
+
+### 模块职责
+
+- `useAnime`：为方法建立可嵌套的 frame 调度边界。
+- `FrameResolver`：保存 step 队列，排序派发并等待异步 handler。
+- `FrameResolver.proceed`：推进 step，使后续 frame 进入下一批次。
+- `FrameService`：把匹配的 consumer Tag 和 frame 登记到当前 step。
+- `Model.emit`：把 Frame 交给 `FrameService` 和 anime 调度链。
+
 ## View
 
 `@useView()` 用于给非 store model 的视图类接入同样的 blink 初始化流程。
@@ -404,6 +643,16 @@ class CounterView extends Model {
 ```
 
 它不会注册 model code，但会把构造函数交给 blink/modelResolver 初始化。
+
+### 实现方式
+
+`@useView()` 与 `@useModel()` 共用 `BlinkManager.delegate()` 包装构造函数，并在实例创建后登记到 `ModelResolver`，因此 view 可以使用 memo、effect、ref 和各种 consumer；区别是 view 不向 `StoreRegistry` 注册持久化 code。
+
+### 模块职责
+
+- `useView`：让视图类接入 Model 初始化生命周期，但不注册 model code。
+- `BlinkManager`：合并 view 构造期间产生的依赖和绑定刷新。
+- `ModelResolver`：在 blink 中初始化 view 的 memo、effect 和 consumers。
 
 ## Complete Example
 

@@ -1,6 +1,7 @@
 import { effectResolver } from "./effect-resolver";
 import { eventProducerResolver } from "../event/event-producer-resolver";
 import { frameProducerResolver } from "../frame/frame-producer-resolver";
+import { refResolver } from "../ref/ref-resolver";
 
 /**
  * Coordinates action boundaries and flushes action-scoped work.
@@ -29,12 +30,13 @@ export class ActionManager {
     /**
      * Flush work that should happen after user state mutation settles.
      *
-     * Effects run first, then event and frame producers emit diff payloads for
-     * properties changed during the action.
+     * Refs are validated first, then effects and producers process the final
+     * action state.
      *
      * @returns Nothing.
      */
     private resolve() {
+        refResolver.resolve();
         effectResolver.resolve();
         eventProducerResolver.resolve();
         frameProducerResolver.resolve();

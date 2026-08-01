@@ -13,8 +13,8 @@ export type RefList = Array<Model | undefined>
  * Create a property decorator for external model references.
  *
  * Unlike `useChild`, referenced models are not mounted as children. Instead,
- * holder relationships are tracked so `Model.unlink()` can clear references to
- * a model when needed.
+ * holder relationships are tracked so `RefResolver` can clear references when
+ * the holder and referenced model no longer share the same root.
  *
  * @returns Property decorator for optional model refs or ref arrays.
  */

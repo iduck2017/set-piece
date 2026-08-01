@@ -1,11 +1,11 @@
-import { Model } from "../model";
-import { Tag } from "../tag/tag-registry";
+import type { Model } from "../model";
+import type { Tag } from "../tag/tag-registry";
 
 /**
  * Tracks which tags hold references to each model.
  */
 class RefConsumerRegistry {
-    private _links: WeakMap<Model, Set<Tag>> = new WeakMap();
+    private _links: WeakMap<Model, Tag[]> = new WeakMap();
 
     /**
      * Track that a ref model is held by a consumer tag.
@@ -15,8 +15,8 @@ class RefConsumerRegistry {
      * @returns Nothing.
      */
     public add(ref: Model, consumerTag: Tag) {
-        const tags = this._links.get(ref) ?? new Set();
-        tags.add(consumerTag);
+        const tags = this._links.get(ref) ?? [];
+        tags.push(consumerTag);
         this._links.set(ref, tags);
     }
 
@@ -30,20 +30,22 @@ class RefConsumerRegistry {
     public remove(ref: Model, consumerTag: Tag) {
         const tags = this._links.get(ref);
         if (!tags) return;
-        tags.delete(consumerTag);
+        const index = tags.indexOf(consumerTag);
+        if (index === -1) return;
+        tags.splice(index, 1);
     }
 
     /**
      * Return all holders that currently point at a ref model.
      *
-     * `Model.unlink()` uses this to clear references before a model is removed.
+     * `RefResolver` uses this to validate passive references after reroute.
      *
      * @param ref - Referenced model to inspect.
      * @returns Tags for properties currently holding the model.
      */
     public query(ref: Model): Tag[] {
         const tags = this._links.get(ref);
-        return [...tags ?? []]
+        return [...tags ?? []];
     }
 }
 

@@ -77,12 +77,12 @@ class FrameService {
                     frameConsumerManager.add(producer, FrameCtor, consumerTag);
                     frameProducerManager.add(consumerTag, producer, FrameCtor);
                 })
+                return;
             }
-            if (value instanceof Model) {
-                const producer = value;
-                frameConsumerManager.add(producer, FrameCtor, consumerTag);
-                frameProducerManager.add(consumerTag, producer, FrameCtor);
-            }
+            if (!value) return;
+            const producer = value;
+            frameConsumerManager.add(producer, FrameCtor, consumerTag);
+            frameProducerManager.add(consumerTag, producer, FrameCtor);
         })
     }
 }

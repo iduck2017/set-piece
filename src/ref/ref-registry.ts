@@ -1,5 +1,5 @@
-import { Model } from "../model";
-import { AbstractConstructor } from "../types";
+import type { Model } from "../model";
+import type { AbstractConstructor } from "../types";
 
 /**
  * Stores ref property keys declared by `useRef()`.

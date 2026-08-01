@@ -80,13 +80,13 @@ class EventService {
                     eventConsumerManager.add(producer, EventCtor, consumerTag);
                     eventProducerManager.add(consumerTag, producer, EventCtor);
                 })
+                return;
             }
-            if (value instanceof Model) {
-                const producer = value;
-                console.log('Event bind:', consumerTag.name);
-                eventConsumerManager.add(producer, EventCtor, consumerTag);
-                eventProducerManager.add(consumerTag, producer, EventCtor);
-            }
+            if (!value) return;
+            const producer = value;
+            console.log('Event bind:', consumerTag.name);
+            eventConsumerManager.add(producer, EventCtor, consumerTag);
+            eventProducerManager.add(consumerTag, producer, EventCtor);
         })
     }
 }

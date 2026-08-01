@@ -1,6 +1,8 @@
 import { Model } from "../model";
 import { useChild } from "../hooks/use-child";
 import { childRegistry } from "./child-registry";
+import { useMemo } from "../hooks/use-memo";
+import { useModel } from "../hooks/use-model";
 
 class AppleModel extends Model {}
 class PineappleModel extends Model {}
@@ -31,6 +33,23 @@ class BoxModel extends Model {
         }
         this._apples[index] = apple;
     }
+}
+
+@useModel('reactive-link-child')
+class ReactiveLinkChildModel extends Model {
+    @useMemo()
+    public get parentMemo() { return this.parent; }
+
+    @useMemo()
+    public get rootMemo() { return this.root; }
+}
+
+@useModel('reactive-link-parent')
+class ReactiveLinkParentModel extends Model {
+    @useChild()
+    private _child?: ReactiveLinkChildModel;
+    public get child() { return this._child; }
+    public set child(value: ReactiveLinkChildModel | undefined) { this._child = value; }
 }
 
 
@@ -87,5 +106,21 @@ describe('child', () => {
         box.delApple(greenApple);
         expect(greenApple.parent).toBeUndefined();
         expect(box.apples.length).toBe(0);
+    })
+
+    it('refreshes parent and root memos', () => {
+        const parent = new ReactiveLinkParentModel();
+        const child = new ReactiveLinkChildModel();
+
+        expect(child.parentMemo).toBeUndefined();
+        expect(child.rootMemo).toBe(child);
+
+        parent.child = child;
+        expect(child.parentMemo).toBe(parent);
+        expect(child.rootMemo).toBe(parent);
+
+        parent.child = undefined;
+        expect(child.parentMemo).toBeUndefined();
+        expect(child.rootMemo).toBe(child);
     })
 });

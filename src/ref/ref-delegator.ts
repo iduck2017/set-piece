@@ -125,7 +125,7 @@ export class RefDelegator {
     }
 
     /**
-     * Keep fill inert because duplicated refs cannot be tracked precisely.
+     * Keep fill inert because ref range replacement is not supported.
      *
      * @param origin - Proxied ref array.
      * @returns The unchanged array.

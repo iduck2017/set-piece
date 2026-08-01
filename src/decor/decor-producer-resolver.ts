@@ -38,18 +38,18 @@ class DecorProducerResolver {
      */
     @useBlink()
     public register(target: Tag | Model, DecorCtor?: Constructor<Decor>) {
-        if (target instanceof Model) {
-            /** Consumer changes register by decor type, so find matching producers. */
-            if (!DecorCtor) return;
-            const model = target;
-            const loaders = decorProducerRegistry.query(model)
-            loaders.forEach((loader, key) => {
-                if (loader() === DecorCtor) {
-                    const tag = tagRegistry.query(model, key);
-                    this.register(tag)
-                }
-            })
-        } else this._queue.add(target);
+        if (target instanceof Tag) this._queue.add(target);
+        if (target instanceof Tag) return;
+        /** Consumer changes register by decor type, so find matching producers. */
+        if (!DecorCtor) return;
+        const model = target;
+        const loaders = decorProducerRegistry.query(model)
+        loaders.forEach((loader, key) => {
+            if (loader() === DecorCtor) {
+                const tag = tagRegistry.query(model, key);
+                this.register(tag)
+            }
+        })
     }
 
     /**

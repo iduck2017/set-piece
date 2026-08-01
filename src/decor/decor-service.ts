@@ -85,13 +85,13 @@ class DecorService {
                     decorProducerManager.add(consumerTag, producer, DecorCtor);
                     decorProducerResolver.register(producer, DecorCtor);
                 })
+                return;
             }
-            if (value instanceof Model) {
-                const producer = value;
-                decorConsumerManager.add(producer, DecorCtor, consumerTag);
-                decorProducerManager.add(consumerTag, producer, DecorCtor);
-                decorProducerResolver.register(producer, DecorCtor);
-            }
+            if (!value) return;
+            const producer = value;
+            decorConsumerManager.add(producer, DecorCtor, consumerTag);
+            decorProducerManager.add(consumerTag, producer, DecorCtor);
+            decorProducerResolver.register(producer, DecorCtor);
         })
     }
 }

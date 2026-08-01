@@ -1,4 +1,6 @@
 ﻿import { childRegistry } from "./child/child-registry";
+import { depCollector } from "./dep/dep-collector";
+import { depService } from "./dep/dep-service";
 import { decorConsumerRegistry } from "./decor/decor-consumer-registry";
 import { decorService } from "./decor/decor-service";
 import { effectRegistry } from "./effect/effect-registry";
@@ -16,9 +18,12 @@ import { Frame } from "./frame";
 import { frameService } from "./frame/frame-service";
 import { frameConsumerRegistry } from "./frame/frame-consumer-registry";
 import { useAnime } from "./hooks/use-anime";
+import { useBlink } from "./hooks/use-blink";
 import { gcService } from "./utils/gc-service";
-import { refConsumerRegistry } from "./ref/ref-consumer-registry";
-import { refRegistry } from "./ref/ref-registry";
+import { refResolver } from "./ref/ref-resolver";
+import { useDep } from "./hooks/use-dep";
+import { useMemo } from "./hooks/use-memo";
+import { useAction } from "./hooks/use-action";
 
 /**
  * Base class for reactive domain objects managed by set-piece.
@@ -101,42 +106,12 @@ export abstract class Model {
         return eventResolver.register(this, target);
     }
 
-    /**
-     * Remove this model from ref holders and clear refs held by this model.
-     *
-     * This is an internal cleanup helper used before a model leaves the object
-     * graph.
-     *
-     * @returns Nothing.
-     */
-    protected unlink() {
-        /** First remove external ref holders that point at this model. */
-        const refConsumers = refConsumerRegistry.query(this);
-        refConsumers.forEach(tag => {
-            const holder: any = tag.target;
-            const value = Reflect.get(holder, tag.key);
-            if (value === this) Reflect.set(holder, tag.key, undefined);
-            if (value instanceof Array) {
-                let index = value.indexOf(this);
-                while (index >= 0) {
-                    value.splice(index, 1);
-                    index = value.indexOf(this);
-                }
-            }
-        });
-        /** Then clear refs owned by this model so it stops holding others. */
-        refRegistry.query(this).forEach(key => {
-            Reflect.set(this, key, undefined);
-        });
-    }
-
     public get _internal() {
         return {
             init: this.init.bind(this),
             mount: this.mount.bind(this),
             unmount: this.unmount.bind(this),
-            reroute: this.reroute.bind(this),
-            unlink: this.unlink.bind(this)
+            reroute: this.reroute.bind(this)
         }
     }
 
@@ -158,10 +133,14 @@ export abstract class Model {
         return children;
     }
 
+    @useDep()
     private _parent?: Model;
+    @useMemo()
     public get parent() { return this._parent; }
 
+    @useDep()
     private _root: Model = this;
+    @useMemo()
     public get root() { return this._root; }
 
     /**
@@ -172,6 +151,7 @@ export abstract class Model {
      * @param parent - Parent model that now owns this child.
      * @returns Nothing.
      */
+    @useAction()
     private mount(parent: Model) {
         if (this._parent) return;
         this._parent = parent;
@@ -185,6 +165,7 @@ export abstract class Model {
      *
      * @returns Nothing.
      */
+    @useAction()
     private unmount() {
         if (!this._parent) return
         this._parent = undefined;
@@ -214,6 +195,7 @@ export abstract class Model {
         let root: Model = this;
         while (root.parent) root = root.parent;
         this._root = root;
+        refResolver.register(this);
         /** Propagate route changes through the mounted subtree. */
         this.children.forEach((child: Model) => child.reroute());
     }
