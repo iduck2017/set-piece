@@ -2,7 +2,7 @@
 export { Model } from './model';
 
 /** Domain payloads */
-export { Decor, NumDecor, BoolDecor } from './decor';
+export { Decor } from './decor';
 export { Event, DiffEvent, PrevEvent } from './event';
 export { Frame, DiffFrame } from './frame';
 
@@ -45,6 +45,7 @@ export { useCheck as useValidator } from './hooks/use-check';
 
 /** Registries */
 export { depRegistry } from './dep/dep-registry';
+export { stateRegistry } from './state/state-registry';
 export { effectRegistry } from './effect/effect-registry';
 export { memoRegistry } from './memo/memo-registry';
 export { routeRegistry } from './route/route-registry';
@@ -60,6 +61,7 @@ export { eventResolver } from './event/event-resolver';
 export { frameResolver } from './frame/frame-resolver';
 
 /** Services */
+export { storeService } from './store/store-service';
 export { frameService } from './frame/frame-service';
 export { gcService } from './utils/gc-service';
 

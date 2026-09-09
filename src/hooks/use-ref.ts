@@ -15,6 +15,7 @@ export type RefList = Array<Model | undefined>
  * Unlike `useChild`, referenced models are not mounted as children. Instead,
  * holder relationships are tracked so `RefResolver` can clear references when
  * the holder and referenced model no longer share the same root.
+ * StoreService uses the ref registry to save referenced model UUIDs.
  *
  * @returns Property decorator for optional model refs or ref arrays.
  */

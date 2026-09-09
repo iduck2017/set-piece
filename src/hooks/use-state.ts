@@ -1,11 +1,12 @@
 import { depRegistry } from "../dep/dep-registry";
 import { Model } from "../model";
+import { stateRegistry } from "../state/state-registry";
 
 /**
  * Create a property decorator for plain reactive state.
  *
- * This is a lighter alias around dependency registration. It does not add
- * producer behavior such as event, frame, or decor emission.
+ * Registers reactive dependencies and stores the field value unchanged.
+ * It does not add event, frame, or decor producer behavior.
  *
  * @returns Property decorator for reactive state fields.
  */
@@ -18,5 +19,6 @@ export function useState<
         key: K,
     ) {
         depRegistry.register(prototype, key);
+        stateRegistry.register(prototype, key);
     }
 }

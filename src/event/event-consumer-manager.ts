@@ -27,6 +27,7 @@ class EventConsumerManager {
     ) {
         const links: EventConsumerTagsMap = this._links.get(producer) ?? new Map();
         const consumerTags = links.get(type) ?? [];
+        if (consumerTags.includes(consumerTag)) return;
         consumerTags.push(consumerTag);
         links.set(type, consumerTags);
         this._links.set(producer, links);

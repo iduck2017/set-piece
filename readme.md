@@ -30,8 +30,6 @@ Model state changes
 import {
   Model,
   Decor,
-  NumDecor,
-  BoolDecor,
   Event,
   DiffEvent,
   PrevEvent,
@@ -53,10 +51,11 @@ import {
   useEventProducer,
   useFrameConsumer,
   useFrameProducer,
+  storeService,
 } from 'set-piece';
 ```
 
-`Event`、`Frame`、`Decor` 以及 `DiffEvent`、`PrevEvent`、`DiffFrame`、`NumDecor`、`BoolDecor` 都是抽象基类。业务代码需要先继承出带业务语义的类型，再把这个业务类型用于 `emit`、producer 或 consumer。
+`Event`、`Frame`、`Decor` 以及 `DiffEvent`、`PrevEvent`、`DiffFrame` 都是抽象基类。业务代码需要先继承出带业务语义的类型，再把这个业务类型用于 `emit`、producer 或 consumer。
 
 ## Tag
 
@@ -170,7 +169,7 @@ new TodoModel()
 
 ### 实现方式
 
-`@useModel(code)` 先登记模型类型，再用 `BlinkManager.delegate()` 包装构造函数。实例完成 `super()` 后进入 `ModelResolver`，由 blink 调用 `_internal.init()`，统一预热 memo、执行初始 effect 并建立 decor、event、frame 的运行时绑定。
+`@useModel(code)` 先用 `BlinkManager.delegate()` 包装构造函数，再为返回的类添加实例注册逻辑，最后把这个类登记到 `StoreRegistry`。因此实例的构造函数与持久化 code 对应的构造函数一致。实例完成 `super()` 后进入 `ModelResolver`，由 blink 调用 `_internal.init()`，统一预热 memo、执行初始 effect 并建立 decor、event、frame 的运行时绑定。
 
 ### 模块职责
 
@@ -219,7 +218,7 @@ this.items.push('a');
 
 ## State
 
-`@useState()` 标记普通响应式状态，常用于 decor producer 的原始值字段。它只提供依赖追踪，不会单独产生 decor、event 或 frame。
+`@useState()` 标记需要持久化的普通响应式状态，也可用于 decor producer 的原始值字段。它提供依赖追踪和存储字段注册，不会单独产生 decor、event 或 frame。仅使用 `@useDep()` 的字段不会自动保存。
 
 ```ts
 class MonsterModel extends Model {
@@ -235,13 +234,142 @@ class MonsterModel extends Model {
 
 ### 实现方式
 
-`useState` 是对 `DepRegistry.register()` 的轻量调用，不维护独立的 registry、manager 或 resolver。字段读写仍然使用完整的 dep getter/setter、依赖收集和变更分发流程；单独命名主要用于表达“这是 producer 的内部原始状态”。
+`useState` 同时调用 `DepRegistry.register()` 和 `StateRegistry.register()`。字段读写使用 dep getter/setter、依赖收集和变更分发流程；`StateRegistry` 记录字段 key，并沿构造函数继承链查询，供 `StoreService` 保存和恢复状态。
 
 ### 模块职责
 
-- `useState`：把普通状态字段登记到依赖系统，不附加 producer 行为。
+- `useState`：把普通状态字段登记到依赖系统和持久化元数据中。
+- `StateRegistry`：记录 state 字段 key，支持继承查询和去重。
 - `DepRegistry`：复用与 `useDep` 相同的响应式字段实现。
 - `DepService`：把 state 变化通知给 memo、effect 和各类 producer/consumer resolver。
+
+## Store
+
+`storeService.save(model)` 返回普通配置对象，`load(config)` 根据最外层的
+`type` 创建模型，返回 `Model | undefined`。需要 JSON 字符串时，显式调用
+`JSON.stringify()` 和 `JSON.parse()`。
+
+| 字段装饰器 | 保存形式 | 恢复方式 |
+| --- | --- | --- |
+| `@useState()` | 字段原值 | 通过 setter 赋值 |
+| `@useChild()` | 子模型配置或配置数组 | 递归创建模型并通过 setter 挂载 |
+| `@useRef()` | UUID 或 UUID 数组 | 整棵树创建完成后查找实例并绑定 |
+
+三种 registry 都支持继承字段。保存的 key 是装饰器所在的字段名，例如
+`_title`，而不是公开 getter 的名字 `title`。普通字段、仅使用 `useDep`
+的字段以及 memo 不会自动保存。
+
+```ts
+@useModel('store-item')
+class ItemModel extends Model {
+  @useState()
+  private _title = '';
+  public get title() { return this._title; }
+  public set title(value: string) { this._title = value; }
+}
+
+@useModel('store-board')
+class BoardModel extends Model {
+  @useChild()
+  private _items: ItemModel[] = [];
+  public get items() { return this._items; }
+
+  @useRef()
+  private _selected?: ItemModel;
+  public get selected() { return this._selected; }
+
+  public add(item: ItemModel) {
+    this._items.push(item);
+    this._selected = item;
+  }
+}
+
+const board = new BoardModel();
+const item = new ItemModel();
+item.title = 'Write docs';
+board.add(item);
+
+const config = storeService.save(board);
+const json = JSON.stringify(config);
+const restored = storeService.load(JSON.parse(json));
+
+if (restored instanceof BoardModel) {
+  restored !== board; // true
+  restored.uuid === board.uuid; // true
+  restored.items[0] !== item; // true
+  restored.selected === restored.items[0]; // true
+}
+```
+
+配置结构如下，UUID 以示例值表示：
+
+```json
+{
+  "uuid": "board-1",
+  "type": "store-board",
+  "_items": [
+    {
+      "uuid": "item-1",
+      "type": "store-item",
+      "_title": "Write docs"
+    }
+  ],
+  "_selected": "item-1"
+}
+```
+
+### 实现方式
+
+`load()` 在一个 blink 中完成两个阶段，单次调用只维护一个
+`Map<string, Model>`：
+
+1. `generate()` 根据 code 无参构造模型，恢复 UUID 和 state，递归恢复
+   child。state 和 child 都通过 `Reflect.set()` 写入，保留响应式和挂载逻辑。
+2. `bind()` 再遍历配置，通过 Map 解析 ref。此时所有持久化子模型都已创建，
+   可以绑定父节点、兄弟节点、自身以及重复引用。
+
+恢复完成后结束 blink，再统一进行初始化和依赖刷新。每次 `load()` 使用
+独立的 Map，不会绑定到上一次加载的实例。
+
+### 当前行为
+
+- 模型及其子模型需要通过 `@useModel(code)` 注册，构造函数需支持无参调用。
+- UUID 原样恢复。code 应保持唯一，同一份模型树配置中的 UUID 也应唯一。
+- 最外层配置无效或类型未注册时，`load()` 返回 `undefined`。
+  无效的子模型配置恢复为 `undefined`；这不是完整的 schema 校验。
+- config 缺失的已注册字段会被赋为 `undefined`，覆盖构造默认值。
+- ref 只解析本次生成的模型，找不到的 UUID 恢复为 `undefined`。
+- child/ref 数组保留顺序、长度和空值位置。JSON 会把数组中的
+  `undefined` 转成 `null`，加载时这些 child/ref 项恢复为 `undefined`。
+- 空的单个 child 在保存时省略。state/ref 字段的 `undefined` 值会被
+  `JSON.stringify()` 省略。
+- state 按原值保存，不做深拷贝或特殊类型转换。JSON 存档应使用可被 JSON
+  表达的数据；不会自动恢复 `Date`、`Map` 或其他自定义类实例。
+
+### Copy
+
+`Model.copy(): this | undefined` 复用 `save()` 和 `load()`，返回具体子类类型：
+
+```ts
+const copied = board.copy(); // BoardModel | undefined
+if (copied) {
+  copied !== board; // true
+  copied.selected === copied.items[0]; // true
+}
+```
+
+copy 创建新的模型和 child 实例，并把树内 ref 绑定到副本。它保留原 UUID，
+不会生成新身份；state 中的对象和数组不会深拷贝，仍可能共享底层数据。
+加载失败或产物不属于当前构造函数类型时返回 `undefined`。
+
+### 模块职责
+
+- `StoreRegistry`：维护 code 与最终包装后的模型构造函数的双向映射。
+- `StateRegistry`：提供需要保存和恢复的 state 字段。
+- `ChildRegistry`：提供 child 字段 key；保存时读取原字段以保留形状和空位。
+- `RefRegistry`：提供最后绑定的 ref 字段。
+- `StoreService`：协调保存、模型生成和引用绑定，不使用 entry registry
+  或字段级 parser/generator。
 
 ## Memo
 
@@ -412,10 +540,14 @@ useRef   = reference, only tracks holders
 
 ## Decor
 
-`Decor` 用来把一个原始值交给一组 consumer 修饰，最后把修饰后的结果作为属性读取值。数值叠加或覆盖场景可以继承 `NumDecor`，布尔覆盖场景可以继承 `BoolDecor`，再用业务类型标识这类 decor。
+`Decor<T>` 用来把一个原始值交给一组 consumer 修饰，最后把修饰后的结果作为属性读取值。框架只提供通用抽象基类，子类自行实现 `result` 和修改规则。下面的业务类提供 setter，允许 consumer 直接修改当前结果：
 
 ```ts
-class AttackDecor extends NumDecor {}
+class AttackDecor extends Decor<number> {
+  private _result = this._origin;
+  public get result() { return this._result; }
+  public set result(value: number) { this._result = value; }
+}
 ```
 
 生产 decor：
@@ -441,7 +573,7 @@ class BuffModel extends Model {
 
   @useDecorConsumer((self: BuffModel) => [self.target, AttackDecor])
   private handleAttack(decor: AttackDecor) {
-    decor.add(this.value);
+    decor.result += this.value;
   }
 }
 ```
@@ -454,7 +586,7 @@ producer getter 会用原始值创建业务 `Decor`，由 `DecorService` 找到�
 
 ### 模块职责
 
-- `Decor/NumDecor/BoolDecor`：承载原始值、目标 model 和可被 consumer 修改的最终结果。
+- `Decor<T>`：承载原始值和目标 model，由子类实现最终结果与修改规则。
 - `DecorProducerRegistry`：包装 producer 字段，创建 Decor、执行组合并登记 producer 类型。
 - `DecorProducerDelegator`：缓存每个 producer Tag 的 decor 结果。
 - `DecorProducerResolver`：定位失效 producer，清缓存重算，并传播最终结果变化。

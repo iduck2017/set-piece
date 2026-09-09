@@ -16,9 +16,8 @@ import { blinkManager } from "../utils/blink-manager";
  */
 export function useModel(code: string) {
     return function(ModelCtor: Constructor<Model, undefined[]>): any {
-        storeRegistry.register(code, ModelCtor);
-        const Wrapped = blinkManager.delegate(ModelCtor);
-        return class extends Wrapped {
+        let Wrapped = blinkManager.delegate(ModelCtor);
+        Wrapped = class extends Wrapped {
             /**
              * Construct the model and queue it for blink-time initialization.
              *
@@ -28,6 +27,8 @@ export function useModel(code: string) {
                 super(...params);
                 modelResolver.register(this);
             }
-        }
+        };
+        storeRegistry.register(code, Wrapped);
+        return Wrapped;
     }
 }

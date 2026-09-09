@@ -33,7 +33,7 @@ function iterator(model: Record<string, any>, key: string) {
  * Use this on a property that stores one child model or a child model array.
  * Assignments and array mutations mount new children to the owner and unmount
  * removed children. The property is also registered as reactive dependency
- * state.
+ * state. StoreService uses the child registry for recursive persistence.
  *
  * @returns Property decorator for child model properties.
  */

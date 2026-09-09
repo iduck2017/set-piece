@@ -1,4 +1,4 @@
-import { BoolDecor, NumDecor } from ".";
+import { Decor } from ".";
 import { useDep } from "../hooks/use-dep";
 import { Model } from "../model";
 import { useModel } from "../hooks/use-model";
@@ -6,8 +6,17 @@ import { useDecorConsumer } from "../hooks/use-decor-consumer";
 import { useDecorProducer } from "../hooks/use-decor-producer";
 import { useState } from "../hooks/use-state";
 
-class AttackDecor extends NumDecor {}
-class GuardDecor extends BoolDecor {}
+class AttackDecor extends Decor<number> {
+    private _result = this._origin;
+    public get result() { return this._result; }
+    public set result(value: number) { this._result = value; }
+}
+
+class GuardDecor extends Decor<boolean> {
+    private _result = this._origin;
+    public get result() { return this._result; }
+    public set result(value: boolean) { this._result = value; }
+}
 
 @useModel('decor-monster')
 class MonsterModel extends Model {
@@ -25,10 +34,10 @@ class MonsterModel extends Model {
     @useDecorConsumer((self: MonsterModel) => [self, AttackDecor])
     private handleAttack(decor: AttackDecor) {
         if (this.buff < 0) {
-            decor.set(0);
+            decor.result = 0;
             return;
         }
-        decor.add(this.buff);
+        decor.result += this.buff;
     }
 }
 
@@ -47,7 +56,7 @@ class GuardModel extends Model {
 
     @useDecorConsumer((self: GuardModel) => [self, GuardDecor])
     private handleGuard(decor: GuardDecor) {
-        if (this.blocked) decor.set(false);
+        if (this.blocked) decor.result = false;
     }
 }
 

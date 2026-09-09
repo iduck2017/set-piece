@@ -24,6 +24,7 @@ import { refResolver } from "./ref/ref-resolver";
 import { useDep } from "./hooks/use-dep";
 import { useMemo } from "./hooks/use-memo";
 import { useAction } from "./hooks/use-action";
+import { storeService } from "./store/store-service";
 
 /**
  * Base class for reactive domain objects managed by set-piece.
@@ -34,7 +35,19 @@ export abstract class Model {
     protected _uuid: string = ticketService.query()
     public get uuid() { return this._uuid; }
 
+    /** Restore persisted identity before model initialization. */
+    private restore(uuid: string) { this._uuid = uuid; }
+
     public get name() { return this.constructor.name; }
+
+    /** Copy persisted fields and children, preserving UUIDs and state values. */
+    public copy(): this | undefined {
+        const config = storeService.save(this);
+        const model = storeService.load(config);
+        if (!model) return;
+        if (!(model instanceof this.constructor)) return;
+        return model as this;
+    }
 
     /**
      * Initialize all reactive registrations for this model.
@@ -111,7 +124,8 @@ export abstract class Model {
             init: this.init.bind(this),
             mount: this.mount.bind(this),
             unmount: this.unmount.bind(this),
-            reroute: this.reroute.bind(this)
+            reroute: this.reroute.bind(this),
+            restore: this.restore.bind(this)
         }
     }
 
