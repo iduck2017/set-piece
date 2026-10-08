@@ -59,7 +59,7 @@ export abstract class Model {
      *
      * @returns Nothing.
      */
-    private init() {
+    private _init() {
         /** Warm memo getters so their dependencies are collected immediately. */
         const memoKeys = memoRegistry.query(this);
         memoKeys.forEach(key => Reflect.get(this, key))
@@ -121,7 +121,7 @@ export abstract class Model {
 
     public get _internal() {
         return {
-            init: this.init.bind(this),
+            init: this._init.bind(this),
             mount: this.mount.bind(this),
             unmount: this.unmount.bind(this),
             reroute: this.reroute.bind(this)
