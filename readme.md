@@ -158,9 +158,8 @@ new TodoModel()
   -> model._internal.init()
 ```
 
-初始化会做这些事情：
+构造函数会将实例注册到 `finalizationRegistry`。随后初始化会做这些事情：
 
-- 注册到 `gcService`
 - 预热 memo getter
 - 执行 effect 并收集依赖
 - 绑定 decor consumer
@@ -169,7 +168,7 @@ new TodoModel()
 
 ### 实现方式
 
-`@useModel(code)` 先用 `BlinkManager.delegate()` 包装构造函数，再为返回的类添加实例注册逻辑，最后把这个类登记到 `StoreRegistry`。因此实例的构造函数与持久化 code 对应的构造函数一致。实例完成 `super()` 后进入 `ModelResolver`，由 blink 调用 `_internal.init()`，统一预热 memo、执行初始 effect 并建立 decor、event、frame 的运行时绑定。
+`@useModel(code)` 先为原始类添加实例注册逻辑，再用 `BlinkManager.delegate()` 包装构造和注册的完整过程，最后把最外层的类登记到 `StoreRegistry`。因此实例的构造函数与持久化 code 对应的构造函数一致。继承链上的注册都发生在同一个构造 blink 内，由 `ModelResolver` 按实例去重；blink 收尾时调用 `_internal.init()`，统一预热 memo、执行初始 effect 并建立 decor、event、frame 的运行时绑定。
 
 ### 模块职责
 
@@ -177,7 +176,7 @@ new TodoModel()
 - `useModel`：登记 model code，并包装模型构造过程。
 - `ModelResolver`：暂存新实例，在 blink 中调用模型初始化。
 - `StoreRegistry`：维护 model code 与构造函数的双向映射。
-- `gcService`：使用 `FinalizationRegistry` 观察 model 被垃圾回收。
+- `finalizationRegistry`：使用 `FinalizationRegistry` 观察 model 被垃圾回收。
 
 ## Dep
 
@@ -778,7 +777,7 @@ class CounterView extends Model {
 
 ### 实现方式
 
-`@useView()` 与 `@useModel()` 共用 `BlinkManager.delegate()` 包装构造函数，并在实例创建后登记到 `ModelResolver`，因此 view 可以使用 memo、effect、ref 和各种 consumer；区别是 view 不向 `StoreRegistry` 注册持久化 code。
+`@useView()` 与 `@useModel()` 一样，先添加实例注册逻辑，再用 `BlinkManager.delegate()` 将构造和登记包在同一个 blink 内，因此 view 可以使用 memo、effect、ref 和各种 consumer；区别是 view 不向 `StoreRegistry` 注册持久化 code。
 
 ### 模块职责
 

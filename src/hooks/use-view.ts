@@ -6,16 +6,15 @@ import { blinkManager } from "../utils/blink-manager";
 /**
  * Create a class decorator for view models.
  *
- * View construction is wrapped with `BlinkManager`, then the instance is queued
- * in `ModelResolver` for the same initialization lifecycle as models.
+ * View construction and model registration share one `BlinkManager` boundary,
+ * so initialization runs after the full construction chain has registered.
  *
  * @returns Class decorator for view model classes.
  */
 export function useView<T extends Model>() {
     return function(ViewCtor: Constructor<Model>): Constructor<T> {
-        const Wrapped = blinkManager.delegate(ViewCtor);
-        return {
-            [Wrapped.name]: class extends Wrapped {
+        const Registered = {
+            [ViewCtor.name]: class extends ViewCtor {
                 /**
                  * Construct the view and queue it for blink-time initialization.
                  *
@@ -26,6 +25,7 @@ export function useView<T extends Model>() {
                     modelResolver.register(this);
                 }
             }
-        }[Wrapped.name] as any
+        }[ViewCtor.name] as Constructor<Model>;
+        return blinkManager.delegate<T>(Registered);
     }
 }

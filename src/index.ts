@@ -63,7 +63,7 @@ export { frameResolver } from './frame/frame-resolver';
 /** Services */
 export { storeService } from './store/store-service';
 export { frameService } from './frame/frame-service';
-export { gcService } from './utils/gc-service';
+export { finalizationRegistry } from './utils/finalization-registry';
 
 /** Utilities */
 export { HookRegistry } from './utils/hook-registry';

@@ -19,7 +19,7 @@ import { frameService } from "./frame/frame-service";
 import { frameConsumerRegistry } from "./frame/frame-consumer-registry";
 import { useAnime } from "./hooks/use-anime";
 import { useBlink } from "./hooks/use-blink";
-import { gcService } from "./utils/gc-service";
+import { finalizationRegistry } from "./utils/finalization-registry";
 import { refResolver } from "./ref/ref-resolver";
 import { useDep } from "./hooks/use-dep";
 import { useMemo } from "./hooks/use-memo";
@@ -36,6 +36,10 @@ export abstract class Model {
     public get uuid() { return this._uuid; }
 
     public get name() { return this.constructor.name; }
+
+    constructor() {
+        finalizationRegistry.register(this, `${this.constructor.name}#${this._uuid}`);
+    }
 
     /** Copy persisted fields and children, preserving UUIDs and state values. */
     public copy(): this | undefined {
@@ -56,7 +60,6 @@ export abstract class Model {
      * @returns Nothing.
      */
     private init() {
-        gcService.register(this, `${this.constructor.name}#${this._uuid}`);
         /** Warm memo getters so their dependencies are collected immediately. */
         const memoKeys = memoRegistry.query(this);
         memoKeys.forEach(key => Reflect.get(this, key))
