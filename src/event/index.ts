@@ -16,9 +16,13 @@ export abstract class Event<P = any> {
 }
 
 /**
- * Base event for property-change payloads produced from dependency writes.
+ * Payload-free signal for property changes produced from dependency writes.
  */
-export abstract class DiffEvent<T = any> extends Event<{ next: T }> {}
+export abstract class DiffEvent extends Event<void> {
+    constructor() {
+        super(undefined);
+    }
+}
 
 /**
  * Base event for previous-value flows that dispatch immediately.

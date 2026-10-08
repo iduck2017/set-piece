@@ -40,8 +40,7 @@ class EventProducerResolver {
             if (!loader) return;
             const EventCtor = loader();
             const model = tag.target;
-            const next = Reflect.get(model, tag.key);
-            const event = new EventCtor({ next });
+            const event = new EventCtor();
             eventService.emit(model, event);
         });
     }

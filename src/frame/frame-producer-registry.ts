@@ -2,7 +2,7 @@ import { DiffFrame } from ".";
 import { Model } from "../model";
 import { AbstractConstructor, Constructor } from "../types";
 
-export type FrameProducerLoader<T = any> = () => Constructor<DiffFrame<T>, [{ next: T }]>;
+export type FrameProducerLoader = () => Constructor<DiffFrame, []>;
 
 /**
  * Stores frame producer loaders declared by `useFrameProducer()`.

@@ -6,9 +6,9 @@ export { Decor } from './decor';
 export { Event, DiffEvent, PrevEvent } from './event';
 export { Frame, DiffFrame } from './frame';
 
-/** Model and view hooks */
+/** Model and persistence hooks */
 export { useModel } from './hooks/use-model';
-export { useView } from './hooks/use-view';
+export { useStore } from './hooks/use-store';
 
 /** Action and lifecycle hooks */
 export { useAction } from './hooks/use-action';

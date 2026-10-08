@@ -11,7 +11,7 @@ class ModelResolver {
     /**
      * Queue a freshly constructed model for initialization.
      *
-     * `useModel()` and `useView()` call this after construction. The actual
+     * `useModel()` calls this after construction. The actual
      * initialization is deferred to the blink resolver.
      *
      * @param model - Model instance to initialize.

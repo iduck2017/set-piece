@@ -1,16 +1,18 @@
-import { DiffEvent, Event, PrevEvent } from ".";
-import { useDep } from "../hooks/use-dep";
-import { Model } from "../model";
-import { useModel } from "../hooks/use-model";
-import { useEventConsumer } from "../hooks/use-event-consumer";
-import { useEventProducer } from "../hooks/use-event-producer";
-import { useStory } from "../hooks/use-story";
+import { DiffEvent, Event, PrevEvent } from "../src/event";
+import { useDep } from "../src/hooks/use-dep";
+import { Model } from "../src/model";
+import { useModel } from "../src/hooks/use-model";
+import { useStore } from "../src/hooks/use-store";
+import { useEventConsumer } from "../src/hooks/use-event-consumer";
+import { useEventProducer } from "../src/hooks/use-event-producer";
+import { useStory } from "../src/hooks/use-story";
 
 class PingEvent extends Event<{ records?: string[] }> {}
 class BeforePingEvent extends PrevEvent<{ records?: string[] }> {}
-class CountChangedEvent extends DiffEvent<number> {}
+class CountChangedEvent extends DiffEvent {}
 
-@useModel('event-pinger')
+@useStore('event-pinger')
+@useModel()
 class PingerModel extends Model {
     public ping() {
         this.emit(new PingEvent({}));
@@ -29,7 +31,8 @@ class PingerModel extends Model {
     }
 }
 
-@useModel('event-listener')
+@useStore('event-listener')
+@useModel()
 class ListenerModel extends Model {
     @useDep()
     private _pinger?: PingerModel;
@@ -51,7 +54,8 @@ class ListenerModel extends Model {
     }
 }
 
-@useModel('event-counter')
+@useStore('event-counter')
+@useModel()
 class CounterModel extends Model {
     @useEventProducer(() => CountChangedEvent)
     @useDep()
@@ -60,7 +64,8 @@ class CounterModel extends Model {
     public set count(value: number) { this._count = value; }
 }
 
-@useModel('event-counter-listener')
+@useStore('event-counter-listener')
+@useModel()
 class CounterListenerModel extends Model {
     @useDep()
     private _counter?: CounterModel;
@@ -71,8 +76,8 @@ class CounterListenerModel extends Model {
     public get values() { return this._values; }
 
     @useEventConsumer((self: CounterListenerModel) => [self.counter, CountChangedEvent])
-    private handleCountChanged(event: CountChangedEvent) {
-        this._values.push(event.detail.next);
+    private handleCountChanged(_event: CountChangedEvent) {
+        this._values.push(this.counter!.count);
     }
 }
 

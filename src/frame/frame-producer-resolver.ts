@@ -40,8 +40,7 @@ class FrameProducerResolver {
             if (!loader) return;
             const FrameCtor = loader();
             const model = tag.target;
-            const next = Reflect.get(model, tag.key);
-            const frame = new FrameCtor({ next });
+            const frame = new FrameCtor();
             frameService.emit(model, frame);
         })
     }

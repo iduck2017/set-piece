@@ -1,8 +1,9 @@
-import { Model } from "../model";
-import { useChild } from "../hooks/use-child";
-import { childRegistry } from "./child-registry";
-import { useMemo } from "../hooks/use-memo";
-import { useModel } from "../hooks/use-model";
+import { Model } from "../src/model";
+import { useChild } from "../src/hooks/use-child";
+import { childRegistry } from "../src/child/child-registry";
+import { useMemo } from "../src/hooks/use-memo";
+import { useModel } from "../src/hooks/use-model";
+import { useStore } from "../src/hooks/use-store";
 
 class AppleModel extends Model {}
 class PineappleModel extends Model {}
@@ -35,7 +36,8 @@ class BoxModel extends Model {
     }
 }
 
-@useModel('reactive-link-child')
+@useStore('reactive-link-child')
+@useModel()
 class ReactiveLinkChildModel extends Model {
     @useMemo()
     public get parentMemo() { return this.parent; }
@@ -44,7 +46,8 @@ class ReactiveLinkChildModel extends Model {
     public get rootMemo() { return this.root; }
 }
 
-@useModel('reactive-link-parent')
+@useStore('reactive-link-parent')
+@useModel()
 class ReactiveLinkParentModel extends Model {
     @useChild()
     private _child?: ReactiveLinkChildModel;

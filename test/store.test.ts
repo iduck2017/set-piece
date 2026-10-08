@@ -1,11 +1,12 @@
-import { Model } from "../model";
-import { useChild } from "../hooks/use-child";
-import { useDep } from "../hooks/use-dep";
-import { useMemo } from "../hooks/use-memo";
-import { useModel } from "../hooks/use-model";
-import { useRef } from "../hooks/use-ref";
-import { useState } from "../hooks/use-state";
-import { storeService } from "./store-service";
+import { Model } from "../src/model";
+import { useChild } from "../src/hooks/use-child";
+import { useDep } from "../src/hooks/use-dep";
+import { useMemo } from "../src/hooks/use-memo";
+import { useModel } from "../src/hooks/use-model";
+import { useStore } from "../src/hooks/use-store";
+import { useRef } from "../src/hooks/use-ref";
+import { useState } from "../src/hooks/use-state";
+import { storeService } from "../src/store/store-service";
 
 /** Inherited fields exercise all three persistence registries. */
 class StoreBase extends Model {
@@ -29,7 +30,8 @@ class StoreBase extends Model {
     }
 }
 
-@useModel('store-test-node')
+@useStore('store-test-node')
+@useModel()
 class StoreNode extends StoreBase {
     @useState()
     private _value: unknown = 42;

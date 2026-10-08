@@ -2,7 +2,7 @@ import { DiffEvent } from ".";
 import { Model } from "../model";
 import { AbstractConstructor, Constructor } from "../types";
 
-export type EventProducerLoader<T = any> = () => Constructor<DiffEvent<T>, [{ next: T }]>;
+export type EventProducerLoader = () => Constructor<DiffEvent, []>;
 
 /**
  * Stores event producer loaders declared by `useEventProducer()`.

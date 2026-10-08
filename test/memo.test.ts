@@ -1,10 +1,12 @@
-import { Model } from "../model";
-import { useModel } from "../hooks/use-model";
-import { depManager } from "../dep/dep-manager";
-import { useMemo } from "../hooks/use-memo";
-import { useDep } from "../hooks/use-dep";
+import { Model } from "../src/model";
+import { useModel } from "../src/hooks/use-model";
+import { useStore } from "../src/hooks/use-store";
+import { depManager } from "../src/dep/dep-manager";
+import { useMemo } from "../src/hooks/use-memo";
+import { useDep } from "../src/hooks/use-dep";
 
-@useModel('foo')
+@useStore('foo')
+@useModel()
 export class FooModel extends Model {
     constructor(level?: number) {
         super();

@@ -36,7 +36,7 @@ import {
   Frame,
   DiffFrame,
   useModel,
-  useView,
+  useStore,
   useDep,
   useState,
   useMemo,
@@ -142,14 +142,15 @@ frameProducerResolver.resolve()
 所有业务对象都继承 `Model`。
 
 ```ts
-@useModel('todo')
+@useStore('todo')
+@useModel()
 class TodoModel extends Model {
   @useDep()
   public title = '';
 }
 ```
 
-`@useModel(code)` 会注册模型类型，并把构造流程接入 blink。model 创建后不会在 constructor 里直接完成初始化，而是进入 `modelResolver`：
+`@useModel()` 把构造流程接入 blink；`@useStore(code)` 单独登记持久化类型，要求构造函数支持无参调用。model 创建后不会在 constructor 里直接完成初始化，而是进入 `modelResolver`：
 
 ```text
 new TodoModel()
@@ -168,12 +169,13 @@ new TodoModel()
 
 ### 实现方式
 
-`@useModel(code)` 先为原始类添加实例注册逻辑，再用 `BlinkManager.delegate()` 包装构造和注册的完整过程，最后把最外层的类登记到 `StoreRegistry`。因此实例的构造函数与持久化 code 对应的构造函数一致。继承链上的注册都发生在同一个构造 blink 内，由 `ModelResolver` 按实例去重；blink 收尾时调用 `_internal.init()`，统一预热 memo、执行初始 effect 并建立 decor、event、frame 的运行时绑定。
+`@useModel()` 先为原始类添加实例注册逻辑，再用 `BlinkManager.delegate()` 包装构造和注册的完整过程。需要持久化时，在它上方添加 `@useStore(code)`；装饰器自下而上执行，因此 `StoreRegistry` 登记的是包装后的构造函数，与实例的构造函数一致。继承链上的注册都发生在同一个构造 blink 内，由 `ModelResolver` 按实例去重；blink 收尾时调用 `_internal.init()`，统一预热 memo、执行初始 effect 并建立 decor、event、frame 的运行时绑定。
 
 ### 模块职责
 
 - `Model`：提供 uuid、消息发送、初始化入口以及 parent、root、children 等模型树能力。
-- `useModel`：登记 model code，并包装模型构造过程。
+- `useModel`：包装模型构造过程，保留构造参数类型并接入初始化生命周期。
+- `useStore`：登记 model code，要求 `Constructor<Model, undefined[]>`，返回原构造函数。
 - `ModelResolver`：暂存新实例，在 blink 中调用模型初始化。
 - `StoreRegistry`：维护 model code 与构造函数的双向映射。
 - `finalizationRegistry`：使用 `FinalizationRegistry` 观察 model 被垃圾回收。
@@ -183,7 +185,8 @@ new TodoModel()
 `@useDep()` 标记一个可追踪字段。
 
 ```ts
-@useModel('counter')
+@useStore('counter')
+@useModel()
 class CounterModel extends Model {
   @useDep()
   public count = 0;
@@ -259,7 +262,8 @@ class MonsterModel extends Model {
 的字段以及 memo 不会自动保存。
 
 ```ts
-@useModel('store-item')
+@useStore('store-item')
+@useModel()
 class ItemModel extends Model {
   @useState()
   private _title = '';
@@ -267,7 +271,8 @@ class ItemModel extends Model {
   public set title(value: string) { this._title = value; }
 }
 
-@useModel('store-board')
+@useStore('store-board')
+@useModel()
 class BoardModel extends Model {
   @useChild()
   private _items: ItemModel[] = [];
@@ -332,7 +337,7 @@ if (restored instanceof BoardModel) {
 
 ### 当前行为
 
-- 模型及其子模型需要通过 `@useModel(code)` 注册，构造函数需支持无参调用。
+- 模型及其子模型需要通过 `@useStore(code)` 注册，构造函数需支持无参调用；将 `@useStore(code)` 写在 `@useModel()` 上方。
 - UUID 原样恢复。code 应保持唯一，同一份模型树配置中的 UUID 也应唯一。
 - 最外层配置无效或类型未注册时，`load()` 返回 `undefined`。
   无效的子模型配置恢复为 `undefined`；这不是完整的 schema 校验。
@@ -375,7 +380,8 @@ copy 创建新的模型和 child 实例，并把树内 ref 绑定到副本。它
 `@useMemo()` 标记 getter。框架会缓存 getter 结果，并自动收集 getter 读取过的依赖。
 
 ```ts
-@useModel('counter')
+@useStore('counter')
+@useModel()
 class CounterModel extends Model {
   @useDep()
   public count = 1;
@@ -412,7 +418,8 @@ memo 的失效和重算发生在 blink 阶段。如果 memo 输出变化，它�
 `@useEffect()` 声明 action 阶段执行的副作用。
 
 ```ts
-@useModel('counter')
+@useStore('counter')
+@useModel()
 class CounterModel extends Model {
   @useDep()
   public count = 0;
@@ -445,7 +452,8 @@ effect 会在 model 初始化时执行一次并收集依赖。之后相关依赖
 `@useChild()` 表示拥有关系。它会维护 `parent`、`root`、`children` 和 `descendants`。
 
 ```ts
-@useModel('todo-list')
+@useStore('todo-list')
+@useModel()
 class TodoListModel extends Model {
   @useChild()
   public todos: TodoModel[] = [];
@@ -478,10 +486,12 @@ child 字段同时也是依赖字段，因此 child 变化会触发 memo、route
 `@useRoute()` 用来在当前 model 上保存某种祖先类型的引用。
 
 ```ts
-@useModel('board')
+@useStore('board')
+@useModel()
 class BoardModel extends Model {}
 
-@useModel('card')
+@useStore('card')
+@useModel()
 class CardModel extends Model {
   @useRoute(() => BoardModel)
   public readonly board?: BoardModel;
@@ -506,10 +516,12 @@ class CardModel extends Model {
 `@useRef()` 表示普通引用关系，不是拥有关系。
 
 ```ts
-@useModel('user')
+@useStore('user')
+@useModel()
 class UserModel extends Model {}
 
-@useModel('task')
+@useStore('task')
+@useModel()
 class TaskModel extends Model {
   @useRef()
   public assignee?: UserModel;
@@ -608,7 +620,8 @@ this.emit(new PingEvent({ message: 'hello' }));
 监听事件：
 
 ```ts
-@useModel('ping')
+@useStore('ping')
+@useModel()
 class PingModel extends Model {
   @useRef()
   public target?: PongModel;
@@ -625,9 +638,10 @@ consumer loader 会收集依赖。上面的 `self.target` 变化时，event cons
 也可以用 `@useEventProducer()` 把字段变化自动变成 event：
 
 ```ts
-class CountChangedEvent extends DiffEvent<number> {}
+class CountChangedEvent extends DiffEvent {}
 
-@useModel('counter')
+@useStore('counter')
+@useModel()
 class CounterModel extends Model {
   @useEventProducer(() => CountChangedEvent)
   @useDep()
@@ -638,12 +652,14 @@ class CounterModel extends Model {
 字段变化后，event producer 会在 action 阶段发出：
 
 ```ts
-new CountChangedEvent({ next: this.count })
+new CountChangedEvent()
 ```
+
+`DiffEvent` 只通知字段发生变化，不携带旧值或新值；consumer 需要当前值时，从所订阅的 model 读取。
 
 ### 实现方式
 
-consumer loader 在初始化和依赖变化时运行，正反两个 manager 保存 producer、Event 类型与 handler Tag 的绑定。`EventService` 根据 producer 和 event 构造函数找到 handler 并同步调用；字段 producer 则由 `EventProducerResolver` 在 action 末尾创建 `{ next }` diff event。显式 event 的派发边界由 Story 负责。
+consumer loader 在初始化和依赖变化时运行，正反两个 manager 保存 producer、Event 类型与 handler Tag 的绑定。`EventService` 根据 producer 和 event 构造函数找到 handler 并同步调用；字段 producer 则由 `EventProducerResolver` 在 action 末尾创建无载荷的 diff event 信号。显式 event 的派发边界由 Story 负责。
 
 ### 模块职责
 
@@ -689,15 +705,16 @@ public ping(records: string[]) {
 `Frame` 适合表达状态变化帧、动画帧或需要异步处理的消息。它和 Event 使用独立的类型与绑定表。
 
 ```ts
-class CountFrame extends DiffFrame<number> {}
+class CountFrame extends DiffFrame {}
 
-this.emit(new CountFrame({ next: this.count }));
+this.emit(new CountFrame());
 ```
 
 也可以用 `@useFrameProducer()` 把字段变化自动变成 frame：
 
 ```ts
-@useModel('counter')
+@useStore('counter')
+@useModel()
 class CounterModel extends Model {
   @useFrameProducer(() => CountFrame)
   @useDep()
@@ -713,17 +730,19 @@ class CounterViewModel extends Model {
   public counter?: CounterModel;
 
   @useFrameConsumer((self: CounterViewModel) => [self.counter, CountFrame])
-  private async handleCount(frame: CountFrame) {
-    console.log(frame.detail.next);
+  private async handleCount(_frame: CountFrame) {
+    console.log(this.counter?.count);
   }
 }
 ```
+
+`DiffFrame` 同样只发出无载荷信号；异步 consumer 读取 model 时，得到的是处理当时的状态。
 
 frame consumer 的 loader 也会收集依赖；监听目标变化时会在 blink 阶段自动重绑。
 
 ### 实现方式
 
-frame consumer loader 在初始化和依赖变化时运行，正反两个 manager 保存 producer、Frame 类型与 handler Tag 的绑定。`FrameService` 根据 producer 和 frame 构造函数找到 consumer，但不直接调用 handler，而是把任务登记到 Anime 的 `FrameResolver`；字段 producer 由 `FrameProducerResolver` 在 action 末尾创建 `{ next }` frame。
+frame consumer loader 在初始化和依赖变化时运行，正反两个 manager 保存 producer、Frame 类型与 handler Tag 的绑定。`FrameService` 根据 producer 和 frame 构造函数找到 consumer，但不直接调用 handler，而是把任务登记到 Anime 的 `FrameResolver`；字段 producer 由 `FrameProducerResolver` 在 action 末尾创建无载荷的 diff frame 信号。
 
 ### 模块职责
 
@@ -743,9 +762,9 @@ frame consumer loader 在初始化和依赖变化时运行，正反两个 manage
 ```ts
 @useAnime()
 public play() {
-  this.emit(new CountFrame({ next: 1 }));
+  this.emit(new CountFrame());
   frameResolver.proceed();
-  this.emit(new CountFrame({ next: 2 }));
+  this.emit(new CountFrame());
 }
 ```
 
@@ -763,10 +782,10 @@ public play() {
 
 ## View
 
-`@useView()` 用于给非 store model 的视图类接入同样的 blink 初始化流程。
+视图类同样使用 `@useModel()` 接入 blink 初始化流程，构造函数可以带必填参数。
 
 ```ts
-@useView()
+@useModel()
 class CounterView extends Model {
   @useRef()
   public counter?: CounterModel;
@@ -777,11 +796,11 @@ class CounterView extends Model {
 
 ### 实现方式
 
-`@useView()` 与 `@useModel()` 一样，先添加实例注册逻辑，再用 `BlinkManager.delegate()` 将构造和登记包在同一个 blink 内，因此 view 可以使用 memo、effect、ref 和各种 consumer；区别是 view 不向 `StoreRegistry` 注册持久化 code。
+`@useModel()` 将构造和实例登记包在同一个 blink 内，因此 view 可以使用 memo、effect、ref 和各种 consumer。只有添加 `@useStore(code)` 时，才向 `StoreRegistry` 登记持久化 code。
 
 ### 模块职责
 
-- `useView`：让视图类接入 Model 初始化生命周期，但不注册 model code。
+- `useModel`：让视图类接入 Model 初始化生命周期。
 - `BlinkManager`：合并 view 构造期间产生的依赖和绑定刷新。
 - `ModelResolver`：在 blink 中初始化 view 的 memo、effect 和 consumers。
 
@@ -805,10 +824,10 @@ import {
 } from 'set-piece';
 
 class TodoDoneEvent extends Event<{ id: string }> {}
-class TodoStatusEvent extends DiffEvent<string> {}
-class TodoDoneFrame extends DiffFrame<boolean> {}
+class TodoStatusEvent extends DiffEvent {}
+class TodoDoneFrame extends DiffFrame {}
 
-@useModel('todo')
+@useModel()
 class TodoModel extends Model {
   constructor(public readonly id: string, title: string) {
     super();
@@ -837,7 +856,7 @@ class TodoModel extends Model {
   }
 }
 
-@useModel('todo-list')
+@useModel()
 class TodoListModel extends Model {
   @useChild()
   public todos: TodoModel[] = [];
@@ -855,8 +874,8 @@ class TodoListModel extends Model {
   }
 
   @useFrameConsumer((self: TodoListModel) => [self.todos, TodoDoneFrame])
-  private async handleTodoFrame(frame: TodoDoneFrame) {
-    console.log('todo done changed:', frame.detail.next);
+  private async handleTodoFrame(_frame: TodoDoneFrame) {
+    console.log('todo done changed');
   }
 
   @useEffect()

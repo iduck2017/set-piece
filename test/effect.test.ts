@@ -1,9 +1,11 @@
-import { useDep } from "../hooks/use-dep";
-import { Model } from "../model";
-import { useModel } from "../hooks/use-model";
-import { useEffect } from "../hooks/use-effect";
+import { useDep } from "../src/hooks/use-dep";
+import { Model } from "../src/model";
+import { useModel } from "../src/hooks/use-model";
+import { useStore } from "../src/hooks/use-store";
+import { useEffect } from "../src/hooks/use-effect";
 
-@useModel('effect-demo')
+@useStore('effect-demo')
+@useModel()
 class EffectModel extends Model {
     @useDep()
     private _count = 1;

@@ -1,7 +1,7 @@
-import { useChild } from "../hooks/use-child";
-import { Model } from "../model";
-import { TypedPropertyDecorator } from "../types";
-import { useRoute } from "../hooks/use-route";
+import { useChild } from "../src/hooks/use-child";
+import { Model } from "../src/model";
+import { TypedPropertyDecorator } from "../src/types";
+import { useRoute } from "../src/hooks/use-route";
 
 export class PineappleModel extends Model {
     @useRoute(() => RoomModel)

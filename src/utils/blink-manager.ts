@@ -61,7 +61,7 @@ export class BlinkManager {
     /**
      * Wrap construction so initial model binding runs inside one blink.
      *
-     * This is used by `useModel()` and `useView()` so a constructor can create
+     * This is used by `useModel()` so a constructor can create
      * nested models while all initialization waits for the same blink boundary.
      *
      * @param ModelCtor - Model constructor to wrap.

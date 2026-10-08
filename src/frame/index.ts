@@ -18,6 +18,10 @@ export abstract class Frame<T = any> {
 }
 
 /**
- * Base frame for property-change payloads produced from dependency writes.
+ * Payload-free signal for property changes produced from dependency writes.
  */
-export abstract class DiffFrame<T = any> extends Frame<{ next: T }> {}
+export abstract class DiffFrame extends Frame<void> {
+    constructor() {
+        super(undefined);
+    }
+}

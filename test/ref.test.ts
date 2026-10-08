@@ -1,10 +1,12 @@
-import { useAction } from "../hooks/use-action";
-import { useChild } from "../hooks/use-child";
-import { useModel } from "../hooks/use-model";
-import { useRef } from "../hooks/use-ref";
-import { Model } from "../model";
+import { useAction } from "../src/hooks/use-action";
+import { useChild } from "../src/hooks/use-child";
+import { useModel } from "../src/hooks/use-model";
+import { useStore } from "../src/hooks/use-store";
+import { useRef } from "../src/hooks/use-ref";
+import { Model } from "../src/model";
 
-@useModel('ref-resolver-node')
+@useStore('ref-resolver-node')
+@useModel()
 class RefNodeModel extends Model {
     @useRef()
     private _target?: RefNodeModel;
@@ -19,7 +21,8 @@ class RefNodeModel extends Model {
     }
 }
 
-@useModel('ref-resolver-root')
+@useStore('ref-resolver-root')
+@useModel()
 class RefRootModel extends Model {
     @useChild()
     private _nodes: RefNodeModel[] = [];

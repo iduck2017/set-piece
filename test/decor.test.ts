@@ -1,10 +1,11 @@
-import { Decor } from ".";
-import { useDep } from "../hooks/use-dep";
-import { Model } from "../model";
-import { useModel } from "../hooks/use-model";
-import { useDecorConsumer } from "../hooks/use-decor-consumer";
-import { useDecorProducer } from "../hooks/use-decor-producer";
-import { useState } from "../hooks/use-state";
+import { Decor } from "../src/decor";
+import { useDep } from "../src/hooks/use-dep";
+import { Model } from "../src/model";
+import { useModel } from "../src/hooks/use-model";
+import { useStore } from "../src/hooks/use-store";
+import { useDecorConsumer } from "../src/hooks/use-decor-consumer";
+import { useDecorProducer } from "../src/hooks/use-decor-producer";
+import { useState } from "../src/hooks/use-state";
 
 class AttackDecor extends Decor<number> {
     private _result = this._origin;
@@ -18,7 +19,8 @@ class GuardDecor extends Decor<boolean> {
     public set result(value: boolean) { this._result = value; }
 }
 
-@useModel('decor-monster')
+@useStore('decor-monster')
+@useModel()
 class MonsterModel extends Model {
     @useDecorProducer(() => AttackDecor)
     @useState()
@@ -41,7 +43,8 @@ class MonsterModel extends Model {
     }
 }
 
-@useModel('decor-guard')
+@useStore('decor-guard')
+@useModel()
 class GuardModel extends Model {
     @useDecorProducer(() => GuardDecor)
     @useState()
