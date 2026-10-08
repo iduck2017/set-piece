@@ -66,13 +66,13 @@ class StoreService {
     @useBlink()
     public load(config: any): Model | undefined {
         const models = new Map<string, Model>();
-        const model = this.generate(config, models);
+        const model = this.create(config, models);
         this.bind(config, models);
         return model;
     }
 
     /** Build owned models and index them by persisted UUID. */
-    private generate(
+    private create(
         config: any,
         models: Map<string, Model>
     ): Model | undefined {
@@ -86,7 +86,7 @@ class StoreService {
         if (!ModelCtor) return;
 
         const model = new ModelCtor();
-        model._internal.restore(config.uuid);
+        Reflect.set(model, "_uuid", config.uuid);
         models.set(model.uuid, model);
 
         const states = stateRegistry.query(model);
@@ -100,10 +100,10 @@ class StoreService {
             let next: ModelValue;
             if (child instanceof Array) {
                 next = child.map(item => {
-                    return this.generate(item, models);
+                    return this.create(item, models);
                 });
             }
-            else next = this.generate(child, models);
+            else next = this.create(child, models);
             Reflect.set(model, key, next);
         }
         return model;

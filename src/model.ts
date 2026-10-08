@@ -35,9 +35,6 @@ export abstract class Model {
     protected _uuid: string = ticketService.query()
     public get uuid() { return this._uuid; }
 
-    /** Restore persisted identity before model initialization. */
-    private restore(uuid: string) { this._uuid = uuid; }
-
     public get name() { return this.constructor.name; }
 
     /** Copy persisted fields and children, preserving UUIDs and state values. */
@@ -124,8 +121,7 @@ export abstract class Model {
             init: this.init.bind(this),
             mount: this.mount.bind(this),
             unmount: this.unmount.bind(this),
-            reroute: this.reroute.bind(this),
-            restore: this.restore.bind(this)
+            reroute: this.reroute.bind(this)
         }
     }
 
