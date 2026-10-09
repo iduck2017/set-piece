@@ -11,11 +11,16 @@ class RefResolver {
     /**
      * Queue a model whose root may have changed during reroute.
      *
-     * @param model - Model to validate at the end of the current action.
+     * @param model - Model to validate after memo updates in the blink phase.
      * @returns Nothing.
      */
     public register(model: Model) {
         this._queue.add(model);
+    }
+
+    /** Report whether any models are waiting for ref validation. */
+    public check() {
+        return Boolean(this._queue.size);
     }
 
     /**

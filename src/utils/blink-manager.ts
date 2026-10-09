@@ -1,14 +1,13 @@
 import { decorConsumerResolver } from "../decor/decor-consumer-resolver";
-import { decorProducerResolver } from "../decor/decor-producer-resolver";
 import { eventConsumerResolver } from "../event/event-consumer-resolver";
 import { frameConsumerResolver } from "../frame/frame-consumer-resolver";
 import { memoResolver } from "../memo/memo-resolver";
 import { Model } from "../model";
 import { modelResolver } from "./model-resolver";
 import { routeResolver } from "../route/route-resolver";
+import { refResolver } from "../ref/ref-resolver";
 import { Constructor } from "../types";
 import { useAction } from "../hooks/use-action";
-import { useBlink } from "../hooks/use-blink";
 
 /**
  * Coordinates blink boundaries and flushes dependency graph updates.
@@ -19,8 +18,8 @@ export class BlinkManager {
     /**
      * Execute one blink and refresh dependency-driven bindings afterward.
      *
-     * Nested blinks reuse the outer blink so model initialization and binding
-     * refreshes happen once after the outermost operation finishes.
+     * Nested blinks reuse the outer blink. After the outermost operation,
+     * resolve queued work in rounds until no blink-scoped tasks remain.
      *
      * @param handler - Operation that may change dependency graphs.
      * @returns The handler result.
@@ -32,29 +31,27 @@ export class BlinkManager {
         /** Run the caller first, then inspect whether anything was queued. */
         this._pending = true;
         const output = handler();
+        /** Keep nested registrations queued while draining successive rounds. */
+        while (this.precheck()) this.resolve();
         this._pending = false;
-        /** Flush only when a resolver has pending blink-scoped work. */
-        const dirty = this.precheck();
-        if (!dirty) return output;
-        this.resolve()
         return output;
     }
 
     /**
      * Check whether any blink-scoped resolver has pending work.
      *
-     * @returns True when model, memo, decor, event, or frame binding work is
-     * queued.
+     * @returns True when initialization, route/ref updates, memo recomputation,
+     * or consumer binding work is queued.
      */
     protected precheck() {
         const dirty =
-            memoResolver.check() ||
-            decorConsumerResolver.check() ||
-            decorProducerResolver.check() ||
-            eventConsumerResolver.check() ||
-            frameConsumerResolver.check() ||
+            modelResolver.check() ||
             routeResolver.check() ||
-            modelResolver.check()
+            memoResolver.check() ||
+            refResolver.check() ||
+            decorConsumerResolver.check() ||
+            eventConsumerResolver.check() ||
+            frameConsumerResolver.check()
         return dirty;
     }
 
@@ -87,28 +84,27 @@ export class BlinkManager {
                     /** Construction may queue model initialization and bindings. */
                     const dirty = that.precheck()
                     if (!dirty) return;
-                    that.resolve();
+                    that.launch(() => that.resolve());
                 }
             }
         }[ModelCtor.name] as any
     }
 
     /**
-     * Resolve all blink-scoped queues in dependency order.
+     * Resolve one round of blink-scoped queues in dependency order.
      *
-     * Model initialization and memo/decor producers run before consumer
-     * bindings so consumers see initialized and freshly computed values.
+     * Initialize models, update routes and memos, then validate refs before
+     * refreshing consumer bindings. Decor producers settle in the action phase.
      *
      * @returns Nothing.
      */
-    @useBlink()
     private resolve() {
         /** Associate value changes before listeners refresh their bindings. */
         modelResolver.resolve();
         routeResolver.resolve();
         memoResolver.resolve();
-        decorProducerResolver.resolve();
-        /** Refresh listeners after values and derived values have settled. */
+        refResolver.resolve();
+        /** Refresh listeners after this round's memo and ref updates. */
         decorConsumerResolver.resolve();
         eventConsumerResolver.resolve();
         frameConsumerResolver.resolve();

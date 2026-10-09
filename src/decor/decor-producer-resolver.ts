@@ -5,7 +5,7 @@ import { Tag, tagRegistry } from "../tag/tag-registry";
 import { decorProducerRegistry } from "./decor-producer-registry";
 import { decorProducerDelegator } from "./decor-producer-delegator";
 import { depService } from "../dep/dep-service";
-import { useBlink } from "../hooks/use-blink";
+import { useAction } from "../hooks/use-action";
 
 /**
  * Recomputes decorated producer values after source or binding changes.
@@ -30,13 +30,13 @@ class DecorProducerResolver {
      *
      * The direct form is used by producer property writes. The model/decor form
      * is used when consumer bindings change and any affected producer values
-     * need to be recalculated.
+     * need to be recalculated at the action boundary.
      *
      * @param target - Producer tag, or producer model used for decor-type lookup.
      * @param DecorCtor - Decor constructor used with the producer model form.
      * @returns Nothing.
      */
-    @useBlink()
+    @useAction()
     public register(target: Tag | Model, DecorCtor?: Constructor<Decor>) {
         if (target instanceof Tag) this._queue.add(target);
         if (target instanceof Tag) return;

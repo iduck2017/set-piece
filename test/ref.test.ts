@@ -76,7 +76,7 @@ describe('useRef', () => {
         expect(holder.target).toBeUndefined();
     });
 
-    it('delays ref removal until the outer action finishes', () => {
+    it('removes invalid refs during blink before the outer action finishes', () => {
         const root = new RefRootModel();
         const holder = new RefNodeModel();
         const target = new RefNodeModel();
@@ -86,7 +86,7 @@ describe('useRef', () => {
         const snapshot = root.removeAndInspect(target, holder);
 
         expect(snapshot.separated).toBe(true);
-        expect(snapshot.target).toBe(target);
+        expect(snapshot.target).toBeUndefined();
         expect(holder.target).toBeUndefined();
     });
 

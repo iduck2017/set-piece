@@ -81,13 +81,13 @@ view.handleChange  -> Tag(view, "handleChange")
 
 ## Blink
 
-`blink` 是同步收敛边界，负责刷新依赖图和绑定关系。顺序是：
+`blink` 用于快速同步 dep 变化导致的计算值更新，并维护模型关系和 consumer 绑定。顺序是：
 
 ```text
 modelResolver.resolve()
 routeResolver.resolve()
 memoResolver.resolve()
-decorProducerResolver.resolve()
+refResolver.resolve()
 decorConsumerResolver.resolve()
 eventConsumerResolver.resolve()
 frameConsumerResolver.resolve()
@@ -97,7 +97,7 @@ frameConsumerResolver.resolve()
 
 ### 实现方式
 
-`useBlink` 用 `BlinkManager.launch()` 包装方法。manager 使用 `_pending` 合并嵌套 blink，最外层 handler 完成后先通过 `precheck()` 判断是否存在待处理工作，再按固定顺序调用各 resolver；resolver 产生的新 blink 会继续复用当前边界，使依赖值先稳定，再刷新 consumer binding。
+`useBlink` 用 `BlinkManager.launch()` 包装方法。manager 使用 `_pending` 合并嵌套 blink，最外层 handler 完成后，通过 `while (precheck())` 按固定顺序反复调用各 resolver，直到队列全部清空。整个循环期间 `_pending` 保持为 `true`，resolver 产生的新登记留在队列中，由尚未执行的 resolver 或下一轮处理；`resolve()` 自身不再包装 `useBlink`。模型构造结束后的刷新也通过 `launch()` 进入同一套循环。
 
 ### 模块职责
 
@@ -106,18 +106,18 @@ frameConsumerResolver.resolve()
 - `ModelResolver`：初始化新创建的 model 或 view。
 - `RouteResolver`：刷新 model 子树的 route 和 root。
 - `MemoResolver`：失效和重算派生值。
-- `DecorProducerResolver`：重新计算 decor producer 的最终结果。
+- `RefResolver`：在 memo 更新后清除跨 root 的主动和被动 ref。
 - `DecorConsumerResolver`：重新绑定 decor consumer。
 - `EventConsumerResolver`：重新绑定 event consumer。
 - `FrameConsumerResolver`：重新绑定 frame consumer。
 
 ## Action
 
-`action` 是状态修改后的 ref 校验和副作用边界。顺序是：
+`action` 用于合并同一批业务变化，依次执行 effect、decor 重算和变化通知。顺序是：
 
 ```text
-refResolver.resolve()
 effectResolver.resolve()
+decorProducerResolver.resolve()
 eventProducerResolver.resolve()
 frameProducerResolver.resolve()
 ```
@@ -126,14 +126,16 @@ frameProducerResolver.resolve()
 
 ### 实现方式
 
-`useAction` 用 `ActionManager.launch()` 包装方法。manager 使用 `_pending` 合并嵌套 action，内层调用只执行 handler，最外层 handler 完成后才依次处理 ref、effect 和自动 producer。`BlinkManager.launch()` 本身也接入 action，因此没有显式装饰器的单次字段写入仍会形成完整的 action 边界。
+`useAction` 用 `ActionManager.launch()` 包装方法。manager 使用 `_pending` 合并嵌套 action，内层调用只执行 handler，最外层 handler 完成后通过 `precheck()` 检查是否有待处理任务，再依次处理 effect、decor producer、event producer 和 frame producer。`resolve()` 自身也包裹 `@useAction()`，因此一轮刷新期间新产生的 action 会复用当前边界；本轮结束后，若仍有任务，再进入下一轮，空队列时停止。`BlinkManager.launch()` 本身也接入 action，因此没有显式装饰器的单次字段写入仍会形成完整的 action 边界。
+
+ref 校验在每次 blink 中完成，不等待外层 action 结束。decor 重算在 action 阶段完成，结果变化会同步触发 blink 更新相关 memo 和绑定；若又登记了 effect，则由后续 action 轮次处理。
 
 ### 模块职责
 
 - `useAction`：把一次或多次状态修改包裹成统一的副作用边界。
-- `ActionManager`：在 action 结束后依次处理 ref、effect、event producer 和 frame producer。
-- `RefResolver`：清除 reroute 后跨 root 的主动和被动 ref。
+- `ActionManager`：在 action 结束后依次处理 effect、decor producer、event producer 和 frame producer。
 - `EffectResolver`：重新执行依赖发生变化的 effect。
+- `DecorProducerResolver`：重新计算 decor producer 的最终结果。
 - `EventProducerResolver`：把字段变化转换成 diff event。
 - `FrameProducerResolver`：把字段变化转换成 diff frame。
 
@@ -589,7 +591,7 @@ class BuffModel extends Model {
 }
 ```
 
-decor producer 的值变化时会进入 `decorProducerResolver`。decor consumer 的 loader 依赖变化时会进入 `decorConsumerResolver`。两者都在 blink 阶段刷新。
+decor producer 的原始值或 consumer 绑定变化时会进入 `decorProducerResolver`，在 action 阶段、effect 之后重算。decor consumer 的 loader 或 handler 依赖变化时会进入 `decorConsumerResolver`，在 blink 阶段重新绑定并登记 producer 重算。已有缓存的 decor 字段在 action 收尾前可能仍返回旧结果；无缓存时，getter 仍会直接计算。
 
 ### 实现方式
 

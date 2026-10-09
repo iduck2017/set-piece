@@ -1,7 +1,8 @@
 import { effectResolver } from "./effect-resolver";
 import { eventProducerResolver } from "../event/event-producer-resolver";
 import { frameProducerResolver } from "../frame/frame-producer-resolver";
-import { refResolver } from "../ref/ref-resolver";
+import { decorProducerResolver } from "../decor/decor-producer-resolver";
+import { useAction } from "../hooks/use-action";
 
 /**
  * Coordinates action boundaries and flushes action-scoped work.
@@ -12,8 +13,8 @@ export class ActionManager {
     /**
      * Execute one action and flush action-scoped resolvers at the boundary.
      *
-     * Nested actions reuse the outer action so effects and producers flush once
-     * after the outermost mutation finishes.
+     * Nested actions reuse the outer action. Pending work is flushed after the
+     * outermost handler finishes, including work queued during a resolve round.
      *
      * @param handler - Operation that may mutate dependency-backed state.
      * @returns The handler result.
@@ -23,21 +24,31 @@ export class ActionManager {
         this._pending = true;
         const output = handler();
         this._pending = false;
+        if (!this.precheck()) return output;
         this.resolve();
         return output;
+    }
+
+    /** Report whether another action resolve round has pending work. */
+    protected precheck() {
+        return effectResolver.check() ||
+            decorProducerResolver.check() ||
+            eventProducerResolver.check() ||
+            frameProducerResolver.check();
     }
 
     /**
      * Flush work that should happen after user state mutation settles.
      *
-     * Refs are validated first, then effects and producers process the final
-     * action state.
+     * Effects run first, followed by decor recomputation and change signals.
+     * Nested actions reuse this boundary; remaining work runs after this round.
      *
      * @returns Nothing.
      */
+    @useAction()
     private resolve() {
-        refResolver.resolve();
         effectResolver.resolve();
+        decorProducerResolver.resolve();
         eventProducerResolver.resolve();
         frameProducerResolver.resolve();
     }

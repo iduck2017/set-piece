@@ -22,6 +22,11 @@ class EventProducerResolver {
         this._queue.add(tag);
     }
 
+    /** Report whether any producer changes are waiting to emit events. */
+    public check() {
+        return Boolean(this._queue.size);
+    }
+
     /**
      * Emit diff events for all queued producer property changes.
      *

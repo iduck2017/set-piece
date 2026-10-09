@@ -22,6 +22,11 @@ class FrameProducerResolver {
         this._queue.add(tag);
     }
 
+    /** Report whether any producer changes are waiting to emit frames. */
+    public check() {
+        return Boolean(this._queue.size);
+    }
+
     /**
      * Emit diff frames for all queued producer property changes.
      *
