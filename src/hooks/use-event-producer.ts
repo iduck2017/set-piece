@@ -5,15 +5,18 @@ import { Model } from "../model";
  * Create a property decorator that emits diff events after value changes.
  *
  * The property must also be dependency-backed. During the action flush, the
- * event producer resolver creates the loaded event without a payload.
+ * event producer resolver emits the first previous value and current next value.
  *
  * @param loader - Returns the diff event constructor emitted for this property.
  * @returns Property decorator for event producer state.
  */
-export function useEventProducer(loader: EventProducerLoader) {
+export function useEventProducer<
+    M extends Model & Record<string, any>,
+    K extends string,
+>(loader: EventProducerLoader<M[K]>) {
     return function(
-        prototype: Model,
-        key: string,
+        prototype: M,
+        key: K,
     ) {
         eventProducerRegistry.register(prototype, key, loader);
     };

@@ -640,7 +640,7 @@ consumer loader 会收集依赖。上面的 `self.target` 变化时，event cons
 也可以用 `@useEventProducer()` 把字段变化自动变成 event：
 
 ```ts
-class CountChangedEvent extends DiffEvent {}
+class CountChangedEvent extends DiffEvent<number> {}
 
 @useStore('counter')
 @useModel()
@@ -651,17 +651,19 @@ class CounterModel extends Model {
 }
 ```
 
-字段变化后，event producer 会在 action 阶段发出：
+例如同一批次内字段从 `1 → 2 → 3`，event producer 会在 action 阶段发出：
 
 ```ts
-new CountChangedEvent()
+new CountChangedEvent({ prev: 1, next: 3 })
 ```
 
-`DiffEvent` 只通知字段发生变化，不携带旧值或新值；consumer 需要当前值时，从所订阅的 model 读取。
+`DiffEvent<T>` 携带 `{ prev: T, next: T }`。同一个 Tag 在 producer 队列的一批登记中，只保留第一次变化前的 `prev`，后续登记不覆盖；`next` 在创建事件时读取。队列取出并清空后，新变化属于下一批。首次赋值前的旧值可能是 `undefined`，需要处理这类通知时应将 `undefined` 纳入业务事件的泛型。
+
+数组的 `prev`、`next` 都保存浅拷贝，保留当时的元素排列；元素对象仍共享引用，不做深拷贝。
 
 ### 实现方式
 
-consumer loader 在初始化和依赖变化时运行，正反两个 manager 保存 producer、Event 类型与 handler Tag 的绑定。`EventService` 根据 producer 和 event 构造函数找到 handler 并同步调用；字段 producer 则由 `EventProducerResolver` 在 action 末尾创建无载荷的 diff event 信号。显式 event 的派发边界由 Story 负责。
+consumer loader 在初始化和依赖变化时运行，正反两个 manager 保存 producer、Event 类型与 handler Tag 的绑定。`EventService` 根据 producer 和 event 构造函数找到 handler 并同步调用；字段 producer 则由 `EventProducerResolver` 在 action 末尾创建携带 `{ prev, next }` 的 diff event。显式 event 的派发边界由 Story 负责。
 
 ### 模块职责
 
@@ -707,9 +709,9 @@ public ping(records: string[]) {
 `Frame` 适合表达状态变化帧、动画帧或需要异步处理的消息。它和 Event 使用独立的类型与绑定表。
 
 ```ts
-class CountFrame extends DiffFrame {}
+class CountFrame extends DiffFrame<number> {}
 
-this.emit(new CountFrame());
+this.emit(new CountFrame({ prev: 0, next: 1 }));
 ```
 
 也可以用 `@useFrameProducer()` 把字段变化自动变成 frame：
@@ -732,19 +734,19 @@ class CounterViewModel extends Model {
   public counter?: CounterModel;
 
   @useFrameConsumer((self: CounterViewModel) => [self.counter, CountFrame])
-  private async handleCount(_frame: CountFrame) {
-    console.log(this.counter?.count);
+  private async handleCount(frame: CountFrame) {
+    console.log(frame.detail.prev, frame.detail.next);
   }
 }
 ```
 
-`DiffFrame` 同样只发出无载荷信号；异步 consumer 读取 model 时，得到的是处理当时的状态。
+`DiffFrame<T>` 同样携带 `{ prev: T, next: T }`，保留本批次首次 `prev`，创建 frame 时读取 `next`。数组载荷保存浅拷贝，避免后续数组修改影响延后处理的 frame。Event 和 Frame 各自合并自己的 producer 队列；event handler 引起的新变化可能仍被合并到尚未结算的 Frame 批次中。
 
 frame consumer 的 loader 也会收集依赖；监听目标变化时会在 blink 阶段自动重绑。
 
 ### 实现方式
 
-frame consumer loader 在初始化和依赖变化时运行，正反两个 manager 保存 producer、Frame 类型与 handler Tag 的绑定。`FrameService` 根据 producer 和 frame 构造函数找到 consumer，但不直接调用 handler，而是把任务登记到 Anime 的 `FrameResolver`；字段 producer 由 `FrameProducerResolver` 在 action 末尾创建无载荷的 diff frame 信号。
+frame consumer loader 在初始化和依赖变化时运行，正反两个 manager 保存 producer、Frame 类型与 handler Tag 的绑定。`FrameService` 根据 producer 和 frame 构造函数找到 consumer，但不直接调用 handler，而是把任务登记到 Anime 的 `FrameResolver`；字段 producer 由 `FrameProducerResolver` 在 action 末尾创建携带 `{ prev, next }` 的 diff frame。
 
 ### 模块职责
 
@@ -764,9 +766,9 @@ frame consumer loader 在初始化和依赖变化时运行，正反两个 manage
 ```ts
 @useAnime()
 public play() {
-  this.emit(new CountFrame());
+  this.emit(new CountFrame({ prev: 0, next: 1 }));
   frameResolver.proceed();
-  this.emit(new CountFrame());
+  this.emit(new CountFrame({ prev: 1, next: 2 }));
 }
 ```
 
@@ -826,8 +828,8 @@ import {
 } from 'set-piece';
 
 class TodoDoneEvent extends Event<{ id: string }> {}
-class TodoStatusEvent extends DiffEvent {}
-class TodoDoneFrame extends DiffFrame {}
+class TodoStatusEvent extends DiffEvent<string> {}
+class TodoDoneFrame extends DiffFrame<boolean> {}
 
 @useModel()
 class TodoModel extends Model {
@@ -876,8 +878,8 @@ class TodoListModel extends Model {
   }
 
   @useFrameConsumer((self: TodoListModel) => [self.todos, TodoDoneFrame])
-  private async handleTodoFrame(_frame: TodoDoneFrame) {
-    console.log('todo done changed');
+  private async handleTodoFrame(frame: TodoDoneFrame) {
+    console.log('todo done changed:', frame.detail.prev, frame.detail.next);
   }
 
   @useEffect()

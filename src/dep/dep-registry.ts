@@ -48,7 +48,7 @@ class DepRegistry {
                     if (setter) setter.call(this, next);
                     else tagDelegator.set(this, key, next);
                     if (prev === next) return;
-                    depService.register(tag);
+                    depService.register(tag, prev);
                 },
                 enumerable: true,
                 configurable: true,

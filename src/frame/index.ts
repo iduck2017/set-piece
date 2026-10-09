@@ -18,10 +18,6 @@ export abstract class Frame<T = any> {
 }
 
 /**
- * Payload-free signal for property changes produced from dependency writes.
+ * Property change with the batch's first previous value and emitted next value.
  */
-export abstract class DiffFrame extends Frame<void> {
-    constructor() {
-        super(undefined);
-    }
-}
+export abstract class DiffFrame<T = any> extends Frame<{ prev: T; next: T }> {}

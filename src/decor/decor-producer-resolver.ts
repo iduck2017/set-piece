@@ -76,7 +76,7 @@ class DecorProducerResolver {
             const next = Reflect.get(model, key);
             /** Notify dependents only if the visible decorated value changed. */
             if (prev !== next) {
-                depService.register(tag);
+                depService.register(tag, prev);
             }
         });
         return true;

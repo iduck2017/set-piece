@@ -92,7 +92,7 @@ class MemoResolver {
             memoDelegator.update(consumerTag, next);
             /** Propagate only real memo output changes. */
             if (prev !== next) {
-                depService.register(consumerTag);
+                depService.register(consumerTag, prev);
             }
         })
     }

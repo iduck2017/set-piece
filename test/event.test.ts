@@ -9,7 +9,7 @@ import { useStory } from "../src/hooks/use-story";
 
 class PingEvent extends Event<{ records?: string[] }> {}
 class BeforePingEvent extends PrevEvent<{ records?: string[] }> {}
-class CountChangedEvent extends DiffEvent {}
+class CountChangedEvent extends DiffEvent<number> {}
 
 @useStore('event-pinger')
 @useModel()
@@ -74,10 +74,12 @@ class CounterListenerModel extends Model {
 
     private _values: number[] = [];
     public get values() { return this._values; }
+    public readonly changes: CountChangedEvent['detail'][] = [];
 
     @useEventConsumer((self: CounterListenerModel) => [self.counter, CountChangedEvent])
-    private handleCountChanged(_event: CountChangedEvent) {
-        this._values.push(this.counter!.count);
+    private handleCountChanged(event: CountChangedEvent) {
+        this._values.push(event.detail.next);
+        this.changes.push(event.detail);
     }
 }
 
@@ -107,6 +109,10 @@ describe('event', () => {
         counter.count = 2;
 
         expect(listener.values).toEqual([1, 2]);
+        expect(listener.changes).toEqual([
+            { prev: 0, next: 1 },
+            { prev: 1, next: 2 },
+        ]);
     });
 
     it('defers normal events but emits prev events immediately in story', () => {

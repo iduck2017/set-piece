@@ -5,8 +5,8 @@ import { depService } from "./dep-service";
 /**
  * Create a method decorator that reports mutations after proxy helpers run.
  *
- * The decorated helper performs the actual array/object operation first, then
- * registers the owning dependency tag so downstream resolvers can react.
+ * The decorated helper snapshots the array before mutation, then registers the
+ * owning dependency tag and previous value so downstream resolvers can react.
  *
  * @returns Method decorator for dependency proxy helper methods.
  */
@@ -19,8 +19,10 @@ function useProxy<P extends any[], R = any>() {
         const handler = descriptor.value;
         if (!handler) return;
         descriptor.value = function(this: DepDelegator, ...args: P) {
+            const origin = args[0];
+            const prev = Array.isArray(origin) ? origin.slice() : origin;
             const output = handler.apply(this, args);
-            depService.register(this.tag);
+            depService.register(this.tag, prev);
             return output;
         }
         useBlink()(prototype, key, descriptor);

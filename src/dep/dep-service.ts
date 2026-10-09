@@ -19,17 +19,18 @@ class DepService {
      * whether the changed tag affects its own graph.
      *
      * @param tag - Dependency tag whose value changed.
+     * @param prev - Value before this write; in-place mutations supply a snapshot.
      * @returns Nothing.
      */
     @useBlink()
-    public register(tag: Tag) {
+    public register(tag: Tag, prev: unknown) {
         memoResolver.register(tag);
         effectResolver.register(tag);
         decorConsumerResolver.register(tag);
         eventConsumerResolver.register(tag);
-        eventProducerResolver.register(tag);
+        eventProducerResolver.register(tag, prev);
         frameConsumerResolver.register(tag);
-        frameProducerResolver.register(tag);
+        frameProducerResolver.register(tag, prev);
     }
 }
 export const depService = new DepService();
