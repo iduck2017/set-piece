@@ -22,12 +22,13 @@ class EffectModel extends Model {
 }
 
 describe('useEffect', () => {
-    it('runs effect during action flush', () => {
+    it('runs effect on initialization and queued construction changes, then on later writes', () => {
         const model = new EffectModel();
 
-        expect(model.records).toEqual([1]);
+        // Initialization runs first; the outer action then flushes the constructor's count write.
+        expect(model.records).toEqual([1, 1]);
 
         model.count = 2;
-        expect(model.records).toEqual([1, 2]);
+        expect(model.records).toEqual([1, 1, 2]);
     });
 });

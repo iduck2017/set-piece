@@ -128,6 +128,14 @@ export abstract class Model {
         }
     }
 
+    /** Return ancestors from the parent to the root, excluding this model. */
+    @useMemo()
+    public get ascendants(): Model[] {
+        const parent = this.parent;
+        return parent ? [parent, ...parent.ascendants] : [];
+    }
+
+    @useMemo()
     public get descendants(): Model[] {
         const descendants: Model[] = [];
         this.children.forEach(child => {
@@ -137,6 +145,7 @@ export abstract class Model {
         return descendants;
     }
 
+    @useMemo()
     public get children(): Model[] {
         const children: Model[] = [];
         const iterators = childRegistry.query(this);

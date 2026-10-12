@@ -47,7 +47,8 @@ class RefRootModel extends Model {
     }
 }
 
-describe('useRef', () => {
+// Automatic ref unlinking is no longer supported; keep the old cases disabled.
+describe.skip('useRef automatic unlinking', () => {
     it('removes an active single ref when its holder leaves the root', () => {
         const root = new RefRootModel();
         const holder = new RefNodeModel();

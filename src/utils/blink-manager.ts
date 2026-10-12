@@ -8,6 +8,7 @@ import { routeResolver } from "../route/route-resolver";
 import { refResolver } from "../ref/ref-resolver";
 import { Constructor } from "../types";
 import { useAction } from "../hooks/use-action";
+import { actionManager } from "../effect/action-manager";
 
 /**
  * Coordinates blink boundaries and flushes dependency graph updates.
@@ -56,7 +57,7 @@ export class BlinkManager {
     }
 
     /**
-     * Wrap construction so initial model binding runs inside one blink.
+     * Wrap construction and its blink flush inside one action.
      *
      * This is used by `useModel()` so a constructor can create
      * nested models while all initialization waits for the same blink boundary.
@@ -66,7 +67,7 @@ export class BlinkManager {
      */
     public delegate<T extends Model>(ModelCtor: Constructor<Model>): Constructor<T> {
         const that = this;
-        return {
+        const Wrapper = {
             [ModelCtor.name]: class extends ModelCtor {
                 /**
                  * Construct the model while preserving the outer blink boundary.
@@ -87,7 +88,8 @@ export class BlinkManager {
                     that.launch(() => that.resolve());
                 }
             }
-        }[ModelCtor.name] as any
+        }[ModelCtor.name] as Constructor<Model>;
+        return actionManager.delegate<T>(Wrapper);
     }
 
     /**

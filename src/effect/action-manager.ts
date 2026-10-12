@@ -3,6 +3,8 @@ import { eventProducerResolver } from "../event/event-producer-resolver";
 import { frameProducerResolver } from "../frame/frame-producer-resolver";
 import { decorProducerResolver } from "../decor/decor-producer-resolver";
 import { useAction } from "../hooks/use-action";
+import type { Model } from "../model";
+import type { Constructor } from "../types";
 
 /**
  * Coordinates action boundaries and flushes action-scoped work.
@@ -27,6 +29,26 @@ export class ActionManager {
         if (!this.precheck()) return output;
         this.resolve();
         return output;
+    }
+
+    /** Wrap construction in an action and flush after the constructor returns. */
+    public delegate<T extends Model>(ModelCtor: Constructor<Model>): Constructor<T> {
+        const that = this;
+        return {
+            [ModelCtor.name]: class extends ModelCtor {
+                constructor(...params: any[]) {
+                    if (that._pending) {
+                        super(...params);
+                        return;
+                    }
+                    that._pending = true;
+                    super(...params);
+                    that._pending = false;
+                    if (!that.precheck()) return;
+                    that.resolve();
+                }
+            }
+        }[ModelCtor.name] as Constructor<T>;
     }
 
     /** Report whether another action resolve round has pending work. */

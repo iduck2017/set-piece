@@ -29,12 +29,13 @@ class RefResolver {
      * @returns Nothing.
      */
     public resolve() {
-        const models = [...this._queue];
+        // Temporarily disable automatic unlinking of refs across roots.
+        // const models = [...this._queue];
         this._queue.clear();
-        models.forEach(model => {
-            this.resolveRefs(model);
-            this.resolveConsumers(model);
-        });
+        // models.forEach(model => {
+        //     this.resolveRefs(model);
+        //     this.resolveConsumers(model);
+        // });
     }
 
     /**

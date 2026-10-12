@@ -37,6 +37,9 @@ import {
   DiffFrame,
   useModel,
   useStore,
+  useAction,
+  useBlink,
+  useStory,
   useDep,
   useState,
   useMemo,
@@ -56,6 +59,15 @@ import {
 ```
 
 `Event`、`Frame`、`Decor` 以及 `DiffEvent`、`PrevEvent`、`DiffFrame` 都是抽象基类。业务代码需要先继承出带业务语义的类型，再把这个业务类型用于 `emit`、producer 或 consumer。
+
+### 开发目录与命令
+
+源码位于 `src/`，测试文件平铺在 `test/`，按 `store.test.ts`、`memo.test.ts` 等模块名称组织。构建使用 `tsconfig.json`，仅编译 `src/`；Jest 使用 `tsconfig.test.json`，包含源码和测试。
+
+```sh
+npm test -- --runInBand
+npm run build
+```
 
 ## Tag
 
@@ -95,9 +107,11 @@ frameConsumerResolver.resolve()
 
 多数情况下不需要手动使用 blink。`@useDep()` 写入、model 构造和 consumer 绑定等内部流程会自动进入 blink；需要显式建立同步收敛边界时，可以使用 `@useBlink()`。
 
+`useBlink` 已从包入口导出。显式包裹一组写入时，依赖刷新等待最外层同步方法返回，因此方法中途读取已缓存的 memo 可能得到旧值。Blink 不等待 Promise 或 `await` 后的操作。
+
 ### 实现方式
 
-`useBlink` 用 `BlinkManager.launch()` 包装方法。manager 使用 `_pending` 合并嵌套 blink，最外层 handler 完成后，通过 `while (precheck())` 按固定顺序反复调用各 resolver，直到队列全部清空。整个循环期间 `_pending` 保持为 `true`，resolver 产生的新登记留在队列中，由尚未执行的 resolver 或下一轮处理；`resolve()` 自身不再包装 `useBlink`。模型构造结束后的刷新也通过 `launch()` 进入同一套循环。
+`useBlink` 用 `BlinkManager.launch()` 包装方法。manager 使用 `_pending` 合并嵌套 blink，最外层 handler 完成后，通过 `while (precheck())` 按固定顺序反复调用各 resolver，直到队列全部清空。整个循环期间 `_pending` 保持为 `true`，resolver 产生的新登记留在队列中，由尚未执行的 resolver 或下一轮处理；`resolve()` 直接执行一轮队列处理。模型构造由 `BlinkManager.delegate()` 建立 blink 边界，并在内部调用 `ActionManager.delegate()` 添加外层 action 包装，因此整个构造过程和 blink 刷新都位于 action 内。
 
 ### 模块职责
 
@@ -106,7 +120,7 @@ frameConsumerResolver.resolve()
 - `ModelResolver`：初始化新创建的 model 或 view。
 - `RouteResolver`：刷新 model 子树的 route 和 root。
 - `MemoResolver`：失效和重算派生值。
-- `RefResolver`：在 memo 更新后清除跨 root 的主动和被动 ref。
+- `RefResolver`：消费 reroute 登记的队列，保留引用，不执行自动脱钩。
 - `DecorConsumerResolver`：重新绑定 decor consumer。
 - `EventConsumerResolver`：重新绑定 event consumer。
 - `FrameConsumerResolver`：重新绑定 frame consumer。
@@ -122,13 +136,15 @@ eventProducerResolver.resolve()
 frameProducerResolver.resolve()
 ```
 
-普通响应式写入会通过 blink 自动进入 action；需要把多次状态修改合并成一次副作用刷新时，可以用 `@useAction()` 包装业务方法。
+普通响应式写入会通过 blink 自动进入 action；需要将多次状态修改作为一批业务操作结算时，可以用 `@useAction()` 包装业务方法。一个 action 内可以完成多个 blink，依赖计算和绑定在各自的 blink 中同步更新，业务结算留到 action 收尾。Action 同样只覆盖同步执行，不等待 `await` 后的操作。
 
 ### 实现方式
 
 `useAction` 用 `ActionManager.launch()` 包装方法。manager 使用 `_pending` 合并嵌套 action，内层调用只执行 handler，最外层 handler 完成后通过 `precheck()` 检查是否有待处理任务，再依次处理 effect、decor producer、event producer 和 frame producer。`resolve()` 自身也包裹 `@useAction()`，因此一轮刷新期间新产生的 action 会复用当前边界；本轮结束后，若仍有任务，再进入下一轮，空队列时停止。`BlinkManager.launch()` 本身也接入 action，因此没有显式装饰器的单次字段写入仍会形成完整的 action 边界。
 
-ref 校验在每次 blink 中完成，不等待外层 action 结束。decor 重算在 action 阶段完成，结果变化会同步触发 blink 更新相关 memo 和绑定；若又登记了 effect，则由后续 action 轮次处理。
+decor 重算在 action 阶段完成，结果变化会同步触发 blink 更新相关 memo 和绑定；若又登记了 effect，则由后续 action 轮次处理。
+
+每轮先执行 effect，再重算 decor，所以 effect 可能先读到旧的 decor 缓存，随后因 decor 结果变化再次执行。Action 合并的是任务登记，不保证每个 effect 或变化通知在整个业务操作中只执行一次。
 
 ### 模块职责
 
@@ -152,7 +168,7 @@ class TodoModel extends Model {
 }
 ```
 
-`@useModel()` 把构造流程接入 blink；`@useStore(code)` 单独登记持久化类型，要求构造函数支持无参调用。model 创建后不会在 constructor 里直接完成初始化，而是进入 `modelResolver`：
+`@useModel()` 把构造流程接入外层 action 和内层 blink，支持带必填参数的构造函数，业务模型和视图类都可以使用；`@useStore(code)` 单独登记持久化类型，要求构造函数支持无参调用。业务构造函数先完成，再由 `modelResolver` 初始化：
 
 ```text
 new TodoModel()
@@ -171,11 +187,17 @@ new TodoModel()
 
 ### 实现方式
 
-`@useModel()` 先为原始类添加实例注册逻辑，再用 `BlinkManager.delegate()` 包装构造和注册的完整过程。需要持久化时，在它上方添加 `@useStore(code)`；装饰器自下而上执行，因此 `StoreRegistry` 登记的是包装后的构造函数，与实例的构造函数一致。继承链上的注册都发生在同一个构造 blink 内，由 `ModelResolver` 按实例去重；blink 收尾时调用 `_internal.init()`，统一预热 memo、执行初始 effect 并建立 decor、event、frame 的运行时绑定。
+`@useModel()` 先为原始类添加实例注册逻辑，再用 `BlinkManager.delegate()` 包装构造和注册的完整过程；该方法内部通过 `ActionManager.delegate()` 将 action 包在 blink 外面。需要持久化时，在它上方添加 `@useStore(code)`；装饰器自下而上执行，因此 `StoreRegistry` 登记的是包装后的构造函数，与实例的构造函数一致。继承链上的注册都发生在同一个构造 blink 内，由 `ModelResolver` 按实例去重；blink 收尾时调用 `_internal.init()`，统一预热 memo、执行初始 effect 并建立 decor、event、frame 的运行时绑定。
+
+例如 A、B 都使用 `@useModel()`，且 B 继承 A，`new B()` 会将同一个实例登记两次，但 `Set<Model>` 只保留一份。A、B 的字段初始化和构造函数全部完成后，才初始化这个 B 实例；若外层还有未结束的 blink，则继续等待外层收尾。这个去重仅针对待处理队列，不是实例终身只允许初始化一次的保护。
+
+Action 和 Blink 的构造包装都在构造函数中直接调用 `super(...params)`，并通过各自的 `_pending` 复用已有边界。构造中的字段写入先登记变化，待整个构造链完成、blink 初始化和依赖刷新结束后，再结算 action。若构造外没有未结束的 blink/action，且没有其他写入，构造中将同一字段从 `undefined` 依次赋为 `3`、`4`，会合并为 `{ prev: undefined, next: 4 }`；自动 DiffEvent/Frame 发射前，自身 consumer 已完成初始化绑定。
+
+初始化方法 `Model._init()` 通过 `_internal.init()` 调用，主动预热 memo、执行初始 effect 并建立绑定。构造期间的响应式赋值会登记 dep 变化；初始化建立依赖后，待处理的变化可能再次触发 memo 重算和 effect 执行。初始化与依赖刷新是独立入口，业务 effect 需要自行处理重复执行，具体见 Memo 和 Effect 章节。
 
 ### 模块职责
 
-- `Model`：提供 uuid、消息发送、初始化入口以及 parent、root、children 等模型树能力。
+- `Model`：提供 uuid、消息发送、初始化入口以及 parent、root、children、descendants、ascendants 等模型树能力。
 - `useModel`：包装模型构造过程，保留构造参数类型并接入初始化生命周期。
 - `useStore`：登记 model code，要求 `Constructor<Model, undefined[]>`，返回原构造函数。
 - `ModelResolver`：暂存新实例，在 blink 中调用模型初始化。
@@ -208,7 +230,9 @@ this.items.push('a');
 
 ### 实现方式
 
-`DepRegistry` 把字段改写为基于 `TagDelegator` 的 getter/setter：getter 向当前 `DepCollector` 报告读取，setter 包装数组、保存新值并调用 `DepService`。`DepService` 再把变更广播给 memo、effect、decor、event 和 frame 的 resolver；数组的原地 mutation 由 `DepDelegator` 的 Proxy 转换成同样的依赖通知。
+`DepRegistry` 把字段改写为基于 `TagDelegator` 的 getter/setter：getter 向当前 `DepCollector` 报告读取，setter 包装数组、保存新值并调用 `DepService.register(tag, prev)`。字段赋值、memo 重算、decor 重算都传入已有的旧值；数组的原地 mutation 由 `DepDelegator` 在操作前保存浅拷贝，再通知依赖系统。
+
+`DepService` 向 memo、effect 和各类 consumer resolver 传递变化的 Tag，同时向 event/frame producer resolver 传递 `prev`。两个 producer 队列分别保留同一 Tag 在本批次的首次旧值。
 
 ### 模块职责
 
@@ -329,13 +353,14 @@ if (restored instanceof BoardModel) {
 `load()` 在一个 blink 中完成两个阶段，单次调用只维护一个
 `Map<string, Model>`：
 
-1. `generate()` 根据 code 无参构造模型，恢复 UUID 和 state，递归恢复
+1. `create()` 根据 code 无参构造模型，恢复 UUID 和 state，递归恢复
    child。state 和 child 都通过 `Reflect.set()` 写入，保留响应式和挂载逻辑。
 2. `bind()` 再遍历配置，通过 Map 解析 ref。此时所有持久化子模型都已创建，
    可以绑定父节点、兄弟节点、自身以及重复引用。
 
-恢复完成后结束 blink，再统一进行初始化和依赖刷新。每次 `load()` 使用
-独立的 Map，不会绑定到上一次加载的实例。
+两个阶段完成后，在 blink 收尾时统一进行初始化和依赖刷新，再处理外层 action 队列。每次 `load()` 使用独立的 Map，不会绑定到上一次加载的实例。若调用方已有未结束的 blink 或 action，则复用对应的外层边界。
+
+存档保存业务字段和引用 UUID，不保存 memo 缓存、依赖网络或 resolver 队列。恢复会重新执行初始 effect，并可能因恢复字段登记的变化再次执行。需要避免重复施加加成等业务操作时，应持久化“已应用”的状态，并在 effect 中判断是否需要修改。例如 Buff 用 `@useRef()` 保存已应用加成的 Monster，恢复后它与 `parent` 指向同一实例时直接返回。保存应在业务 action 完成后进行，引用目标必须包含在本次恢复的模型树中。
 
 ### 当前行为
 
@@ -407,6 +432,20 @@ memo 的失效和重算发生在 blink 阶段。如果 memo 输出变化，它�
 
 `MemoRegistry` 包装 getter，首次读取时开启依赖收集并把结果缓存在 `MemoDelegator`。依赖字段变化后，`MemoResolver` 根据依赖图找到受影响的 memo，解除旧依赖、清除缓存并重新读取 getter；只有新旧结果不同才继续通过 `DepService` 向下游传播。
 
+`MemoResolver` 队列保存的是发生变化的依赖 Tag，受影响的 memo 到 `resolve()` 时才查询。每轮先取出并清空队列，重算产生的新变化留给后续轮次；例如已经建立依赖的 `A → B → C` 中，B、C 都是 memo，A 变化后先重算 B，下一轮重算 C，最后再处理 C 的变化登记。
+
+### 构造期间的重复计算
+
+`_init()` 会预热 memo，而构造期间的 dep 变化也已进入队列。例如响应式字段 `a` 在构造中被设为 `1`，memo `b = a + 1` 此前未被读取，收尾顺序是：
+
+```text
+构造期间：登记 a 变化
+modelResolver：_init() 首次读取 b，得到 2，建立 a → b 的依赖
+memoResolver：处理 a 的变化，清除 b 缓存，再计算得到 2
+```
+
+这个例子中 `b` 的 getter 执行两次，是首次计算加一次重算，并非 `_init()` 执行了两次。第二次结果相同只会阻止继续传播，不会省掉这次计算。
+
 ### 模块职责
 
 - `useMemo`：登记需要缓存的派生 getter。
@@ -437,6 +476,10 @@ class CounterModel extends Model {
 
 effect 会在 model 初始化时执行一次并收集依赖。之后相关依赖变化时，effect 会在 action 收尾阶段重新执行。
 
+构造赋值也会登记依赖变化。上例单独执行 `new CounterModel()` 时，初始化先调用 `record()`，随后构造 action 处理 `count = 0` 登记的变化，再调用一次，因此 `records` 为 `[0, 0]`。接着将 `count` 设为 `1`，记录变为 `[0, 0, 1]`。
+
+EffectResolver 保存的是发生变化的依赖 Tag，在处理队列时才查找依赖它的 effect。初始化执行与队列刷新不互相去重；Action 合并任务登记，不保证 effect 只执行一次。框架不提供业务幂等性，增减数值、外部写入等操作需要由 effect 自行判断是否已经应用。`load()` 同样会初始化新模型，持久化场景也需要考虑重复执行。
+
 ### 实现方式
 
 `EffectRegistry` 包装 effect 方法，每次执行前开启依赖收集。字段变化后，`EffectResolver` 从依赖图中找到受影响的方法，先解除旧依赖，再重新调用 effect 以收集新的动态依赖；`ActionManager` 保证这些调用发生在当前状态修改完成之后。
@@ -451,7 +494,17 @@ effect 会在 model 初始化时执行一次并收集依赖。之后相关依赖
 
 ## Child
 
-`@useChild()` 表示拥有关系。它会维护 `parent`、`root`、`children` 和 `descendants`。
+`@useChild()` 表示拥有关系。它会维护模型树，相关计算属性通过 `@useMemo()` 缓存并参与依赖传播：
+
+| 属性 | 含义 |
+| --- | --- |
+| `parent` | 直接父节点，根节点为 `undefined` |
+| `root` | 所属树的根节点，独立模型为自身 |
+| `children` | 所有 child 字段中的直接子节点 |
+| `descendants` | 按子节点顺序深度优先展开的所有后代，不包含自身 |
+| `ascendants` | 从父节点到根节点的祖先列表，不包含自身；根节点为空数组 |
+
+effect、memo 和 consumer 读取这些属性时会收集对应依赖。列表是缓存的计算结果，应通过 `@useChild()` 字段修改模型关系，不要直接修改返回数组。列表重算会创建新数组，比较结果引用时会被视为变化。
 
 ```ts
 @useStore('todo-list')
@@ -530,9 +583,9 @@ class TaskModel extends Model {
 }
 ```
 
-`useRef` 会维护反向引用表。模型树发生 reroute 后，`RefResolver` 会在 action
-结束时校验主动引用和被动引用；如果引用两端不再拥有相同的 `root`，单值 ref
-会被设为 `undefined`，数组 ref 中对应的 model 会通过 `splice` 移除。
+`useRef` 提供响应式引用和 UUID 持久化，并维护反向引用表。引用双方可以属于不同的模型树；卸载、换父节点或 root 改变时，引用保持原值。需要解除引用时，由业务代码显式赋值为 `undefined` 或从引用数组中移除。
+
+保存时只记录目标 UUID，不递归保存引用目标。加载只解析本次创建的模型树，目标不在这棵树中时，引用恢复为 `undefined`。运行时保留跨树引用与存档恢复的查找范围是两个独立规则。
 
 ```text
 useChild = ownership, updates parent/root/children
@@ -541,15 +594,15 @@ useRef   = reference, only tracks holders
 
 ### 实现方式
 
-`useRef` 为字段安装引用 setter，并通过 `RefConsumerRegistry` 同时保存被引用 model 到持有字段 Tag 的反向关系。数组由 `RefDelegator` 代理，每次 mutation 都同步增加或删除一条 Tag；reroute 时 `RefResolver` 收集相关 model，在 action 末尾分别检查主动引用和被动引用，并用 `undefined` 或原数组 `splice()` 清除跨 root 的关系。
+`useRef` 为字段安装引用 setter，并通过 `RefConsumerRegistry` 同时保存被引用 model 到持有字段 Tag 的反向关系。数组由 `RefDelegator` 代理，在 mutation 时同步维护引用记录。`RefResolver` 接收 reroute 登记并在 blink 中清空队列，不修改引用值。
 
 ### 模块职责
 
 - `useRef`：声明非所有权引用，并让引用字段同时具备依赖能力。
-- `RefRegistry`：记录每种 model 声明的 ref 字段，用于主动引用检查。
+- `RefRegistry`：记录每种 model 声明的 ref 字段，供存档保存 UUID 和恢复引用。
 - `RefConsumerRegistry`：以数组保存 referenced model→holder Tag 的反向引用，支持重复数组元素。
 - `RefDelegator`：代理 ref 数组 mutation，同步维护反向引用记录。
-- `RefResolver`：在 action 末尾清除 root 不同的单值和数组引用。
+- `RefResolver`：消费 reroute 队列，不执行自动脱钩。
 
 ## Decor
 
@@ -595,7 +648,7 @@ decor producer 的原始值或 consumer 绑定变化时会进入 `decorProducerR
 
 ### 实现方式
 
-producer getter 会用原始值创建业务 `Decor`，由 `DecorService` 找到绑定的 consumer 并依次修改 decor，最终结果缓存在 `DecorProducerDelegator`。consumer loader 执行时会收集动态依赖，并由正反两个 manager 保存绑定；原始值或绑定变化后，两个 resolver 分别负责重算 producer 和重绑 consumer。
+producer getter 会用原始值创建业务 `Decor`，由 `DecorService` 找到绑定的 consumer 并依次修改 decor，最终结果缓存在 `DecorProducerDelegator`。consumer 的 loader 和 handler 都会收集 dep 依赖，登记在同一个 consumer Tag 下；正反两个 manager 另行保存 producer、Decor 类型与 consumer 的绑定。任一部分依赖变化都会触发 consumer 解绑和重新绑定，并登记 producer 重算；loader 的依赖在重绑时收集，handler 的依赖在 producer 重算、执行 handler 时重新收集。
 
 ### 模块职责
 
@@ -603,7 +656,7 @@ producer getter 会用原始值创建业务 `Decor`，由 `DecorService` 找到�
 - `DecorProducerRegistry`：包装 producer 字段，创建 Decor、执行组合并登记 producer 类型。
 - `DecorProducerDelegator`：缓存每个 producer Tag 的 decor 结果。
 - `DecorProducerResolver`：定位失效 producer，清缓存重算，并传播最终结果变化。
-- `DecorConsumerRegistry`：保存 consumer loader，并收集 loader 的动态依赖。
+- `DecorConsumerRegistry`：保存 consumer loader，并收集 loader 和 handler 的动态依赖。
 - `DecorConsumerManager`：保存 producer+Decor 类型→consumer Tag 的正向绑定。
 - `DecorProducerManager`：保存 consumer Tag→producer+Decor 类型的反向绑定。
 - `DecorConsumerResolver`：依赖变化后解除旧关系并重新运行 consumer loader。
@@ -611,7 +664,7 @@ producer getter 会用原始值创建业务 `Decor`，由 `DecorService` 找到�
 
 ## Event
 
-`Event` 适合表达业务事件。`emit` 只接收一个 event 实例，不再接收 options。
+`Event` 适合表达业务事件。`emit` 接收一个 event 实例。
 
 ```ts
 class PingEvent extends Event<{ message: string }> {}
