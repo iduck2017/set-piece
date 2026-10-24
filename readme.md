@@ -583,25 +583,25 @@ class TaskModel extends Model {
 }
 ```
 
-`useRef` 提供响应式引用和 UUID 持久化，并维护反向引用表。引用双方可以属于不同的模型树；卸载、换父节点或 root 改变时，引用保持原值。需要解除引用时，由业务代码显式赋值为 `undefined` 或从引用数组中移除。
+`useRef` 提供响应式引用和 UUID 持久化；反向引用表及相关维护逻辑暂时注释停用。引用双方可以属于不同的模型树；卸载、换父节点或 root 改变时，引用保持原值。需要解除引用时，由业务代码显式赋值为 `undefined` 或从引用数组中移除。
 
 保存时只记录目标 UUID，不递归保存引用目标。加载只解析本次创建的模型树，目标不在这棵树中时，引用恢复为 `undefined`。运行时保留跨树引用与存档恢复的查找范围是两个独立规则。
 
 ```text
 useChild = ownership, updates parent/root/children
-useRef   = reference, only tracks holders
+useRef   = reference, reactive values and UUID persistence
 ```
 
 ### 实现方式
 
-`useRef` 为字段安装引用 setter，并通过 `RefConsumerRegistry` 同时保存被引用 model 到持有字段 Tag 的反向关系。数组由 `RefDelegator` 代理，在 mutation 时同步维护引用记录。`RefResolver` 接收 reroute 登记并在 blink 中清空队列，不修改引用值。
+`useRef` 为字段安装引用 setter。数组由 `RefDelegator` 代理，保留 mutation 的 action 包装；`RefConsumerRegistry` 及字段赋值、数组 mutation 中的反向引用维护逻辑已暂时注释。`RefResolver` 接收 reroute 登记并在 blink 中清空队列，不修改引用值。
 
 ### 模块职责
 
 - `useRef`：声明非所有权引用，并让引用字段同时具备依赖能力。
 - `RefRegistry`：记录每种 model 声明的 ref 字段，供存档保存 UUID 和恢复引用。
-- `RefConsumerRegistry`：以数组保存 referenced model→holder Tag 的反向引用，支持重复数组元素。
-- `RefDelegator`：代理 ref 数组 mutation，同步维护反向引用记录。
+- `RefConsumerRegistry`：反向引用表实现已暂时注释停用。
+- `RefDelegator`：代理 ref 数组 mutation，保留 action 包装，反向引用维护已暂时注释。
 - `RefResolver`：消费 reroute 队列，不执行自动脱钩。
 
 ## Decor

@@ -1,9 +1,9 @@
 import type { Model } from "../model";
-import { refConsumerRegistry } from "./ref-consumer-registry";
+// import { refConsumerRegistry } from "./ref-consumer-registry";
 import { refRegistry } from "./ref-registry";
 
 /**
- * Removes ref links whose models no longer share the same root.
+ * Queues rerouted models; automatic ref unlinking is temporarily disabled.
  */
 class RefResolver {
     private _queue: Set<Model> = new Set();
@@ -63,30 +63,30 @@ class RefResolver {
         });
     }
 
-    /**
-     * Remove fields that reference a model from a different root.
-     *
-     * @param model - Referenced model whose holders should be checked.
-     * @returns Nothing.
-     */
-    private resolveConsumers(model: Model) {
-        const root = model.root;
-        const tags = refConsumerRegistry.query(model);
-        tags.forEach(tag => {
-            const holder = tag.target;
-            if (holder.root === root) return;
-            const value = Reflect.get(holder, tag.key);
-            if (value === model) {
-                Reflect.set(holder, tag.key, undefined);
-                return;
-            }
-            if (!(value instanceof Array)) return;
-            for (let index = value.length - 1; index >= 0; index -= 1) {
-                if (value[index] !== model) continue;
-                value.splice(index, 1);
-            }
-        });
-    }
+    // /**
+    //  * Remove fields that reference a model from a different root.
+    //  *
+    //  * @param model - Referenced model whose holders should be checked.
+    //  * @returns Nothing.
+    //  */
+    // private resolveConsumers(model: Model) {
+    //     const root = model.root;
+    //     const tags = refConsumerRegistry.query(model);
+    //     tags.forEach(tag => {
+    //         const holder = tag.target;
+    //         if (holder.root === root) return;
+    //         const value = Reflect.get(holder, tag.key);
+    //         if (value === model) {
+    //             Reflect.set(holder, tag.key, undefined);
+    //             return;
+    //         }
+    //         if (!(value instanceof Array)) return;
+    //         for (let index = value.length - 1; index >= 0; index -= 1) {
+    //             if (value[index] !== model) continue;
+    //             value.splice(index, 1);
+    //         }
+    //     });
+    // }
 }
 
 export const refResolver = new RefResolver();

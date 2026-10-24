@@ -1,13 +1,12 @@
 import { useAction } from "../hooks/use-action";
 import { Model } from "../model";
-import { Tag } from "../tag/tag-registry";
-import { refConsumerRegistry } from "./ref-consumer-registry";
+// import { Tag } from "../tag/tag-registry";
+// import { refConsumerRegistry } from "./ref-consumer-registry";
 
 /**
- * Create a method decorator that locks proxy traps during array helpers.
+ * Create an action wrapper for ref array helpers.
  *
- * Array helpers update ref holder links explicitly. The lock prevents proxy
- * traps from applying the same add/remove operation twice.
+ * The proxy lock is temporarily disabled along with reverse holder tracking.
  *
  * @returns Method decorator for ref array helper methods.
  */
@@ -20,9 +19,9 @@ function useLock<P extends any[], R = any>() {
         const handler = descriptor.value;
         if (!handler) return;
         descriptor.value = function(this: RefDelegator, ...args: P) {
-            this.locked = true;
+            // this.locked = true;
             const output = handler.apply(this, args);
-            this.locked = false;
+            // this.locked = false;
             return output;
         }
         useAction()(prototype, key, descriptor)
@@ -30,18 +29,19 @@ function useLock<P extends any[], R = any>() {
 }
 
 /**
- * Proxies ref values so holder links stay in sync with mutations.
+ * Proxies ref arrays and wraps array helpers in actions.
+ * Reverse holder tracking is temporarily disabled.
  */
 export class RefDelegator {
     public readonly value: unknown;
 
-    protected _locked;
-    public set locked(value: boolean) {
-        this._locked = value;
-    }
+    // protected _locked;
+    // public set locked(value: boolean) {
+    //     this._locked = value;
+    // }
 
     /**
-     * Pop a ref and remove its holder relationship.
+     * Pop a ref.
      *
      * @param origin - Proxied ref array.
      * @returns Removed model, if any.
@@ -49,12 +49,12 @@ export class RefDelegator {
     @useLock()
     private pop(origin: Model[]) {
         const model = origin.pop();
-        if (model instanceof Model) refConsumerRegistry.remove(model, this.tag);
+        // if (model instanceof Model) refConsumerRegistry.remove(model, this.tag);
         return model;
     }
 
     /**
-     * Push refs and add holder relationships.
+     * Push refs.
      *
      * @param origin - Proxied ref array.
      * @param refs - Referenced models to append.
@@ -63,13 +63,13 @@ export class RefDelegator {
     @useLock()
     private push(origin: Model[], ...refs: Model[]) {
         const length = origin.push(...refs);
-        refs.filter(item => item instanceof Model)
-            .forEach(item => refConsumerRegistry.add(item, this.tag));
+        // refs.filter(item => item instanceof Model)
+        //     .forEach(item => refConsumerRegistry.add(item, this.tag));
         return length;
     }
 
     /**
-     * Shift a ref and remove its holder relationship.
+     * Shift a ref.
      *
      * @param origin - Proxied ref array.
      * @returns Removed model, if any.
@@ -77,12 +77,12 @@ export class RefDelegator {
     @useLock()
     private shift(origin: Model[]) {
         const model = origin.shift();
-        if (model instanceof Model) refConsumerRegistry.remove(model, this.tag);
+        // if (model instanceof Model) refConsumerRegistry.remove(model, this.tag);
         return model;
     }
 
     /**
-     * Unshift refs and add holder relationships.
+     * Unshift refs.
      *
      * @param origin - Proxied ref array.
      * @param refs - Referenced models to prepend.
@@ -91,16 +91,13 @@ export class RefDelegator {
     @useLock()
     private unshift(origin: Model[], ...refs: Model[]) {
         const length = origin.unshift(...refs);
-        refs.filter(item => item instanceof Model)
-            .forEach(item => refConsumerRegistry.add(item, this.tag));
+        // refs.filter(item => item instanceof Model)
+        //     .forEach(item => refConsumerRegistry.add(item, this.tag));
         return length;
     }
 
     /**
-     * Replace ref ranges while updating holder relationships.
-     *
-     * Removed refs are detached from the holder tag, and inserted refs are
-     * attached to it.
+     * Replace ref ranges.
      *
      * @param origin - Proxied ref array.
      * @param start - Start index for replacement.
@@ -115,12 +112,12 @@ export class RefDelegator {
         deleteCount: number,
         ...refs: Model[]
     ) {
-        const removed = origin.slice(start, start + deleteCount);
+        // const removed = origin.slice(start, start + deleteCount);
         const items = origin.splice(start, deleteCount, ...refs);
-        removed.filter(item => item instanceof Model)
-            .forEach(item => refConsumerRegistry.remove(item, this.tag));
-        refs.filter(item => item instanceof Model)
-            .forEach(item => refConsumerRegistry.add(item, this.tag));
+        // removed.filter(item => item instanceof Model)
+        //     .forEach(item => refConsumerRegistry.remove(item, this.tag));
+        // refs.filter(item => item instanceof Model)
+        //     .forEach(item => refConsumerRegistry.add(item, this.tag));
         return items;
     }
 
@@ -135,18 +132,15 @@ export class RefDelegator {
     }
 
     /**
-     * Proxy ref arrays so in-place edits keep holder links correct.
+     * Proxy ref arrays with action-wrapped mutation helpers.
      *
-     * Single model values pass through unchanged. Array values are proxied so
-     * direct index assignment, deletion, and known array helpers update
-     * `RefConsumerRegistry`.
+     * Single model values pass through unchanged.
      *
      * @param value - Original ref value assigned to the decorated property.
-     * @param tag - Tag for the property holding the reference.
      */
-    constructor(value: unknown, private readonly tag: Tag) {
+    constructor(value: unknown /*, private readonly tag: Tag */) {
         if (value instanceof Array) {
-            /** Proxy ref arrays so holder links follow in-place mutations. */
+            /** Reverse holder tracking is temporarily disabled. */
             this.value = new Proxy(value, {
                 get: (origin, index) => {
                     /** Replace mutating helpers with ref-aware wrappers. */
@@ -159,25 +153,23 @@ export class RefDelegator {
                     return Reflect.get(origin, index);
                 },
                 set: (origin, index, next) => {
-                    /** Direct index writes replace one ref holder link. */
-                    const prev = Reflect.get(origin, index);
+                    // const prev = Reflect.get(origin, index);
                     Reflect.set(origin, index, next);
-                    if (this._locked) return true;
-                    if (prev instanceof Model) refConsumerRegistry.remove(prev, this.tag);
-                    if (next instanceof Model) refConsumerRegistry.add(next, this.tag);
+                    // if (this._locked) return true;
+                    // if (prev instanceof Model) refConsumerRegistry.remove(prev, this.tag);
+                    // if (next instanceof Model) refConsumerRegistry.add(next, this.tag);
                     return true;
                 },
                 deleteProperty: (origin, index) => {
-                    /** Direct deletes remove the old holder link. */
-                    const prev = Reflect.get(origin, index);
+                    // const prev = Reflect.get(origin, index);
                     Reflect.deleteProperty(origin, index);
-                    if (this._locked) return true;
-                    if (prev instanceof Model) refConsumerRegistry.remove(prev, this.tag);
+                    // if (this._locked) return true;
+                    // if (prev instanceof Model) refConsumerRegistry.remove(prev, this.tag);
                     return true;
                 }
             });
         }
         else this.value = value;
-        this._locked = false;
+        // this._locked = false;
     }
 }

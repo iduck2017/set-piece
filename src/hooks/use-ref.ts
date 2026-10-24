@@ -1,10 +1,10 @@
 import { depRegistry } from "../dep/dep-registry";
 import { Model } from "../model";
-import { refConsumerRegistry } from "../ref/ref-consumer-registry";
+// import { refConsumerRegistry } from "../ref/ref-consumer-registry";
 import { RefDelegator } from "../ref/ref-delegator";
 import { refRegistry } from "../ref/ref-registry";
 import { tagDelegator } from "../tag/tag-delegator";
-import { tagRegistry } from "../tag/tag-registry";
+// import { tagRegistry } from "../tag/tag-registry";
 import { TypedPropertyDecorator } from "../types";
 
 export type RefList = Array<Model | undefined>
@@ -12,9 +12,8 @@ export type RefList = Array<Model | undefined>
 /**
  * Create a property decorator for external model references.
  *
- * Unlike `useChild`, referenced models are not mounted as children. Instead,
- * holder relationships are tracked so `RefResolver` can clear references when
- * the holder and referenced model no longer share the same root.
+ * Unlike `useChild`, referenced models are not mounted as children.
+ * Reverse holder tracking and automatic unlinking are temporarily disabled.
  * StoreService uses the ref registry to save referenced model UUIDs.
  *
  * @returns Property decorator for optional model refs or ref arrays.
@@ -41,20 +40,21 @@ export function useRef<
                 return tagDelegator.get(this, key);
             },
             set(this: Model, value: unknown) {
-                const tag = tagRegistry.query(this, key);
-                const prev: unknown = Reflect.get(this, key);
-                const next: unknown = new RefDelegator(value, tag).value;
+                // const tag = tagRegistry.query(this, key);
+                // const prev: unknown = Reflect.get(this, key);
+                const next: unknown = new RefDelegator(value /*, tag */).value;
                 if (setter) setter.call(this, next);
                 else tagDelegator.set(this, key, next);
 
-                if (prev instanceof Model) refConsumerRegistry.remove(prev, tag);
-                if (prev instanceof Array)
-                    prev.filter(item => item instanceof Model)
-                        .forEach(item => refConsumerRegistry.remove(item, tag));
-                if (next instanceof Model) refConsumerRegistry.add(next, tag);
-                if (next instanceof Array)
-                    next.filter(item => item instanceof Model)
-                        .forEach(item => refConsumerRegistry.add(item, tag));
+                // Reverse holder tracking is temporarily disabled.
+                // if (prev instanceof Model) refConsumerRegistry.remove(prev, tag);
+                // if (prev instanceof Array)
+                //     prev.filter(item => item instanceof Model)
+                //         .forEach(item => refConsumerRegistry.remove(item, tag));
+                // if (next instanceof Model) refConsumerRegistry.add(next, tag);
+                // if (next instanceof Array)
+                //     next.filter(item => item instanceof Model)
+                //         .forEach(item => refConsumerRegistry.add(item, tag));
             },
             enumerable: true,
             configurable: true,
